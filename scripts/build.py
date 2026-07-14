@@ -37,8 +37,6 @@ back = "const HERO_ART_BACK={%s};" % ",".join(
     f'"{k}":"{url("assets/art/hero_back/" + k + ".webp")}"' for k in man["hero_back"])
 
 repl = {
-    "//@@THREE@@": open(A("assets/vendor/three.min.js"), encoding="utf-8").read(),
-    "//@@BUNDLED_ART@@": open(A("assets/vendor/bundled_art.js"), encoding="utf-8").read(),
     "//@@HERO_ART@@": hero,
     "//@@HERO_ART_BACK@@": back,
     "//@@PAINT_ART@@": paint,

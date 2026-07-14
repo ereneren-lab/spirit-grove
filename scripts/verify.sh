@@ -5,14 +5,14 @@ set -e
 F="${1:-dist/spirit_grove_3d.html}"
 echo "검증 대상: $F"
 
-# 1) three.js 무결성 (반드시 1)
-TJS=$(grep -c "^<script>/\*\*" "$F" || true)
-echo "three.js 마커: $TJS  (기대: 1)"
-[ "$TJS" = "1" ] || { echo "❌ three.js 무결성 실패"; exit 1; }
+# 1) 죽은 의존성이 되살아나지 않았는지 (three.js / Map3D / BUNDLED_ART 는 제거됨)
+DEAD=$(grep -c "THREE\.\|Map3D\|BUNDLED_ART" "$F" || true)
+echo "죽은 의존성 참조: $DEAD  (기대: 0)"
+[ "$DEAD" = "0" ] || { echo "❌ 제거된 의존성이 다시 들어왔다"; exit 1; }
 
-# 2) JS 문법 (2번째 <script> 블록)
-OPEN=$(grep -n "^<script>" "$F" | sed -n '2p' | cut -d: -f1)
-CLOSE=$(grep -n "^</script>" "$F" | sed -n '2p' | cut -d: -f1)
+# 2) JS 문법 (게임 <script> 블록)
+OPEN=$(grep -n "^<script>" "$F" | sed -n '1p' | cut -d: -f1)
+CLOSE=$(grep -n "^</script>" "$F" | sed -n '1p' | cut -d: -f1)
 sed -n "$((OPEN+1)),$((CLOSE-1))p" "$F" > /tmp/_game.js
 node --check /tmp/_game.js && echo "✅ JS 문법 OK"
 
@@ -34,4 +34,11 @@ print(f"DEX={len(dex)}  PAINT_ART={len(pa)}  안덮인={notcov or '없음'}  중
 assert not notcov and not dups, "❌ PAINT_ART/DEX 불일치"
 print("✅ PAINT_ART/DEX 일치")
 PY
+
+# 4) 스모크 테스트 (jsdom 필요 — 없으면 건너뜀)
+if node -e "require.resolve('jsdom')" 2>/dev/null; then
+  node scripts/smoke.js "$F" || exit 1
+else
+  echo "⏭️  스모크 테스트 건너뜀 (npm install jsdom 하면 실행됨)"
+fi
 echo "🎉 모든 검증 통과"

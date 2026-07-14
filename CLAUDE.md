@@ -3,7 +3,8 @@
 이 파일은 Claude Code가 매 세션 자동으로 읽는 프로젝트 지침이야. (예전 `작업_인수인계.md`를 대체)
 
 ## 개요
-- 크리처 수집형 RPG. 렌더러는 **Map2D**(활성) / Map3D(비활성). 전투는 DOM UI.
+- 크리처 수집형 RPG. 렌더러는 **Map2D**(canvas 2D) 단일. 전투는 DOM UI.
+  - Map3D/three.js는 제거됨(모든 진입 경로가 Map2D로 덮어써서 도달 불가한 죽은 코드였음). 되살리려면 git 이력 참조.
 - 아트는 **외부에서 생성**(ChatGPT 등) → PNG를 `art_inbox/`에 넣으면 파이프라인이 배경제거·정렬·저장.
 
 ## 아키텍처 (에셋 분리됨)
@@ -14,9 +15,8 @@
 | `src/index.html` | **편집용 소스 (~440KB)**. DEX·MOVES·전투·맵·UI 전부. 아트 자리에는 주입 마커(`//@@PAINT_ART@@` 등)만. |
 | `assets/art/creatures/<id>.webp` | 크리처 아트 86종 (진짜 이미지 파일, 바로 열어볼 수 있음) |
 | `assets/art/hero/<0-3>.webp`, `hero_back/<0-3>.webp` | 주인공 4명 앞/뒤 |
-| `assets/vendor/` | three.js, bundled_art.js (원문 그대로, 편집 대상 아님) |
 | `assets/manifest.json` | 번들에 넣을 크리처 id 순서. **새 종 추가 시 여기에도 추가해야 함** |
-| `dist/spirit_grove_3d.html` | 빌드 결과물 (~4.7MB). 브라우저로 여는 건 이 파일. 직접 편집 금지 — 다음 빌드에 덮인다. |
+| `dist/spirit_grove_3d.html` | 빌드 결과물 (~3.5MB). 브라우저로 여는 건 이 파일. 직접 편집 금지 — 다음 빌드에 덮인다. |
 
 `scripts/build.py`가 마커 자리에 base64를 채워 dist를 만든다. `scripts/extract_assets.py`는 최초 분리에 쓴 1회성 스크립트(보관용).
 
@@ -46,10 +46,11 @@ python3 scripts/build.py     # src + assets -> dist
 bash scripts/verify.sh       # dist 검증
 ```
 verify 내용:
-- **three.js 무결성**: `grep -c "^<script>/\*\*"` → 반드시 **1**.
-- **JS 문법**: 2번째 `<script>` 블록 추출 → `node --check`.
+- **죽은 의존성 재유입 차단**: `THREE.` / `Map3D` / `BUNDLED_ART` 참조가 0이어야 함.
+- **JS 문법**: 게임 `<script>` 블록 추출 → `node --check`.
 - **PAINT_ART/DEX 대조**: DEX 종수 == PAINT_ART 종수, 누락/중복 0.
-- ⚠️ **dist**는 거대한 base64 줄이 있으니 **흔한 단어로 grep 금지**. 정확한 앵커로만. (src/index.html은 440KB라 자유롭게 grep 가능)
+- **스모크 테스트**(`scripts/smoke.js`): jsdom으로 dist를 실제 로드 → 런타임 에러 0건 확인 + 전투 계산·적 AI·저장/불러오기 왕복 검사. `npm install jsdom canvas` 하면 자동 실행, 없으면 건너뜀.
+- ⚠️ **dist**는 거대한 base64 줄이 있으니 **흔한 단어로 grep 금지**. 정확한 앵커로만. (src/index.html은 413KB라 자유롭게 grep 가능)
 
 ## 아트/설계 규칙
 - 화풍: soft anime, cel-shading, 귀엽고 따뜻하게. 실제 포켓몬 애셋 금지, 오리지널만.
@@ -69,9 +70,9 @@ verify 내용:
 2. **다음**: 온보딩/튜토리얼, 게임필 폴리시, 목표 루프+난이도, 오디오.
 3. 신규 지역/콘텐츠는 마지막.
 
-### 남은 다이어트 여지 (선택)
-- `assets/vendor/bundled_art.js` (616KB): 86종 전부 PAINT_ART로 덮여 `creatureVisual`이 절대 도달하지 않는 죽은 폴백. 빼면 dist가 616KB 줄어든다.
-- `assets/vendor/three.min.js` (589KB): Map3D는 모든 진입 경로가 `Field=Map2D`로 덮어써서 사실상 도달 불가. Map3D를 걷어내면 589KB 추가 절감.
+### 다이어트 결과 (완료)
+three.js(589KB) + BUNDLED_ART(616KB) + Map3D 코드 216줄 제거 → dist 4.7MB → **3.5MB**.
+남은 용량은 사실상 전부 크리처 아트 86종(PAINT_ART)이라 더 줄이려면 아트 화질/해상도 트레이드오프가 필요하다.
 
 ## 세션 워크플로
 "새 아트 왔어 → 파이프라인 → 빌드 → 검증 → 커밋" 순으로. 큰 변경 전 `git commit`. 게임 확인은 `python3 -m http.server`로 `dist/spirit_grove_3d.html` 로컬 프리뷰(브라우저 자동화 MCP가 있으면 스크린샷 검증).
