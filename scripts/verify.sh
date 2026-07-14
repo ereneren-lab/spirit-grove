@@ -35,9 +35,10 @@ assert not notcov and not dups, "❌ PAINT_ART/DEX 불일치"
 print("✅ PAINT_ART/DEX 일치")
 PY
 
-# 4) 스모크 테스트 (jsdom 필요 — 없으면 건너뜀)
+# 4) 스모크 + 코치 테스트 (jsdom 필요 — 없으면 건너뜀)
 if node -e "require.resolve('jsdom')" 2>/dev/null; then
   node scripts/smoke.js "$F" || exit 1
+  node scripts/coach_test.js "$F" || exit 1
 else
   echo "⏭️  스모크 테스트 건너뜀 (npm install jsdom 하면 실행됨)"
 fi
