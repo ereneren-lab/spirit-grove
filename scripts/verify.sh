@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # 정령의 숲 빌드 검증. 사용: bash scripts/verify.sh [파일]
+# 대상은 빌드 결과물(dist). 소스는 src/index.html + assets/ 이다.
 set -e
-F="${1:-spirit_grove_3d.html}"
+F="${1:-dist/spirit_grove_3d.html}"
 echo "검증 대상: $F"
 
 # 1) three.js 무결성 (반드시 1)

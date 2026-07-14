@@ -1,31 +1,40 @@
 #!/usr/bin/env python3
 """
 정령의 숲 아트 파이프라인.
-배경제거(GrabCut) → 리사이즈 → WebP q86 → base64 → HTML 주입.
+배경제거(GrabCut) → 정렬/리사이즈 → assets/art/**.webp 저장.
 
 사용 예:
-  # 크리처 (PAINT_ART, 중앙정렬). jobs = 파일패턴:id
-  python scripts/process_art.py creature spirit_grove_3d.html \
-      art_inbox/foxfire.png=foxfire art_inbox/emberwolf.png=emberwolf
+  # 크리처 (중앙정렬) → assets/art/creatures/<id>.webp
+  python3 scripts/process_art.py creature art_inbox/foxfire.png=foxfire
 
-  # 주인공 정면 (HERO_ART, 발끝 하단정렬). id는 0~3
-  python scripts/process_art.py hero spirit_grove_3d.html \
-      art_inbox/rio.png=0 art_inbox/mina.png=1
+  # 주인공 정면 (발끝 하단정렬) → assets/art/hero/<0-3>.webp
+  python3 scripts/process_art.py hero art_inbox/rio.png=0
 
-  # 주인공 뒷모습 (HERO_ART_BACK)
-  python scripts/process_art.py hero_back spirit_grove_3d.html art_inbox/rio_back.png=0
+  # 주인공 뒷모습 → assets/art/hero_back/<0-3>.webp
+  python3 scripts/process_art.py hero_back art_inbox/rio_back.png=0
+
+저장 후 `python3 scripts/build.py` 로 dist 번들에 반영, `bash scripts/verify.sh` 로 검증.
+새 크리처 id 는 assets/manifest.json 의 "paint" 배열에도 추가해야 번들에 들어간다.
 
 의존성: pip install opencv-python-headless numpy Pillow
 한 이미지에 캐릭터 2명이면 미리 좌/우로 잘라서 각각 넣을 것.
 """
-import sys, io, base64, re
+import sys, os, json
 import cv2, numpy as np
 from PIL import Image
 
 R = 420
+ROOT = os.path.dirname(os.path.abspath(__file__)) + "/.."
+A = lambda *p: os.path.join(ROOT, *p)
+OUTDIR = {"creature": "assets/art/creatures", "hero": "assets/art/hero",
+          "hero_back": "assets/art/hero_back"}
+
 
 def cutout_rgba(path):
-    img0 = cv2.imread(path); img = cv2.resize(img0, (R, R), interpolation=cv2.INTER_AREA)
+    img0 = cv2.imread(path)
+    if img0 is None:
+        raise SystemExit(f"❌ 이미지를 읽지 못함: {path}")
+    img = cv2.resize(img0, (R, R), interpolation=cv2.INTER_AREA)
     mask = np.zeros((R, R), np.uint8)
     rect = (int(R*0.05), int(R*0.05), int(R*0.90), int(R*0.90))
     bgd = np.zeros((1, 65), np.float64); fgd = np.zeros((1, 65), np.float64)
@@ -40,8 +49,10 @@ def cutout_rgba(path):
     rgba = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA); rgba[:, :, 3] = m
     return cv2.cvtColor(rgba, cv2.COLOR_BGRA2RGBA)
 
+
 def to_center(rgba, size=360):
     return Image.fromarray(rgba).resize((size, size), Image.LANCZOS)
+
 
 def to_bottom_anchor(rgba, size=360):
     im = Image.fromarray(rgba); a = np.array(im)[:, :, 3]
@@ -59,57 +70,27 @@ def to_bottom_anchor(rgba, size=360):
     canvas.paste(crop, ((size-nw)//2, int(size*0.989)-nh), crop)
     return canvas
 
-def encode(im):
-    buf = io.BytesIO(); im.save(buf, "WEBP", quality=86)
-    return "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
-
-def process(path, mode):
-    rgba = cutout_rgba(path)
-    im = to_center(rgba) if mode == "creature" else to_bottom_anchor(rgba)
-    return encode(im)
-
-def inject_paint(html, id_, url):
-    # replace existing entry if present, else insert after `const PAINT_ART={`
-    pat = re.compile(r'^' + re.escape(id_) + r':"data:image[^\n]*$', re.M)
-    line = f'{id_}:"{url}",'
-    if pat.search(html):
-        return pat.sub(line, html, count=1)
-    return html.replace("const PAINT_ART={", "const PAINT_ART={\n" + line, 1)
-
-def inject_hero(html, const_name, idx, url):
-    # object literal on one line: const HERO_ART={"0":"...","1":"..."}
-    m = re.search(r'(const ' + const_name + r'=\{)(.*?)(\};)', html, re.S)
-    if not m:
-        raise SystemExit(f"{const_name} 상수를 찾지 못함")
-    body = m.group(2)
-    key = f'"{idx}"'
-    entry = f'{key}:"{url}"'
-    if re.search(re.escape(key) + r':"data:image.*?"', body):
-        body = re.sub(re.escape(key) + r':"data:image[^"]*"', entry, body, count=1)
-    else:
-        body = (body + "," if body.strip() else "") + entry
-    return html[:m.start()] + m.group(1) + body + m.group(3) + html[m.end():]
 
 def main():
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3 or sys.argv[1] not in OUTDIR:
         print(__doc__); raise SystemExit(1)
-    mode, html_path = sys.argv[1], sys.argv[2]
-    jobs = [a.split("=", 1) for a in sys.argv[3:]]
-    html = open(html_path, encoding="utf-8").read()
+    mode = sys.argv[1]
+    jobs = [a.split("=", 1) for a in sys.argv[2:]]
+    outdir = A(OUTDIR[mode]); os.makedirs(outdir, exist_ok=True)
+    known = set(json.load(open(A("assets/manifest.json")))["paint"])
+
     for path, target in jobs:
-        kind = "creature" if mode == "creature" else "hero"
-        url = process(path, kind)
-        if mode == "creature":
-            html = inject_paint(html, target, url)
-        elif mode == "hero":
-            html = inject_hero(html, "HERO_ART", target, url)
-        elif mode == "hero_back":
-            html = inject_hero(html, "HERO_ART_BACK", target, url)
-        else:
-            raise SystemExit(f"알 수 없는 모드: {mode}")
-        print(f"  주입 완료: {target}  ({len(url)//1024}KB base64)")
-    open(html_path, "w", encoding="utf-8").write(html)
-    print("완료. 이제 scripts/verify.sh 로 검증하세요.")
+        rgba = cutout_rgba(path)
+        im = to_center(rgba) if mode == "creature" else to_bottom_anchor(rgba)
+        dest = os.path.join(outdir, target + ".webp")
+        im.save(dest, "WEBP", quality=86)
+        note = ""
+        if mode == "creature" and target not in known:
+            note = "  ⚠️ manifest.json 의 paint 배열에 없음 — 추가해야 번들에 들어감"
+        print(f"  저장: {os.path.relpath(dest, A('.'))}  ({os.path.getsize(dest)//1024}KB){note}")
+
+    print("완료. 이제 `python3 scripts/build.py` → `bash scripts/verify.sh`")
+
 
 if __name__ == "__main__":
     main()
