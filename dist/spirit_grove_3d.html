@@ -95,6 +95,19 @@
   .dlg-text{color:#2a2030;font-size:14px;line-height:1.55;white-space:pre-wrap}
   .dlg-next{position:absolute;right:13px;bottom:9px;color:#7a4a90;font-size:12px;animation:dlgBounce 1s infinite}
   @keyframes dlgBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+  /* 목표 트래커 */
+  .goal{position:absolute;top:8px;left:8px;z-index:6;max-width:60%;display:none;gap:8px;align-items:center;
+    padding:7px 10px;border-radius:12px;cursor:pointer;
+    background:linear-gradient(180deg,rgba(24,20,40,.88),rgba(18,15,32,.82));
+    border:1px solid rgba(168,240,210,.34);box-shadow:0 3px 12px rgba(0,0,0,.4);backdrop-filter:blur(3px)}
+  .goal.on{display:flex}
+  .goal .arrow{font-size:17px;line-height:1;color:#a8f0d2;flex:0 0 auto;transition:transform .25s ease}
+  .goal .gtxt{min-width:0}
+  .goal .glbl{font-size:9px;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
+  .goal .gnm{font-size:12px;font-weight:700;color:#eafaf3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .goal .gsub{font-size:10px;color:#9fb5c8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .goal.done{border-color:rgba(255,210,63,.45)}
+  .goal.done .arrow{color:#ffd23f}
   .hint{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:11px;color:var(--muted);padding:8px;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.8)}
 
   #battle{padding:0;background:radial-gradient(600px 320px at 70% 12%, rgba(240,168,104,.10), transparent 65%),linear-gradient(180deg,#241b30,#15101f)}
@@ -397,6 +410,12 @@
     <section class="view" id="map">
       <div class="canvas-wrap" id="canvasWrap">
         <canvas id="mapCanvas"></canvas>
+        <div class="goal" id="goalTrack" title="탭하면 목표 지점으로 자동 이동">
+          <span class="arrow" id="goalArrow">➤</span>
+          <span class="gtxt"><span class="glbl">다음 목표</span>
+            <div class="gnm" id="goalName">—</div>
+            <div class="gsub" id="goalSub"></div></span>
+        </div>
       </div>
       <div class="map-foot">
         <div class="dpad">
@@ -1248,11 +1267,13 @@ function enterInterior(map){
   W=map.W; H=map.H; MAP_STR=map.str; G.pos={x:map.startX,y:map.startY}; G.indoor=map.id||"interior";
   if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"up"); if(Field)Field.moveSpeed=(G&&G.running)?11.4:6.8; if(typeof updateRunBtn==="function")updateRunBtn();
   if(!G.inBattle)Audio.startMusic(fieldMusic());
+  if(typeof updateGoal==="function")updateGoal();
 }
 function exitInterior(){ if(!_owBackup)return;
   W=_owBackup.W; H=_owBackup.H; MAP_STR=_owBackup.str; G.pos={x:_owBackup.pos.x,y:_owBackup.pos.y}; G.indoor=null; _owBackup=null; _justExited=true;
   if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"down");
   if(!G.inBattle)Audio.startMusic(regionMusic(region(G.pos.y)));
+  if(typeof updateGoal==="function")updateGoal();
 }
 const GUARD_TILES="789abcdef0ijklq";
 const GYM_THEME={ gym1:{fl:"#bcd0a0",wl:"#7a9a5a"}, gym2:{fl:"#9ab88a",wl:"#4f7a4a"}, gym3:{fl:"#a6c8cc",wl:"#4a8a8a"}, gym4:{fl:"#c8bfa0",wl:"#8a7a5a"}, league:{fl:"#39344f",wl:"#6a5a8a"} };
@@ -1574,6 +1595,7 @@ function move(dir,auto){ if(G.busy||G.inBattle||!Field.arrived)return; if(Field)
   if(dir==="up")y--;else if(dir==="down")y++;else if(dir==="left")x--;else if(dir==="right")x++;
   if(!walkable(x,y)){ if(Field.face)Field.face(dir); if(tileAt(x,y)==="~"&&!G.busy&&!G.inBattle){ if(G.hasSurf&&!G.surfing&&!G.indoor){ stopPath(); G.surfing=true; Audio.sfx("blip"); flashHint("🌊 파도타기 시작!"); move(dir); return; } if(G.hasRod){ stopPath(); startFishing(); return; } } if(tileAt(x,y)==="x"&&G.hasCut&&!G.busy&&!G.indoor){ stopPath(); cutObstacle(x,y); return; } if(tileAt(x,y)==="o"&&G.hasStrength&&!G.busy&&!G.indoor){ stopPath(); pushBoulder(x,y,dir); return; } if(tileAt(x,y)==="Y"&&G.indoor==="coast"){ stopPath(); if(G.hasRod){ if(!G.isleSeen){ G.isleSeen=true; sailToIsle(); setTimeout(()=>{ if(G.indoor==="isle")playStory(ISLE_INTRO,()=>{}); },420); } else { sailToIsle(); } } else { showDialog({name:"뱃사람",text:"배가 아직 준비되지 않았소. 낚싯대라도 챙겨 진짜 뱃사람이 되어 오시게."}); } return; } if(tileAt(x,y)==="Y"&&G.indoor==="isle"){ stopPath(); sailToCoast(); return; } if(tileAt(x,y)==="K"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); openShop(); return; } if(tileAt(x,y)==="H"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); healParty(true); Audio.sfx("heal"); flashHint(G.indoor==="snowfield"?"따뜻한 오두막에서 정령들이 푹 쉬었다!":"여관에서 정령들이 푹 쉬었다!"); saveGame(); return; } if(tileAt(x,y)==="L"&&G.indoor==="isle"){ stopPath(); if(!G.defeated.has("L")){ startTrainer("L"); } else { showDialog({name:"여명 관장 하로",text:"또 붙어보고 싶은가? 언제든 환영이다!"}); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="isle"){ stopPath(); sailToShrine(); if(!G.shrineSeen){ G.shrineSeen=true; setTimeout(()=>{ if(G.indoor==="shrine")playStory(SHRINE_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="shrine"){ stopPath(); sailFromShrine(); return; } if(tileAt(x,y)==="@"&&G.indoor==="shrine"){ stopPath(); if(!G.legendDone){ startLegendary(); } else { showDialog({name:"신전",text:"신전은 고요하다. 여명룡은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="%"&&!G.indoor){ stopPath(); if(!G.lakeDone){ startLakeLegendary(); } else { showDialog({name:"호수 제단",text:"호수는 잔잔하다. 수룡왕은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="&"&&G.indoor==="snowfield"){ stopPath(); if(!G.snowDone){ startSnowLegendary(); } else { showDialog({name:"빙하 제단",text:"빙하는 잠잠하다. 빙하제는 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="Q"&&G.indoor==="snowfield"){ stopPath(); if(!G.defeated.has("SNOW")){ startTrainer("SNOW"); } else { showDialog({name:"설산의 주인 빙하",text:"또 겨루고 싶은가? 언제든지."}); } return; } if((tileAt(x,y)==="5"||tileAt(x,y)==="6"||GUARD_TILES.indexOf(tileAt(x,y))>=0)&&G.indoor&&!G.defeated.has(tileAt(x,y))){ stopPath(); startTrainer(tileAt(x,y)); return; } if(tileAt(x,y)==="H"&&!G.indoor){ enterInterior(INTERIORS.house); return; } if(tileAt(x,y)==="D"&&!G.indoor){ enterInterior(INTERIORS.cave); return; } if(tileAt(x,y)==="V"&&!G.indoor){ enterInterior(INTERIORS.lavacave); if(!G.lavaSeen){ G.lavaSeen=true; setTimeout(()=>{ if(G.indoor==="lavacave")flashHint("🌋 뜨거운 열기가 밀려온다… 용암 동굴이다!"); },400); } return; } if(tileAt(x,y)==="M"&&!G.indoor){ enterInterior(INTERIORS.snowfield); if(!G.snowSeen){ G.snowSeen=true; setTimeout(()=>{ if(G.indoor==="snowfield")flashHint("❄️ 차가운 바람이 불어온다… 설원 지대다!"); },400); } return; } if(tileAt(x,y)==="G"&&!G.indoor&&typeof GYM_AT!=="undefined"&&GYM_AT[x+","+y]){ enterInterior(INTERIORS[GYM_AT[x+","+y]]); return; } if(tileAt(x,y)==="W"&&!G.indoor){ enterInterior(INTERIORS.coast); if(!G.coastSeen){ G.coastSeen=true; setTimeout(()=>{ if(G.indoor==="coast")playStory(COAST_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="U"&&!G.indoor){ if(forestBadges()>=4){ enterInterior(INTERIORS.league); if(!G.leagueSeen){ G.leagueSeen=true; setTimeout(()=>{ if(G.indoor==="league")playStory(LEAGUE_INTRO,()=>{}); },420); } } else { showDialog({name:"리그 안내인",text:`정령 리그는 <b>4개의 인장 조각</b>을 모은 자에게만 열립니다. (현재 ${forestBadges()}/4)`}); } return; } if(tileAt(x,y)==="N"&&G.indoor==="shrine"){ showDialog(SHRINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="snowfield"){ showDialog(SNOW_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="isle"){ showDialog(ISLE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="coast"){ showDialog(COAST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor){ showDialog({name:G.indoor==="shop"?"점원":"집주인",text:(INTERIOR_NPC_MSG[G.indoor]||"...").replace(/^[^:]+:\s*/,"")}); return; } if(tileAt(x,y)==="P"){ showDialog({name:"팻말",text:(SIGN_MSG[x+","+y]||"조심해서 나아가자.").replace(/^🪧\s*/,"")}); return; } return; } G.pos={x,y}; if(G.surfing&&tileAt(x,y)!=="~"){ G.surfing=false; flashHint("뭍에 올랐다."); } mmReveal(x,y); Audio.sfx("step"); Field.setTarget(x,y,dir); }
 function onArrived(){
+  updateGoal();
   if(_justExited){ _justExited=false; return; }
   if(G.indoor){ const _it=INTERIORS[G.indoor]; const _t=tileAt(G.pos.x,G.pos.y);
     if(_it && G.pos.x===_it.exitX && G.pos.y===_it.exitY){ stopPath(); exitInterior(); return; }
@@ -1638,6 +1660,53 @@ document.addEventListener("keydown",e=>{ if(!$("map").classList.contains("active
 document.addEventListener("keyup",e=>{ const k=e.key.toLowerCase();
   const m={arrowup:"up",w:"up",arrowdown:"down",s:"down",arrowleft:"left",a:"left",arrowright:"right",d:"right"};
   if(m[k]&&heldDir===m[k])heldDir=null; });
+/* ===================== 목표 트래커 =====================
+   "지금 뭘 해야 하지?"를 화면에 붙박아 둔다. 진행 사슬: 체육관 4곳 → 정령 리그 → 챔피언 → 도감.
+   좌표는 실제 게이트 타일에서 가져온다(GYM_AT / 리그 U 타일). 탭하면 그 지점까지 자동 이동. */
+const LEAGUE_XY={x:18,y:9};
+const GYM_ORDER=[["1","8,43"],["2","8,35"],["3","8,26"],["4","8,17"]];
+function currentGoal(){
+  if(!G||!G.party||!G.party.length)return null;
+  const badges=G.badges||[];
+  for(const [key,pos] of GYM_ORDER){
+    if(badges.includes(key))continue;
+    const [gx,gy]=pos.split(",").map(Number);
+    const gym=INTERIORS[GYM_AT[pos]];
+    return {name:gym?gym.name:"체육관", sub:`🏅 인장 조각 ${forestBadges()}/4`, x:gx, y:gy};
+  }
+  if(!G.champion)
+    return {name:"정령 리그", sub:"4조각을 모았다 — 챔피언에 도전하라", x:LEAGUE_XY.x, y:LEAGUE_XY.y};
+  return {name:"도감 완성", sub:`${G.caught.size}/${DEX.length}종 수집`, x:null, y:null, done:true};
+}
+function updateGoal(){
+  const el=$("goalTrack"); if(!el)return;
+  const g=(!G||G.inBattle)?null:currentGoal();
+  if(!g){ el.classList.remove("on"); return; }
+  el.classList.add("on"); el.classList.toggle("done",!!g.done);
+  $("goalName").textContent=g.name;
+  const arrow=$("goalArrow");
+  if(g.x==null||G.indoor){
+    // 실내이거나 좌표가 없는 목표(도감)는 방향 대신 상태만 보여준다
+    $("goalSub").textContent=g.sub;
+    arrow.textContent=g.done?"🏆":"📍"; arrow.style.transform="";
+  }else{
+    const dx=g.x-G.pos.x, dy=g.y-G.pos.y;
+    const dist=Math.abs(dx)+Math.abs(dy);
+    $("goalSub").textContent=dist===0?g.sub:`${g.sub} · ${dist}칸`;
+    arrow.textContent="➤";
+    arrow.style.transform=`rotate(${Math.round(Math.atan2(dy,dx)*180/Math.PI)}deg)`;
+  }
+  el._goal=g;
+}
+if($("goalTrack")) $("goalTrack").addEventListener("click",()=>{
+  const g=$("goalTrack")._goal;
+  if(!g||g.x==null||G.indoor||G.busy||G.inBattle){ Audio.sfx("blip"); return; }
+  Audio.sfx("blip");
+  const p=bfsPath(G.pos.x,G.pos.y,g.x,g.y);
+  if(!p||!p.length){ flashHint("지금은 그곳까지 가는 길이 막혀 있다."); return; }
+  gamePath=p; if(Field.setDest)Field.setDest(g.x,g.y); pathStep();
+});
+
 /* ===================== VIEW NAV / OVERLAYS ===================== */
 function show(id){ document.querySelectorAll(".view").forEach(v=>v.classList.remove("active")); $(id).classList.add("active"); }
 function openOverlay(id){ $(id).classList.add("active"); }
@@ -1656,7 +1725,7 @@ function startInHouse(){ G.pos={x:5,y:48}; enterMap(false); enterInterior(INTERI
 function enterMap(fromLoad){ if(fromLoad){ G.indoor=null; _owBackup=null; } if(!G.indoor){ MAP_STR=OVERWORLD_STR0.slice(); W=25; H=50; } updateDexPill(); updateMoney(); lastRegion=-1;
   $("settingsBtn").style.display="grid"; $("moneyPill").style.display="block"; updateBadgePill(); show("map");
   Field.init(); Field.rebuild();
-  Field.start(); Audio.startMusic(fieldMusic());
+  Field.start(); Audio.startMusic(fieldMusic()); updateGoal();
   if(!fromLoad)maybeTutorial(); }
 
 function maybeTutorial(){ let done=false; try{done=!!localStorage.getItem("sg4_tut");}catch(e){}
@@ -2974,7 +3043,7 @@ function showEnding(){ const body=$("endingBody"); const lv=Math.max(...G.party.
 
 function endBattle(){ Coach.finish(); G.inBattle=false; G.busy=false; G.foe=null; G.trainer=null; heldDir=null; stopPath(); closeOverlay("switchOverlay");
   G.party.forEach(m=>{ m.stages={atk:0,def:0,spd:0}; }); // reset volatile stages, keep status
-  show("map"); Field.start(); Audio.startMusic(fieldMusic()); saveGame(); }
+  show("map"); Field.start(); Audio.startMusic(fieldMusic()); updateGoal(); saveGame(); }
 
 function blackout(){ healParty(true); G.trainer=null; G.inBattle=false; G.busy=false; G.surfing=false;
   if(G.indoor && typeof exitInterior==="function"){ exitInterior(); }
@@ -3449,7 +3518,7 @@ function renderWarp(){ const body=$("warpBody"); body.innerHTML="";
     if(!cur)card.querySelector(".pick").addEventListener("click",()=>warpTo(x,y)); body.appendChild(card); }); }
 function warpTo(x,y){ Audio.sfx("heal"); closeOverlay("warpOverlay"); stopPath(); heldDir=null; lastRegion=-1;
   if(G.indoor){ G.indoor=null; _owBackup=null; MAP_STR=OVERWORLD_STR0.slice(); W=25; H=50; if(Field.rebuild)Field.rebuild(); }
-  G.pos={x,y}; Field.placeImmediate(); healParty(true); flashHint("모닥불로 돌아왔다 🔥"); saveGame(); }
+  G.pos={x,y}; Field.placeImmediate(); healParty(true); updateGoal(); flashHint("모닥불로 돌아왔다 🔥"); saveGame(); }
 
 /* ===================== MINIMAP ===================== */
 let _miniRaf=null;
@@ -3584,7 +3653,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal};
 
 /* ===================== INIT ===================== */
 if(hasSave()) $("continueBtn").style.display="block";
