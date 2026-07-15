@@ -255,6 +255,11 @@
   .bag-item .nm{font-weight:700;font-size:14px} .bag-item .ds{font-size:11px;color:var(--muted);margin-top:2px}
   .bag-item .ct{font-weight:800;font-size:15px;color:var(--amber)}
   .bag-item .price{font-weight:800;font-size:13px;color:var(--amber)}
+  /* 상점 구매/판매 탭 */
+  .shop-tabs{display:flex;gap:8px;margin-bottom:12px}
+  .shop-tabs button{flex:1;padding:10px;border-radius:11px;font-weight:800;font-size:14px;cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+  .shop-tabs button.on{background:rgba(127,209,174,.16);border-color:var(--mint);color:var(--cream)}
   /* 상점 수량 구매 모달 */
   .buy-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
   .buy-head .buy-em{font-size:36px}
@@ -3070,10 +3075,15 @@ function xpMult(level){ if(!G||G.indoor||!G.pos||typeof region!=="function")retu
 async function gainXpFor(m,gain,isLead){ m.xp+=Math.floor(gain*(isLead?1:0.4)*xpMult(m.level));
   if(isLead)setExpBar();
   let need=m.level*30; let leveled=false;
-  while(m.xp>=need && m.level<60){ m.xp-=need; m.level++; const sp=byId(m.id); recalc(m,sp); m.hp=m.maxHp; leveled=true; m.friendship=(m.friendship||0)+5;
+  while(m.xp>=need && m.level<60){ m.xp-=need; m.level++; const sp=byId(m.id);
+    const _pre=isLead?{hp:m.maxHp,atk:m.atk,def:m.def,spa:m.spa,spDef:m.spDef,spd:m.spd}:null;   // 레벨업 전 스탯
+    recalc(m,sp); m.hp=m.maxHp; leveled=true; m.friendship=(m.friendship||0)+5;
     if(sp.learn){ for(const [lv,mv] of sp.learn){ if(lv===m.level) await learnMoveFlow(m,mv,isLead); } }
     if(isLead){ triggerLevelup(m.level); Audio.sfx("levelup"); setMsg(`<b>${m.name}</b>이(가) Lv ${m.level}(으)로 성장했다!`); renderCombatants(); setExpBar();
-      await mw(900); await evolveCheck(m,true); }
+      await mw(900);
+      const _g=[["HP",m.maxHp-_pre.hp],["공격",m.atk-_pre.atk],["방어",m.def-_pre.def],["특공",m.spa-_pre.spa],["특방",m.spDef-_pre.spDef],["속도",m.spd-_pre.spd]];
+      setMsg("📈 "+_g.map(([n,v])=>`${n} +${v}`).join(" · ")); Audio.sfx("blip"); await mw(1100);
+      await evolveCheck(m,true); }
     else { await evolveCheck(m,false); }
     need=m.level*30; }
   return leveled; }
@@ -3546,32 +3556,60 @@ const SHOP=[
   {key:"rod",em:"🎣",nm:"낚싯대",ds:"물가에서 물의 정령을 낚는다",price:500},
 ];
 function openShop(){ Audio.sfx("blip"); renderShop(); updateMoney(); openOverlay("shopOverlay"); }
+const SHOP_PRICE={}; SHOP.forEach(it=>SHOP_PRICE[it.key]=it.price);
+const KEY_ITEMS=new Set(["rod","vsseeker"]);   // 판매 불가 열쇠 아이템
+function sellPrice(key){ return Math.floor((SHOP_PRICE[key]||0)/2); }
+function ownedQty(it){ return (it.held?(G.heldStock&&G.heldStock[it.key]):G.items[it.key])||0; }
+let shopTab="buy";
 function renderShop(){ const body=$("shopBody"); body.innerHTML="";
-  SHOP.forEach(it=>{ const owned=(it.held?(G.heldStock&&G.heldStock[it.key]):G.items[it.key])||0;
-    const row=document.createElement("div"); row.className="bag-item";
-    row.innerHTML=`<div class="em">${it.em}</div><div class="info"><div class="nm">${it.nm} <span style="color:var(--muted);font-size:10px">×${owned} 보유</span></div><div class="ds">${it.ds}</div></div>
-      <button class="pick" ${G.money<it.price?"disabled":""}>구매</button><div class="price">💰${it.price}</div>`;
-    row.querySelector(".pick").addEventListener("click",()=>{ if(G.money<it.price){toast("코인이 부족해");return;} Audio.sfx("blip"); openBuy(it); });
-    body.appendChild(row); }); }
-// 포켓마트식 수량 구매: −/+ 카운터 + 총액·잔액 미리보기 + 확인.
-let _buyIt=null,_buyQty=1;
-function buyMax(it){ return Math.max(0, Math.min(99, Math.floor(G.money/it.price))); }
-function openBuy(it){ _buyIt=it; _buyQty=1; renderBuy(); openOverlay("buyOverlay"); }
-function renderBuy(){ const it=_buyIt; if(!it)return; const max=buyMax(it); _buyQty=clamp(_buyQty,1,Math.max(1,max));
-  const total=it.price*_buyQty, b=$("buyBody");
-  b.innerHTML=`<div class="buy-head"><span class="buy-em">${it.em}</span><div><div class="buy-nm">${it.nm}</div><div class="buy-ds">${it.ds} · 개당 💰${it.price}</div></div></div>
-    <div class="buy-qtyrow"><button class="buy-step" id="buyMinus" ${_buyQty<=1?"disabled":""}>−</button><div class="buy-qty">${_buyQty}</div><button class="buy-step" id="buyPlus" ${_buyQty>=max?"disabled":""}>+</button></div>
-    <div class="buy-total">합계 <b>💰 ${total}</b><span class="buy-after">구매 후 잔액 💰 ${G.money-total}</span></div>
-    <button class="dcbtn wide buy-ok" id="buyOk" ${max<1?"disabled":""}>${max<1?"코인이 부족해":"구매하기"}</button>
-    <button class="dcbtn wide" id="buyCancel" style="margin-top:8px">취소</button>`;
-  $("buyMinus").onclick=()=>{ if(_buyQty>1){_buyQty--; Audio.sfx("blip"); renderBuy();} };
-  $("buyPlus").onclick=()=>{ if(_buyQty<max){_buyQty++; Audio.sfx("blip"); renderBuy();} };
-  $("buyOk").onclick=doBuy; $("buyCancel").onclick=()=>{ Audio.sfx("blip"); closeOverlay("buyOverlay"); };
+  const tabs=document.createElement("div"); tabs.className="shop-tabs";
+  tabs.innerHTML=`<button id="shopBuyTab" class="${shopTab==="buy"?"on":""}">구매</button><button id="shopSellTab" class="${shopTab==="sell"?"on":""}">판매</button>`;
+  body.appendChild(tabs);
+  tabs.querySelector("#shopBuyTab").onclick=()=>{ if(shopTab!=="buy"){shopTab="buy"; Audio.sfx("blip"); renderShop();} };
+  tabs.querySelector("#shopSellTab").onclick=()=>{ if(shopTab!=="sell"){shopTab="sell"; Audio.sfx("blip"); renderShop();} };
+  if(shopTab==="buy"){
+    SHOP.forEach(it=>{ const owned=ownedQty(it);
+      const row=document.createElement("div"); row.className="bag-item";
+      row.innerHTML=`<div class="em">${it.em}</div><div class="info"><div class="nm">${it.nm} <span style="color:var(--muted);font-size:10px">×${owned} 보유</span></div><div class="ds">${it.ds}</div></div>
+        <button class="pick" ${G.money<it.price?"disabled":""}>구매</button><div class="price">💰${it.price}</div>`;
+      row.querySelector(".pick").addEventListener("click",()=>{ if(G.money<it.price){toast("코인이 부족해");return;} Audio.sfx("blip"); openTrade(it,"buy"); });
+      body.appendChild(row); });
+  } else {
+    const sellable=SHOP.filter(it=>ownedQty(it)>0 && !KEY_ITEMS.has(it.key) && sellPrice(it.key)>0);
+    if(!sellable.length){ const e=document.createElement("div"); e.style.cssText="text-align:center;color:var(--muted);padding:26px 8px;font-size:13px"; e.textContent="팔 수 있는 물건이 없어요."; body.appendChild(e); return; }
+    sellable.forEach(it=>{ const owned=ownedQty(it);
+      const row=document.createElement("div"); row.className="bag-item";
+      row.innerHTML=`<div class="em">${it.em}</div><div class="info"><div class="nm">${it.nm} <span style="color:var(--muted);font-size:10px">×${owned} 보유</span></div><div class="ds">${it.ds}</div></div>
+        <button class="pick">판매</button><div class="price">💰${sellPrice(it.key)}</div>`;
+      row.querySelector(".pick").addEventListener("click",()=>{ Audio.sfx("blip"); openTrade(it,"sell"); });
+      body.appendChild(row); });
+  }
 }
-function doBuy(){ const it=_buyIt,qty=_buyQty,total=it.price*qty; if(!it||G.money<total){toast("코인이 부족해");return;}
-  G.money-=total; if(it.held){ G.heldStock=G.heldStock||{}; G.heldStock[it.key]=(G.heldStock[it.key]||0)+qty; } else { G.items[it.key]=(G.items[it.key]||0)+qty; }
-  Audio.sfx("buy"); updateMoney(); closeOverlay("buyOverlay"); renderShop(); saveGame();
-  toast(`고맙습니다! ${it.nm} ×${qty} 구매했어요`); }
+// 포켓마트식 수량 거래(구매/판매): −/+ 카운터 + 총액·잔액 미리보기 + 확인.
+let _trIt=null,_trQty=1,_trMode="buy";
+function tradeMax(it,mode){ return mode==="buy" ? Math.max(0,Math.min(99,Math.floor(G.money/it.price))) : Math.max(0,Math.min(99,ownedQty(it))); }
+function openTrade(it,mode){ _trIt=it; _trMode=mode; _trQty=1; renderTrade(); openOverlay("buyOverlay"); }
+function renderTrade(){ const it=_trIt,mode=_trMode; if(!it)return; const buy=mode==="buy";
+  const max=tradeMax(it,mode); _trQty=clamp(_trQty,1,Math.max(1,max));
+  const unit=buy?it.price:sellPrice(it.key), total=unit*_trQty, b=$("buyBody");
+  b.innerHTML=`<div class="buy-head"><span class="buy-em">${it.em}</span><div><div class="buy-nm">${it.nm}</div><div class="buy-ds">${it.ds} · 개당 💰${unit}</div></div></div>
+    <div class="buy-qtyrow"><button class="buy-step" id="buyMinus" ${_trQty<=1?"disabled":""}>−</button><div class="buy-qty">${_trQty}</div><button class="buy-step" id="buyPlus" ${_trQty>=max?"disabled":""}>+</button></div>
+    <div class="buy-total">${buy?"합계":"판매액"} <b>💰 ${total}</b><span class="buy-after">${buy?`구매 후 잔액 💰 ${G.money-total}`:`판매 후 💰 ${G.money+total}`}</span></div>
+    <button class="dcbtn wide buy-ok" id="buyOk" ${max<1?"disabled":""}>${max<1?(buy?"코인이 부족해":"팔 수 없어"):(buy?"구매하기":"판매하기")}</button>
+    <button class="dcbtn wide" id="buyCancel" style="margin-top:8px">취소</button>`;
+  $("buyMinus").onclick=()=>{ if(_trQty>1){_trQty--; Audio.sfx("blip"); renderTrade();} };
+  $("buyPlus").onclick=()=>{ if(_trQty<max){_trQty++; Audio.sfx("blip"); renderTrade();} };
+  $("buyOk").onclick=doTrade; $("buyCancel").onclick=()=>{ Audio.sfx("blip"); closeOverlay("buyOverlay"); };
+}
+function doTrade(){ const it=_trIt,qty=_trQty,mode=_trMode; if(!it)return;
+  const store=it.held?(G.heldStock=G.heldStock||{}):G.items;
+  if(mode==="buy"){ const total=it.price*qty; if(G.money<total){toast("코인이 부족해");return;}
+    G.money-=total; store[it.key]=(store[it.key]||0)+qty; Audio.sfx("buy");
+    toast(`고맙습니다! ${it.nm} ×${qty} 구매했어요`); }
+  else { const have=ownedQty(it); if(have<qty){toast("가진 수량이 부족해");return;}
+    const gain=sellPrice(it.key)*qty; store[it.key]=have-qty; if(store[it.key]<=0)delete store[it.key];
+    G.money+=gain; Audio.sfx("buy"); toast(`💰 ${gain} 받았어요! ${it.nm} ×${qty} 판매`); }
+  updateMoney(); closeOverlay("buyOverlay"); renderShop(); saveGame(); }
 
 /* ===================== PC BOX ===================== */
 let pcTab="party";
