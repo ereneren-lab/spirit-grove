@@ -201,6 +201,10 @@
   #logBody .logline{font-size:12.5px;color:var(--cream);padding:6px 2px;border-bottom:1px solid rgba(255,255,255,.06);line-height:1.5}
   #logBody .logline:nth-child(odd){color:var(--muted)}
   .skiphint{position:absolute;right:12px;top:10px;font-size:10px;color:var(--muted);z-index:5;pointer-events:none;opacity:.7}
+  /* 수동 전투 진행 큐 (▼ 탭하면 계속) */
+  .adv-cue{position:absolute;right:14px;bottom:10px;font-size:15px;color:var(--mint);z-index:6;pointer-events:none;opacity:0;transition:opacity .15s}
+  .adv-cue.show{opacity:1;animation:advBounce .8s ease-in-out infinite}
+  @keyframes advBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
 
   .battle-ui{background:var(--panel);border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:14px;min-height:184px;display:flex;flex-direction:column}
   .msg{font-size:14px;line-height:1.5;min-height:46px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
@@ -467,7 +471,7 @@
 
     <section class="view" id="battle">
       <div class="field" id="battleField">
-        <div class="skiphint">탭하면 빨리감기</div>
+        <div class="skiphint" id="skipHint">누르는 동안 빨리감기</div>
         <div class="bg-sky"></div><div class="bg-clouds"></div><div class="bg-ground"></div>
         <div class="platform foe-plat" id="foePlat"></div>
         <div class="platform me-plat" id="mePlat"></div>
@@ -494,6 +498,7 @@
       <div class="battle-ui" style="position:relative">
         <button id="logBtn" title="전투 기록">📜</button>
         <div class="msg" id="battleMsg">야생 정령이 나타났다!</div>
+        <div class="adv-cue" id="advCue">▼</div>
         <div class="coach-tip" id="coachTip"></div>
         <div class="menu-grid" id="mainMenu">
           <button class="mbtn" data-act="fight">⚔️ 공격</button>
@@ -574,6 +579,8 @@
         <div class="set-item"><label>텍스트 속도</label>
           <div class="seg" id="segSpeed"><button data-v="0.6">빠름</button><button data-v="1" class="on">보통</button><button data-v="1.6">느림</button></div></div>
         <div class="set-item"><label>볼륨 <span id="volVal">70</span></label><input type="range" id="volRange" min="0" max="100" value="70"></div>
+        <div class="set-item"><label>전투 텍스트</label><div class="note">자동=시간 지나면 넘어감(누르면 빨리감기) · 수동=탭할 때마다 진행</div>
+          <div class="seg" id="segBattleText"><button data-v="auto" class="on">자동</button><button data-v="tap">수동</button></div></div>
         <div class="set-item"><label>모션 줄이기</label><div class="note">전투 이펙트를 최소화 (멀미 방지)</div>
           <div class="seg" id="segMotion"><button data-v="0" class="on">보통</button><button data-v="1">최소</button></div></div>
         <div class="set-item"><label>정령 따라다니기</label><div class="note">선두 정령이 맵에서 뒤를 따라와요</div>
@@ -659,9 +666,27 @@ const SAVE_KEY="spiritGroveSave_v4";
 
 /* ===== CONFIG ===== */
 const DIFF={easy:{lvl:-3,dmg:0.6,catch:0.18,nm:"쉬움"},normal:{lvl:0,dmg:0.8,catch:0.05,nm:"보통"},hard:{lvl:2,dmg:1.12,catch:-0.06,nm:"어려움"}};
-const CONFIG={difficulty:"normal",textSpeed:1,volume:0.7,reduceMotion:false,follower:"all"};
+const CONFIG={difficulty:"normal",textSpeed:1,volume:0.7,reduceMotion:false,follower:"all",battleText:"auto"};
 let SKIP=false;
 function wait(ms){ if(SKIP)return delay(28); return delay(ms*CONFIG.textSpeed); }
+// 메시지 표시 대기. 수동 모드(battleText==="tap")에선 탭/키 입력을 기다린다(포켓몬식 진행).
+// 자동 모드에선 wait와 동일. SKIP(빨리감기 홀드) 중엔 즉시 통과.
+function mw(ms){ if(SKIP)return delay(28);
+  if(CONFIG.battleText==="tap" && typeof G!=="undefined" && G && G.inBattle)return tapGate(ms);
+  return delay(ms*CONFIG.textSpeed); }
+function tapGate(fallbackMs){
+  return new Promise(res=>{ let done=false;
+    const finish=()=>{ if(done)return; done=true; cleanup(); showAdvanceCue(false); res(); };
+    const el=(typeof $!=="undefined"&&$("battleField"))||document;
+    const onTap=e=>{ if(e&&e.cancelable)e.preventDefault(); finish(); };
+    const onKey=e=>{ const k=(e.key||"").toLowerCase(); if(k===" "||k==="enter"||k==="z"||k==="x"||k.startsWith("arrow")){ e.preventDefault(); finish(); } };
+    const cleanup=()=>{ try{el.removeEventListener("pointerdown",onTap);}catch(_){} document.removeEventListener("keydown",onKey); clearTimeout(t); };
+    try{el.addEventListener("pointerdown",onTap);}catch(_){}
+    document.addEventListener("keydown",onKey);
+    const t=setTimeout(finish, 8000);   // 안전 폴백: 입력 없이 8초면 자동 진행(소프트락 방지)
+    showAdvanceCue(true);
+  }); }
+function showAdvanceCue(on){ const el=(typeof $!=="undefined")&&$("advCue"); if(!el)return; el.classList.toggle("show",!!on); }
 
 /* ===== AUDIO (32-step loops + crossfade) ===== */
 const Audio={ctx:null,master:null,musicGain:null,sfxGain:null,muted:false,track:null,step:0,nextTime:0,timer:null,
@@ -1173,13 +1198,13 @@ function sightTrainer(){ if(typeof NPCS==="undefined")return null;
     for(let s=1;s<=range;s++){ const cx=n.x+d[0]*s, cy=n.y+d[1]*s; if(!walkable(cx,cy))break; if(G.pos.x===cx&&G.pos.y===cy)return n; } }
   return null; }
 async function spotTrainer(n){ G.busy=true; Audio.sfx("blip"); if(Field&&Field.exclaim)Field.exclaim(n.x,n.y);
-  flashHint(`❗ ${n.name}이(가) 너를 발견했다!`); await wait(720);
+  flashHint(`❗ ${n.name}이(가) 너를 발견했다!`); await mw(720);
   const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[n.dir];
   if(d && typeof NPC_AT!=="undefined"){ const dist=Math.abs(G.pos.x-n.x)+Math.abs(G.pos.y-n.y);
     delete NPC_AT[n.x+","+n.y];
-    for(let s=0;s<dist-1;s++){ n.x+=d[0]; n.y+=d[1]; const nk=n.x+","+n.y; NPC_AT[nk]=n; Audio.sfx("step"); await wait(150); delete NPC_AT[nk]; }
+    for(let s=0;s<dist-1;s++){ n.x+=d[0]; n.y+=d[1]; const nk=n.x+","+n.y; NPC_AT[nk]=n; Audio.sfx("step"); await mw(150); delete NPC_AT[nk]; }
     NPC_AT[n.x+","+n.y]=n; }
-  await wait(200); G.busy=false; if(n.double){ startDouble(n.duoTeam,n.name,n.battleKey); } else { startTrainer(n.battleKey); if(G.trainer)G.trainer._npcId=n.id; } }
+  await mw(200); G.busy=false; if(n.double){ startDouble(n.duoTeam,n.name,n.battleKey); } else { startTrainer(n.battleKey); if(G.trainer)G.trainer._npcId=n.id; } }
 TRAINERS["1"].spr={outfit:"#8a6a3a",accent:"#c2a060",skin:"#e8c39a",hair:"#4a3320",hat:"straw",hatc:"#c8a85a",boots:"#5a4326"};
 TRAINERS["2"].spr={outfit:"#5a4a7a",accent:"#b07fd1",skin:"#e0bd96",hair:"#3a3548",hat:"hood",hatc:"#4a3f6a",boots:"#3a3548",extra:"staff"};
 TRAINERS["3"].spr={outfit:"#3a7a8a",accent:"#7fc7e0",skin:"#e3b07e",hair:"#2a3a4a",boots:"#2a4a5a"};
@@ -2035,9 +2060,9 @@ function pushBoulder(x,y,dir){ if(G.indoor)return; const dv={up:[0,-1],down:[0,1
   else { flashHint("바위가 꿈쩍도 하지 않는다."); } }
 function startSurfEncounter(){ const pool=["shellow","otterwave","frostfish","swampfrog","tidewhale","nipling","jellure","gullian"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,4,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}물살을 가르자 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 async function startFishing(){ if(G.busy||G.inBattle)return; G.busy=true; if(typeof stopPath==="function")stopPath();
-  flashHint("🎣 낚싯대를 던졌다…"); await wait(1100);
-  if(Math.random()<0.68){ flashHint("❗ 입질이 온다!"); await wait(750); G.busy=false; startFishEncounter(); }
-  else { flashHint("아무것도 잡히지 않았다…"); await wait(600); G.busy=false; }
+  flashHint("🎣 낚싯대를 던졌다…"); await mw(1100);
+  if(Math.random()<0.68){ flashHint("❗ 입질이 온다!"); await mw(750); G.busy=false; startFishEncounter(); }
+  else { flashHint("아무것도 잡히지 않았다…"); await mw(600); G.busy=false; }
 }
 function startFishEncounter(){ const pool=(Math.random()<0.25&&["tidewhale","krakentide","riverdrake","sharkfin","crablord"].filter(id=>byId(id)).length)?["tidewhale","krakentide","riverdrake","sharkfin","crablord"].filter(id=>byId(id)):["shellow","frostfish","otterwave","swampfrog","jellure","nipling"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,4,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}낚싯줄에 <b>${G.foe.name}</b>이(가) 걸렸다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 function startLavaEncounter(){ const pool=["pebblet","lavakit","burrowmouse","pebblet","lavakit","boulderin","magmadon","crystalgon"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,8,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}용암 사이에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
@@ -2149,6 +2174,12 @@ const Coach={
 
 /* ===================== BATTLE UI ===================== */
 const mainMenu=$("mainMenu"),moveMenu=$("moveMenu"),moveBack=$("moveBack");
+// 자동 모드: 배틀 필드를 누르는 동안 텍스트/애니메이션 빨리감기(SKIP). 수동 모드는 tapGate가 처리.
+(function(){ const bf=$("battleField"); if(!bf)return;
+  const ff=on=>{ if(CONFIG.battleText==="tap")return; SKIP=on; };
+  bf.addEventListener("pointerdown",()=>ff(true));
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>bf.addEventListener(ev,()=>ff(false)));
+})();
 function resetSprites(){ for(const id of ["foeSprite","meSprite"]){ const s=$(id); s.style.visibility=""; s.style.transform=""; s.style.opacity=""; s.style.filter=""; } }
 function applyIntimidate(enter,opp){ if(!enter||!opp)return; if(enter.ability==="intimidate" && opp.hp>0){ opp.stages.atk=clamp(opp.stages.atk-1,-6,6); battleLog.push(`${dispName(enter)}의 위협! ${dispName(opp)}의 공격이 떨어졌다`); } }
 function logAbilities(){ const me=activeMon(),f=G.foe; if(me)battleLog.push(`${dispName(me)} 특성: ${ABILITY_KO[me.ability]||"-"}`); if(f)battleLog.push(`${f.name} 특성: ${ABILITY_KO[f.ability]||"-"}`); }
@@ -2177,7 +2208,8 @@ function applyWeather(){ const fld=$("battleField"); if(!fld)return;
   const w=G&&G.weather&&WEATHERS[G.weather];
   if(w){ ov.style.background=w.tint; ov.style.opacity="1"; badge.textContent=w.em+" "+w.ko; badge.style.display="block"; }
   else { ov.style.opacity="0"; badge.style.display="none"; } }
-function setupBattleUI(foeOnly){ setWeather(); if(G&&G.foe&&Audio.cry)setTimeout(()=>{ if(G&&G.foe)Audio.cry(G.foe.id,G.foe.type); },260); const _bf=$("battleField"); if(_bf&&G)_bf.style.background=REGION_BATTLE_BG[region(G.pos.y)]||_bf.style.background; applyWeather(); battleLog=[]; resetSprites(); renderCombatants(); renderStages();
+function setupBattleUI(foeOnly){ { const sh=$("skipHint"); if(sh)sh.textContent=CONFIG.battleText==="tap"?"탭하면 진행 ▼":"누르는 동안 빨리감기"; }
+  setWeather(); if(G&&G.foe&&Audio.cry)setTimeout(()=>{ if(G&&G.foe)Audio.cry(G.foe.id,G.foe.type); },260); const _bf=$("battleField"); if(_bf&&G)_bf.style.background=REGION_BATTLE_BG[region(G.pos.y)]||_bf.style.background; applyWeather(); battleLog=[]; resetSprites(); renderCombatants(); renderStages();
   ["foeSprite","meSprite"].forEach((id,i)=>{ const s=$(id); if(!s)return; s.classList.remove("enter"); void s.offsetWidth; setTimeout(()=>s.classList.add("enter"),i*170); setTimeout(()=>s.classList.remove("enter"),i*170+520); });
   $("foeType").textContent=tkLabel(G.foe.type); $("foeType").className="type-tag "+TYPE_CLASS[G.foe.type];
   $("foeType").style.marginTop="6px"; $("foeType").style.fontSize="9px";
@@ -2717,7 +2749,7 @@ const SIGFX={
   crush: async(s,d)=>{ const c=fxCenter(d); const sh=fxGlyph("💥",c,TYPE_COLOR.normal,"fx-proj"); sh.style.fontSize="20px"; sh.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:"translate(-50%,-50%) scale(3)",opacity:0}],{duration:fxT(320),easing:"ease-out",fill:"forwards"}).finished.then(()=>sh.remove()).catch(()=>sh.remove()); fxSlash(d); fxBurst(d,"normal",3); impactFlash(); screenShake(true); await wait(fxT(150)); },
   drainfang: async(s,d)=>{ const c=fxCenter(d); _pop("🦷",c,TYPE_COLOR.normal,0,-6,260); await wait(fxT(130)); const from=fxCenter(d),to=fxCenter(s); for(let i=0;i<4;i++)_fly("✦",{x:from.x+rand(-14,14),y:from.y+rand(-14,14)},to,"#8fd16f",340,1); fxBurst(d,"normal",2); screenShake(false); await wait(fxT(120)); }
 };
-async function moveFx(move,side,dSide,mv){ const type=move.type; const pw=move.power||0; const inten=pw<=0?1:pw<=45?1:pw<=62?2:3; fieldFlash(type); if(CONFIG.reduceMotion){ await wait(60); return; }
+async function moveFx(move,side,dSide,mv){ const type=move.type; const pw=move.power||0; const inten=pw<=0?1:pw<=45?1:pw<=62?2:3; fieldFlash(type); if(CONFIG.reduceMotion){ await mw(60); return; }
   if(inten>=3){ const aS=spriteEl(side); aS.style.filter=`drop-shadow(0 0 13px ${TYPE_COLOR[type]})`; setTimeout(()=>{aS.style.filter="";},300); }
   if(move.power===0){ fxBurst(side,type,1); await wait(fxT(90)); return; }
   if(mv&&SIGFX[mv]){ await SIGFX[mv](side,dSide,inten,type); return; }
@@ -2755,29 +2787,29 @@ function applyStage(mon,stat,delta,side){ const old=mon.stages[stat]; const nv=c
   else { mon.stages[stat]=nv; fxStage(side,delta>0); const dir=delta>0?(delta>=2?"크게 올랐다!":"올랐다!"):(delta<=-2?"크게 떨어졌다!":"떨어졌다!");
     setMsg(`<b>${mon.name}</b>의 ${lbl} 능력이 ${dir}`); Audio.sfx("blip"); } renderStages(); }
 async function endTurnItems(mon,side){ if(!mon||mon.hp<=0||!mon.held)return;
-  if(mon.held==="leftovers" && mon.hp<mon.maxHp){ const h=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.min(mon.maxHp,mon.hp+h); renderCombatants(); particles(side,"💚",3); setMsg(`<b>${dispName(mon)}</b>은(는) 먹다남은음식으로 회복했다!`); Audio.sfx("heal"); await wait(560); }
-  else if(mon.held==="oranberry" && mon.hp>0 && mon.hp<mon.maxHp/2){ const h=Math.floor(mon.maxHp*0.25); mon.hp=Math.min(mon.maxHp,mon.hp+h); mon.held=null; renderCombatants(); particles(side,"💚",5); setMsg(`<b>${dispName(mon)}</b>은(는) 오랭열매를 먹고 회복했다!`); Audio.sfx("heal"); await wait(620); }
-  else if(mon.held==="cureberry" && mon.status){ mon.status=null; mon._slp=0; mon.held=null; renderStages(); renderCombatants(); setMsg(`<b>${dispName(mon)}</b>은(는) 정화열매로 상태이상이 나았다!`); Audio.sfx("heal"); await wait(620); } }
+  if(mon.held==="leftovers" && mon.hp<mon.maxHp){ const h=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.min(mon.maxHp,mon.hp+h); renderCombatants(); particles(side,"💚",3); setMsg(`<b>${dispName(mon)}</b>은(는) 먹다남은음식으로 회복했다!`); Audio.sfx("heal"); await mw(560); }
+  else if(mon.held==="oranberry" && mon.hp>0 && mon.hp<mon.maxHp/2){ const h=Math.floor(mon.maxHp*0.25); mon.hp=Math.min(mon.maxHp,mon.hp+h); mon.held=null; renderCombatants(); particles(side,"💚",5); setMsg(`<b>${dispName(mon)}</b>은(는) 오랭열매를 먹고 회복했다!`); Audio.sfx("heal"); await mw(620); }
+  else if(mon.held==="cureberry" && mon.status){ mon.status=null; mon._slp=0; mon.held=null; renderStages(); renderCombatants(); setMsg(`<b>${dispName(mon)}</b>은(는) 정화열매로 상태이상이 나았다!`); Audio.sfx("heal"); await mw(620); } }
 async function applyHazards(mon,side){ if(!mon||mon.hp<=0||!G.hazards||!G.hazards[side])return; const hz=G.hazards[side]; const sp=spriteEl(side);
-  if(hz.rock){ let eff=EFF["rock"][mon.type]||1; if(mon.type2&&mon.type2!==mon.type)eff*=(EFF["rock"][mon.type2]||1); const d=Math.max(1,Math.floor(mon.maxHp*eff/8)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); if(sp){sp.classList.add("hurt");setTimeout(()=>sp.classList.remove("hurt"),300);} Audio.sfx("hit"); setMsg(`<b>${mon.name}</b>이(가) 떠도는 바위에 부딪혔다!`); await wait(680); if(mon.hp<=0)return; }
-  if(hz.spikes>0 && mon.type!=="flying" && mon.type2!=="flying"){ const frac=hz.spikes>=3?4:(hz.spikes===2?6:8); const d=Math.max(1,Math.floor(mon.maxHp/frac)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); if(sp){sp.classList.add("hurt");setTimeout(()=>sp.classList.remove("hurt"),300);} Audio.sfx("hit"); setMsg(`<b>${mon.name}</b>이(가) 압정을 밟았다!`); await wait(680); } }
+  if(hz.rock){ let eff=EFF["rock"][mon.type]||1; if(mon.type2&&mon.type2!==mon.type)eff*=(EFF["rock"][mon.type2]||1); const d=Math.max(1,Math.floor(mon.maxHp*eff/8)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); if(sp){sp.classList.add("hurt");setTimeout(()=>sp.classList.remove("hurt"),300);} Audio.sfx("hit"); setMsg(`<b>${mon.name}</b>이(가) 떠도는 바위에 부딪혔다!`); await mw(680); if(mon.hp<=0)return; }
+  if(hz.spikes>0 && mon.type!=="flying" && mon.type2!=="flying"){ const frac=hz.spikes>=3?4:(hz.spikes===2?6:8); const d=Math.max(1,Math.floor(mon.maxHp/frac)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); if(sp){sp.classList.add("hurt");setTimeout(()=>sp.classList.remove("hurt"),300);} Audio.sfx("hit"); setMsg(`<b>${mon.name}</b>이(가) 압정을 밟았다!`); await mw(680); } }
 async function endTurnStatus(mon,side){ if(mon.hp<=0)return;
-  if(G.weather==="sand" && mon.hp>0 && mon.type!=="rock" && mon.type2!=="rock"){ const d=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); setMsg(`<b>${mon.name}</b>이(가) 모래바람에 시달린다!`); Audio.sfx&&Audio.sfx("hit"); await wait(480); if(mon.hp<=0)return; }
-  if(mon._seeded && mon.hp>0){ const d=Math.max(1,Math.floor(mon.maxHp/8)); mon.hp=Math.max(0,mon.hp-d); const healer=(mon._seeded==="me")?activeMon():G.foe; if(healer&&healer.hp>0&&healer!==mon)healer.hp=Math.min(healer.maxHp,healer.hp+d); renderCombatants(); setMsg(`<b>${mon.name}</b>의 체력이 씨앗에 빨렸다!`); Audio.sfx("blip"); await wait(560); if(mon.hp<=0)return; }
+  if(G.weather==="sand" && mon.hp>0 && mon.type!=="rock" && mon.type2!=="rock"){ const d=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); setMsg(`<b>${mon.name}</b>이(가) 모래바람에 시달린다!`); Audio.sfx&&Audio.sfx("hit"); await mw(480); if(mon.hp<=0)return; }
+  if(mon._seeded && mon.hp>0){ const d=Math.max(1,Math.floor(mon.maxHp/8)); mon.hp=Math.max(0,mon.hp-d); const healer=(mon._seeded==="me")?activeMon():G.foe; if(healer&&healer.hp>0&&healer!==mon)healer.hp=Math.min(healer.maxHp,healer.hp+d); renderCombatants(); setMsg(`<b>${mon.name}</b>의 체력이 씨앗에 빨렸다!`); Audio.sfx("blip"); await mw(560); if(mon.hp<=0)return; }
   if(mon.status==="psn"||mon.status==="brn"){ const frac=mon.status==="psn"?8:16; const dmg=Math.max(1,Math.floor(mon.maxHp/frac));
     mon.hp=Math.max(0,mon.hp-dmg); const dS=spriteEl(side); dS.classList.add("hurt"); setTimeout(()=>dS.classList.remove("hurt"),400);
     renderCombatants(); dmgNumber(side,dmg,false);
-    setMsg(`<b>${mon.name}</b>은(는) ${mon.status==="psn"?"독":"화상"} 피해를 입었다!`); Audio.sfx("weakhit"); await wait(620); } }
+    setMsg(`<b>${mon.name}</b>은(는) ${mon.status==="psn"?"독":"화상"} 피해를 입었다!`); Audio.sfx("weakhit"); await mw(620); } }
 
 /* ===================== CORE TURN ===================== */
 async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
   if(mvKey!=="struggle" && att.pp[mvKey]!=null) att.pp[mvKey]=Math.max(0,att.pp[mvKey]-1);
   setMsg(`<b>${att.name}</b>의 ${move.name}!`); const aS=spriteEl(side); const _melee=move.power>0&&(move.type==="normal"||move.type==="flying"); if(!_melee)aS.style.setProperty("--castc",TYPE_COLOR[move.type]||"#fff"); const _wc=_melee?"lunge":"cast"; aS.classList.add(_wc); await wait(fxT(_melee?220:200)); aS.classList.remove(_wc);
-  if(move.acc<100 && Math.random()*100>move.acc){ setMsg(`<b>${att.name}</b>의 공격은 빗나갔다!`); Audio.sfx("miss"); await wait(600); return; }
+  if(move.acc<100 && Math.random()*100>move.acc){ setMsg(`<b>${att.name}</b>의 공격은 빗나갔다!`); Audio.sfx("miss"); await mw(600); return; }
   if(move.power===0 && move.heal){ await moveFx(move,side,side,mvKey);
     const bf=att.hp; att.hp=Math.min(att.maxHp, att.hp+Math.floor(att.maxHp*move.heal)); renderCombatants();
     Audio.sfx("heal"); particles(side,"💚",6);
-    setMsg(att.hp>bf?`<b>${att.name}</b>의 체력이 회복되었다!`:`<b>${att.name}</b>의 체력은 가득 차 있다!`); await wait(620); return; }
+    setMsg(att.hp>bf?`<b>${att.name}</b>의 체력이 회복되었다!`:`<b>${att.name}</b>의 체력은 가득 차 있다!`); await mw(620); return; }
   if(move.power===0 && move.eff){
     await moveFx(move,side,side==="me"?"foe":"me",mvKey);
     if(move.eff.status){ if(Math.random()<(move.eff.chance||1)) applyStatus(def,move.eff.status,side==="me"?"foe":"me"); else { setMsg("효과가 없었다…"); } }
@@ -2787,7 +2819,7 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
     else if(move.eff.confuse){ if(def._confuse>0){ setMsg("이미 혼란에 빠져있다."); } else { def._confuse=ri(2,4); Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>이(가) 혼란에 빠졌다!`); } }
     else if(move.eff.weather){ G.weather=move.eff.weather; G.weatherTurns=5; if(typeof applyWeather==="function")applyWeather(); Audio.sfx("blip"); setMsg({sun:"☀️ 햇살이 강해졌다!",rain:"🌧️ 비가 내리기 시작했다!",sand:"🌪️ 모래바람이 휘몰아친다!"}[move.eff.weather]||"날씨가 변했다!"); }
     else if(move.eff.hazard){ if(!G.hazards)G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; const hz=(side==="me")?G.hazards.foe:G.hazards.me; Audio.sfx("blip"); if(move.eff.hazard==="rock"){ if(hz.rock){ setMsg("이미 바위가 떠 있다."); } else { hz.rock=true; setMsg("상대 발밑에 날카로운 바위가 떠올랐다!"); } } else { if(hz.spikes>=3){ setMsg("더는 압정을 뿌릴 수 없다."); } else { hz.spikes++; setMsg("상대 발밑에 압정을 흩뿌렸다!"); } } }
-    await wait(540); return; }
+    await mw(540); return; }
   const dSide=side==="me"?"foe":"me", dS=spriteEl(dSide);
   await moveFx(move,side,dSide,mvKey);
   const hits=move.multi?ri(move.multi[0],move.multi[1]):1; let total=0,lastR=null,sturdied=false;
@@ -2804,27 +2836,27 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
   if(r.eff>1)particles(dSide,"💥",4);
   if(move.drain && total>0){ const heal=Math.max(1,Math.floor(total*move.drain)); att.hp=Math.min(att.maxHp,att.hp+heal); renderCombatants(); particles(side,"💚",4); }
   if(move.recoil){ const rc=Math.max(1,Math.floor(att.maxHp*move.recoil)); att.hp=Math.max(0,att.hp-rc); renderCombatants(); }
-  await wait(340);
+  await mw(340);
   if(move.multi&&hits>1)setMsg(`${hits}번 맞았다!`);
   else if(r.crit)setMsg("급소에 맞았다! 🎯"); else if(r.eff>1)setMsg("효과가 굉장했다! 💥"); else if(r.eff<1)setMsg("효과가 별로인 듯하다…");
-  if(sturdied){ await wait(260); setMsg(`<b>${dispName(def)}</b>은(는) <b>옹골참</b>으로 한 방을 버텼다!`); Audio.sfx("blip"); }
-  if(move.drain && total>0){ await wait(220); setMsg(`<b>${dispName(att)}</b>이(가) 체력을 흡수했다!`); }
-  if(def.hp>0 && def.ability==="static" && !att.status && move.power>0 && Math.random()<0.3){ await wait(240); applyStatus(att,"par",side); }
+  if(sturdied){ await mw(260); setMsg(`<b>${dispName(def)}</b>은(는) <b>옹골참</b>으로 한 방을 버텼다!`); Audio.sfx("blip"); }
+  if(move.drain && total>0){ await mw(220); setMsg(`<b>${dispName(att)}</b>이(가) 체력을 흡수했다!`); }
+  if(def.hp>0 && def.ability==="static" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"par",side); }
   if(def.hp>0 && move.eff && move.eff.status && Math.random()<(move.eff.chance||0)) applyStatus(def,move.eff.status,dSide);
   if(def.hp>0 && move.eff && move.eff.flinch && !def._acted && Math.random()<move.eff.flinch) def._flinch=true;
   if(move.recoil)setMsg(`<b>${att.name}</b>도 반동 피해를 입었다!`);
-  await wait(500); }
+  await mw(500); }
 
 function foeKeyResolved(){ let k=foeChooseMove(G.foe,activeMon()); if((G.foe.pp[k]||0)<=0 && k!=="struggle"){ k=noPP(G.foe)?"struggle":k; } return k; }
 function pickFirst(meKey,foeKey){ const me=activeMon(),foe=G.foe; const mp=MOVES[meKey].pri||0, fp=MOVES[foeKey].pri||0;
   if(mp!==fp)return mp>fp; const ms=effSpd(me),fs=effSpd(foe); return ms!==fs?ms>fs:Math.random()<0.5; }
 async function canAct(att,side){
-  if(att._flinch){ att._flinch=false; setMsg(`<b>${att.name}</b>은(는) 풀이 죽어 움직이지 못했다!`); Audio.sfx("status"); await wait(600); return false; }
-  if(att._confuse>0){ att._confuse--; if(att._confuse<=0){ setMsg(`<b>${att.name}</b>의 혼란이 풀렸다!`); await wait(500); } else { setMsg(`<b>${att.name}</b>은(는) 혼란에 빠져있다!`); await wait(560); if(Math.random()<0.33){ const s=Math.max(1,Math.floor(att.maxHp*0.09)); att.hp=Math.max(0,att.hp-s); renderCombatants(); setMsg("영문도 모른 채 스스로를 공격했다!"); Audio.sfx("hit"); await wait(620); return false; } } }
+  if(att._flinch){ att._flinch=false; setMsg(`<b>${att.name}</b>은(는) 풀이 죽어 움직이지 못했다!`); Audio.sfx("status"); await mw(600); return false; }
+  if(att._confuse>0){ att._confuse--; if(att._confuse<=0){ setMsg(`<b>${att.name}</b>의 혼란이 풀렸다!`); await mw(500); } else { setMsg(`<b>${att.name}</b>은(는) 혼란에 빠져있다!`); await mw(560); if(Math.random()<0.33){ const s=Math.max(1,Math.floor(att.maxHp*0.09)); att.hp=Math.max(0,att.hp-s); renderCombatants(); setMsg("영문도 모른 채 스스로를 공격했다!"); Audio.sfx("hit"); await mw(620); return false; } } }
   if(att.status==="slp"){ att._slp=(att._slp||1)-1;
-    if(att._slp>0){ setMsg(`<b>${att.name}</b>은(는) 새근새근 잠들어 있다…`); Audio.sfx("status"); await wait(620); return false; }
-    att.status=null; renderStages(); setMsg(`<b>${att.name}</b>은(는) 잠에서 깨어났다!`); await wait(560); }
-  if(att.status==="par" && Math.random()<0.25){ setMsg(`<b>${att.name}</b>은(는) 몸이 저려 움직일 수 없다!`); Audio.sfx("status"); await wait(620); return false; }
+    if(att._slp>0){ setMsg(`<b>${att.name}</b>은(는) 새근새근 잠들어 있다…`); Audio.sfx("status"); await mw(620); return false; }
+    att.status=null; renderStages(); setMsg(`<b>${att.name}</b>은(는) 잠에서 깨어났다!`); await mw(560); }
+  if(att.status==="par" && Math.random()<0.25){ setMsg(`<b>${att.name}</b>은(는) 몸이 저려 움직일 수 없다!`); Audio.sfx("status"); await mw(620); return false; }
   return true; }
 
 /* ==================== MOVE EXPERT (relearn / forget) ==================== */
@@ -3049,7 +3081,7 @@ async function sendOutAnim(side){ const sp=spriteEl(side); if(!sp)return; const 
 function setExpBar(){ const el=$("meExp"); if(!el)return; const m=activeMon(); if(!m){el.style.width="0%";return;} const need=m.level*30; el.style.width=clamp((m.xp/need)*100,0,100)+"%"; }
 async function evolveAnimate(side,m){ const sp=spriteEl(side); const mir=side==="me"?"scaleX(-1) ":"";
   sp.style.animation="none";
-  if(CONFIG.reduceMotion){ setCrit(side,m); fxEvolveFlash(side); await wait(400); sp.style.animation=""; return; }
+  if(CONFIG.reduceMotion){ setCrit(side,m); fxEvolveFlash(side); await mw(400); sp.style.animation=""; return; }
   sp.style.filter="brightness(0) invert(1) drop-shadow(0 0 10px #cfe8ff)"; Audio.sfx("evolve");
   const pulses=6;
   for(let i=0;i<pulses;i++){ const d=fxT(Math.max(150,430-i*52));
@@ -3059,31 +3091,31 @@ async function evolveAnimate(side,m){ const sp=spriteEl(side); const mir=side===
   sp.style.filter=""; setCrit(side,m); sp.style.animation=""; particles(side,"✨",12); fxBurst(side,m.type); }
 function evoCondMet(m,b){ if(b.lv && m.level<b.lv)return false; if(b.friend && (m.friendship||0)<b.friend)return false; if(b.time){ const ph=(typeof dayPhase==="function")?dayPhase():"day"; const night=(ph==="night"||ph==="dusk"); if(b.time==="night"&&!night)return false; if(b.time==="day"&&night)return false; } if(b.move && !(m.moves||[]).includes(b.move))return false; if(b.gender && m.gender!==b.gender)return false; return true; }
 async function applyEvolution(m,to,animate){ const oldName=m.name;
-  if(animate){ setMsg(`어라…? <b>${oldName}</b>의 모습이…`); await wait(820); }
+  if(animate){ setMsg(`어라…? <b>${oldName}</b>의 모습이…`); await mw(820); }
   m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type; m.type2=to.type2||null; if(Audio.cry)Audio.cry(m.id,m.type);
   if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
   G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
-  if(animate){ await evolveAnimate("me",m); renderCombatants(); setMsg(`축하해! <b>${oldName}</b>은(는) <b>${m.name}</b>(으)로 진화했다!`); await wait(1100); }
+  if(animate){ await evolveAnimate("me",m); renderCombatants(); setMsg(`축하해! <b>${oldName}</b>은(는) <b>${m.name}</b>(으)로 진화했다!`); await mw(1100); }
   else toast(`${oldName}이(가) ${m.name}(으)로 진화했다!`);
   return true; }
 async function evolveCheck(m,animate){ const sp=byId(m.id);
   if(sp.evolveBranch){ for(const b of sp.evolveBranch){ if(evoCondMet(m,b)){ const to=byId(b.to); if(to)return await applyEvolution(m,to,animate); } } return false; }
   if(sp.evolveTo && !sp.evolveItem && !sp.evolveFriend && m.level>=sp.evolveLv){ const to=byId(sp.evolveTo); const oldName=m.name;
-    if(animate){ setMsg(`어라…? <b>${oldName}</b>의 모습이…`); await wait(820); }
+    if(animate){ setMsg(`어라…? <b>${oldName}</b>의 모습이…`); await mw(820); }
     m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type;
     if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
     G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
     if(animate){ await evolveAnimate("me",m); renderCombatants();
-      setMsg(`🎉 <b>${oldName}</b>이(가) <b>${m.name}</b>(으)로 진화했다!`); await wait(1100); }
+      setMsg(`🎉 <b>${oldName}</b>이(가) <b>${m.name}</b>(으)로 진화했다!`); await mw(1100); }
     else toast(`${oldName} → ${m.name} 진화!`);
     return true; }
   if(sp.evolveTo && sp.evolveFriend && (m.friendship||0)>=sp.evolveFriend){ const to=byId(sp.evolveTo); const oldName=m.name;
-    if(animate){ setMsg(`어라? <b>${oldName}</b>의 모습이…`); await wait(820); }
+    if(animate){ setMsg(`어라? <b>${oldName}</b>의 모습이…`); await mw(820); }
     m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type;
     if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
     G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
     if(animate){ await evolveAnimate("me",m); renderCombatants();
-      setMsg(`💚 깊은 유대로 <b>${oldName}</b>이(가) <b>${m.name}</b>(으)로 진화했다!`); await wait(1100); }
+      setMsg(`💚 깊은 유대로 <b>${oldName}</b>이(가) <b>${m.name}</b>(으)로 진화했다!`); await mw(1100); }
     else toast(`${oldName}이(가) ${m.name}(으)로 진화!`);
     return true; }
   return false; }
@@ -3099,7 +3131,7 @@ async function gainXpFor(m,gain,isLead){ m.xp+=Math.floor(gain*(isLead?1:0.4)*xp
   while(m.xp>=need && m.level<60){ m.xp-=need; m.level++; const sp=byId(m.id); recalc(m,sp); m.hp=m.maxHp; leveled=true; m.friendship=(m.friendship||0)+5;
     if(sp.learn){ for(const [lv,mv] of sp.learn){ if(lv===m.level) await learnMoveFlow(m,mv,isLead); } }
     if(isLead){ triggerLevelup(m.level); Audio.sfx("levelup"); setMsg(`<b>${m.name}</b>이(가) Lv ${m.level}(으)로 성장했다!`); renderCombatants(); setExpBar();
-      await wait(900); await evolveCheck(m,true); }
+      await mw(900); await evolveCheck(m,true); }
     else { await evolveCheck(m,false); }
     need=m.level*30; }
   return leveled; }
@@ -3129,42 +3161,42 @@ function gainEV(m, foeId){ if(!m)return; if(!m.evs)m.evs={hp:0,atk:0,def:0,spa:0
   [[keys[0],2],[keys[1],1]].forEach(pair=>{ const k=pair[0],g=pair[1]; if(tot>=510)return; const add=Math.min(g,252-(m.evs[k]||0),510-tot); if(add>0){ m.evs[k]=(m.evs[k]||0)+add; tot+=add; } });
   recalc(m); }
 async function winBattle(){ $("foeSprite").classList.add("faint"); Audio.sfx("faint"); if(!G.trainer)Audio.startMusic("victory"); if(G.party[G.active]&&G.foe)gainEV(G.party[G.active],G.foe.id); G.party.forEach((pm,i)=>{ if(pm)pm.friendship=(pm.friendship||0)+(i===G.active?6:2); });
-  setMsg(`<b>${G.foe.name}</b>을(를) 쓰러뜨렸다!`); await wait(640);
+  setMsg(`<b>${G.foe.name}</b>을(를) 쓰러뜨렸다!`); await mw(640);
   const me=activeMon(); const base=Math.floor(G.foe.level*19+14+(G.trainer?G.foe.level*4:0));
-  setMsg(`<b>${me.name}</b> 경험치 +${base}`); await wait(540);
+  setMsg(`<b>${me.name}</b> 경험치 +${base}`); await mw(540);
   await gainXpFor(me,base,true);
   // shared XP to the rest of the (alive) party, silent
   for(const o of G.party){ if(o!==me && o.hp>0){ await gainXpFor(o,base,false); } }
   // coins for wild kill
   if(!G.trainer){ const c=ri(8,18)+Math.floor(G.foe.level*1.5); G.money+=c; updateMoney(); }
-  if(!G.trainer && G.foe && G.foe.id==="dawnwyrm"){ G.legendDone=true; setMsg("여명룡이 그대를 인정하고 하늘로 솟아올랐다… 두 인장의 힘이 공명한다!"); await wait(1400); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="shadowlord"){ G.shadowDone=true; setMsg("흑요마가 빛 속으로 흩어졌다… 숲에 평온이 돌아온다."); await wait(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="aqualord"){ G.lakeDone=true; setMsg("수룡왕이 호수 깊은 곳으로 잠겨들었다… 물의 축복이 그대와 함께한다."); await wait(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="glaciarch"){ G.snowDone=true; setMsg("빙하제가 눈보라 속으로 사라졌다… 얼음의 축복이 그대와 함께한다."); await wait(1300); saveGame(); }
-  if(!G.trainer && G.foe && G.foe.id==="dawnguard"){ G.dawnDone=true; setMsg("오로르가 하늘로 날아올라 숲을 축복했다."); await wait(1300); saveGame(); }
+  if(!G.trainer && G.foe && G.foe.id==="dawnwyrm"){ G.legendDone=true; setMsg("여명룡이 그대를 인정하고 하늘로 솟아올랐다… 두 인장의 힘이 공명한다!"); await mw(1400); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="shadowlord"){ G.shadowDone=true; setMsg("흑요마가 빛 속으로 흩어졌다… 숲에 평온이 돌아온다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="aqualord"){ G.lakeDone=true; setMsg("수룡왕이 호수 깊은 곳으로 잠겨들었다… 물의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="glaciarch"){ G.snowDone=true; setMsg("빙하제가 눈보라 속으로 사라졌다… 얼음의 축복이 그대와 함께한다."); await mw(1300); saveGame(); }
+  if(!G.trainer && G.foe && G.foe.id==="dawnguard"){ G.dawnDone=true; setMsg("오로르가 하늘로 날아올라 숲을 축복했다."); await mw(1300); saveGame(); }
   if(G.trainer){ G.trainer.idx++;
     if(G.trainer.idx<G.trainer.team.length){ const nx=G.trainer.team[G.trainer.idx];
       G.foe=makeMon(nx[0],nx[1]); G.seen.add(nx[0]); $("foeSprite").classList.remove("faint");
-      setupBattleUI(true); setMsg(`${G.trainer.name}이(가) <b>${G.foe.name}</b>을(를) 내보냈다!`); await wait(900); await applyHazards(G.foe,"foe"); if(G.foe.hp<=0){ await winBattle(); return; }
+      setupBattleUI(true); setMsg(`${G.trainer.name}이(가) <b>${G.foe.name}</b>을(를) 내보냈다!`); await mw(900); await applyHazards(G.foe,"foe"); if(G.foe.hp<=0){ await winBattle(); return; }
       G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); return; }
     else { await trainerDefeated(); return; } }
   endBattle(); }
 
 async function trainerDefeated(){ const tr=G.trainer; const firstWin=!G.defeated.has(tr.key);
   G.defeated.add(tr.key); if(G.rematchWanted)G.rematchWanted.delete(tr.key); Field.removeNpc(tr.key); if(tr._npcId)Field.removeNpc("NPC_"+tr._npcId); Audio.sfx(firstWin?"victory":"win");
-  setMsg(`<b>${tr.name}</b>을(를) 물리쳤다!`); await wait(900);
+  setMsg(`<b>${tr.name}</b>을(를) 물리쳤다!`); await mw(900);
   const money=tr.rematch?Math.floor(tr.money*0.5):tr.money; G.money+=money; updateMoney();
   let parts=["💰 "+money];
   if(firstWin){ for(const k in tr.reward){ G.items[k]=(G.items[k]||0)+tr.reward[k];
     parts.push((ITEM_KO[k]||k)+" ×"+tr.reward[k]); } }
-  setMsg(`보상: ${parts.join(", ")}`); await wait(1100);
+  setMsg(`보상: ${parts.join(", ")}`); await mw(1100);
   const outro=TRAINERS[tr.key]&&TRAINERS[tr.key].outro;
-  if(outro && firstWin){ setMsg(`💬 ${outro}`); await wait(1800); }
+  if(outro && firstWin){ setMsg(`💬 ${outro}`); await mw(1800); }
   const _gdef=TRAINERS[tr.key];
   if(firstWin && _gdef && _gdef.gym){ G.badges=G.badges||[]; if(!G.badges.includes(tr.key))G.badges.push(tr.key); updateBadgePill();
-    setMsg(`🏅 <b>${_gdef.badge}</b>을(를) 얻었다!${tr.key==="L"?"":` (${forestBadges()}/4)`}`); await wait(1600);
-    if(tr.key!=="L" && forestBadges()>=4){ setMsg("✨ 네 조각이 모두 모였다 — 군주의 제단과 정령 리그가 열렸다!"); await wait(1800); } }
-  if(tr.key!=="L" && firstWin){ if(!G.hasCut && forestBadges()>=1){ G.hasCut=true; setMsg("🌿 비전 기술 <b>자르기</b>를 배웠다! 작은 덤불을 벨 수 있다."); await wait(1600); } else if(!G.hasStrength && forestBadges()>=2){ G.hasStrength=true; setMsg("💪 비전 기술 <b>괴력</b>을 배웠다! 바위를 밀 수 있다."); await wait(1600); } else if(!G.hasSurf && forestBadges()>=3){ G.hasSurf=true; setMsg("🌊 비전 기술 <b>파도타기</b>를 배웠다! 물 위를 건널 수 있다."); await wait(1600); } }
-  if(tr.key!=="L" && firstWin && !(G.items&&G.items.vsseeker) && forestBadges()>=1){ G.items=G.items||{}; G.items.vsseeker=1; setMsg("📡 <b>VS 시커</b>를 받았다! 가방에서 사용하면 격파한 트레이너와 재대결할 수 있다."); await wait(1700); }
-  if(_gdef && _gdef.champion && firstWin){ G.champion=true; updateBadgePill(); setMsg("👑 그대가 새로운 챔피언이다!"); await wait(1400); saveGame(); endBattle(); playStory(LEAGUE_WIN,()=>{}); return; }
-  if(tr.boss && firstWin){ G.badge=true; setMsg("🏆 숲의 인장을 손에 넣었다!"); await wait(1400); saveGame(); endBattle(); playStory(EPILOGUE,()=>showEnding()); return; }
+    setMsg(`🏅 <b>${_gdef.badge}</b>을(를) 얻었다!${tr.key==="L"?"":` (${forestBadges()}/4)`}`); await mw(1600);
+    if(tr.key!=="L" && forestBadges()>=4){ setMsg("✨ 네 조각이 모두 모였다 — 군주의 제단과 정령 리그가 열렸다!"); await mw(1800); } }
+  if(tr.key!=="L" && firstWin){ if(!G.hasCut && forestBadges()>=1){ G.hasCut=true; setMsg("🌿 비전 기술 <b>자르기</b>를 배웠다! 작은 덤불을 벨 수 있다."); await mw(1600); } else if(!G.hasStrength && forestBadges()>=2){ G.hasStrength=true; setMsg("💪 비전 기술 <b>괴력</b>을 배웠다! 바위를 밀 수 있다."); await mw(1600); } else if(!G.hasSurf && forestBadges()>=3){ G.hasSurf=true; setMsg("🌊 비전 기술 <b>파도타기</b>를 배웠다! 물 위를 건널 수 있다."); await mw(1600); } }
+  if(tr.key!=="L" && firstWin && !(G.items&&G.items.vsseeker) && forestBadges()>=1){ G.items=G.items||{}; G.items.vsseeker=1; setMsg("📡 <b>VS 시커</b>를 받았다! 가방에서 사용하면 격파한 트레이너와 재대결할 수 있다."); await mw(1700); }
+  if(_gdef && _gdef.champion && firstWin){ G.champion=true; updateBadgePill(); setMsg("👑 그대가 새로운 챔피언이다!"); await mw(1400); saveGame(); endBattle(); playStory(LEAGUE_WIN,()=>{}); return; }
+  if(tr.boss && firstWin){ G.badge=true; setMsg("🏆 숲의 인장을 손에 넣었다!"); await mw(1400); saveGame(); endBattle(); playStory(EPILOGUE,()=>showEnding()); return; }
   saveGame(); endBattle(); }
 const _leagueSVG="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><rect width='160' height='110' rx='12' fill='#2a2540'/><rect x='20' y='30' width='12' height='60' fill='#5a4f7a'/><rect x='128' y='30' width='12' height='60' fill='#5a4f7a'/><rect x='50' y='24' width='12' height='66' fill='#6a5a9a'/><rect x='98' y='24' width='12' height='66' fill='#6a5a9a'/><rect x='0' y='88' width='160' height='22' fill='#3a3358'/><path d='M64 40 l6 -14 6 14 15 3 -12 11 4 15 -13 -8 -13 8 4 -15 -12 -11 z' fill='#ffd23f'/></svg>";
 const LEAGUE_INTRO=[
@@ -3221,11 +3253,11 @@ function blackout(){ healParty(true); G.trainer=null; G.inBattle=false; G.busy=f
   if(typeof fieldMusic==="function"&&Audio&&Audio.startMusic)Audio.startMusic(fieldMusic());
   if(typeof saveGame==="function")saveGame(); }
 async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("faint");
-  setMsg(`<b>${activeMon().name}</b>이(가) 쓰러졌다…`); activeMon().stages={atk:0,def:0,spd:0}; await wait(800);
+  setMsg(`<b>${activeMon().name}</b>이(가) 쓰러졌다…`); activeMon().stages={atk:0,def:0,spd:0}; await mw(800);
   const alive=G.party.filter(m=>m.hp>0);
   if(alive.length>0){ setMsg("다음 정령을 내보내자."); G.busy=false; openSwitch(true); }
   else{ const pen=Math.floor(G.money*0.25); G.money=Math.max(0,G.money-pen); updateMoney();
-    setMsg(`모든 정령이 쓰러졌다… 코인 ${pen} 잃고 모닥불로 돌아간다.`); await wait(1300);
+    setMsg(`모든 정령이 쓰러졌다… 코인 ${pen} 잃고 모닥불로 돌아간다.`); await mw(1300);
     healParty(true); G.trainer=null; endBattle(); blackout(); } }
 
 /* ===================== CATCH / RUN ===================== */
@@ -3290,9 +3322,9 @@ async function tryCatch(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너
     ballEl.animate([{transform:"translate(-50%,-50%) scale(1)"},{transform:"translate(-50%,-50%) scale(1.25)"},{transform:"translate(-50%,-50%) scale(1)"}],{duration:fxT(360)});
     fxCaptureFlash(foeC); particles("foe","✨",14); for(let k=0;k<8;k++){ const a=k/8*6.28,e=fxGlyph("⭐",{x:foeC.x,y:foeC.y},"#ffe08a","fx-particle"); e.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:`translate(-50%,-50%) translate(${Math.cos(a)*44}px,${Math.sin(a)*44}px) scale(1)`,opacity:0}],{duration:fxT(620),easing:"ease-out",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); } foeSp.classList.add("faint"); await wait(fxT(560)); ballEl.remove();
     G.caught.add(foe.id); G.questFlags=G.questFlags||{}; if(sp.type==="water")G.questFlags.waterCaught=true; if(G.indoor==="cave")G.questFlags.caveCatch=true; const cap=makeMon(foe.id,foe.level); cap.hp=Math.max(1,foe.hp); cap.status=foe.status;
-    if(G.party.length<6){ G.party.push(cap); await wait(700); setMsg("파티에 합류했다!"); }
-    else { G.box.push(cap); await wait(700); setMsg("📦 보관함으로 보내졌다."); }
-    updateDexPill(); checkDexRewards(); if(foe.id==="shadowlord")G.shadowDone=true; if(foe.id==="dawnguard")G.dawnDone=true; if(foe.id==="dawnwyrm")G.legendDone=true; if(foe.id==="aqualord")G.lakeDone=true; if(foe.id==="glaciarch")G.snowDone=true; await wait(620); await askNickname(cap); saveGame(); endBattle(); }
+    if(G.party.length<6){ G.party.push(cap); await mw(700); setMsg("파티에 합류했다!"); }
+    else { G.box.push(cap); await mw(700); setMsg("📦 보관함으로 보내졌다."); }
+    updateDexPill(); checkDexRewards(); if(foe.id==="shadowlord")G.shadowDone=true; if(foe.id==="dawnguard")G.dawnDone=true; if(foe.id==="dawnwyrm")G.legendDone=true; if(foe.id==="aqualord")G.lakeDone=true; if(foe.id==="glaciarch")G.snowDone=true; await mw(620); await askNickname(cap); saveGame(); endBattle(); }
   else{ // ball bursts open, spirit re-emerges
     Audio.sfx("escape"); fxBurst("foe",foe.type); ballEl.remove(); foeSp.style.opacity="";
     await foeSp.animate([{transform:"scale(.05)",opacity:.2},{transform:"scale(1.1)",opacity:1},{transform:"scale(1)",opacity:1}],{duration:fxT(360),easing:"ease-out"}).finished.catch(()=>{});
@@ -3302,8 +3334,8 @@ async function tryCatch(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너
 
 async function tryRun(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너 전투에서는 도망칠 수 없다!"); return; }
   const me=activeMon(); const chance=effSpd(me)>=effSpd(G.foe)?0.82:0.45; G.busy=true; setMenuEnabled(false);
-  if(Math.random()<chance){ setMsg("무사히 도망쳤다!"); Audio.sfx("escape"); await wait(680); endBattle(); }
-  else{ setMsg("도망치지 못했다!"); await wait(680); await foeFreeTurn();
+  if(Math.random()<chance){ setMsg("무사히 도망쳤다!"); Audio.sfx("escape"); await mw(680); endBattle(); }
+  else{ setMsg("도망치지 못했다!"); await mw(680); await foeFreeTurn();
     if(me.hp<=0){ await faintMine(); return; } G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); } }
 
 /* ===================== SWITCH ===================== */
@@ -3318,8 +3350,8 @@ function renderSwitch(){ const body=$("switchBody"); body.innerHTML="";
     card.querySelector(".pick").addEventListener("click",()=>chooseSwitch(i)); body.appendChild(card); }); }
 async function chooseSwitch(i){ if(i===G.active||!G.party[i]||G.party[i].hp<=0)return; if(G.party[i].isEgg){ flashHint("알은 전투에 낼 수 없다!"); return; } Audio.sfx("blip");
   G.active=i; closeOverlay("switchOverlay"); $("meSprite").classList.remove("faint"); renderCombatants(); sendOutAnim("me"); applyIntimidate(activeMon(),G.foe); renderStages(); setMsg(`가라, <b>${dispName(activeMon())}</b>!`); await applyHazards(activeMon(),"me");
-  if(switchForced){ switchForced=false; G.busy=false; setMenuEnabled(true); await wait(500); setMsg("무엇을 할까?"); }
-  else{ G.busy=true; setMenuEnabled(false); await wait(600); await foeFreeTurn();
+  if(switchForced){ switchForced=false; G.busy=false; setMenuEnabled(true); await mw(500); setMsg("무엇을 할까?"); }
+  else{ G.busy=true; setMenuEnabled(false); await mw(600); await foeFreeTurn();
     if(activeMon().hp<=0){ await faintMine(); return; } G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); } }
 
 /* ===================== DEX + DETAIL ===================== */
@@ -3526,7 +3558,7 @@ function applyItemEffect(it){ const m=activeMon();
 function useItem(it){ if((G.items[it.key]||0)<=0)return; if(applyItemEffect(it)){ renderBag(); if(G.inBattle)renderCombatants(); saveGame(); } }
 async function battleUseItem(it){ if(G.busy)return; if((G.items[it.key]||0)<=0)return;
   if(!applyItemEffect(it))return; renderCombatants(); closeOverlay("bagOverlay");
-  G.busy=true; setMenuEnabled(false); setMsg(`${ITEM_KO[it.key]||"아이템"}을(를) 사용했다!`); await wait(720);
+  G.busy=true; setMenuEnabled(false); setMsg(`${ITEM_KO[it.key]||"아이템"}을(를) 사용했다!`); await mw(720);
   await foeFreeTurn();
   if(activeMon().hp<=0){ await faintMine(); return; }
   G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); saveGame(); }
@@ -3747,7 +3779,7 @@ function serialize(){ return {v:4, pe:G.playerEmoji, ps:G.styleIdx||0,
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, lakeDone:!!G.lakeDone, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, dexMaster:!!G.dexMaster, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower} }; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, lakeDone:!!G.lakeDone, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, dexMaster:!!G.dexMaster, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:{atk:0,def:0,spd:0}}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; if(p.nick)m.nick=p.nick; return m; }
 function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
@@ -3758,7 +3790,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
   if(!s.party.length)return false;
-  if(o.cfg){ CONFIG.difficulty=o.cfg.d||"normal"; CONFIG.textSpeed=o.cfg.t||1; CONFIG.volume=o.cfg.v!=null?o.cfg.v:0.7; CONFIG.reduceMotion=!!o.cfg.m; CONFIG.follower=o.cfg.f||"all"; Audio.setVolume(CONFIG.volume); }
+  if(o.cfg){ CONFIG.difficulty=o.cfg.d||"normal"; CONFIG.textSpeed=o.cfg.t||1; CONFIG.volume=o.cfg.v!=null?o.cfg.v:0.7; CONFIG.reduceMotion=!!o.cfg.m; CONFIG.follower=o.cfg.f||"all"; CONFIG.battleText=o.cfg.bt||"auto"; Audio.setVolume(CONFIG.volume); }
   G=s; return true; }
 function saveGame(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(serialize())); }
   catch(e){ if(!saveGame._warned){saveGame._warned=true; toast("⚠️ 저장 불가(브라우저 설정)");} } }
@@ -3772,7 +3804,10 @@ function applySettingsUI(){ document.querySelectorAll("#segDiff button").forEach
   document.querySelectorAll("#segSpeed button").forEach(b=>b.classList.toggle("on",parseFloat(b.dataset.v)===CONFIG.textSpeed));
   $("volRange").value=Math.round(CONFIG.volume*100); $("volVal").textContent=Math.round(CONFIG.volume*100);
   document.querySelectorAll("#segMotion button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.reduceMotion));
-  document.querySelectorAll("#segFollower button").forEach(b=>b.classList.toggle("on",b.dataset.v===(CONFIG.follower||"all"))); }
+  document.querySelectorAll("#segFollower button").forEach(b=>b.classList.toggle("on",b.dataset.v===(CONFIG.follower||"all")));
+  document.querySelectorAll("#segBattleText button").forEach(b=>b.classList.toggle("on",b.dataset.v===(CONFIG.battleText||"auto"))); }
+document.querySelectorAll("#segBattleText button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.battleText=b.dataset.v; SKIP=false; Audio.sfx("blip");
+  document.querySelectorAll("#segBattleText button").forEach(x=>x.classList.toggle("on",x===b)); saveGame(); }));
 document.querySelectorAll("#segMotion button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.reduceMotion=b.dataset.v==="1"; Audio.sfx("blip");
   document.querySelectorAll("#segMotion button").forEach(x=>x.classList.toggle("on",x===b)); saveGame(); }));
 document.querySelectorAll("#segFollower button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.follower=b.dataset.v; Audio.sfx("blip");
