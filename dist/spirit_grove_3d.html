@@ -1277,8 +1277,10 @@ function handleQuestTalk(q,npc){ G.quests=G.quests||{}; const st=G.quests[q.id];
   if(!st){ _npcTalk[npc.id]=(_npcTalk[npc.id]||0)+1; const intro=(_npcTalk[npc.id]===1&&npc.lines)?npc.lines:[]; pages=intro.concat(q.offer); cb=()=>{ G.quests[q.id]="active"; if(q.id==="q_water"&&!G.hasRod){ G.hasRod=true; toast("🎣 낡은 낚싯대를 얻었다!"); } toast("📜 의뢰 수락: "+q.title); if(typeof saveGame==="function")saveGame(); }; }
   else if(st==="active"&&q.check()){ pages=q.done; cb=()=>{ grantReward(q.reward); G.quests[q.id]="done"; toast("🎁 보상: "+rewardText(q.reward)); if(typeof saveGame==="function")saveGame(); }; }
   else { pages=q.active.concat(["(진행도: "+q.prog()+")"]); cb=null; }
-  const dp=pages.map(t=>({name:npc.name||"",text:t}));
+  const dp=pages.map(t=>({name:npc.name||"",text:stripNamePrefix(npc.name,t)}));
   showDialog(dp, ()=>{ _talking=false; if(cb)cb(); }); }
+// 대사 본문에 "이름: " 접두사가 있으면 제거 (이름 라벨과 중복되지 않게)
+function stripNamePrefix(name,text){ if(!name||!text)return text; const p=name+":"; return text.indexOf(p)===0?text.slice(p.length).replace(/^\s+/,""):text; }
 function talkNPC(npc){ if(_talking||dialogActive())return;
   if(npc.daycare){ Audio.sfx&&Audio.sfx("blip"); openDaycare(); return; }
   if(npc.moveExpert){ Audio.sfx&&Audio.sfx("blip"); openMoveExpert(); return; }
@@ -1290,7 +1292,7 @@ function talkNPC(npc){ if(_talking||dialogActive())return;
     const base=(cleared&&npc.linesAfter)?npc.linesAfter:npc.lines;
     if(_npcTalk[npc.id]===1){ src=base; }
     else { const pool=(npc.chat&&npc.chat.length)?npc.chat:npcAmbient(npc); src=[pool[(_npcTalk[npc.id]-2)%pool.length]]; } }
-  const pages=src.map(t=>({name:npc.name||"",text:t}));
+  const pages=src.map(t=>({name:npc.name||"",text:stripNamePrefix(npc.name,t)}));
   _talking=true; Audio.sfx("blip");
   showDialog(pages, ()=>{ _talking=false;
     if(key && !G.defeated.has(key)){ if(npc.double){ startDouble(npc.duoTeam,npc.name,key); } else { startTrainer(key); if(G.trainer)G.trainer._npcId=npc.id; } }
@@ -1311,7 +1313,7 @@ function updateMoney(){ $("moneyPill").textContent="💰 "+G.money; $("shopMoney
 
 /* expose for tests */
 window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,byId,makeMon,recalc,damage,stageMul,effSpd,foeChooseMove,noPP,
-  G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary};
+  G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary,stripNamePrefix};
 /* ===== MAP (17 x 42) ===== */
 let MAP_STR=[
   "#########################","#TTTggggggTggggTggggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggggg#","#gggMgCgggCggg#T#gTTg#gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgggggg##ogTg#","#TTT#goggggg#TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTgg#gT#","#ggTgT~ggggggggDTTggT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g##gTggRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tggg~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg#gggggx~~~~~~~~~~~g##","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg#gggggCg##TggT#","#gggggPgggg#g#ggTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg#Tg##","#TgggggTgT~~~gTT#TTggg#V#","#gggTg#gggg##g#ggT##ggTg#","#gTm#TggRg#gTT#gTgg#T#TT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#gggggggggTgmggTTg##T#gg#","#ggggg#gggT#gggg#ggggg#T#","##g#g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg#gggggg~~~#g#gggT##","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTg#gTgggg##gT#","#gTTggggggTTggggg#gggggg#","#ggTgggTgTgTggTTgTTTgg###","#gT#PHggggggggTwgTTFFFT##","#gggggRg.gSggggwwggggggg#","#######...######ggggWggg#",
@@ -2086,7 +2088,7 @@ function startTrainer(key){ const tr=TRAINERS[key];
   G.trainer={key,name:tr.name,em:tr.em,team:tr.team.map(t=>[t[0],clamp(t[1]+scale,2,60)]),idx:0,reward:tr.reward,money:tr.money,boss:!!tr.boss,rematch:G.defeated.has(key)};
   const first=G.trainer.team[0]; G.foe=makeMon(first[0],first[1]); G.seen.add(first[0]);
   G.busy=false; Audio.sfx(tr.boss?"boss":"encounter");
-  showDialog({name:tr.name,text:tr.intro}, ()=>{ G.inBattle=true; transitionToBattle(()=>{ setMsg(`<b>${tr.name}</b> 와(과)의 전투 시작!`); Audio.startMusic(tr.boss?"boss":"battle"); }); }); }
+  showDialog({name:tr.name,text:stripNamePrefix(tr.name,tr.intro)}, ()=>{ G.inBattle=true; transitionToBattle(()=>{ setMsg(`<b>${tr.name}</b> 와(과)의 전투 시작!`); Audio.startMusic(tr.boss?"boss":"battle"); }); }); }
 function maybeRematch(t){ const tr=TRAINERS[t];
   if(!G.badge){ flashHint("이미 쓰러뜨린 트레이너야 — 숲의 인장을 얻으면 재대결 가능"); return; }
   if(confirm(`${tr.name}에게 재대결을 신청할까?\n(레벨이 오르고 보상은 절반)`)) startTrainer(t); }
