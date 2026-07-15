@@ -1325,7 +1325,13 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     const moving=!this.arrived;
     ctx.fillStyle="#0b1410"; ctx.fillRect(0,0,cw,ch);
     const ts=Math.floor(cw/9.5); const px=this.player.x,py=this.player.y;
-    const ox=cw/2-px*ts-ts/2, oy=ch/2-py*ts-ts/2;
+    let ox=cw/2-px*ts-ts/2, oy=ch/2-py*ts-ts/2;
+    // 카메라를 맵 경계에 클램프 — 맵 밖 검은 공백을 없앤다. 맵이 뷰포트보다 작으면 중앙 정렬.
+    const mapW=W*ts, mapH=H*ts;
+    ox = mapW>=cw ? Math.min(0,Math.max(cw-mapW,ox)) : (cw-mapW)/2;
+    oy = mapH>=ch ? Math.min(0,Math.max(ch-mapH,oy)) : (ch-mapH)/2;
+    this._cam={ox,oy,ts};                       // 탭-이동 역변환용
+    const pcx=ox+px*ts+ts/2, pcy=oy+py*ts+ts/2; // 플레이어 실제 화면 중심
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const sx=ox+x*ts,sy=oy+y*ts; if(sx<-ts||sy<-ts||sx>cw||sy>ch)continue; this._tile(ctx,tileAt(x,y),sx,sy,ts,x,y,now); }
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const sx=ox+x*ts,sy=oy+y*ts; if(sx<-ts||sy<-ts||sx>cw||sy>ch)continue;
       const t=tileAt(x,y); let emoji=null, spec=null, sdir="down";
@@ -1354,12 +1360,12 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
           ctx.drawImage(_img, fsx-_sz/2, fsy-_sz/2-_bob, _sz, _sz); ctx.restore(); } } }
     { const _sidx=(typeof G!=="undefined"&&G.styleIdx)||0, _upd=(this.dir||"down")==="up";
       let _hi=_upd?heroImgBack(_sidx):null; const _back=!!(_hi&&_hi.complete&&_hi.naturalWidth); if(!_back){ _hi=heroImg(_sidx); }
-      if(_hi&&_hi.complete&&_hi.naturalWidth){ const hx=cw/2, gy=ch/2+ts*0.30, S=ts*0.98;
+      if(_hi&&_hi.complete&&_hi.naturalWidth){ const hx=pcx, gy=pcy+ts*0.30, S=ts*0.98;
         const _hb=moving?Math.abs(Math.sin(now*10))*ts*0.06:Math.sin(now*2.2)*ts*0.012;
         ctx.fillStyle="rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(hx,gy,ts*0.30,ts*0.11,0,0,6.29); ctx.fill();
         ctx.save(); if(!_back&&(this.dir||"down")==="left"){ ctx.translate(hx,0); ctx.scale(-1,1); ctx.translate(-hx,0); }
         ctx.drawImage(_hi, hx-S/2, gy-S-_hb, S, S); ctx.restore(); }
-      else { this._walker(ctx, cw/2, ch/2, ts, this.dir||"down", moving, now); } }
+      else { this._walker(ctx, pcx, pcy, ts, this.dir||"down", moving, now); } }
     if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; } },
   _tile(ctx,t,sx,sy,ts,x,y,now){ const h=((x*73856093)^(y*19349663))>>>0; const rnd=n=>((h>>(n*3))&7)/7; const ol="rgba(20,42,24,.4)"; sx=Math.round(sx); sy=Math.round(sy); const tb=Math.ceil(ts)+1;
     if(typeof G!=="undefined" && (G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield")){
@@ -1771,8 +1777,10 @@ function rippleAt(clientX,clientY){ const wrap=$("canvasWrap"); const r=wrap.get
   const p=document.createElement("div"); p.className="tap-ping"; p.style.left=(clientX-r.left)+"px"; p.style.top=(clientY-r.top)+"px";
   wrap.appendChild(p); void p.offsetWidth; p.classList.add("go"); setTimeout(()=>p.remove(),520); }
 function tapTile2D(e){ const cv=$("mapCanvas"); const r=cv.getBoundingClientRect(); const scale=cv.width/r.width;
-  const cx=(e.clientX-r.left)*scale, cy=(e.clientY-r.top)*scale; const ts=Math.floor(cv.width/9.5);
-  const dx=Math.round((cx-cv.width/2)/ts), dy=Math.round((cy-cv.height/2)/ts);
+  const cx=(e.clientX-r.left)*scale, cy=(e.clientY-r.top)*scale;
+  const cam=Map2D._cam;   // 클램프된 카메라 오프셋으로 역변환 (플레이어가 화면 중앙이 아닐 수 있음)
+  if(cam){ return {x:clamp(Math.floor((cx-cam.ox)/cam.ts),0,W-1), y:clamp(Math.floor((cy-cam.oy)/cam.ts),0,H-1)}; }
+  const ts=Math.floor(cv.width/9.5); const dx=Math.round((cx-cv.width/2)/ts), dy=Math.round((cy-cv.height/2)/ts);
   return {x:clamp(G.pos.x+dx,0,W-1), y:clamp(G.pos.y+dy,0,H-1)}; }
 function tapToMove(e){ if(dialogActive()){ advanceDialog(); return; } if(!$("map").classList.contains("active")||G.inBattle||G.busy)return;
   let tile=null; try{ tile=tapTile2D(e); }catch(_){tile=null;}
