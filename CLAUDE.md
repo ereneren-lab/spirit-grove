@@ -67,7 +67,7 @@ verify 내용:
 
 ## 로드맵 (권장 순서)
 1. ~~아키텍처 분리~~ ✅ 완료 (src 413KB + assets + dist 빌드).
-2. 온보딩/튜토리얼 — **첫 전투 코치 ✅ · 목표 트래커 ✅ · 난이도 커브 ✅**. 남은 것: 게임필 폴리시, 오디오.
+2. 온보딩/튜토리얼 — **첫 전투 코치 ✅ · 목표 트래커 ✅ · 난이도 커브 ✅**. 게임필 폴리시 진행 중(타이틀 종수 표기 수정 ✅). 남은 것: 오디오, 추가 폴리시.
 3. 신규 지역/콘텐츠는 마지막.
 
 ### 첫 전투 코치 (`const Coach`)
@@ -105,5 +105,13 @@ verify 내용:
 three.js(589KB) + BUNDLED_ART(616KB) + Map3D 코드 216줄 제거 → dist 4.7MB → **3.5MB**.
 남은 용량은 사실상 전부 크리처 아트 86종(PAINT_ART)이라 더 줄이려면 아트 화질/해상도 트레이드오프가 필요하다.
 
+## 시각 검증 (스크린샷)
+`scripts/screenshot.js` — Playwright + Chromium으로 dist를 실제로 띄워 타이틀→캐릭터→스타터→맵→전투까지 자동으로 몰고 가며 PNG 캡처 + 런타임 에러 수집. UI/아트/게임필 변경은 이걸로 눈으로 확인한다.
+```bash
+npm install playwright && npx playwright install chromium   # 최초 1회
+node scripts/screenshot.js dist/spirit_grove_3d.html <출력폴더>
+```
+canvas 기반이라 jsdom으로는 렌더가 안 잡히므로, 시각 확인은 반드시 Playwright로.
+
 ## 세션 워크플로
-"새 아트 왔어 → 파이프라인 → 빌드 → 검증 → 커밋" 순으로. 큰 변경 전 `git commit`. 게임 확인은 `python3 -m http.server`로 `dist/spirit_grove_3d.html` 로컬 프리뷰(브라우저 자동화 MCP가 있으면 스크린샷 검증).
+"새 아트 왔어 → 파이프라인 → 빌드 → 검증 → 커밋" 순으로. 큰 변경 전 `git commit`. 코드 회귀는 `verify.sh`(jsdom 5종), 시각 확인은 `screenshot.js`(Playwright).

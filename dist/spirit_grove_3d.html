@@ -354,7 +354,7 @@
       <button class="iconbtn" id="settingsBtn" title="저장/설정" style="display:none">⚙️</button>
       <button class="iconbtn" id="runBtn" title="달리기 (Shift)">🚶</button>
       <button class="iconbtn" id="muteBtn" title="소리">🔊</button>
-      <div class="pill" id="dexPill">도감 0 / 30</div>
+      <div class="pill" id="dexPill">도감 0 / 86</div>
       <div class="pill" id="badgePill" style="display:none">🏅 0/4</div>
     </div>
   </div>
@@ -391,7 +391,7 @@
       </div>
       <h2>정령의 숲</h2>
       <p class="tag">황혼이 내려앉은 정령의 숲. 정령을 포획·진화시키고, 상성과 상태이상을 활용해 트레이너와 숲의 군주를 꺾어라.</p>
-      <div class="badges"><span class="badge">정령 32종</span><span class="badge">이중 타입</span><span class="badge">물리·특수</span><span class="badge">진화의 돌</span><span class="badge">숲의 군주</span></div>
+      <div class="badges"><span class="badge" id="spCountBadge">정령 86종</span><span class="badge">이중 타입</span><span class="badge">물리·특수</span><span class="badge">진화의 돌</span><span class="badge">숲의 군주</span></div>
       <div class="btn-col"><button class="btn" id="newGameBtn">새 게임</button><button class="btn ghost" id="continueBtn" style="display:none">이어하기</button></div>
     </section>
 
@@ -484,7 +484,7 @@
       <div class="dex-stat">
         <div class="box"><div class="num" id="dexCaught">0</div><div class="lbl">포획</div></div>
         <div class="box"><div class="num" id="dexParty">0</div><div class="lbl">파티</div></div>
-        <div class="box"><div class="num" id="dexTotal">30</div><div class="lbl">전체</div></div>
+        <div class="box"><div class="num" id="dexTotal">86</div><div class="lbl">전체</div></div>
       </div>
       <div class="ov-body" id="dexBody"></div>
     </div>
@@ -3675,6 +3675,8 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region};
 
 /* ===================== INIT ===================== */
+// 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
+try{ $("dexPill").textContent=`도감 0 / ${DEX.length}`; const _dt=$("dexTotal"); if(_dt)_dt.textContent=DEX.length; const _sb=$("spCountBadge"); if(_sb)_sb.textContent=`정령 ${DEX.length}종`; }catch(e){}
 if(hasSave()) $("continueBtn").style.display="block";
 
 })();
