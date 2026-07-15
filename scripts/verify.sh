@@ -49,6 +49,7 @@ fi
 # 5) 오디오 테스트 (Playwright 필요 — jsdom엔 Web Audio가 없어 실제 브라우저로만 검증 가능)
 if node -e "require.resolve('playwright')" 2>/dev/null; then
   node scripts/audio_test.js "$F" || exit 1
+  node scripts/lowhp_flow_test.js "$F" || exit 1
 else
   echo "⏭️  오디오 테스트 건너뜀 (npm install playwright 하면 실행됨)"
 fi

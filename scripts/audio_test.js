@@ -15,7 +15,12 @@ const { chromium } = require("playwright"); const path=require("path");
     const b2=n; A.hpTick(100,97); const small=n-b2;             // 3% 감소 → 소수 비프
     const b3=n; A.hpTick(30,5); const crit=n-b3;                // 위험권 진입 → 비프+경고음2
     const b4=n; A.hpTick(80,80); const none=n-b4;               // 감소 없음 → 무음
-    return {big,small,crit,none};
+    // 저체력 지속 경고음: 위험권이면 루프 시작, 회복/무위험이면 정지
+    A.lowHp(false);                          // 초기화
+    A.lowHp(true);  const loopOn = !!A._lowTimer;
+    A.lowHp(true);  const noDup = A._lowTimer===A._lowTimer;  // 중복 타이머 안 생김(가드)
+    A.lowHp(false); const loopOff = !A._lowTimer;
+    return {big,small,crit,none,loopOn,loopOff};
   });
   const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)process.exitCode=1; };
   if(r.err){ console.log("❌",r.err); process.exit(1); }
@@ -24,7 +29,9 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(r.small<r.big && r.small>=1, `작은 감소(3%) → 비프 소수 (${r.small}개) < 큰 감소`);
   ok(r.crit>r.small, `위험권 진입 → 비프+경고음 (${r.crit}개)`);
   ok(r.none===0, `감소 없음 → 무음 (${r.none}개)`);
+  ok(r.loopOn===true, "위험권 → 저체력 경고음 루프 시작");
+  ok(r.loopOff===true, "회복/무위험 → 루프 정지");
   ok(errs.length===0, "런타임 에러 0");
-  console.log(process.exitCode?"\n❌ 실패":"\n🎉 HP 틱음 검증 통과");
+  console.log(process.exitCode?"\n❌ 실패":"\n🎉 전투 오디오 검증 통과");
   await b.close(); process.exit(process.exitCode||0);
 })();

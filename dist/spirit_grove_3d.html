@@ -668,6 +668,12 @@ const Audio={ctx:null,master:null,musicGain:null,sfxGain:null,muted:false,track:
     const low=toPct<=20;
     for(let i=0;i<n;i++){ const f=(low?860:640)+(low?70:36)*(n>1?i/(n-1):0); this.note(f,t0+i*step,0.03,"square",0.05); }
     if(low && fromPct>20){ const tw=t0+n*step+0.05; [900,760].forEach((f,i)=>this.note(f,tw+i*0.12,0.14,"square",0.11)); } },
+  // 저체력 지속 경고음. 내 정령 HP가 위험권이면 회복·교체·기절·전투종료까지 반복.
+  lowHp(on){
+    if(on){ if(this._lowTimer||!this.ctx||this.muted)return;
+      const beep=()=>{ if(this.muted||!this.ctx)return; const t=this.ctx.currentTime; this.note(860,t,0.09,"square",0.07); this.note(1080,t+0.1,0.08,"square",0.055); };
+      beep(); this._lowTimer=setInterval(beep,620);
+    } else if(this._lowTimer){ clearInterval(this._lowTimer); this._lowTimer=null; } },
   note(f,t,dur,type,gain,dest){ if(!this.ctx)return; const o=this.ctx.createOscillator(),g=this.ctx.createGain();
     o.type=type||"triangle";o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(gain,t+0.02);
     g.gain.exponentialRampToValueAtTime(0.0008,t+dur);o.connect(g);g.connect(dest||this.sfxGain);o.start(t);o.stop(t+dur+0.02); },
@@ -2550,7 +2556,9 @@ function renderCombatants(){ const f=G.foe,m=activeMon();
   const foeSnap=(_lastFoeRef!==f), meSnap=(_lastMeRef!==m); _lastFoeRef=f; _lastMeRef=m;
   setHpBar($("meHp"),$("meHpGhost"),m.hp/m.maxHp,meSnap,"me");
   setHpBar($("foeHp"),$("foeHpGhost"),f.hp/f.maxHp,foeSnap,"foe");
-  animHpTxt(m.hp,m.maxHp,meSnap); renderStages(); setExpBar(); }
+  animHpTxt(m.hp,m.maxHp,meSnap); renderStages(); setExpBar();
+  // 저체력 지속 경고음: 내 정령이 위험권이면 켜고, 아니면(회복/교체/기절) 끈다
+  if(typeof Audio!=="undefined"&&Audio.lowHp) Audio.lowHp(!!(G&&G.inBattle&&m&&m.hp>0&&m.hp/m.maxHp<=0.2)); }
 function setBar(el,r){ r=clamp(r,0,1); el.style.width=(r*100)+"%"; el.classList.remove("warn","crit");
   if(r<=0.2)el.classList.add("crit"); else if(r<=0.5)el.classList.add("warn"); }
 let battleLog=[];
@@ -3132,7 +3140,7 @@ function showEnding(){ const body=$("endingBody"); const lv=Math.max(...G.party.
   body.querySelector("#endingClose").addEventListener("click",()=>{Audio.sfx("blip");closeOverlay("endingOverlay");});
   Audio.sfx("win"); openOverlay("endingOverlay"); }
 
-function endBattle(){ Coach.finish(); G.inBattle=false; G.busy=false; G.foe=null; G.trainer=null; heldDir=null; stopPath(); closeOverlay("switchOverlay");
+function endBattle(){ Coach.finish(); if(Audio.lowHp)Audio.lowHp(false); G.inBattle=false; G.busy=false; G.foe=null; G.trainer=null; heldDir=null; stopPath(); closeOverlay("switchOverlay");
   G.party.forEach(m=>{ m.stages={atk:0,def:0,spd:0}; }); // reset volatile stages, keep status
   show("map"); Field.start(); Audio.startMusic(fieldMusic()); updateGoal(); saveGame(); }
 

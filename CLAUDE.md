@@ -78,6 +78,12 @@ verify 내용:
 - `Audio.hpTick(fromPct,toPct)`: HP바가 줄 때 감소량에 비례한 짧은 square 비프 연쇄. 위험권(≤20%)으로 떨어지면 더 높고 급하게 + 경고음 2노트.
 - 훅: `setHpBar`의 드레인 분기(`pct < g.w`)에서 새 타깃일 때만(`pct < g.t`) 1회 발동 — 재렌더 중복 방지. me/foe 양쪽, 상태이상 잔뎀 포함 모든 HP 감소에 적용.
 - 검증: `scripts/audio_test.js`(Playwright, Chromium Web Audio 계측) — 감소량 비례 비프 수 + 위험권 경고음 + 무감소 무음. verify.sh에 playwright 게이트로 연결(jsdom엔 Web Audio 없음).
+
+### 저체력 지속 경고음 (`Audio.lowHp`)
+내 정령 HP가 위험권(≤20%)이면 회복·교체·기절·전투종료까지 "빠-빠" 경고음 반복(setInterval 620ms).
+- 훅: `renderCombatants` 끝 — HP바 갱신 단일 지점이라 회복/교체/기절이 전부 여기를 거쳐 자동으로 켜지고 꺼진다. `endBattle`에도 안전 정지.
+- 중복 타이머 가드(`_lowTimer`), muted면 비프 스킵.
+- 검증: `scripts/lowhp_flow_test.js` — 위험→회복→재위험→기절 흐름별 루프 on/off 확인.
 3. 신규 지역/콘텐츠는 마지막.
 
 ### 첫 전투 코치 (`const Coach`)
