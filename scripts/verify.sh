@@ -42,6 +42,7 @@ if node -e "require.resolve('jsdom')" 2>/dev/null; then
   node scripts/goal_test.js "$F" || exit 1
   node scripts/altar_test.js "$F" || exit 1
   node scripts/curve_test.js "$F" || exit 1
+  node scripts/movedesc_test.js "$F" || exit 1
 else
   echo "⏭️  스모크 테스트 건너뜀 (npm install jsdom 하면 실행됨)"
 fi

@@ -61,6 +61,9 @@ verify 내용:
 - **HP바 갈라짐**: HP fill이 저체력 시 `crit`/`warn` 클래스를 붙이는데, `crit`이 **크리처 아트 컨테이너 클래스와 이름 충돌**(`.crit{position:relative;margin:0 auto}`)해서 fill이 중앙정렬 → 왼쪽 ghost와 갭 발생. → HP fill 클래스를 `hpcrit`/`hpwarn`으로 개명 + `.hpfill`을 `position:absolute;left:0`로 명시 고정. (`scripts/gym_test.js` 아님, probe로 확인)
 - **체육관 관장 전투 안 걸림**: 관장 타일 1~4가 `walkable` 가드 분기와 move()-into 트리거 목록에서 빠져 있어(5,6,가드만), 실내에서 관장에게 걸어가도 전투가 안 걸렸음. `onArrived`도 실내 블록에서 조기 return. → walkable·트리거 두 곳에 1~4 추가(가드처럼 취급: 벽으로 걸어들면 전투, 이기면 통과). 회귀 테스트 `scripts/gym_test.js`.
 
+### 기술 설명 (`moveDesc` / `moveSummary`)
+기술이 뭘 하는지 한 줄로: 타입·위력·효과·PP. 변화기도 정체가 드러남(위협="상대 공격↓", 가속="자신 속도↑↑", 맹독="상대를 독으로", 리플렉터="물리 피해 5턴 감소" 등). MOVES의 `eff`/`heal`/`drain`/`multi`/`pri`에서 파생. 쓰이는 곳: 배우기 오버레이(`buildLearnOverlay`), 기술전문가 잊기/재습득(`mxPickMove`), 전투 기술 메뉴(`showMoves`). 회귀 테스트 `scripts/movedesc_test.js`.
+
 ## 완료된 개선 (되돌리지 말 것)
 - 86종 전원 v2 아트 통일 (DEX 86 = PAINT_ART 86).
 - 불여우 라인 파라꼬→파라울→파라온을 구미호 계보로 재설계, 이모지 🦊 통일.

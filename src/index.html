@@ -832,6 +832,27 @@ const MOVES={
   boulder:{name:"거석충돌",type:"rock",power:74,acc:85,pp:8,pri:0},
   struggle:{name:"발버둥",type:"normal",power:40,acc:100,pp:Infinity,pri:0,recoil:0.25},
 };
+// 기술 효과를 사람이 읽을 수 있는 한 줄로. 배우기/잊기/재습득 UI에서 "어떤 기술인지" 보여준다.
+const _MV_STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦"};
+function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; const e=mo.eff||{};
+  if(mo.power>0)p.push("위력 "+mo.power);
+  if(mo.heal)p.push("HP "+Math.round(mo.heal*100)+"% 회복");
+  if(mo.drain)p.push("피해 "+Math.round(mo.drain*100)+"% 흡수");
+  if(mo.multi)p.push(mo.multi[0]+"~"+mo.multi[1]+"연타");
+  if(mo.recoil)p.push("반동");
+  if((mo.pri||0)>0)p.push("선제공격");
+  if(e.status)p.push("상대를 "+(_MV_STATUS_KO[e.status]||e.status)+"으로");
+  if(e.stat){ const st=STAT_KO[e.stat]||e.stat; const who=e.target==="self"?"자신":"상대"; const n=Math.min(3,Math.abs(e.stage||1)); const arw=((e.stage||0)>0?"↑":"↓").repeat(n); p.push(who+" "+st+arw); }
+  if(e.screen)p.push(e.screen==="reflect"?"물리 피해 5턴 감소":"특수 피해 5턴 감소");
+  if(e.seed)p.push("씨뿌리기(매턴 흡수)");
+  if(e.confuse)p.push("상대 혼란");
+  if(e.weather)p.push(({sun:"날씨 쨍쨍",rain:"날씨 비",sand:"날씨 모래바람"}[e.weather]||"날씨 변화"));
+  if(e.hazard)p.push(e.hazard==="rock"?"바위 설치":"압정 설치");
+  if(e.flinch)p.push("풀죽음 유발");
+  return p.join(" · ");
+}
+function moveSummary(mvKey){ const mo=MOVES[mvKey]; if(!mo)return mvKey; const d=moveDesc(mvKey);
+  return `${TYPE_KO[mo.type]||""} · ${d||"변화"} · PP ${mo.pp}`; }
 
 /* ===== DEX (30) ===== */
 const DEX=[
@@ -1245,7 +1266,7 @@ function updateMoney(){ $("moneyPill").textContent="💰 "+G.money; $("shopMoney
 
 /* expose for tests */
 window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,byId,makeMon,recalc,damage,stageMul,effSpd,foeChooseMove,noPP,
-  G:()=>G,setG:s=>{G=s;},freshState,Audio};
+  G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary};
 /* ===== MAP (17 x 42) ===== */
 let MAP_STR=[
   "#########################","#TTTggggggTggggTggggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggggg#","#gggMgCgggCggg#T#gTTg#gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgggggg##ogTg#","#TTT#goggggg#TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTgg#gT#","#ggTgT~ggggggggDTTggT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g##gTggRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tggg~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg#gggggx~~~~~~~~~~~g##","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg#gggggCg##TggT#","#gggggPgggg#g#ggTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg#Tg##","#TgggggTgT~~~gTT#TTggg#V#","#gggTg#gggg##g#ggT##ggTg#","#gTm#TggRg#gTT#gTgg#T#TT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#gggggggggTgmggTTg##T#gg#","#ggggg#gggT#gggg#ggggg#T#","##g#g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg#gggggg~~~#g#gggT##","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTg#gTgggg##gT#","#gTTggggggTTggggg#gggggg#","#ggTgggTgTgTggTTgTTTgg###","#gT#PHggggggggTwgTTFFFT##","#gggggRg.gSggggwwggggggg#","#######...######ggggWggg#",
@@ -2508,7 +2529,7 @@ function showMoves(){ mainMenu.style.display="none"; moveMenu.style.display="gri
   me.moves.forEach(mv=>{ const mo=MOVES[mv]; const pp=me.pp[mv]||0; const b=document.createElement("button"); b.className="mbtn move-btn"; b.disabled=pp<=0;
     let eff=""; if(mo.power>0 && G.foe){ let e=EFF[mo.type][G.foe.type]; if(G.foe.type2&&G.foe.type2!==G.foe.type)e*=EFF[mo.type][G.foe.type2];
       if(e>=4)eff=`<span class="eff-tag eff-good">효과 매우 굉장</span>`; else if(e>1)eff=`<span class="eff-tag eff-good">효과 굉장</span>`; else if(e>0&&e<=0.25)eff=`<span class="eff-tag eff-bad">효과 매우 별로</span>`; else if(e<1)eff=`<span class="eff-tag eff-bad">효과 별로</span>`; }
-    const desc=mo.power>0?`${TYPE_KO[mo.type]} · 위력 ${mo.power}`:(mo.eff&&mo.eff.status?`${TYPE_KO[mo.type]} · 상태`:`${TYPE_KO[mo.type]} · 변화`);
+    const desc=`${TYPE_KO[mo.type]} · ${moveDesc(mv)||"변화"}`;
     b.innerHTML=`<div class="top"><span>${mo.name}</span><span class="pp">PP ${pp}/${mo.pp}</span></div><span class="mp">${desc}${eff}</span>`;
     b.addEventListener("click",()=>{Audio.sfx("blip");doMove(mv);}); moveMenu.appendChild(b); });
   Coach.onMoves(); }
@@ -2699,12 +2720,12 @@ function mxPickMon(){ const b=$("mxBody"); const cands=G.party.filter(m=>m&&!m.i
 function mxPickMove(){ const b=$("mxBody"); const m=MX.mon; if(!m){ mxStep1(); return; }
   if(MX.mode==="relearn"){ const pool=relearnPool(m);
     if(!pool.length){ b.innerHTML=`<div class="mxprompt"><b>${m.nick||m.name}</b>이(가) 되살릴 기술이 없어요.</div><button class="dcbtn" id="mxBack">← 뒤로</button>`; $("mxBack").onclick=mxPickMon; return; }
-    b.innerHTML=`<div class="mxprompt"><b>${m.nick||m.name}</b>이(가) 되살릴 수 있는 기술</div>`+pool.map(mv=>`<button class="dcbtn wide" data-mv="${mv}">${MOVES[mv].name} <span class="dclv">${MOVES[mv].power>0?"위력 "+MOVES[mv].power:"변화기"}</span></button>`).join("")+`<button class="dcbtn" id="mxBack" style="margin-top:6px">← 뒤로</button>`;
+    b.innerHTML=`<div class="mxprompt"><b>${m.nick||m.name}</b>이(가) 되살릴 수 있는 기술</div>`+pool.map(mv=>`<button class="dcbtn wide" data-mv="${mv}" style="text-align:left"><b>${MOVES[mv].name}</b><br><span style="font-size:10.5px;opacity:.7;font-weight:400">${moveSummary(mv)}</span></button>`).join("")+`<button class="dcbtn" id="mxBack" style="margin-top:6px">← 뒤로</button>`;
     b.querySelectorAll("[data-mv]").forEach(btn=>btn.onclick=async()=>{ const mv=btn.dataset.mv; closeOverlay("mxOverlay"); await learnMoveFlow(m,mv,false); saveGame&&saveGame(); });
     $("mxBack").onclick=mxPickMon;
   } else {
     if((m.moves||[]).length<=1){ b.innerHTML=`<div class="mxprompt">마지막 하나 남은 기술은 잊을 수 없어요.</div><button class="dcbtn" id="mxBack">← 뒤로</button>`; $("mxBack").onclick=mxPickMon; return; }
-    b.innerHTML=`<div class="mxprompt"><b>${m.nick||m.name}</b>이(가) 잊을 기술 선택</div>`+m.moves.map(mv=>`<button class="dcbtn wide" data-mv="${mv}">${MOVES[mv]?MOVES[mv].name:mv}</button>`).join("")+`<button class="dcbtn" id="mxBack" style="margin-top:6px">← 뒤로</button>`;
+    b.innerHTML=`<div class="mxprompt"><b>${m.nick||m.name}</b>이(가) 잊을 기술 선택</div>`+m.moves.map(mv=>`<button class="dcbtn wide" data-mv="${mv}" style="text-align:left"><b>${MOVES[mv]?MOVES[mv].name:mv}</b><br><span style="font-size:10.5px;opacity:.7;font-weight:400">${moveSummary(mv)}</span></button>`).join("")+`<button class="dcbtn" id="mxBack" style="margin-top:6px">← 뒤로</button>`;
     b.querySelectorAll("[data-mv]").forEach(btn=>btn.onclick=()=>{ const mv=btn.dataset.mv; m.moves=m.moves.filter(x=>x!==mv); if(m.pp)delete m.pp[mv]; Audio.sfx&&Audio.sfx("blip"); flashHint(`${m.nick||m.name}이(가) ${MOVES[mv]?MOVES[mv].name:mv}을(를) 잊었다.`); saveGame&&saveGame(); mxPickMove(); });
     $("mxBack").onclick=mxPickMon;
   } }
@@ -2970,11 +2991,11 @@ function buildLearnOverlay(m,newMv,resolve){ $("learnTitle").textContent="새로
   intro.innerHTML=`<div style="font-size:13.5px"><b>${m.name}</b>이(가) <b style="color:var(--mint)">${nm.name}</b>을(를) 배우려 한다!</div>
     <div style="font-size:11.5px;color:var(--muted);margin-top:4px">기술은 최대 4개. 잊을 기술을 고르거나 배우지 않을 수 있어.</div>`; body.appendChild(intro);
   m.moves.forEach((mvk,i)=>{ const mo=MOVES[mvk]; const card=document.createElement("div"); card.className="mon-card";
-    card.innerHTML=`<div class="info"><div class="nm">${mo.name}</div><div class="st">${TYPE_KO[mo.type]} · ${mo.power>0?"위력 "+mo.power:"변화"} · PP ${mo.pp}</div></div><button class="pick danger">잊기</button>`;
+    card.innerHTML=`<div class="info"><div class="nm">${mo.name}</div><div class="st">${moveSummary(mvk)}</div></div><button class="pick danger">잊기</button>`;
     card.querySelector(".pick").addEventListener("click",()=>{ Audio.sfx("blip"); delete m.pp[mvk]; m.moves[i]=newMv; m.pp[newMv]=nm.pp;
       toast(`${m.name}이(가) ${nm.name} 습득!`); closeOverlay("learnOverlay"); resolve(); }); body.appendChild(card); });
   const newCard=document.createElement("div"); newCard.className="mon-card"; newCard.style.borderColor="var(--mint)";
-  newCard.innerHTML=`<div class="em">✨</div><div class="info"><div class="nm" style="color:var(--mint)">${nm.name} <span style="font-size:10px;color:var(--muted)">신규</span></div><div class="st">${TYPE_KO[nm.type]} · ${nm.power>0?"위력 "+nm.power:"변화"} · PP ${nm.pp}</div></div>`;
+  newCard.innerHTML=`<div class="em">✨</div><div class="info"><div class="nm" style="color:var(--mint)">${nm.name} <span style="font-size:10px;color:var(--muted)">신규</span></div><div class="st">${moveSummary(newMv)}</div></div>`;
   body.appendChild(newCard);
   const skip=document.createElement("button"); skip.className="btn ghost"; skip.style.cssText="margin-top:8px;width:100%"; skip.textContent=`${nm.name} 안 배우기`;
   skip.addEventListener("click",()=>{ Audio.sfx("blip"); toast(`${nm.name}을(를) 배우지 않았다`); closeOverlay("learnOverlay"); resolve(); }); body.appendChild(skip); }
