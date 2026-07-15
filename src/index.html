@@ -255,6 +255,20 @@
   .bag-item .nm{font-weight:700;font-size:14px} .bag-item .ds{font-size:11px;color:var(--muted);margin-top:2px}
   .bag-item .ct{font-weight:800;font-size:15px;color:var(--amber)}
   .bag-item .price{font-weight:800;font-size:13px;color:var(--amber)}
+  /* 상점 수량 구매 모달 */
+  .buy-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .buy-head .buy-em{font-size:36px}
+  .buy-nm{font-weight:800;font-size:16px} .buy-ds{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .buy-qtyrow{display:flex;align-items:center;justify-content:center;gap:18px;margin:6px 0 14px}
+  .buy-step{width:52px;height:52px;border-radius:14px;font-size:26px;font-weight:800;color:var(--cream);
+    background:var(--panel);border:1px solid var(--line);cursor:pointer;line-height:1}
+  .buy-step:active{transform:scale(.94)} .buy-step:disabled{opacity:.35}
+  .buy-qty{min-width:64px;text-align:center;font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+  .buy-total{text-align:center;font-size:14px;margin-bottom:14px}
+  .buy-total b{color:var(--amber);font-size:16px}
+  .buy-after{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+  .buy-ok{background:linear-gradient(180deg,#7fd1ae,#56b78f)!important;color:#0d1a14!important;font-weight:800}
+  .buy-ok:disabled{background:var(--panel)!important;color:var(--muted)!important}
   .dex-stat{display:flex;gap:9px;margin-bottom:12px}
   .dex-stat .box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px;text-align:center}
   .dex-stat .num{font-size:22px;font-weight:800;color:var(--mint)} .dex-stat .lbl{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.5px}
@@ -550,6 +564,9 @@
       <div class="ov-head"><div><h3>🏪 정령 상점</h3><div class="sub" id="shopMoney">💰 0</div></div><button class="closex" data-close="shopOverlay">✕</button></div>
       <div class="ov-body" id="shopBody"></div>
     </div>
+    <div class="overlay" id="buyOverlay"><div class="sheet" style="max-width:340px">
+      <div id="buyBody"></div>
+    </div></div>
     <div class="overlay" id="mxOverlay"><div class="sheet" style="max-width:420px">
       <div style="font-weight:800;text-align:center;margin-bottom:8px">📖 기술 전문가</div>
       <div id="mxBody"></div>
@@ -1790,7 +1807,7 @@ function interact(){ if(typeof G==="undefined"||!G||G.busy||G.inBattle||dialogAc
   if(!walkable(fx,fy)){ stopPath(); move(d); } }
 function updateRunBtn(){ const b=$("runBtn"); if(b)b.textContent=(G&&G.running)?"👟":"🚶"; }
 function toggleRun(){ G.running=!G.running; if(Field)Field.moveSpeed=G.running?11.4:6.8; updateRunBtn(); flashHint(G.running?"👟 달리기 켜짐":"🚶 걷기 모드"); }
-const CANCELABLE_OVERLAYS=["dexDetailOverlay","dexOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay"];
+const CANCELABLE_OVERLAYS=["buyOverlay","dexDetailOverlay","dexOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay"];
 function anyOverlayOpen(){ for(const id of CANCELABLE_OVERLAYS){ const el=$(id); if(el&&el.classList.contains("active"))return id; } return null; }
 function cancelBtn(){ if(dialogActive()){ advanceDialog(); return; } const id=anyOverlayOpen(); if(id){ closeOverlay(id); if(Audio&&Audio.sfx)Audio.sfx("blip"); } }
 document.addEventListener("keydown",e=>{ if(!$("map").classList.contains("active"))return; const k=e.key.toLowerCase();
@@ -3534,9 +3551,27 @@ function renderShop(){ const body=$("shopBody"); body.innerHTML="";
     const row=document.createElement("div"); row.className="bag-item";
     row.innerHTML=`<div class="em">${it.em}</div><div class="info"><div class="nm">${it.nm} <span style="color:var(--muted);font-size:10px">×${owned} 보유</span></div><div class="ds">${it.ds}</div></div>
       <button class="pick" ${G.money<it.price?"disabled":""}>구매</button><div class="price">💰${it.price}</div>`;
-    row.querySelector(".pick").addEventListener("click",()=>{ if(G.money<it.price){toast("코인이 부족해");return;}
-      G.money-=it.price; if(it.held){ G.heldStock=G.heldStock||{}; G.heldStock[it.key]=(G.heldStock[it.key]||0)+1; } else { G.items[it.key]=(G.items[it.key]||0)+1; } Audio.sfx("buy"); updateMoney(); renderShop(); saveGame(); });
+    row.querySelector(".pick").addEventListener("click",()=>{ if(G.money<it.price){toast("코인이 부족해");return;} Audio.sfx("blip"); openBuy(it); });
     body.appendChild(row); }); }
+// 포켓마트식 수량 구매: −/+ 카운터 + 총액·잔액 미리보기 + 확인.
+let _buyIt=null,_buyQty=1;
+function buyMax(it){ return Math.max(0, Math.min(99, Math.floor(G.money/it.price))); }
+function openBuy(it){ _buyIt=it; _buyQty=1; renderBuy(); openOverlay("buyOverlay"); }
+function renderBuy(){ const it=_buyIt; if(!it)return; const max=buyMax(it); _buyQty=clamp(_buyQty,1,Math.max(1,max));
+  const total=it.price*_buyQty, b=$("buyBody");
+  b.innerHTML=`<div class="buy-head"><span class="buy-em">${it.em}</span><div><div class="buy-nm">${it.nm}</div><div class="buy-ds">${it.ds} · 개당 💰${it.price}</div></div></div>
+    <div class="buy-qtyrow"><button class="buy-step" id="buyMinus" ${_buyQty<=1?"disabled":""}>−</button><div class="buy-qty">${_buyQty}</div><button class="buy-step" id="buyPlus" ${_buyQty>=max?"disabled":""}>+</button></div>
+    <div class="buy-total">합계 <b>💰 ${total}</b><span class="buy-after">구매 후 잔액 💰 ${G.money-total}</span></div>
+    <button class="dcbtn wide buy-ok" id="buyOk" ${max<1?"disabled":""}>${max<1?"코인이 부족해":"구매하기"}</button>
+    <button class="dcbtn wide" id="buyCancel" style="margin-top:8px">취소</button>`;
+  $("buyMinus").onclick=()=>{ if(_buyQty>1){_buyQty--; Audio.sfx("blip"); renderBuy();} };
+  $("buyPlus").onclick=()=>{ if(_buyQty<max){_buyQty++; Audio.sfx("blip"); renderBuy();} };
+  $("buyOk").onclick=doBuy; $("buyCancel").onclick=()=>{ Audio.sfx("blip"); closeOverlay("buyOverlay"); };
+}
+function doBuy(){ const it=_buyIt,qty=_buyQty,total=it.price*qty; if(!it||G.money<total){toast("코인이 부족해");return;}
+  G.money-=total; if(it.held){ G.heldStock=G.heldStock||{}; G.heldStock[it.key]=(G.heldStock[it.key]||0)+qty; } else { G.items[it.key]=(G.items[it.key]||0)+qty; }
+  Audio.sfx("buy"); updateMoney(); closeOverlay("buyOverlay"); renderShop(); saveGame();
+  toast(`고맙습니다! ${it.nm} ×${qty} 구매했어요`); }
 
 /* ===================== PC BOX ===================== */
 let pcTab="party";
