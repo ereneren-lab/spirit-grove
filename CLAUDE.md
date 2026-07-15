@@ -87,8 +87,10 @@ verify 내용:
 ### 맵 게이트 참고 (트래커/기획 수정 시)
 - 체육관 입구 = `G` 타일, `GYM_AT`에 정의된 4곳. 뱃지 키는 TRAINERS `"1"~"4"`.
 - 정령 리그 입구 = `U` 타일 (18,9). `forestBadges()>=4`로 잠김.
-- 군주의 제단 = `X` 타일 (8,8). 안에서 흑요마(`shadowDone`) → 오로르(`dawnDone`).
-- ⚠️ `TRAINERS.X`(숲의 군주, `boss:true`)는 현재 **도달 불가**로 보인다 — 오버월드 `X` 타일이 트레이너 전투 대신 제단 실내로 보내고, 제단 안에는 `X` 타일이 없다. 따라서 `EPILOGUE` 엔딩도 이 경로로는 안 열린다(챔피언 경로의 `LEAGUE_WIN`으로는 열림). 손볼 때 확인할 것.
+- 군주의 제단 = `X` 타일 (8,8) → 제단 실내. 내부 `A` 타일의 진행은 `altarStage()`가 결정: **숲의 군주(`lord`) → 흑요마(`shadow`) → 오로르(`dawn`) → `quiet`**.
+  - `lord`(메인 클라이맥스): `startTrainer("X")` → 승리 시 `G.badge`=숲의 인장 → `EPILOGUE` 엔딩 → **재대결 시스템 해금**(`maybeRematch`가 `G.badge`로 게이트됨).
+  - `shadow`/`dawn`은 엔딩 후 제단에 다시 와서 잡는 포스트게임 보스. `showEnding` 텍스트가 이 구조를 전제로 쓰여 있다.
+  - 복구 이력: 예전엔 `A` 타일이 숲의 군주를 건너뛰고 곧장 흑요마로 가서, 숲의 군주·EPILOGUE·인장·재대결이 통째로 죽어 있었다. `altarStage()`에 `lord` 단계를 앞에 끼워 복구. 회귀 테스트 `scripts/altar_test.js`.
 
 ### 다이어트 결과 (완료)
 three.js(589KB) + BUNDLED_ART(616KB) + Map3D 코드 216줄 제거 → dist 4.7MB → **3.5MB**.

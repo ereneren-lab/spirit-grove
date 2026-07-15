@@ -1594,6 +1594,13 @@ function move(dir,auto){ if(G.busy||G.inBattle||!Field.arrived)return; if(Field)
   let {x,y}=G.pos;
   if(dir==="up")y--;else if(dir==="down")y++;else if(dir==="left")x--;else if(dir==="right")x++;
   if(!walkable(x,y)){ if(Field.face)Field.face(dir); if(tileAt(x,y)==="~"&&!G.busy&&!G.inBattle){ if(G.hasSurf&&!G.surfing&&!G.indoor){ stopPath(); G.surfing=true; Audio.sfx("blip"); flashHint("🌊 파도타기 시작!"); move(dir); return; } if(G.hasRod){ stopPath(); startFishing(); return; } } if(tileAt(x,y)==="x"&&G.hasCut&&!G.busy&&!G.indoor){ stopPath(); cutObstacle(x,y); return; } if(tileAt(x,y)==="o"&&G.hasStrength&&!G.busy&&!G.indoor){ stopPath(); pushBoulder(x,y,dir); return; } if(tileAt(x,y)==="Y"&&G.indoor==="coast"){ stopPath(); if(G.hasRod){ if(!G.isleSeen){ G.isleSeen=true; sailToIsle(); setTimeout(()=>{ if(G.indoor==="isle")playStory(ISLE_INTRO,()=>{}); },420); } else { sailToIsle(); } } else { showDialog({name:"뱃사람",text:"배가 아직 준비되지 않았소. 낚싯대라도 챙겨 진짜 뱃사람이 되어 오시게."}); } return; } if(tileAt(x,y)==="Y"&&G.indoor==="isle"){ stopPath(); sailToCoast(); return; } if(tileAt(x,y)==="K"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); openShop(); return; } if(tileAt(x,y)==="H"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); healParty(true); Audio.sfx("heal"); flashHint(G.indoor==="snowfield"?"따뜻한 오두막에서 정령들이 푹 쉬었다!":"여관에서 정령들이 푹 쉬었다!"); saveGame(); return; } if(tileAt(x,y)==="L"&&G.indoor==="isle"){ stopPath(); if(!G.defeated.has("L")){ startTrainer("L"); } else { showDialog({name:"여명 관장 하로",text:"또 붙어보고 싶은가? 언제든 환영이다!"}); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="isle"){ stopPath(); sailToShrine(); if(!G.shrineSeen){ G.shrineSeen=true; setTimeout(()=>{ if(G.indoor==="shrine")playStory(SHRINE_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="shrine"){ stopPath(); sailFromShrine(); return; } if(tileAt(x,y)==="@"&&G.indoor==="shrine"){ stopPath(); if(!G.legendDone){ startLegendary(); } else { showDialog({name:"신전",text:"신전은 고요하다. 여명룡은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="%"&&!G.indoor){ stopPath(); if(!G.lakeDone){ startLakeLegendary(); } else { showDialog({name:"호수 제단",text:"호수는 잔잔하다. 수룡왕은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="&"&&G.indoor==="snowfield"){ stopPath(); if(!G.snowDone){ startSnowLegendary(); } else { showDialog({name:"빙하 제단",text:"빙하는 잠잠하다. 빙하제는 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="Q"&&G.indoor==="snowfield"){ stopPath(); if(!G.defeated.has("SNOW")){ startTrainer("SNOW"); } else { showDialog({name:"설산의 주인 빙하",text:"또 겨루고 싶은가? 언제든지."}); } return; } if((tileAt(x,y)==="5"||tileAt(x,y)==="6"||GUARD_TILES.indexOf(tileAt(x,y))>=0)&&G.indoor&&!G.defeated.has(tileAt(x,y))){ stopPath(); startTrainer(tileAt(x,y)); return; } if(tileAt(x,y)==="H"&&!G.indoor){ enterInterior(INTERIORS.house); return; } if(tileAt(x,y)==="D"&&!G.indoor){ enterInterior(INTERIORS.cave); return; } if(tileAt(x,y)==="V"&&!G.indoor){ enterInterior(INTERIORS.lavacave); if(!G.lavaSeen){ G.lavaSeen=true; setTimeout(()=>{ if(G.indoor==="lavacave")flashHint("🌋 뜨거운 열기가 밀려온다… 용암 동굴이다!"); },400); } return; } if(tileAt(x,y)==="M"&&!G.indoor){ enterInterior(INTERIORS.snowfield); if(!G.snowSeen){ G.snowSeen=true; setTimeout(()=>{ if(G.indoor==="snowfield")flashHint("❄️ 차가운 바람이 불어온다… 설원 지대다!"); },400); } return; } if(tileAt(x,y)==="G"&&!G.indoor&&typeof GYM_AT!=="undefined"&&GYM_AT[x+","+y]){ enterInterior(INTERIORS[GYM_AT[x+","+y]]); return; } if(tileAt(x,y)==="W"&&!G.indoor){ enterInterior(INTERIORS.coast); if(!G.coastSeen){ G.coastSeen=true; setTimeout(()=>{ if(G.indoor==="coast")playStory(COAST_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="U"&&!G.indoor){ if(forestBadges()>=4){ enterInterior(INTERIORS.league); if(!G.leagueSeen){ G.leagueSeen=true; setTimeout(()=>{ if(G.indoor==="league")playStory(LEAGUE_INTRO,()=>{}); },420); } } else { showDialog({name:"리그 안내인",text:`정령 리그는 <b>4개의 인장 조각</b>을 모은 자에게만 열립니다. (현재 ${forestBadges()}/4)`}); } return; } if(tileAt(x,y)==="N"&&G.indoor==="shrine"){ showDialog(SHRINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="snowfield"){ showDialog(SNOW_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="isle"){ showDialog(ISLE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="coast"){ showDialog(COAST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor){ showDialog({name:G.indoor==="shop"?"점원":"집주인",text:(INTERIOR_NPC_MSG[G.indoor]||"...").replace(/^[^:]+:\s*/,"")}); return; } if(tileAt(x,y)==="P"){ showDialog({name:"팻말",text:(SIGN_MSG[x+","+y]||"조심해서 나아가자.").replace(/^🪧\s*/,"")}); return; } return; } G.pos={x,y}; if(G.surfing&&tileAt(x,y)!=="~"){ G.surfing=false; flashHint("뭍에 올랐다."); } mmReveal(x,y); Audio.sfx("step"); Field.setTarget(x,y,dir); }
+// 제단 A 타일에서 다음에 벌어질 일. 순서: 숲의 군주(메인 클라이맥스) → 흑요마 → 오로르(포스트게임).
+function altarStage(){
+  if(!G.badge && !G.defeated.has("X"))return "lord";
+  if(!G.shadowDone)return "shadow";
+  if(!G.dawnDone)return "dawn";
+  return "quiet";
+}
 function onArrived(){
   updateGoal();
   if(_justExited){ _justExited=false; return; }
@@ -1602,8 +1609,10 @@ function onArrived(){
     if(_t==="S"){ stopPath(); openShop(); return; }
     if(_t==="B"){ stopPath(); healParty(true); Audio.sfx("heal"); flashHint("침대에서 푹 쉬었다 — 모두 회복! 😴"); saveGame(); return; }
     if(_t==="A"){ stopPath();
-      if(!G.shadowDone){ startShadowBoss(); return; }
-      if(!G.dawnDone){ startDawnBoss(); return; }
+      const st=altarStage();
+      if(st==="lord"){ startTrainer("X"); return; }        // 숲의 군주 = 메인 클라이맥스 (EPILOGUE 엔딩)
+      if(st==="shadow"){ startShadowBoss(); return; }       // 이하 포스트게임
+      if(st==="dawn"){ startDawnBoss(); return; }
       flashHint("제단은 이제 고요하다. 숲이 균형을 되찾았다."); return; } return; }
   announceRegion(G.pos.y); if(!G.inBattle)Audio.startMusic(fieldMusic()); const t=tileAt(G.pos.x,G.pos.y);
   if(t==="R"){ stopPath(); if(G.campfires)G.campfires.add(G.pos.x+","+G.pos.y); healParty(true); Audio.sfx("heal"); flashHint("모닥불에서 모두 회복했다 🔥"); saveGame(); return; }
@@ -3653,7 +3662,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage};
 
 /* ===================== INIT ===================== */
 if(hasSave()) $("continueBtn").style.display="block";
