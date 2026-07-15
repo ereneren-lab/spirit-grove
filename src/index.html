@@ -1663,6 +1663,13 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     else if(t==="w"){ for(let i=0;i<6;i++){ const fx=sx+ts*(0.18+rnd(i)*0.64), fy=sy+ts*(0.22+rnd(i+2)*0.6); const fc=["#f0d84a","#f088b0","#f5f0f0","#e88ac0","#c8a0f0"][(h>>(i+2))%5];
       ctx.fillStyle=fc; for(let a=0;a<5;a++){ const an=a/5*6.28; ctx.beginPath(); ctx.arc(fx+Math.cos(an)*ts*0.05,fy+Math.sin(an)*ts*0.05,ts*0.034,0,6.29); ctx.fill(); } ctx.fillStyle="#fff3b0"; ctx.beginPath(); ctx.arc(fx,fy,ts*0.028,0,6.29); ctx.fill(); } } },
   _rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); },
+  // 색을 밝게(amt>0)/어둡게(amt<0). 소프트 셰이딩용. hex/rgb 아니면 원본 반환.
+  _tint(c,amt){ let r,g,b; if(typeof c==="string"&&c[0]==="#"){ let h=c.slice(1); if(h.length===3)h=h.split("").map(x=>x+x).join(""); r=parseInt(h.slice(0,2),16); g=parseInt(h.slice(2,4),16); b=parseInt(h.slice(4,6),16); }
+    else { const m=/rgb\((\d+),\s*(\d+),\s*(\d+)/.exec(c); if(!m)return c; r=+m[1]; g=+m[2]; b=+m[3]; }
+    if(isNaN(r))return c; const f=v=>Math.round(amt>=0?v+(255-v)*amt:v*(1+amt));
+    return `rgb(${f(r)},${f(g)},${f(b)})`; },
+  // 세로 방향광 그라디언트(위 밝게, 아래 어둡게) — 워터컬러 느낌 근사.
+  _grad(ctx,base,y0,y1,up,dn){ const g=ctx.createLinearGradient(0,y0,0,y1); g.addColorStop(0,this._tint(base,up==null?0.2:up)); g.addColorStop(1,this._tint(base,dn==null?-0.16:dn)); return g; },
   _walker(ctx,cx,cy,s,dir,moving,now){ const C=(typeof CHARS!=="undefined"&&CHARS[(typeof G!=="undefined"&&G.styleIdx)||0])||{};
     const col=(v,d)=>v==null?d:(typeof v==="number"?"#"+("000000"+(v>>>0).toString(16)).slice(-6):v);
     const skin=col(C.skin,"#e8b88a"), hair=col(C.hair,"#2a2a33"), body=col(C.cloak||C.hat,"#4a6f8a"), boot=col(C.boot,"#2c3a4a"), hat=col(C.hat,"#4a6f8a"); const cap=C.cap||"none";
@@ -1701,12 +1708,14 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     ctx.strokeStyle=ol; ctx.lineWidth=olw;
     ctx.fillStyle=boots; this._rr(ctx,cx-u*0.22,cy+u*0.2,u*0.16,u*0.34,u*0.05); ctx.fill(); ctx.stroke();
     this._rr(ctx,cx+u*0.06,cy+u*0.2,u*0.16,u*0.34,u*0.05); ctx.fill(); ctx.stroke();
-    ctx.fillStyle=outfit; this._rr(ctx,cx-u*0.3,cy-u*0.18,u*0.6,u*0.5,u*0.12); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=this._grad(ctx,outfit,cy-u*0.18,cy+u*0.32); this._rr(ctx,cx-u*0.3,cy-u*0.18,u*0.6,u*0.5,u*0.12); ctx.fill(); ctx.stroke();
+    { ctx.save(); this._rr(ctx,cx-u*0.3,cy-u*0.18,u*0.6,u*0.5,u*0.12); ctx.clip(); ctx.fillStyle="rgba(255,255,255,.12)"; this._rr(ctx,cx-u*0.26,cy-u*0.15,u*0.22,u*0.4,u*0.08); ctx.fill(); ctx.restore(); }  // 왼쪽 하이라이트
     ctx.fillStyle=accent; ctx.fillRect(cx-u*0.05,cy-u*0.16,u*0.1,u*0.46);
     if(spec.extra==="scroll"){ ctx.fillStyle="#e8dcc0"; this._rr(ctx,cx-u*0.42,cy+u*0.02,u*0.2,u*0.26,u*0.04); ctx.fill(); ctx.stroke(); }
     if(spec.extra==="staff"||spec.extra==="rod"||spec.extra==="net"){ ctx.strokeStyle="#7a5a32"; ctx.lineWidth=Math.max(1,u*0.06); ctx.beginPath(); ctx.moveTo(cx+u*0.34,cy-u*0.5); ctx.lineTo(cx+u*0.34,cy+u*0.42); ctx.stroke();
       if(spec.extra==="net"){ ctx.strokeStyle="#cfcfd6"; ctx.lineWidth=Math.max(1,u*0.04); ctx.beginPath(); ctx.arc(cx+u*0.34,cy-u*0.56,u*0.14,0,6.29); ctx.stroke(); } ctx.strokeStyle=ol; ctx.lineWidth=olw; }
-    ctx.fillStyle=skin; this._rr(ctx,cx-u*0.28,cy-u*0.7,u*0.56,u*0.56,u*0.2); ctx.fill(); ctx.stroke();
+    { const sg=ctx.createRadialGradient(cx-u*0.12,cy-u*0.6,u*0.08,cx+u*0.05,cy-u*0.4,u*0.55); sg.addColorStop(0,this._tint(skin,0.16)); sg.addColorStop(1,this._tint(skin,-0.1)); ctx.fillStyle=sg; }
+    this._rr(ctx,cx-u*0.28,cy-u*0.7,u*0.56,u*0.56,u*0.2); ctx.fill(); ctx.stroke();
     const hat=spec.hat||"none";
     if(hat==="cap"){ ctx.fillStyle=hair; this._rr(ctx,cx-u*0.3,cy-u*0.66,u*0.6,u*0.2,u*0.1); ctx.fill(); ctx.fillStyle=hatc; this._rr(ctx,cx-u*0.32,cy-u*0.8,u*0.64,u*0.2,u*0.09); ctx.fill(); ctx.stroke();
       if(dir==="down"){ ctx.fillRect(cx-u*0.02,cy-u*0.66,u*0.34,u*0.07); } else if(dir==="left"){ ctx.fillRect(cx-u*0.34,cy-u*0.66,u*0.3,u*0.07); } else if(dir==="right"){ ctx.fillRect(cx+u*0.04,cy-u*0.66,u*0.3,u*0.07); } }
