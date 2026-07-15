@@ -64,6 +64,11 @@ verify 내용:
 ### 기술 설명 (`moveDesc` / `moveSummary`)
 기술이 뭘 하는지 한 줄로: 타입·위력·효과·PP. 변화기도 정체가 드러남(위협="상대 공격↓", 가속="자신 속도↑↑", 맹독="상대를 독으로", 리플렉터="물리 피해 5턴 감소" 등). MOVES의 `eff`/`heal`/`drain`/`multi`/`pri`에서 파생. 쓰이는 곳: 배우기 오버레이(`buildLearnOverlay`), 기술전문가 잊기/재습득(`mxPickMove`), 전투 기술 메뉴(`showMoves`). 회귀 테스트 `scripts/movedesc_test.js`.
 
+### 설정 토글 (포켓몬화, 둘 다 opt-in)
+- **전투 텍스트** `CONFIG.battleText`: `auto`(기본, 자동진행+누르는동안 빨리감기) / `tap`(수동, 메시지마다 탭 진행 + ▼큐, 8초 폴백). 메시지 대기는 `mw()`, 애니메이션 대기는 `wait(fxT())`로 구분. `scripts/movedesc_test.js` 아님 — 동작은 btext 측정으로 확인.
+- **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
+- 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
+
 ## 완료된 개선 (되돌리지 말 것)
 - 86종 전원 v2 아트 통일 (DEX 86 = PAINT_ART 86).
 - 불여우 라인 파라꼬→파라울→파라온을 구미호 계보로 재설계, 이모지 🦊 통일.
