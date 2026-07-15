@@ -1692,7 +1692,7 @@ function onArrived(){
       if(st==="lord"){ startTrainer("X"); return; }        // 숲의 군주 = 메인 클라이맥스 (EPILOGUE 엔딩)
       if(st==="shadow"){ startShadowBoss(); return; }       // 이하 포스트게임
       if(st==="dawn"){ startDawnBoss(); return; }
-      flashHint("제단은 이제 고요하다. 숲이 균형을 되찾았다."); return; } return; }
+      flashHint("제단은 이제 고요하다. 숲이 균형을 되찾았다."); return; } continueMovement(); return; }
   announceRegion(G.pos.y); if(!G.inBattle)Audio.startMusic(fieldMusic()); const t=tileAt(G.pos.x,G.pos.y);
   if(t==="R"){ stopPath(); if(G.campfires)G.campfires.add(G.pos.x+","+G.pos.y); healParty(true); healFx(); flashHint("모닥불에서 모두 회복했다 🔥"); saveGame(); return; }
   if(t==="S"){ stopPath(); enterInterior(INTERIORS.shop); return; }
