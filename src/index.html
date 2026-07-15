@@ -976,11 +976,11 @@ function foeChooseMove(foe,target){
 const TRAINERS={
   "1":{key:"1",name:"탐험가 미루",em:"🧑‍🌾",team:[["racoonmon",10],["cindercat",12]],reward:{greatball:2,potion:3},money:500,intro:"트레이너 미루가 길을 막아섰다!",outro:"…너, 보통이 아니구나. 요즘 숲이 이상해. 정령들이 안절부절못하고, 빛이 점점 옅어져. 위로 갈수록 더 심해질 거야. 부디 조심해."},
   "2":{key:"2",name:"주술사 다온",em:"🧙",team:[["thunderowl",16],["otterwave",17],["vinesnake",18]],reward:{greatball:3,potion:3,repel:1},money:1100,intro:"숲의 주술사 다온이 정령을 깨운다!",outro:"인장의 빛이 그냥 꺼지는 게 아니야 — 누군가, 무언가가 그 힘을 *빨아먹고* 있어. 정령들이 미쳐 날뛰는 것도 그 탓이지. 수정 호수에 가면 진실의 일부가 비칠 거다."},
-  "3":{key:"3",name:"호수지기 미르",em:"🧜",team:[["otterwave",21],["sharkfin",22],["riverdrake",23]],reward:{greatball:3,hyperpotion:2,revive:1},money:1800,intro:"수정 호수의 미르가 물결을 일으킨다!",outro:"호수의 수면을 봐. …제단 쪽으로 검은 그림자가 번지고 있어. 숲의 군주가 홀로 그걸 막아내느라 상처투성이라더라. 우리에겐 시간이 없어."},
-  "4":{key:"4",name:"고원지기 라온",em:"🧗",team:[["magmahound",25],["stormhawk",26],["hedgemoss",27]],reward:{greatball:4,hyperpotion:3,revive:1,candy:1},money:2600,intro:"고원지기 라온이 마지막 관문을 지킨다!",outro:"여기서부턴 군주의 영역이다. 그분은 인장을 지키려 모든 걸 쏟아붓고 있어. …네가 그분을 도울 수 있을지, 아니면 그분마저 쓰러질지. 올라가 직접 봐라."},
-  "X":{key:"X",name:"숲의 군주",em:"🧝",team:[["emberwolf",29],["riverdrake",30],["blazelion",33]],reward:{greatball:6,hyperpotion:4,revive:2,candy:2},money:4000,boss:true,intro:"⚔️ 상처 입은 숲의 군주가 마지막 힘으로 당신을 시험한다!",outro:"…네 정령들과의 유대를, 그 빛을 보았다. 흐려진 인장을 네게 맡기마. 허나 그림자는 아직 완전히 사라지지 않았어. 언젠가 그것이 다시 깨어날 때, 숲을 지킬 자는 너다."},
-  "5":{key:"5",name:"제단 수호자 여명",em:"🛡️",team:[["voltrat",28],["tigerflame",29]],reward:{hyperpotion:3,revive:1},money:3000,intro:"제단 수호자 여명이 앞을 막아선다!",outro:"…통과를 허락하마. 허나 안쪽 수호자는 나보다 강하다."},
-  "6":{key:"6",name:"제단 수호자 황혼",em:"⚔️",team:[["grovespirit",29],["sharkfin",30],["voltrat",31]],reward:{hyperpotion:3,revive:1,candy:1},money:3500,intro:"최후의 수호자 황혼이 마지막 시험을 건다!",outro:"…자격이 있군. 군주께서 기다리신다. 올라가라."}
+  "3":{key:"3",name:"호수지기 미르",em:"🧜",team:[["otterwave",23],["sharkfin",24],["riverdrake",25]],reward:{greatball:3,hyperpotion:2,revive:1},money:1800,intro:"수정 호수의 미르가 물결을 일으킨다!",outro:"호수의 수면을 봐. …제단 쪽으로 검은 그림자가 번지고 있어. 숲의 군주가 홀로 그걸 막아내느라 상처투성이라더라. 우리에겐 시간이 없어."},
+  "4":{key:"4",name:"고원지기 라온",em:"🧗",team:[["magmahound",28],["stormhawk",29],["hedgemoss",31]],reward:{greatball:4,hyperpotion:3,revive:1,candy:1},money:2600,intro:"고원지기 라온이 마지막 관문을 지킨다!",outro:"여기서부턴 군주의 영역이다. 그분은 인장을 지키려 모든 걸 쏟아붓고 있어. …네가 그분을 도울 수 있을지, 아니면 그분마저 쓰러질지. 올라가 직접 봐라."},
+  "X":{key:"X",name:"숲의 군주",em:"🧝",team:[["emberwolf",34],["riverdrake",36],["blazelion",38]],reward:{greatball:6,hyperpotion:4,revive:2,candy:2},money:4000,boss:true,intro:"⚔️ 상처 입은 숲의 군주가 마지막 힘으로 당신을 시험한다!",outro:"…네 정령들과의 유대를, 그 빛을 보았다. 흐려진 인장을 네게 맡기마. 허나 그림자는 아직 완전히 사라지지 않았어. 언젠가 그것이 다시 깨어날 때, 숲을 지킬 자는 너다."},
+  "5":{key:"5",name:"제단 수호자 여명",em:"🛡️",team:[["voltrat",30],["tigerflame",32]],reward:{hyperpotion:3,revive:1},money:3000,intro:"제단 수호자 여명이 앞을 막아선다!",outro:"…통과를 허락하마. 허나 안쪽 수호자는 나보다 강하다."},
+  "6":{key:"6",name:"제단 수호자 황혼",em:"⚔️",team:[["grovespirit",31],["sharkfin",33],["voltrat",34]],reward:{hyperpotion:3,revive:1,candy:1},money:3500,intro:"최후의 수호자 황혼이 마지막 시험을 건다!",outro:"…자격이 있군. 군주께서 기다리신다. 올라가라."}
 };
 
 /* ===== RIVAL + TRAINER-NPCS + LORE NPCS ===== */
@@ -1132,7 +1132,7 @@ TRAINERS["i"]={key:"i",name:"엘리트 · 초원의 로사",em:"🌿",team:[["gr
 TRAINERS["j"]={key:"j",name:"엘리트 · 심연의 마레",em:"🌊",team:[["otterwave",38],["sharkfin",39],["krakentide",40]],reward:{hyperpotion:2,greatball:3},money:4500,intro:"마레: 물의 깊이를 견딜 수 있겠나?",outro:"마레: 파도를 넘었군. 계속 오르게."};
 TRAINERS["k"]={key:"k",name:"엘리트 · 불꽃의 이그니",em:"🔥",team:[["magmahound",39],["tigerflame",40],["blazelion",41]],reward:{hyperpotion:3,greatball:3},money:5000,intro:"이그니: 이 불길을 꺼뜨릴 수 있겠어?!",outro:"이그니: …재가 될 뻔했군. 인정하지."};
 TRAINERS["l"]={key:"l",name:"엘리트 · 창공의 제피르",em:"🌪️",team:[["thunderowl",40],["stormhawk",41],["emberdrake",42]],reward:{hyperpotion:3,greatball:4},money:5500,intro:"제피르: 마지막 관문이다. 하늘의 시련을 받으라!",outro:"제피르: 챔피언이 그대를 기다린다. 가라."};
-TRAINERS["q"]={key:"q",name:"챔피언 아리엘",em:"👑",champion:true,team:[["crablord",44],["blazelion",45],["stormhawk",46],["dawnwyrm",47]],reward:{hyperpotion:5,greatball:5},money:12000,intro:"챔피언 아리엘: 여기까지 오다니 대단하군. 허나 챔피언의 벽은 높다 — 전력을 다해라!",outro:"챔피언 아리엘: …졌다. 그대가 새로운 챔피언이다. 정령의 숲이 그대를 영원히 기억하리라!"};
+TRAINERS["q"]={key:"q",name:"챔피언 아리엘",em:"👑",champion:true,team:[["crablord",42],["blazelion",43],["stormhawk",44],["dawnwyrm",45]],reward:{hyperpotion:5,greatball:5},money:12000,intro:"챔피언 아리엘: 여기까지 오다니 대단하군. 허나 챔피언의 벽은 높다 — 전력을 다해라!",outro:"챔피언 아리엘: …졌다. 그대가 새로운 챔피언이다. 정령의 숲이 그대를 영원히 기억하리라!"};
 let _talking=false;
 const _npcTalk={};
 function npcAmbient(npc){
@@ -1874,7 +1874,12 @@ function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
   if(_dark){ const noct=pool.filter(d=>NIGHT_MONS.has(d.id)); if(noct.length&&Math.random()<0.55)return noct[ri(0,noct.length-1)]; }
   else { const diur=pool.filter(d=>DAY_MONS.has(d.id)); if(diur.length&&Math.random()<0.45)return diur[ri(0,diur.length-1)]; }
   return pool[ri(0,pool.length-1)]; }
-function startEncounter(depth){ const al=avgLevel(); const sp=pickWild(al,depth);
+// 지역별 의도 레벨(index=region). 야생 레벨의 하한이자 XP 끌개의 앵커로 함께 쓰인다.
+// 덜 싸운 플레이어는 야생 하한이 끌어올리고, 과하게 그라인딩한 플레이어는 앵커 위에서
+// XP가 급감해(xpMult) 레벨이 지역에 수렴 → 고정 게이트 난이도가 그라인딩 양과 무관해진다.
+const WILD_FLOOR=[5,9,15,20,23,28,34];
+function wildFloor(){ return (G&&G.pos&&typeof region==="function")?(WILD_FLOOR[region(G.pos.y)]||0):0; }
+function startEncounter(depth){ const al=Math.max(avgLevel(),wildFloor()); const sp=pickWild(al,depth);
   let lvl=Math.round(al+ri(-1,1)+depth*4); if(sp.tier>=2)lvl+=ri(1,3); if(sp.tier>=3)lvl+=ri(2,4);
   lvl+=DIFF[CONFIG.difficulty].lvl; lvl=clamp(lvl,2,58);
   G.foe=makeMon(sp.id,lvl); G.trainer=null; G.seen.add(sp.id); G.inBattle=true; G.busy=false;
@@ -2849,7 +2854,12 @@ async function evolveCheck(m,animate){ const sp=byId(m.id);
     return true; }
   return false; }
 
-async function gainXpFor(m,gain,isLead){ m.xp+=Math.floor(gain*(isLead?1:0.4));
+// XP 끌개: 오버월드에서만, 정령 레벨이 지역 앵커를 넘을수록 획득 XP를 급감시켜
+// 레벨이 지역에 수렴하게 한다. 실내(체육관·특수지역)에선 관여하지 않는다(mult=1).
+function xpMult(level){ if(!G||G.indoor||!G.pos||typeof region!=="function")return 1;
+  const anc=WILD_FLOOR[region(G.pos.y)]||0, over=level-anc;
+  return over<0?1.4:over<=2?1.0:over<=5?0.45:0.15; }
+async function gainXpFor(m,gain,isLead){ m.xp+=Math.floor(gain*(isLead?1:0.4)*xpMult(m.level));
   if(isLead)setExpBar();
   let need=m.level*30; let leveled=false;
   while(m.xp>=need && m.level<60){ m.xp-=need; m.level++; const sp=byId(m.id); recalc(m,sp); m.hp=m.maxHp; leveled=true; m.friendship=(m.friendship||0)+5;
@@ -3577,7 +3587,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region};
 
 /* ===================== INIT ===================== */
 if(hasSave()) $("continueBtn").style.display="block";
