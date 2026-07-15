@@ -202,6 +202,9 @@
   #logBody .logline:nth-child(odd){color:var(--muted)}
   .skiphint{position:absolute;right:12px;top:10px;font-size:10px;color:var(--muted);z-index:5;pointer-events:none;opacity:.7}
   /* 수동 전투 진행 큐 (▼ 탭하면 계속) */
+  .evo-cancel{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:8;
+    padding:8px 16px;border-radius:12px;font-size:13px;font-weight:700;color:#eafaf3;cursor:pointer;
+    background:rgba(20,16,30,.9);border:1px solid rgba(255,255,255,.25);box-shadow:0 3px 12px rgba(0,0,0,.4)}
   .adv-cue{position:absolute;right:14px;bottom:10px;font-size:15px;color:var(--mint);z-index:6;pointer-events:none;opacity:0;transition:opacity .15s}
   .adv-cue.show{opacity:1;animation:advBounce .8s ease-in-out infinite}
   @keyframes advBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
@@ -3037,8 +3040,22 @@ async function evolveAnimate(side,m){ const sp=spriteEl(side); const mir=side===
   fxEvolveFlash(side); Audio.sfx("levelup"); await wait(fxT(200));
   sp.style.filter=""; setCrit(side,m); sp.style.animation=""; particles(side,"✨",12); fxBurst(side,m.type); }
 function evoCondMet(m,b){ if(b.lv && m.level<b.lv)return false; if(b.friend && (m.friendship||0)<b.friend)return false; if(b.time){ const ph=(typeof dayPhase==="function")?dayPhase():"day"; const night=(ph==="night"||ph==="dusk"); if(b.time==="night"&&!night)return false; if(b.time==="day"&&night)return false; } if(b.move && !(m.moves||[]).includes(b.move))return false; if(b.gender && m.gender!==b.gender)return false; return true; }
+// 진화 중 취소 입력 대기(B/X/Esc/취소버튼). 취소하면 true.
+function evoCancelWindow(){ return new Promise(res=>{ let done=false;
+  const finish=v=>{ if(done)return; done=true; cleanup(); res(v); };
+  const onKey=e=>{ const k=(e.key||"").toLowerCase(); if(k==="x"||k==="b"||k==="escape"||k==="backspace"){ e.preventDefault(); finish(true); } };
+  const field=(typeof $!=="undefined")&&$("battleField");
+  const btn=document.createElement("button"); btn.className="evo-cancel"; btn.textContent="✕ 진화 취소";
+  const onBtn=e=>{ if(e&&e.cancelable)e.preventDefault(); finish(true); };
+  if(field){ field.appendChild(btn); btn.addEventListener("pointerdown",onBtn); }
+  document.addEventListener("keydown",onKey);
+  const cleanup=()=>{ document.removeEventListener("keydown",onKey); try{btn.remove();}catch(_){} clearTimeout(t); };
+  const t=setTimeout(()=>finish(false), 2200);   // 입력 없으면 진화 진행
+}); }
 async function applyEvolution(m,to,animate){ const oldName=m.name;
-  if(animate){ setMsg(`어라…? <b>${oldName}</b>의 모습이…`); await mw(820); }
+  if(animate){ setMsg(`어라…? <b>${oldName}</b>의 모습이…`);
+    const cancelled=await evoCancelWindow();
+    if(cancelled){ setMsg(`<b>${oldName}</b>은(는) 진화를 멈췄다!`); if(Audio.sfx)Audio.sfx("blip"); await mw(950); return false; } }
   m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type; m.type2=to.type2||null; if(Audio.cry)Audio.cry(m.id,m.type);
   if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
   G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
@@ -3047,24 +3064,8 @@ async function applyEvolution(m,to,animate){ const oldName=m.name;
   return true; }
 async function evolveCheck(m,animate){ const sp=byId(m.id);
   if(sp.evolveBranch){ for(const b of sp.evolveBranch){ if(evoCondMet(m,b)){ const to=byId(b.to); if(to)return await applyEvolution(m,to,animate); } } return false; }
-  if(sp.evolveTo && !sp.evolveItem && !sp.evolveFriend && m.level>=sp.evolveLv){ const to=byId(sp.evolveTo); const oldName=m.name;
-    if(animate){ setMsg(`어라…? <b>${oldName}</b>의 모습이…`); await mw(820); }
-    m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type;
-    if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
-    G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
-    if(animate){ await evolveAnimate("me",m); renderCombatants();
-      setMsg(`🎉 <b>${oldName}</b>이(가) <b>${m.name}</b>(으)로 진화했다!`); await mw(1100); }
-    else toast(`${oldName} → ${m.name} 진화!`);
-    return true; }
-  if(sp.evolveTo && sp.evolveFriend && (m.friendship||0)>=sp.evolveFriend){ const to=byId(sp.evolveTo); const oldName=m.name;
-    if(animate){ setMsg(`어라? <b>${oldName}</b>의 모습이…`); await mw(820); }
-    m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type;
-    if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
-    G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
-    if(animate){ await evolveAnimate("me",m); renderCombatants();
-      setMsg(`💚 깊은 유대로 <b>${oldName}</b>이(가) <b>${m.name}</b>(으)로 진화했다!`); await mw(1100); }
-    else toast(`${oldName}이(가) ${m.name}(으)로 진화!`);
-    return true; }
+  if(sp.evolveTo && !sp.evolveItem && !sp.evolveFriend && m.level>=sp.evolveLv){ const to=byId(sp.evolveTo); if(to)return await applyEvolution(m,to,animate); }
+  if(sp.evolveTo && sp.evolveFriend && (m.friendship||0)>=sp.evolveFriend){ const to=byId(sp.evolveTo); if(to)return await applyEvolution(m,to,animate); }
   return false; }
 
 // XP 끌개: 오버월드에서만, 정령 레벨이 지역 앵커를 넘을수록 획득 XP를 급감시켜
