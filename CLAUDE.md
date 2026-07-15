@@ -73,6 +73,11 @@ verify 내용:
 - **화면 전환 와이프** (`playBattleWipe`, `#battleWipe` + `.bwbar`): 보라 블라인드 11줄이 대각선 스태거로 스윕. 완전히 덮이는 시점(~340ms)에 필드→전투 스왑이 커버 아래 숨는다. `transitionToBattle`가 이 타이밍을 받아 쓴다. reduceMotion이면 기존 플래시만.
 - **정령구 던지기 등장** (`sendOutAnim` 업그레이드): 내 정령은 항상, 상대는 트레이너전일 때 볼을 포물선으로 던져 터뜨리며 등장(throw sfx + 캡처플래시 + 반짝임). 야생 상대는 기존 poof. 내 정령엔 "가랏! {이름}!" 라벨. 교체 등장에도 적용된다.
 - 검증: Playwright로 전환 타이밍별(170/360/600/1100ms) 캡처해 커버·볼·라벨·클린 종료 확인.
+
+### HP 틱음 (포켓몬식 전투 손맛)
+- `Audio.hpTick(fromPct,toPct)`: HP바가 줄 때 감소량에 비례한 짧은 square 비프 연쇄. 위험권(≤20%)으로 떨어지면 더 높고 급하게 + 경고음 2노트.
+- 훅: `setHpBar`의 드레인 분기(`pct < g.w`)에서 새 타깃일 때만(`pct < g.t`) 1회 발동 — 재렌더 중복 방지. me/foe 양쪽, 상태이상 잔뎀 포함 모든 HP 감소에 적용.
+- 검증: `scripts/audio_test.js`(Playwright, Chromium Web Audio 계측) — 감소량 비례 비프 수 + 위험권 경고음 + 무감소 무음. verify.sh에 playwright 게이트로 연결(jsdom엔 Web Audio 없음).
 3. 신규 지역/콘텐츠는 마지막.
 
 ### 첫 전투 코치 (`const Coach`)

@@ -45,4 +45,11 @@ if node -e "require.resolve('jsdom')" 2>/dev/null; then
 else
   echo "⏭️  스모크 테스트 건너뜀 (npm install jsdom 하면 실행됨)"
 fi
+
+# 5) 오디오 테스트 (Playwright 필요 — jsdom엔 Web Audio가 없어 실제 브라우저로만 검증 가능)
+if node -e "require.resolve('playwright')" 2>/dev/null; then
+  node scripts/audio_test.js "$F" || exit 1
+else
+  echo "⏭️  오디오 테스트 건너뜀 (npm install playwright 하면 실행됨)"
+fi
 echo "🎉 모든 검증 통과"
