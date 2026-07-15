@@ -3425,7 +3425,11 @@ function openDetail(id){ const sp=byId(id); Audio.sfx("blip"); $("ddTitle").text
 
 /* ===================== BAG ===================== */
 $("openBag").addEventListener("click",()=>{Audio.sfx("blip");renderBag();openOverlay("bagOverlay");});
-function openBattleBag(){ if(G.busy)return; Audio.sfx("blip"); renderBag(); openOverlay("bagOverlay"); }
+function openBattleBag(){ if(G.busy)return; Audio.sfx("blip");
+  // 전투에선 볼 주머니가 비어있으니(포획은 '포획' 버튼), 쓸 물건이 있는 첫 주머니로 연다.
+  const hasUsable=tab=>BAG_ITEMS.some(it=>it.use&&it.where!=="map"&&bagPocket(it)===tab&&(G.items[it.key]||0)>0);
+  if(!hasUsable(G._bagTab||"ball")){ const t=BAG_TABS.map(x=>x[0]).find(hasUsable); if(t)G._bagTab=t; }
+  renderBag(); openOverlay("bagOverlay"); }
 function firstFainted(){ return G.party.find(m=>m.hp<=0); }
 const BAG_ITEMS=[
   {key:"ball",em:"🔮",nm:"정령구",ds:"야생 정령을 포획"},
