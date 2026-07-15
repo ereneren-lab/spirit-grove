@@ -2002,7 +2002,18 @@ function maybeRematch(t){ const tr=TRAINERS[t];
 function transitionToBattle(after){ heldDir=null; stopPath(); G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; if(G.party)G.party.forEach(m=>{ if(m){ m._confuse=0; m._seeded=false; m._flinch=false; m._acted=false; } }); if(G.foe){ G.foe._confuse=0; G.foe._seeded=false; G.foe._flinch=false; G.foe._acted=false; } const wrap=$("canvasWrap"); wrap.classList.add("zoom");
   const fl=$("flash"); fl.classList.remove("go"); void fl.offsetWidth; fl.classList.add("go");
   const covered=playBattleWipe();   // 블라인드 바가 화면을 덮는 시점(ms)을 돌려줌
-  setTimeout(()=>{ wrap.classList.remove("zoom"); Field.stop(); show("battle"); setupBattleUI(); after(); showMain(); }, covered); }
+  const seq=!(typeof G!=="undefined" && G && G.trainer);   // 야생·보스 = 순차 인트로, 트레이너 = 즉시(별도 등장 대사 있음)
+  setTimeout(()=>{ wrap.classList.remove("zoom"); Field.stop(); show("battle");
+    setupBattleUI(seq); after();                            // seq면 foeOnly로 상대만 먼저 등장
+    if(seq)battleIntroMe(); else showMain(); }, covered); }
+// 포켓몬식 순차 인트로: 상대 등장("야생 X 나타났다") 한 박자 뒤 → "가랏! 내정령!" 볼 던지며 등장 → 메뉴.
+async function battleIntroMe(){
+  if(G)G.busy=true; if(mainMenu)mainMenu.style.display="none";   // 인트로 동안 메뉴 숨김·입력 차단
+  const meSp=$("meSprite"); if(meSp)meSp.style.opacity="0";       // 아직 등장 전 — 깜빡임 방지
+  await wait(fxT(720));                                           // "야생 X 나타났다" 한 박자
+  await sendOutAnim("me");                                        // 볼 던지기 + "가랏! 이름!" 라벨
+  const me=activeMon(); if(me&&Audio.cry)Audio.cry(me.id,me.type);
+  if(G)G.busy=false; showMain(); }
 // 전투 진입 블라인드 와이프. 바가 완전히 덮이는 순간(전환 스왑 타이밍)을 ms로 반환.
 function playBattleWipe(){
   const w=$("battleWipe");
