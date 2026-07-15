@@ -281,6 +281,25 @@
 
   .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60}
   .flash.go{animation:flashAnim .5s} @keyframes flashAnim{0%{opacity:0}30%{opacity:.85}100%{opacity:0}}
+  /* 전투 진입 와이프 (블라인드 스윕) */
+  .battle-wipe{position:absolute;inset:0;z-index:70;pointer-events:none;overflow:hidden;display:none}
+  .battle-wipe.go{display:block}
+  .battle-wipe .bwbar{position:absolute;left:0;width:100%;height:9.5%;
+    background:linear-gradient(90deg,#1b1636,#4a2c6e 45%,#6a3c8e 50%,#4a2c6e 55%,#1b1636);
+    transform:scaleX(0);transform-origin:left center;will-change:transform}
+  .battle-wipe.go .bwbar{animation:bwipe .72s cubic-bezier(.5,0,.5,1) forwards}
+  @keyframes bwipe{0%{transform:scaleX(0);transform-origin:left center}
+    42%{transform:scaleX(1);transform-origin:left center}
+    58%{transform:scaleX(1);transform-origin:right center}
+    100%{transform:scaleX(0);transform-origin:right center}}
+  /* 정령구 던지기 */
+  .throwball{position:absolute;width:26px;height:26px;border-radius:50%;z-index:22;pointer-events:none;
+    background:radial-gradient(circle at 35% 30%,#fff 6%,#d86a8a 30%,#a83a5a 55%,#5a1a30 100%);
+    box-shadow:0 0 8px rgba(216,106,138,.7),inset 0 -3px 4px rgba(0,0,0,.3)}
+  .throwball::after{content:"";position:absolute;left:50%;top:46%;width:8px;height:8px;transform:translate(-50%,-50%);
+    border-radius:50%;background:radial-gradient(circle,#fff 40%,#e0c8f0 100%);box-shadow:0 0 4px #fff}
+  .sendlabel{position:absolute;z-index:23;pointer-events:none;font-weight:800;font-size:15px;color:#eafaf3;
+    text-shadow:0 2px 6px rgba(0,0,0,.8),0 0 10px rgba(168,240,210,.6);white-space:nowrap}
   .levelup{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(.6);background:linear-gradient(180deg,var(--amber),#d98947);color:var(--bg);padding:14px 26px;border-radius:14px;font-weight:800;font-size:17px;z-index:55;opacity:0;pointer-events:none;box-shadow:0 12px 30px rgba(0,0,0,.4)}
   .levelup.go{animation:lvl 1.4s ease}
   @keyframes lvl{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}80%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-58%) scale(1)}}
@@ -609,6 +628,7 @@
     </div>
 
     <div class="flash" id="flash"></div>
+    <div class="battle-wipe" id="battleWipe"></div>
     <div class="levelup" id="levelup">레벨 업!</div>
     <div class="toast" id="toast"></div>
   </div>
@@ -1967,7 +1987,18 @@ function maybeRematch(t){ const tr=TRAINERS[t];
   if(confirm(`${tr.name}에게 재대결을 신청할까?\n(레벨이 오르고 보상은 절반)`)) startTrainer(t); }
 function transitionToBattle(after){ heldDir=null; stopPath(); G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; if(G.party)G.party.forEach(m=>{ if(m){ m._confuse=0; m._seeded=false; m._flinch=false; m._acted=false; } }); if(G.foe){ G.foe._confuse=0; G.foe._seeded=false; G.foe._flinch=false; G.foe._acted=false; } const wrap=$("canvasWrap"); wrap.classList.add("zoom");
   const fl=$("flash"); fl.classList.remove("go"); void fl.offsetWidth; fl.classList.add("go");
-  setTimeout(()=>{ wrap.classList.remove("zoom"); Field.stop(); show("battle"); setupBattleUI(); after(); showMain(); },280); }
+  const covered=playBattleWipe();   // 블라인드 바가 화면을 덮는 시점(ms)을 돌려줌
+  setTimeout(()=>{ wrap.classList.remove("zoom"); Field.stop(); show("battle"); setupBattleUI(); after(); showMain(); }, covered); }
+// 전투 진입 블라인드 와이프. 바가 완전히 덮이는 순간(전환 스왑 타이밍)을 ms로 반환.
+function playBattleWipe(){
+  const w=$("battleWipe");
+  if(!w || CONFIG.reduceMotion){ return 280; }   // 모션 최소화 시 기존 플래시만
+  w.innerHTML=""; const N=11;
+  for(let i=0;i<N;i++){ const b=document.createElement("div"); b.className="bwbar"; b.style.top=(i*100/N)+"%"; b.style.animationDelay=(i*10)+"ms"; w.appendChild(b); }
+  w.classList.remove("go"); void w.offsetWidth; w.classList.add("go");
+  setTimeout(()=>w.classList.remove("go"), 760);
+  return 340;   // 42%*720ms ≈ 300 + 마지막 바 지연 여유
+}
 
 /* ===================== 첫 전투 코치 =====================
    첫 야생 전투 딱 한 번만. 핵심 루프(싸운다 → 약하게 만든다 → 잡는다)를 손에 쥐여준다.
@@ -2900,11 +2931,35 @@ function fxPoof(side){ if(CONFIG.reduceMotion)return; const sp=spriteEl(side),f=
   const fl=document.createElement("div"); fl.className="fx-evoflash"; fl.style.left=cx+"px"; fl.style.top=cy+"px"; fl.style.width=fl.style.height="34px"; f.appendChild(fl);
   fl.animate([{transform:"translate(-50%,-50%) scale(.4)",opacity:.95},{transform:"translate(-50%,-50%) scale(3.6)",opacity:0}],{duration:fxT(420),easing:"ease-out"}).finished.then(()=>fl.remove()).catch(()=>fl.remove());
   particles(side,"✨",6); }
-async function sendOutAnim(side){ const sp=spriteEl(side); if(!sp)return; const mir=side==="me"?"scaleX(-1) ":"";
-  if(CONFIG.reduceMotion){ fxPoof(side); return; }
-  sp.style.animation="none"; sp.style.transform=mir+"scale(0.1)"; sp.style.opacity="0"; fxPoof(side); Audio.sfx("blip");
+// 정령구를 던져 정령이 튀어나오는 등장 연출. 스프라이트를 튕겨 키워 등장시킨다.
+async function _scaleInSprite(sp,mir){
   try{ await sp.animate([{transform:mir+"scale(0.1)",opacity:0},{transform:mir+"scale(1.18)",opacity:1},{transform:mir+"scale(0.94)",opacity:1},{transform:mir+"scale(1)",opacity:1}],{duration:fxT(440),easing:"cubic-bezier(.34,1.56,.64,1)"}).finished; }catch(e){}
   sp.style.transform=""; sp.style.opacity=""; sp.style.animation=""; }
+async function sendOutAnim(side){ const sp=spriteEl(side); if(!sp)return; const mir=side==="me"?"scaleX(-1) ":"";
+  // 볼 던지기: 내 정령은 항상, 상대는 트레이너 전투일 때(야생은 그냥 나타남)
+  const ballThrow = !CONFIG.reduceMotion && (side==="me" || (side==="foe" && typeof G!=="undefined" && G && G.trainer));
+  sp.style.animation="none"; sp.style.transform=mir+"scale(0.1)"; sp.style.opacity="0";
+  if(!ballThrow){ fxPoof(side); Audio.sfx("blip"); await _scaleInSprite(sp,mir); return; }
+  const field=$("battleField"); if(!field){ fxPoof(side); await _scaleInSprite(sp,mir); return; }
+  const fr=field.getBoundingClientRect(), sr=sp.getBoundingClientRect();
+  const tx=sr.left-fr.left+sr.width/2, ty=sr.top-fr.top+sr.height*0.42;   // 도착 지점(스프라이트 중심)
+  const fromX=side==="me"?fr.width*0.12:fr.width*0.88, fromY=fr.height*(side==="me"?1.02:-0.02);
+  // "가랏! 이름!" 라벨 (내 정령 등장 시)
+  if(side==="me" && typeof activeMon==="function"){ const m=activeMon(); if(m){ const lab=document.createElement("div"); lab.className="sendlabel";
+    lab.textContent=`가랏! ${dispName(m)}!`; lab.style.left="14px"; lab.style.top="10px"; field.appendChild(lab);
+    lab.animate([{opacity:0,transform:"translateY(6px)"},{opacity:1,transform:"translateY(0)"},{opacity:1},{opacity:0}],{duration:fxT(1100),easing:"ease-out"}).finished.then(()=>lab.remove()).catch(()=>lab.remove()); } }
+  // 볼이 포물선으로 날아감
+  const ball=document.createElement("div"); ball.className="throwball"; field.appendChild(ball);
+  Audio.sfx("throw");
+  const apexY=Math.min(fromY,ty)-fr.height*0.28;
+  try{ await ball.animate([
+    {left:fromX+"px",top:fromY+"px",transform:"translate(-50%,-50%) scale(.8) rotate(0deg)",offset:0},
+    {left:(fromX+tx)/2+"px",top:apexY+"px",transform:"translate(-50%,-50%) scale(1) rotate(360deg)",offset:0.5},
+    {left:tx+"px",top:ty+"px",transform:"translate(-50%,-50%) scale(1) rotate(720deg)",offset:1}
+  ],{duration:fxT(440),easing:"cubic-bezier(.4,0,.7,1)"}).finished; }catch(e){}
+  // 터지며 정령 등장
+  fxCaptureFlash({x:tx,y:ty}); Audio.sfx("blip"); particles(side,"✨",7); ball.remove();
+  await _scaleInSprite(sp,mir); }
 function setExpBar(){ const el=$("meExp"); if(!el)return; const m=activeMon(); if(!m){el.style.width="0%";return;} const need=m.level*30; el.style.width=clamp((m.xp/need)*100,0,100)+"%"; }
 async function evolveAnimate(side,m){ const sp=spriteEl(side); const mir=side==="me"?"scaleX(-1) ":"";
   sp.style.animation="none";
