@@ -1306,7 +1306,10 @@ function handleQuestTalk(q,npc){ G.quests=G.quests||{}; const st=G.quests[q.id];
   showDialog(dp, ()=>{ _talking=false; if(cb)cb(); }); }
 // 대사 본문에 "이름: " 접두사가 있으면 제거 (이름 라벨과 중복되지 않게)
 function stripNamePrefix(name,text){ if(!name||!text)return text; const p=name+":"; return text.indexOf(p)===0?text.slice(p.length).replace(/^\s+/,""):text; }
+function faceNpcToPlayer(npc){ if(!npc||typeof G==="undefined"||!G||!G.pos)return; const dx=G.pos.x-npc.x, dy=G.pos.y-npc.y; if(!dx&&!dy)return;
+  npc.dir = Math.abs(dx)>=Math.abs(dy) ? (dx<0?"left":"right") : (dy<0?"up":"down"); }
 function talkNPC(npc){ if(_talking||dialogActive())return;
+  faceNpcToPlayer(npc);   // 말 걸면 플레이어 쪽으로 돌아본다 — 로밍 NPC가 딴 데 보던 문제
   if(npc.daycare){ Audio.sfx&&Audio.sfx("blip"); openDaycare(); return; }
   if(npc.moveExpert){ Audio.sfx&&Audio.sfx("blip"); openMoveExpert(); return; }
   if(typeof QUESTS!=="undefined"){ const _q=questForGiver(npc.id); if(_q){ _talking=true; Audio.sfx("blip"); handleQuestTalk(_q,npc); return; } }
