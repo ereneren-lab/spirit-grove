@@ -3263,7 +3263,8 @@ async function winBattle(){ $("foeSprite").classList.add("faint"); Audio.sfx("fa
   endBattle(); }
 
 async function trainerDefeated(){ const tr=G.trainer; const firstWin=!G.defeated.has(tr.key);
-  G.defeated.add(tr.key); if(G.rematchWanted)G.rematchWanted.delete(tr.key); Field.removeNpc(tr.key); if(tr._npcId)Field.removeNpc("NPC_"+tr._npcId); Audio.sfx(firstWin?"victory":"win");
+  G.defeated.add(tr.key); if(G.rematchWanted)G.rematchWanted.delete(tr.key); Field.removeNpc(tr.key); if(tr._npcId)Field.removeNpc("NPC_"+tr._npcId);
+  Audio.sfx("win"); Audio.startMusic("victory");   // 야생 승리처럼 깨끗한 승리 팡파르 트랙으로 통일(전투 음악 교체). endBattle이 필드 음악으로 복귀.
   setMsg(`<b>${tr.name}</b>을(를) 물리쳤다!`); await mw(900);
   const money=tr.rematch?Math.floor(tr.money*0.5):tr.money; G.money+=money; updateMoney();
   let parts=["💰 "+money];
@@ -3995,7 +3996,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
