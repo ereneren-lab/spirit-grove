@@ -859,8 +859,8 @@ const TYPE_CLASS={fire:"t-fire",water:"t-water",grass:"t-grass",elec:"t-elec",no
 const TYPE_COLOR={fire:"#f08a5d",water:"#5d9cf0",grass:"#7fd16f",elec:"#f0cf5d",normal:"#c7bca6",flying:"#9db8e0",rock:"#c2a878",ice:"#88d6e6",poison:"#b57fd0",ground:"#d2a862"};
 const TYPE_ICON={fire:"🔥",water:"💧",grass:"🍃",elec:"⚡",normal:"⭐",flying:"🪶",rock:"🪨"};
 const ABILITY_KO={blaze:"맹화",torrent:"급류",overgrow:"신록",static:"정전기",intimidate:"위협",sturdy:"옹골참",thickfat:"두꺼운지방",guts:"근성"};
-const ABILITY_DESC={blaze:"HP가 낮으면 불 기술 위력 ↑",torrent:"HP가 낮으면 물 기술 위력 ↑",overgrow:"HP가 낮으면 풀 기술 위력 ↑",static:"맞으면 30% 확률로 상대 마비",intimidate:"등장 시 상대 공격 1 ↓",sturdy:"풀피일 때 한 방에 안 쓰러짐",thickfat:"불 기술 피해 절반",guts:"상태이상이면 공격 ↑"};
-const DEFAULT_ABILITY={fire:"blaze",water:"torrent",grass:"overgrow",elec:"static",normal:"guts",flying:"intimidate",rock:"sturdy"};
+const ABILITY_DESC={blaze:"HP가 낮으면 불 기술 위력 ↑",torrent:"HP가 낮으면 물 기술 위력 ↑",overgrow:"HP가 낮으면 풀 기술 위력 ↑",static:"맞으면 30% 확률로 상대 마비",intimidate:"등장 시 상대 공격 1 ↓",sturdy:"풀피일 때 한 방에 안 쓰러짐",thickfat:"불 기술 피해 절반",guts:"상태이상이면 공격 ↑",levitate:"땅 타입 기술 무효",poisonpoint:"맞으면 30% 확률로 상대 중독",icebody:"싸라기눈일 때 매턴 회복"};
+const DEFAULT_ABILITY={fire:"blaze",water:"torrent",grass:"overgrow",elec:"static",normal:"guts",flying:"intimidate",rock:"sturdy",ice:"icebody",poison:"poisonpoint",ground:"sturdy"};
 const NATURES=[
   {k:"hardy",ko:"노력하는",up:null,down:null},{k:"docile",ko:"온순한",up:null,down:null},
   {k:"lonely",ko:"외로운",up:"atk",down:"def"},{k:"brave",ko:"용감한",up:"atk",down:"spd"},
@@ -878,7 +878,7 @@ const HELD_ITEMS={
   cureberry:{ko:"정화열매",em:"🍇",desc:"상태이상이 되면 회복(1회)"},
   powerband:{ko:"힘의띠",em:"💪",desc:"기술 위력이 약간 오른다"},
 };
-const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts"};
+const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate"};
 const STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦",frz:"냉동"};
 const STATUS_CLS={psn:"b-psn",brn:"b-brn",par:"b-par",slp:"b-slp",frz:"b-frz"};
 const EFF={
@@ -908,6 +908,7 @@ const MOVES={
   sunnyday:{name:"쾌청",type:"fire",power:0,acc:100,pp:5,pri:0,eff:{weather:"sun"}},
   raindance:{name:"비바라기",type:"water",power:0,acc:100,pp:5,pri:0,eff:{weather:"rain"}},
   sandstorm:{name:"모래바람",type:"rock",power:0,acc:100,pp:5,pri:0,eff:{weather:"sand"}},
+  hailstorm:{name:"싸라기눈",type:"ice",power:0,acc:100,pp:5,pri:0,eff:{weather:"hail"}},
   quickjab:{name:"날쌘일격",type:"normal",power:40,acc:100,pp:30,pri:1},
   ember:{name:"불꽃세례",type:"fire",power:42,acc:100,pp:25,pri:0,eff:{status:"brn",chance:0.1}},
   flare:{name:"화염방사",type:"fire",power:58,acc:95,pp:15,pri:0,eff:{status:"brn",chance:0.12}},
@@ -1063,7 +1064,7 @@ const DEX=[
   {id:"snowl",name:"설올빼미",em:"🦉",type:"flying",type2:"ice",tier:2,base:{hp:62,atk:16,def:14,spd:24,spa:20,spDef:16},moves:["peck","icebeam","gust","wingatk"],learn:[[32,"skyrush"]]},
   {id:"cryogon",name:"동결룡",em:"🐋",type:"ice",type2:"water",tier:3,base:{hp:84,atk:24,def:28,spd:14,spa:24,spDef:22},moves:["blizzard","rockslide","icebeam","boulder"],learn:[]},
   {id:"iceling",name:"얼음정",em:"🧊",type:"ice",tier:1,base:{hp:48,atk:12,def:16,spd:12,spa:16,spDef:16},moves:["tackle","iceshard"],learn:[[14,"icebeam"],[20,"harden"]],evolveTo:"frostwyrm",evolveLv:32},
-  {id:"frostwyrm",name:"빙하룡",em:"❄️",type:"ice",tier:3,base:{hp:82,atk:22,def:26,spd:16,spa:26,spDef:24},moves:["blizzard","icebeam","crush","harden"],learn:[]},
+  {id:"frostwyrm",name:"빙하룡",em:"❄️",type:"ice",tier:3,base:{hp:82,atk:22,def:26,spd:16,spa:26,spDef:24},moves:["blizzard","icebeam","crush","harden"],learn:[[34,"hailstorm"]]},
   {id:"drakeling",name:"새끼용",em:"🦎",type:"normal",tier:1,base:{hp:50,atk:16,def:14,spd:14,spa:12,spDef:12},moves:["tackle","headbutt"],learn:[[16,"crush"],[22,"slam"]],evolveTo:"wyverna",evolveLv:25},
   {id:"wyverna",name:"비룡",em:"🐉",type:"normal",tier:2,base:{hp:70,atk:22,def:20,spd:18,spa:16,spDef:16},moves:["crush","headbutt","slam","furyswipe"],learn:[[36,"gust"]],evolveTo:"skydrake",evolveLv:42},
   {id:"skydrake",name:"천공룡",em:"🐲",type:"normal",type2:"flying",tier:3,base:{hp:96,atk:30,def:26,spd:26,spa:22,spDef:24},moves:["skyrush","crush","wingatk","headbutt"],learn:[]},
@@ -1142,6 +1143,7 @@ function recalc(m,sp,full){ sp=sp||byId(m.id);
 function stageMul(s){ return s>=0?(2+s)/2:2/(2-s); }
 function effSpd(m){ return m.spd*stageMul(m.stages.spd)*(m.status==="par"?0.5:1); }
 function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&def.type2!==def.type)eff*=EFF[move.type][def.type2];
+  if(def.ability==="levitate" && move.type==="ground")eff=0;   // 부유: 땅 기술 무효
   const burnMul=(att.status==="brn" && att.ability!=="guts")?0.5:1;
   const SPEC={fire:1,water:1,grass:1,elec:1,ice:1}; const isSpec=!!SPEC[move.type];   // 얼음도 특수(독·땅은 물리)
   const A=isSpec?(att.spa||att.atk):att.atk, D=isSpec?(def.spDef||def.def):def.def;
@@ -1152,7 +1154,7 @@ function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&d
   if(def.ability==="thickfat" && move.type==="fire") abil*=0.5;
   if(att.held==="powerband") abil*=1.1;
   const lvf=2*att.level/5+2; const stab=(move.type===att.type||(att.type2&&move.type===att.type2))?1.5:1; const crit=Math.random()<1/16?1.5:1;
-  let wMul=1; if(typeof G!=="undefined"&&G&&G.weather){ if(G.weather==="sun"){ if(move.type==="fire")wMul=1.3; else if(move.type==="water")wMul=0.7; } else if(G.weather==="rain"){ if(move.type==="water")wMul=1.3; else if(move.type==="fire")wMul=0.7; } else if(G.weather==="sand"){ if(move.type==="rock")wMul=1.2; } }
+  let wMul=1; if(typeof G!=="undefined"&&G&&G.weather){ if(G.weather==="sun"){ if(move.type==="fire")wMul=1.3; else if(move.type==="water")wMul=0.7; } else if(G.weather==="rain"){ if(move.type==="water")wMul=1.3; else if(move.type==="fire")wMul=0.7; } else if(G.weather==="sand"){ if(move.type==="rock")wMul=1.2; } else if(G.weather==="hail"){ if(move.type==="ice")wMul=1.2; } }
   let scrMul=1; if(typeof G!=="undefined"&&G&&G.screens){ const _ds=(def===G.foe)?"foe":"me"; const _sc=G.screens[_ds]; if(_sc){ if(isSpec&&_sc.light>0)scrMul=0.5; else if(!isSpec&&_sc.reflect>0)scrMul=0.5; } }
   let dmg=Math.floor((lvf*move.power*((A*aMul)/(D*dMul)))/9+2);
   dmg=Math.floor(dmg*eff*stab*crit*abil*wMul*scrMul*rand(0.85,1.0)); return {dmg:Math.max(1,dmg),eff,crit:crit>1}; }
@@ -2362,7 +2364,8 @@ function resetSprites(){ for(const id of ["foeSprite","meSprite"]){ const s=$(id
 function applyIntimidate(enter,opp){ if(!enter||!opp)return; if(enter.ability==="intimidate" && opp.hp>0){ opp.stages.atk=clamp(opp.stages.atk-1,-6,6); battleLog.push(`${dispName(enter)}의 위협! ${dispName(opp)}의 공격이 떨어졌다`); } }
 function logAbilities(){ const me=activeMon(),f=G.foe; if(me)battleLog.push(`${dispName(me)} 특성: ${ABILITY_KO[me.ability]||"-"}`); if(f)battleLog.push(`${f.name} 특성: ${ABILITY_KO[f.ability]||"-"}`); }
 const WEATHERS={ sun:{ko:"쨍쨍",em:"☀️",tint:"radial-gradient(circle at 62% 4%,rgba(255,210,120,.20),transparent 72%)"},
-  rain:{ko:"비",em:"🌧️",tint:"linear-gradient(180deg,rgba(80,124,194,.22),rgba(80,124,194,.06))"}, sand:{ko:"모래바람",em:"🌪️",tint:"linear-gradient(180deg,rgba(200,170,110,.24),rgba(160,130,80,.08))"} };
+  rain:{ko:"비",em:"🌧️",tint:"linear-gradient(180deg,rgba(80,124,194,.22),rgba(80,124,194,.06))"}, sand:{ko:"모래바람",em:"🌪️",tint:"linear-gradient(180deg,rgba(200,170,110,.24),rgba(160,130,80,.08))"},
+  hail:{ko:"싸라기눈",em:"🌨️",tint:"linear-gradient(180deg,rgba(190,225,240,.26),rgba(150,200,225,.08))"} };
 /* 지역별 전투 배경 (하늘빛 글로우 + 하늘→지면 그라데이션), index=region(y) */
 const REGION_BATTLE_BG=[
   "radial-gradient(520px 300px at 72% 10%, rgba(255,224,150,.28), transparent 60%), linear-gradient(180deg,#a9dcee 0%,#cfe9c6 50%,#9ecb74 100%)",   /*0 마을*/
@@ -2913,6 +2916,8 @@ async function applyHazards(mon,side){ if(!mon||mon.hp<=0||!G.hazards||!G.hazard
   if(hz.spikes>0 && mon.type!=="flying" && mon.type2!=="flying"){ const frac=hz.spikes>=3?4:(hz.spikes===2?6:8); const d=Math.max(1,Math.floor(mon.maxHp/frac)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); if(sp){sp.classList.add("hurt");setTimeout(()=>sp.classList.remove("hurt"),300);} Audio.sfx("hit"); setMsg(`<b>${mon.name}</b>이(가) 압정을 밟았다!`); await mw(680); } }
 async function endTurnStatus(mon,side){ if(mon.hp<=0)return;
   if(G.weather==="sand" && mon.hp>0 && mon.type!=="rock" && mon.type2!=="rock"){ const d=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); setMsg(`<b>${mon.name}</b>이(가) 모래바람에 시달린다!`); Audio.sfx&&Audio.sfx("hit"); await mw(480); if(mon.hp<=0)return; }
+  if(G.weather==="hail" && mon.hp>0 && mon.ability==="icebody" && mon.hp<mon.maxHp){ const h=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.min(mon.maxHp,mon.hp+h); renderCombatants(); setMsg(`<b>${mon.name}</b>은(는) 얼음몸으로 회복했다!`); Audio.sfx&&Audio.sfx("heal"); await mw(480); }
+  if(G.weather==="hail" && mon.hp>0 && mon.type!=="ice" && mon.type2!=="ice"){ const d=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); setMsg(`<b>${mon.name}</b>이(가) 싸라기눈에 시달린다!`); Audio.sfx&&Audio.sfx("hit"); await mw(480); if(mon.hp<=0)return; }
   if(mon._seeded && mon.hp>0){ const d=Math.max(1,Math.floor(mon.maxHp/8)); mon.hp=Math.max(0,mon.hp-d); const healer=(mon._seeded==="me")?activeMon():G.foe; if(healer&&healer.hp>0&&healer!==mon)healer.hp=Math.min(healer.maxHp,healer.hp+d); renderCombatants(); setMsg(`<b>${mon.name}</b>의 체력이 씨앗에 빨렸다!`); Audio.sfx("blip"); await mw(560); if(mon.hp<=0)return; }
   if(mon.status==="psn"||mon.status==="brn"){ const frac=mon.status==="psn"?8:16; const dmg=Math.max(1,Math.floor(mon.maxHp/frac));
     mon.hp=Math.max(0,mon.hp-dmg); const dS=spriteEl(side); dS.classList.add("hurt"); setTimeout(()=>dS.classList.remove("hurt"),400);
@@ -2935,7 +2940,7 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
     else if(move.eff.screen){ if(!G.screens)G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; const sc=(side==="me")?G.screens.me:G.screens.foe; sc[move.eff.screen]=5; Audio.sfx("blip"); setMsg(`${move.eff.screen==="reflect"?"물리":"특수"} 공격을 5턴간 막는 장막이 펼쳐졌다!`); }
     else if(move.eff.seed){ if(def.type==="grass"||def.type2==="grass"){ setMsg("효과가 없었다…"); } else if(def._seeded){ setMsg("이미 씨앗이 심어져 있다."); } else { def._seeded=side; Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>에게 씨앗이 심어졌다!`); } }
     else if(move.eff.confuse){ if(def._confuse>0){ setMsg("이미 혼란에 빠져있다."); } else { def._confuse=ri(2,4); Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>이(가) 혼란에 빠졌다!`); } }
-    else if(move.eff.weather){ G.weather=move.eff.weather; G.weatherTurns=5; if(typeof applyWeather==="function")applyWeather(); Audio.sfx("blip"); setMsg({sun:"☀️ 햇살이 강해졌다!",rain:"🌧️ 비가 내리기 시작했다!",sand:"🌪️ 모래바람이 휘몰아친다!"}[move.eff.weather]||"날씨가 변했다!"); }
+    else if(move.eff.weather){ G.weather=move.eff.weather; G.weatherTurns=5; if(typeof applyWeather==="function")applyWeather(); Audio.sfx("blip"); setMsg({sun:"☀️ 햇살이 강해졌다!",rain:"🌧️ 비가 내리기 시작했다!",sand:"🌪️ 모래바람이 휘몰아친다!",hail:"🌨️ 싸라기눈이 흩날린다!"}[move.eff.weather]||"날씨가 변했다!"); }
     else if(move.eff.hazard){ if(!G.hazards)G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; const hz=(side==="me")?G.hazards.foe:G.hazards.me; Audio.sfx("blip"); if(move.eff.hazard==="rock"){ if(hz.rock){ setMsg("이미 바위가 떠 있다."); } else { hz.rock=true; setMsg("상대 발밑에 날카로운 바위가 떠올랐다!"); } } else { if(hz.spikes>=3){ setMsg("더는 압정을 뿌릴 수 없다."); } else { hz.spikes++; setMsg("상대 발밑에 압정을 흩뿌렸다!"); } } }
     await mw(540); return; }
   const dSide=side==="me"?"foe":"me", dS=spriteEl(dSide);
@@ -2960,6 +2965,7 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
   if(sturdied){ await mw(260); setMsg(`<b>${dispName(def)}</b>은(는) <b>옹골참</b>으로 한 방을 버텼다!`); Audio.sfx("blip"); }
   if(move.drain && total>0){ await mw(220); setMsg(`<b>${dispName(att)}</b>이(가) 체력을 흡수했다!`); }
   if(def.hp>0 && def.ability==="static" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"par",side); }
+  if(def.hp>0 && def.ability==="poisonpoint" && !att.status && move.power>0 && (att.type!=="poison"&&att.type2!=="poison") && Math.random()<0.3){ await mw(240); applyStatus(att,"psn",side); }   // 독가시
   if(def.hp>0 && move.eff && move.eff.status && Math.random()<(move.eff.chance||0)) applyStatus(def,move.eff.status,dSide);
   if(def.hp>0 && move.eff && move.eff.flinch && !def._acted && Math.random()<move.eff.flinch) def._flinch=true;
   if(move.recoil)setMsg(`<b>${att.name}</b>도 반동 피해를 입었다!`);
