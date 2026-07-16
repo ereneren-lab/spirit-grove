@@ -1431,7 +1431,7 @@ const INTERIORS={
   gym2:{ id:"gym2", W:9,H:13, startX:4,startY:11, exitX:4,exitY:12, name:"숲 체육관",
     str:["#########","#...2...#","#.......#","#.T...T.#","####b####","#.......#","#.T...T.#","####8####","#.......#","#.T...T.#","#.......#","#.......#","####.####"] },
   gym3:{ id:"gym3", W:9,H:15, startX:4,startY:13, exitX:4,exitY:14, name:"수정 호수 체육관",
-    str:["#########","#...3...#","#.......#","#.~...~.#","####d####","#.......#","#.C...C.#","####c####","#.......#","#.~...~.#","####9####","#.......#","#.C...C.#","#.......#","####.####"] },
+    str:["#########","#...3...#","#.......#","####d####","#.IIIII.#","#.I...I.#","#.IIIII.#","####c####","#.......#","#.IIIII.#","#.I...I.#","#.IIIII.#","####9####","#.......#","####.####"] },
   gym4:{ id:"gym4", W:9,H:15, startX:4,startY:13, exitX:4,exitY:14, name:"고원 체육관",
     str:["#########","#...4...#","#.......#","#.o...o.#","####f####","#.......#","#.C...C.#","####e####","#.......#","#.o...o.#","####0####","#.......#","#.C...C.#","#.......#","####.####"] },
   coast:{ id:"coast", W:17,H:13, startX:8,startY:11, exitX:8,exitY:12, dockX:8,dockY:4, name:"노을 해안",
@@ -1611,6 +1611,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     if(typeof G!=="undefined" && G.indoor){
       const _th=(typeof GYM_THEME!=="undefined"&&GYM_THEME[G.indoor])?GYM_THEME[G.indoor]:null; const _flC=_th?_th.fl:"#c8a878"; const _wlC=_th?_th.wl:"#5c4636";
       if(t==="#"){ ctx.fillStyle=_wlC; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="#6e5644"; ctx.fillRect(sx,sy,tb,ts*0.28); ctx.fillStyle="rgba(255,235,200,.08)"; ctx.fillRect(sx,sy,tb,ts*0.06); ctx.strokeStyle="rgba(30,20,12,.45)"; ctx.lineWidth=1; ctx.strokeRect(sx+0.5,sy+0.5,ts,ts); }
+      else if(t==="I"){ ctx.fillStyle="#c2e6f2"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="rgba(255,255,255,.4)"; ctx.fillRect(sx,sy,tb,ts*0.15); ctx.strokeStyle="rgba(130,185,215,.55)"; ctx.lineWidth=1; ctx.strokeRect(sx+0.5,sy+0.5,ts,ts); ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.beginPath(); ctx.moveTo(sx+ts*0.15,sy+ts*0.68); ctx.lineTo(sx+ts*0.42,sy+ts*0.5); ctx.stroke(); }   // 얼음 바닥(미끄럼)
       else if(t==="S"){ ctx.fillStyle="#caa878"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="#8a6240"; ctx.fillRect(sx+ts*0.08,sy+ts*0.38,ts*0.84,ts*0.5); ctx.fillStyle="#a37c52"; ctx.fillRect(sx+ts*0.05,sy+ts*0.3,ts*0.9,ts*0.1); ctx.strokeStyle="rgba(40,26,14,.5)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.08,sy+ts*0.38,ts*0.84,ts*0.5); ctx.fillStyle="#f0d048"; ctx.fillRect(sx+ts*0.3,sy+ts*0.44,ts*0.4,ts*0.06); }
       else if(t==="A"){ ctx.fillStyle="#3a3054"; ctx.fillRect(sx,sy,tb,tb); const cx=sx+ts*0.5, fl=Math.sin((now||0)*3)*0.5+0.5;
         ctx.fillStyle="rgba(160,140,220,"+(0.15+fl*0.15)+")"; ctx.beginPath(); ctx.ellipse(cx,sy+ts*0.5,ts*0.42,ts*0.42,0,0,6.29); ctx.fill();
@@ -1852,6 +1853,8 @@ function onArrived(){
   if(_justExited){ _justExited=false; return; }
   if(G.indoor){ const _it=INTERIORS[G.indoor]; const _t=tileAt(G.pos.x,G.pos.y);
     if(_it && G.pos.x===_it.exitX && G.pos.y===_it.exitY){ stopPath(); exitInterior(); return; }
+    if(_t==="I"){ const _d=(Field&&Field.dir)||"down"; const _dv={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[_d];   // 얼음 미끄럼: 벽/트레이너 만날 때까지 같은 방향으로 계속 미끄러진다(포켓몬 체육관 퍼즐)
+      if(_dv && walkable(G.pos.x+_dv[0], G.pos.y+_dv[1])){ stopPath(); Audio.sfx&&Audio.sfx("step"); move(_d,true); return; } }
     if(_t==="S"){ stopPath(); openShop(); return; }
     if(_t==="B"){ stopPath(); healParty(true); healFx(); flashHint("침대에서 푹 쉬었다 — 모두 회복! 😴"); saveGame(); return; }
     if(_t==="A"){ stopPath();
@@ -4069,7 +4072,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
