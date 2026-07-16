@@ -958,6 +958,27 @@ const MOVES={
   poisonpowder:{name:"독가루",type:"poison",power:0,acc:75,pp:20,pri:0,eff:{status:"psn",chance:1}},
   dig:{name:"땅파기",type:"ground",power:60,acc:100,pp:10,pri:0},
   quake:{name:"지진",type:"ground",power:78,acc:100,pp:8,pri:0},
+  // ===== 다단히트 =====
+  doublekick:{name:"두번차기",type:"ground",power:18,acc:100,pp:20,pri:0,multi:[2,2]},
+  rockblast:{name:"돌팔매연타",type:"rock",power:14,acc:90,pp:15,pri:0,multi:[2,5]},
+  // ===== 반동(고위력) =====
+  flareblitz:{name:"플레어드라이브",type:"fire",power:82,acc:100,pp:8,pri:0,recoil:0.25,eff:{status:"brn",chance:0.1}},
+  wildbolt:{name:"와일드볼트",type:"elec",power:78,acc:100,pp:8,pri:0,recoil:0.2},
+  takedown:{name:"돌진",type:"normal",power:70,acc:95,pp:12,pri:0,recoil:0.2},
+  // ===== 우선도 =====
+  aquajet:{name:"아쿠아제트",type:"water",power:40,acc:100,pp:20,pri:1},
+  quickstrike:{name:"전광석화",type:"normal",power:40,acc:100,pp:25,pri:1},
+  // ===== 흡수 =====
+  gigadrain:{name:"기가드레인",type:"grass",power:55,acc:100,pp:10,pri:0,drain:0.5},
+  // ===== 변화기 =====
+  willowisp:{name:"도깨비불",type:"fire",power:0,acc:85,pp:15,pri:0,eff:{status:"brn",chance:1}},
+  swordsdance:{name:"칼춤",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{stat:"atk",stage:2,target:"self"}},
+  irondefense:{name:"철벽",type:"rock",power:0,acc:100,pp:15,pri:0,eff:{stat:"def",stage:2,target:"self"}},
+  charm:{name:"애교부리기",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{stat:"atk",stage:-2,target:"foe"}},
+  scaryface:{name:"위협하기",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{stat:"spd",stage:-2,target:"foe"}},
+  // ===== 풀죽음 =====
+  ironhead:{name:"아이언헤드",type:"rock",power:60,acc:100,pp:12,pri:0,eff:{flinch:0.3}},
+  bite:{name:"물기",type:"normal",power:48,acc:100,pp:20,pri:0,eff:{flinch:0.3}},
   struggle:{name:"발버둥",type:"normal",power:40,acc:100,pp:Infinity,pri:0,recoil:0.25},
 };
 // 기술 효과를 사람이 읽을 수 있는 한 줄로. 배우기/잊기/재습득 UI에서 "어떤 기술인지" 보여준다.
@@ -985,16 +1006,16 @@ function moveSummary(mvKey){ const mo=MOVES[mvKey]; if(!mo)return mvKey; const d
 /* ===== DEX (30) ===== */
 const DEX=[
   {id:"foxfire",name:"파라꼬",em:"🦊",type:"fire",tier:1,starter:true,base:{hp:46,atk:10,def:9,spd:13,spa:14,spDef:9},moves:["tackle","ember"],learn:[[7,"growl"],[10,"flare"],[12,"furyswipe"],[14,"agility"]],evolveTo:"emberwolf",evolveLv:16},
-  {id:"emberwolf",name:"파라울",em:"🦊",type:"fire",tier:2,base:{hp:60,atk:13,def:12,spd:15,spa:18,spDef:12},moves:["ember","flare"],learn:[[22,"inferno"]],evolveTo:"blazelion",evolveLv:32},
-  {id:"blazelion",name:"파라온",em:"🦊",type:"fire",tier:3,base:{hp:78,atk:17,def:16,spd:17,spa:24,spDef:16},moves:["flare","inferno"],learn:[[36,"crush"]]},
+  {id:"emberwolf",name:"파라울",em:"🦊",type:"fire",tier:2,base:{hp:60,atk:13,def:12,spd:15,spa:18,spDef:12},moves:["ember","flare"],learn:[[16,"bite"],[22,"inferno"],[26,"takedown"]],evolveTo:"blazelion",evolveLv:32},
+  {id:"blazelion",name:"파라온",em:"🦊",type:"fire",tier:3,base:{hp:78,atk:17,def:16,spd:17,spa:24,spDef:16},moves:["flare","inferno"],learn:[[36,"crush"],[40,"willowisp"],[46,"flareblitz"]]},
   {id:"shellow",name:"무르꼬",em:"🐢",type:"water",tier:1,starter:true,base:{hp:55,atk:8,def:15,spd:7,spa:11,spDef:15},moves:["tackle","splash"],learn:[[7,"harden"],[10,"hydro"],[13,"recover"]],evolveTo:"riverdrake",evolveLv:16},
   {id:"riverdrake",name:"무르롱",em:"🐊",type:"water",tier:2,base:{hp:68,atk:11,def:18,spd:10,spa:15,spDef:18},moves:["splash","hydro"],learn:[[22,"tsunami"]],evolveTo:"krakentide",evolveLv:32},
-  {id:"krakentide",name:"무르칸",em:"🐙",type:"water",tier:3,base:{hp:86,atk:14,def:22,spd:11,spa:20,spDef:22},moves:["hydro","tsunami"],learn:[[36,"slam"]]},
+  {id:"krakentide",name:"무르칸",em:"🐙",type:"water",tier:3,base:{hp:86,atk:14,def:22,spd:11,spa:20,spDef:22},moves:["hydro","tsunami"],learn:[[36,"slam"],[40,"aquajet"],[46,"ironhead"]]},
   {id:"leafdrake",name:"새록꼬",em:"🦎",type:"grass",tier:1,starter:true,base:{hp:48,atk:9,def:11,spd:11,spa:13,spDef:11},moves:["tackle","leaf"],learn:[[7,"growl"],[10,"vine"],[12,"absorb"],[14,"quickjab"]],evolveTo:"leafwyrm",evolveLv:16},
   {id:"leafwyrm",name:"새록룡",em:"🦕",type:"grass",tier:2,base:{hp:64,atk:12,def:14,spd:13,spa:17,spDef:14},moves:["leaf","vine"],learn:[[22,"bloom"],[26,"megadrain"],[30,"bloomheal"]],evolveTo:"grovespirit",evolveLv:32},
-  {id:"grovespirit",name:"새록정",em:"🌳",type:"grass",tier:3,base:{hp:84,atk:16,def:20,spd:12,spa:22,spDef:20},moves:["vine","bloom"],learn:[[36,"crush"]]},
+  {id:"grovespirit",name:"새록정",em:"🌳",type:"grass",tier:3,base:{hp:84,atk:16,def:20,spd:12,spa:22,spDef:20},moves:["vine","bloom"],learn:[[36,"crush"],[40,"gigadrain"],[46,"swordsdance"]]},
   {id:"sparkmouse",name:"찌리몽",em:"🐹",type:"elec",tier:1,base:{hp:42,atk:9,def:9,spd:18,spa:13,spDef:9},moves:["tackle","spark"],learn:[[10,"thunderwave"],[12,"bolt"],[14,"twinbolt"]],evolveTo:"voltrat",evolveItem:"thunderstone"},
-  {id:"voltrat",name:"찌리볼",em:"🐀",type:"elec",tier:2,base:{hp:58,atk:13,def:12,spd:21,spa:18,spDef:12},moves:["spark","bolt"],learn:[[28,"thunder"]]},
+  {id:"voltrat",name:"찌리볼",em:"🐀",type:"elec",tier:2,base:{hp:58,atk:13,def:12,spd:21,spa:18,spDef:12},moves:["spark","bolt"],learn:[[28,"thunder"],[32,"quickstrike"]]},
   {id:"bunnyhop",name:"토롱이",em:"🐇",type:"normal",tier:1,base:{hp:44,atk:11,def:10,spd:16,spa:8,spDef:10},moves:["tackle","quickjab"],learn:[[8,"furyswipe"],[10,"slam"],[14,"recover"]],evolveTo:"harelord",evolveFriend:100},
   {id:"harelord",name:"토롱크",em:"🐇",type:"normal",tier:2,base:{hp:58,atk:16,def:13,spd:22,spa:12,spDef:13},moves:["slam","quickjab"],learn:[[28,"crush"]]},
   {id:"frostfish",name:"빙구리",em:"🐟",type:"ice",tier:1,base:{hp:46,atk:9,def:11,spd:13,spa:12,spDef:11},moves:["tackle","iceshard"],learn:[[12,"icebeam"]],evolveTo:"sharkfin",evolveItem:"waterstone"},
@@ -1021,11 +1042,11 @@ const DEX=[
   {id:"jellure",name:"해파리정",em:"🪼",type:"water",type2:"poison",tier:1,base:{hp:54,atk:8,def:12,spd:15,spa:20,spDef:20},moves:["splash","sludge","hydro"],learn:[[12,"poisonpowder"],[22,"tsunami"]]},
   {id:"emberlix",name:"불도롱",em:"🦎",type:"fire",tier:2,base:{hp:56,atk:20,def:14,spd:21,spa:19,spDef:12},moves:["ember","furyswipe","quickjab","flare"],learn:[[24,"inferno"]]},
   {id:"seedbean",name:"씨앗콩",em:"🌱",type:"grass",tier:1,base:{hp:48,atk:11,def:14,spd:10,spa:13,spDef:13},moves:["tackle","leaf"],learn:[[10,"absorb"],[16,"vine"]],evolveTo:"titanoak",evolveLv:30},
-  {id:"titanoak",name:"거목령",em:"🌳",type:"grass",tier:3,base:{hp:88,atk:22,def:26,spd:9,spa:20,spDef:22},moves:["slam","bloom","megadrain","harden"],learn:[[38,"bloomheal"]]},
+  {id:"titanoak",name:"거목령",em:"🌳",type:"grass",tier:3,base:{hp:88,atk:22,def:26,spd:9,spa:20,spDef:22},moves:["slam","bloom","megadrain","harden"],learn:[[38,"bloomheal"],[44,"gigadrain"]]},
   {id:"emberfly",name:"불티나방",em:"🔥",type:"fire",type2:"flying",tier:1,base:{hp:44,atk:12,def:10,spd:16,spa:15,spDef:11},moves:["ember","gust"],learn:[[14,"peck"],[20,"flare"]],evolveTo:"pyrmoth",evolveLv:30},
   {id:"pyrmoth",name:"화염나방",em:"🦋",type:"fire",type2:"flying",tier:3,base:{hp:74,atk:18,def:14,spd:22,spa:26,spDef:16},moves:["flare","wingatk","inferno","gust"],learn:[[40,"skyrush"]]},
   {id:"voltsnake",name:"번개뱀",em:"🐍",type:"elec",tier:1,base:{hp:46,atk:14,def:11,spd:15,spa:16,spDef:11},moves:["spark","tackle"],learn:[[14,"bolt"],[22,"twinbolt"]],evolveTo:"thundwyrm",evolveLv:32},
-  {id:"thundwyrm",name:"뇌전룡",em:"⚡",type:"elec",type2:"flying",tier:3,base:{hp:80,atk:20,def:16,spd:24,spa:26,spDef:18},moves:["thunder","skyrush","twinbolt","crush"],learn:[]},
+  {id:"thundwyrm",name:"뇌전룡",em:"⚡",type:"elec",type2:"flying",tier:3,base:{hp:80,atk:20,def:16,spd:24,spa:26,spDef:18},moves:["thunder","skyrush","twinbolt","crush"],learn:[[42,"quickstrike"],[48,"wildbolt"]]},
   {id:"frostpup",name:"서리강아지",em:"🐕",type:"ice",tier:1,base:{hp:50,atk:13,def:13,spd:12,spa:14,spDef:14},moves:["tackle","frostbreath"],learn:[[12,"icebeam"],[16,"icywind"],[18,"harden"]],evolveTo:"glacibear",evolveLv:30},
   {id:"glacibear",name:"빙하곰",em:"🐻‍❄️",type:"ice",type2:"rock",tier:3,base:{hp:90,atk:24,def:24,spd:10,spa:16,spDef:22},moves:["crush","icebeam","rockslide","boulder"],learn:[[38,"blizzard"]]},
   {id:"dewdrop",name:"이슬방울",em:"💧",type:"water",tier:1,base:{hp:45,atk:9,def:11,spd:13,spa:14,spDef:12},moves:["tackle","splash"],learn:[[10,"hydro"],[16,"absorb"]],evolveBranch:[{to:"glimmertide",lv:24,time:"day"},{to:"moonytide",lv:24,time:"night"}]},
@@ -1059,7 +1080,7 @@ const DEX=[
   {id:"arcmoth",name:"뇌광나방",em:"🦋",type:"elec",tier:3,base:{hp:70,atk:16,def:16,spd:24,spa:28,spDef:20},moves:["thunder","twinbolt","gust","spark"],learn:[]},
   {id:"pebblet",name:"조약돌",em:"🪨",type:"rock",tier:1,base:{hp:44,atk:14,def:22,spd:8,spa:6,spDef:14},moves:["tackle","rockthrow"],learn:[[12,"harden"],[18,"rockslide"]],evolveTo:"boulderin",evolveLv:22},
   {id:"boulderin",name:"바위정",em:"⛰️",type:"rock",type2:"ground",tier:2,base:{hp:64,atk:20,def:34,spd:8,spa:8,spDef:20},moves:["rockthrow","rockslide","quake","harden"],learn:[[30,"boulder"]],evolveTo:"megalith",evolveLv:36},
-  {id:"megalith",name:"거암왕",em:"🗿",type:"rock",tier:3,base:{hp:88,atk:28,def:44,spd:9,spa:10,spDef:26},moves:["boulder","rockslide","crush","harden"],learn:[]},
+  {id:"megalith",name:"거암왕",em:"🗿",type:"rock",tier:3,base:{hp:88,atk:28,def:44,spd:9,spa:10,spDef:26},moves:["boulder","rockslide","crush","harden"],learn:[[40,"rockblast"],[44,"ironhead"],[50,"irondefense"]]},
   {id:"lavakit",name:"용암구리",em:"🌋",type:"fire",type2:"rock",tier:1,base:{hp:48,atk:15,def:16,spd:12,spa:16,spDef:12},moves:["ember","rockthrow"],learn:[[16,"flare"],[22,"rockslide"]],evolveTo:"magmadon",evolveLv:32},
   {id:"magmadon",name:"마그마룡",em:"🔥",type:"fire",type2:"ground",tier:3,base:{hp:82,atk:26,def:26,spd:14,spa:24,spDef:18},moves:["inferno","boulder","flare","quake"],learn:[]},
   {id:"burrowmouse",name:"굴다람",em:"🐹",type:"ground",tier:1,base:{hp:46,atk:14,def:15,spd:16,spa:9,spDef:12},moves:["tackle","mudshot"],learn:[[14,"furyswipe"],[20,"dig"]],evolveTo:"burrowlord",evolveLv:30},
