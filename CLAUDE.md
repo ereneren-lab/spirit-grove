@@ -71,7 +71,10 @@ verify 내용:
 - 상태이상 표기 전수 점검 결과: `slp` 누락(수정됨)이 유일한 갭. 독/화상/마비 잔뎀·혼란·풀죽음·씨앗 메시지는 모두 완비. 듀오 배틀 상태칩 색도 이참에 정상화.
 
 ### 진화 장면 (배틀 밖 · 진화의 돌)
-배틀 밖 진화(진화의 돌 `evostone`)는 예전엔 `flashHint` 텍스트만 뜨고 애니가 없었고 `type2`도 안 넣었다. → `evolveScene(m,to,itemKey)`: 전용 오버레이(`#evoOverlay`, `.evo-art`/`.evo-msg`)에서 포켓몬식 실루엣 모프(`brightness(0) invert(1)` 글로우 + 펄스, 중간에 새 종으로 스왑)를 보여주고 "어라…? → 축하해!" 메시지. B/✕로 취소 가능(취소 시 **돌 소모 안 함** — 소모는 성공 시점). `type2`·친밀도·울음소리·도감 반영. 배틀 내 진화는 기존 `evolveAnimate`(배틀 스프라이트) 유지.
+배틀 밖 진화(진화의 돌 `evostone`)는 예전엔 `flashHint` 텍스트만 뜨고 애니가 없었고 `type2`도 안 넣었다. → `evolveScene(m,to,itemKey)`: 전용 오버레이(`#evoOverlay`, `.evo-art`/`.evo-msg`)에서 포켓몬식 실루엣 모프(`brightness(0) invert(1)` 글로우 + 펄스, 중간에 새 종으로 스왑)를 보여주고 "어라…? → 축하해!" 메시지. B/✕로 취소 가능(취소 시 **돌 소모 안 함** — 소모는 성공 시점). `type2`·친밀도·울음소리·도감 반영.
+- **진화 연출 통일**: `applyEvolution(m,to,false)`(비선두/배틀 밖)는 이제 `toast` 대신 `evolveScene`을 쓴다(예전엔 파티 뒤쪽 정령이 전투 후 진화하면 toast만 떴음). `evolveScene`은 `_oob=!G.inBattle` 가드로 **전투 중이면 음악을 안 건드리고**(startMusic/stopMusic 스킵) 끝에 `renderCombatants()`로 배틀 뷰만 갱신 — 배틀 음악 유지. 배틀 선두 진화는 여전히 `evolveAnimate`(배틀 스프라이트 모프).
+- **이상한사탕 진화**: candy 사용 후 `evolveCheck(m,false)` 호출 → 레벨 진화 조건 충족 시 진화 장면(포켓몬 레어캔디처럼).
+- 회귀 `scripts/evo_unify_test.js`(비선두 진화 장면 + 전투 중 음악 스파이). ⚠️ 테스트에서 `enterMap`은 필드 렌더 루프·음악을 켜므로 배틀 시나리오 검증 전엔 새 페이지 로드로 격리할 것.
 
 ### 정령 순서 조절 (포켓몬식)
 정령관리(PC) 파티 탭 카드에 ▲▼ 재정렬 버튼. `pcAction("up"/"down",i)`가 `G.party[i]`↔이웃을 스왑하고 `G.active`가 옮긴 정령을 따라간다. 회귀 `bugfix_batch_test.js`.

@@ -3215,15 +3215,15 @@ function evoCancelWindow(){ return new Promise(res=>{ let done=false;
   const cleanup=()=>{ document.removeEventListener("keydown",onKey); try{btn.remove();}catch(_){} clearTimeout(t); };
   const t=setTimeout(()=>finish(false), 2200);   // 입력 없으면 진화 진행
 }); }
-async function applyEvolution(m,to,animate){ const oldName=m.name;
-  if(animate){ setMsg(`어라…? <b>${oldName}</b>의 모습이…`);
-    const cancelled=await evoCancelWindow();
-    if(cancelled){ setMsg(`<b>${oldName}</b>은(는) 진화를 멈췄다!`); if(Audio.sfx)Audio.sfx("blip"); await mw(950); return false; } }
+async function applyEvolution(m,to,animate){
+  if(!animate) return await evolveScene(m,to);   // 비선두/배틀 밖 진화 → 진화 장면(데이터 적용 포함). 예전엔 toast만 떴음.
+  const oldName=m.name; setMsg(`어라…? <b>${oldName}</b>의 모습이…`);
+  const cancelled=await evoCancelWindow();
+  if(cancelled){ setMsg(`<b>${oldName}</b>은(는) 진화를 멈췄다!`); if(Audio.sfx)Audio.sfx("blip"); await mw(950); return false; }
   m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type; m.type2=to.type2||null; if(Audio.cry)Audio.cry(m.id,m.type);
   if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
   G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
-  if(animate){ await evolveAnimate("me",m); renderCombatants(); setMsg(`축하해! <b>${oldName}</b>은(는) <b>${m.name}</b>(으)로 진화했다!`); await mw(1100); }
-  else toast(`${oldName}이(가) ${m.name}(으)로 진화했다!`);
+  await evolveAnimate("me",m); renderCombatants(); setMsg(`축하해! <b>${oldName}</b>은(는) <b>${m.name}</b>(으)로 진화했다!`); await mw(1100);
   return true; }
 async function evolveCheck(m,animate){ const sp=byId(m.id);
   if(sp.evolveBranch){ for(const b of sp.evolveBranch){ if(evoCondMet(m,b)){ const to=byId(b.to); if(to)return await applyEvolution(m,to,animate); } } return false; }
@@ -3232,9 +3232,10 @@ async function evolveCheck(m,animate){ const sp=byId(m.id);
   return false; }
 // 배틀 밖(진화의 돌 등) 진화 장면 — 배틀 스프라이트가 없으므로 전용 오버레이에서 실루엣 모프를 보여준다(포켓몬식).
 async function evolveScene(m,to,itemKey){ const old=m.name; const art=$("evoArt"), msg=$("evoMsg"), cx=$("evoCancel");
+  const _oob=!(typeof G!=="undefined"&&G&&G.inBattle);   // 전투 밖이면 음악 정지/복귀, 전투 중이면 배틀 음악 유지
   const setArt=(id,type,sil)=>{ art.innerHTML=creatureVisual(id,type); art.classList.toggle("sil",!!sil); };
   setArt(m.id,m.type,false); msg.textContent=`어라…? ${old}의 모습이…`; if(cx)cx.style.display="";
-  openOverlay("evoOverlay"); if(Audio.stopMusic)Audio.stopMusic();
+  openOverlay("evoOverlay"); if(_oob && Audio.stopMusic)Audio.stopMusic();
   let cancelled=false;
   const onKey=e=>{ const k=(e.key||"").toLowerCase(); if(k==="x"||k==="b"||k==="escape"||k==="backspace"){ e.preventDefault(); cancelled=true; } };
   document.addEventListener("keydown",onKey); if(cx)cx.onclick=()=>{ cancelled=true; };
@@ -3250,7 +3251,7 @@ async function evolveScene(m,to,itemKey){ const old=m.name; const art=$("evoArt"
   }
   document.removeEventListener("keydown",onKey); if(cx)cx.onclick=null;
   if(cancelled){ art.classList.remove("sil"); setArt(m.id,m.type,false); msg.textContent=`${old}은(는) 진화를 멈췄다!`; if(Audio.sfx)Audio.sfx("blip");
-    await delay(950); closeOverlay("evoOverlay"); if(typeof fieldMusic==="function")Audio.startMusic(fieldMusic()); saveGame(); if(typeof renderBag==="function")renderBag(); return false; }
+    await delay(950); closeOverlay("evoOverlay"); if(_oob && typeof fieldMusic==="function")Audio.startMusic(fieldMusic()); saveGame(); if(typeof renderBag==="function")renderBag(); return false; }
   if(itemKey)G.items[itemKey]=Math.max(0,(G.items[itemKey]||0)-1);   // 성공 시에만 돌 소모(취소하면 안 씀)
   m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type; m.type2=to.type2||null;
   if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
@@ -3258,7 +3259,8 @@ async function evolveScene(m,to,itemKey){ const old=m.name; const art=$("evoArt"
   G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
   Audio.sfx("levelup"); msg.textContent=`축하해! ${old}은(는) ${m.name}(으)로 진화했다!`;
   await delay(1700); closeOverlay("evoOverlay");
-  if(typeof fieldMusic==="function")Audio.startMusic(fieldMusic());
+  if(_oob && typeof fieldMusic==="function")Audio.startMusic(fieldMusic());
+  else if(typeof renderCombatants==="function")renderCombatants();   // 전투 중 진화면 배틀 뷰 갱신
   saveGame(); if(typeof renderBag==="function")renderBag(); if(typeof renderPC==="function")renderPC(); return true; }
 
 // XP 끌개: 오버월드에서만, 정령 레벨이 지역 앵커를 넘을수록 획득 XP를 급감시켜
@@ -3700,7 +3702,9 @@ function applyItemEffect(it){ const m=activeMon();
   if(it.use==="revive"){ const f=firstFainted(); if(!f){flashHint("쓰러진 정령이 없다");return false;} G.items[it.key]--; recalc(f); f.hp=Math.floor(f.maxHp/2); f.status=null; Audio.sfx("levelup"); flashHint(f.name+"이(가) 되살아났다!"); return true; }
   if(it.use==="stage"){ if(!G.inBattle)return false; if((m.stages[it.stat]||0)>=6){flashHint("더 오르지 않는다");return false;} G.items[it.key]--; applyStage(m,it.stat,1,"me"); return true; }
   if(it.use==="repel"){ G.items[it.key]--; G.repel=60; Audio.sfx("blip"); flashHint("🧴 퇴치 스프레이! 60걸음 동안 약한 정령이 피해간다"); return true; }
-  if(it.use==="candy"){ if(m.level>=60){flashHint(m.name+"은(는) 이미 최고 레벨");return false;} G.items[it.key]--; m.level++; recalc(m); m.hp=m.maxHp; Audio.sfx("levelup"); flashHint(`🍬 ${m.name}이(가) Lv ${m.level}(으)로!`); return true; }
+  if(it.use==="candy"){ if(m.level>=60){flashHint(m.name+"은(는) 이미 최고 레벨");return false;} G.items[it.key]--; m.level++; recalc(m); m.hp=m.maxHp; Audio.sfx("levelup"); flashHint(`🍬 ${m.name}이(가) Lv ${m.level}(으)로!`);
+    if(typeof evolveCheck==="function")evolveCheck(m,false);   // 레벨 진화 조건 충족 시 진화 장면(포켓몬 레어캔디처럼)
+    return true; }
   if(it.use==="evostone"){ const sp=byId(m.id);
     if(sp.evolveItem!==it.key){ flashHint(m.name+"에게는 아무 반응이 없다..."); return false; }
     const to=byId(sp.evolveTo); if(!to){ flashHint("아무 반응이 없다..."); return false; }
