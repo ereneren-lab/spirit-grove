@@ -3392,7 +3392,7 @@ function gainEV(m, foeId){ if(!m)return; if(!m.evs)m.evs={hp:0,atk:0,def:0,spa:0
   recalc(m); }
 async function winBattle(){ $("foeSprite").classList.add("faint"); Audio.sfx("faint"); if(!G.trainer)Audio.startMusic("victory",true); if(G.party[G.active]&&G.foe)gainEV(G.party[G.active],G.foe.id); G.party.forEach((pm,i)=>{ if(pm)pm.friendship=(pm.friendship||0)+(i===G.active?6:2); });
   setMsg(`<b>${G.foe.name}</b>을(를) 쓰러뜨렸다!`); await mw(640);
-  const me=activeMon(); const base=Math.floor(G.foe.level*19+14+(G.trainer?G.foe.level*4:0));
+  const me=activeMon(); const base=Math.floor(G.foe.level*15+11+(G.trainer?G.foe.level*3:0));   // XP 완화(진행도 천천히): 킬당 레벨업이 느려져 여정이 길어진다. 레벨은 xpMult 앵커로 여전히 수렴.
   setMsg(`<b>${me.name}</b> 경험치 +${base}`); await mw(540);
   await gainXpFor(me,base,true);
   // shared XP to the rest of the (alive) party, silent

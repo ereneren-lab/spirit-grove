@@ -42,7 +42,7 @@ setTimeout(() => {
     for (let y = 48; y >= 8; y--) {
       while (gi < gates.length && y === gates[gi][1]) { arr[gates[gi][0]] = lv + xp / (lv * 30); gi++; }
       const n = Math.floor(enc) + ((y * 997 % 100) / 100 < enc - Math.floor(enc) ? 1 : 0);
-      for (let k = 0; k < n; k++) { xp += Math.floor((wildLevel(lv, y) * 19 + 14) * xpMult(lv, y)); while (xp >= lv * 30 && lv < 60) { xp -= lv * 30; lv++; } }
+      for (let k = 0; k < n; k++) { xp += Math.floor((wildLevel(lv, y) * 15 + 11) * xpMult(lv, y)); while (xp >= lv * 30 && lv < 60) { xp -= lv * 30; lv++; } }
     }
     while (gi < gates.length) { arr[gates[gi][0]] = lv + xp / (lv * 30); gi++; }
     return arr;
