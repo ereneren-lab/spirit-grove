@@ -2323,7 +2323,8 @@ function applyWeather(){ const fld=$("battleField"); if(!fld)return;
   else { ov.style.opacity="0"; badge.style.display="none"; } }
 function setupBattleUI(foeOnly){ { const sh=$("skipHint"); if(sh)sh.textContent=CONFIG.battleText==="tap"?"탭하면 진행 ▼":"누르는 동안 빨리감기"; }
   setWeather(); if(G&&G.foe&&Audio.cry)setTimeout(()=>{ if(G&&G.foe)Audio.cry(G.foe.id,G.foe.type); },260); const _bf=$("battleField"); if(_bf&&G)_bf.style.background=REGION_BATTLE_BG[region(G.pos.y)]||_bf.style.background; applyWeather(); battleLog=[]; resetSprites(); renderCombatants(); renderStages();
-  ["foeSprite","meSprite"].forEach((id,i)=>{ const s=$(id); if(!s)return; s.classList.remove("enter"); void s.offsetWidth; setTimeout(()=>s.classList.add("enter"),i*170); setTimeout(()=>s.classList.remove("enter"),i*170+520); });
+  // (등장 애니는 아래 sendOutAnim이 단독 담당 — 예전 .enter CSS는 sendOutAnim과 이중으로 걸려 transform 충돌 + 순차 인트로 시 me opacity:0을 덮어 깜빡임을 유발했다. 제거.)
+  ["foeSprite","meSprite"].forEach(id=>{ const s=$(id); if(s)s.classList.remove("enter"); });
   $("foeType").textContent=tkLabel(G.foe.type); $("foeType").className="type-tag "+TYPE_CLASS[G.foe.type];
   $("foeType").style.marginTop="6px"; $("foeType").style.fontSize="9px";
   { const o=document.getElementById("foeType2"); if(o)o.remove();
