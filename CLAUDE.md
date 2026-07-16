@@ -76,6 +76,9 @@ verify 내용:
 - HP바 빨간점 버그 수정: `.hpfill`/`.hpghost`의 border-radius 제거(컨테이너 overflow:hidden이 양끝 처리).
 - 주인공 4명 회화체 빌보드(앞/뒤) + 캐릭터 선택 미리보기도 회화.
 - 팔로워 타입색 오라 글로우 + 크기/접지 조정.
+- NPC 생동감: 소프트 셰이딩(`_grad`/`_tint`) + 걸음 애니메이션(`_char`의 `moving` 인자 → 다리 번갈아+통통, 멈추면 아이들 바운스).
+- **로밍 NPC 부드러운 보간**: NPC 그리기를 그리드 루프에서 분리해 별도 패스로. 각 NPC의 렌더 좌표 `rx/ry`가 논리 타일(`n.x/n.y`)로 이징(3.2 tiles/s) → 타일 텔레포트(툭툭 튐) 제거. `npcRoamTick`은 논리 좌표만 바꾸고, 상호작용은 논리 타일(`NPC_AT`) 기준이라 그대로. 회귀 테스트 `scripts/npc_roam_test.js`(G.busy로 로밍 얼려 보간 결정적 관찰). 계측용으로 `window.SG.NPCS`/`SG.Field` 노출.
+- NPC가 말 걸면 플레이어 쪽으로 돌아봄(`faceNpcToPlayer`, `talkNPC` 진입 시). 대화 중엔 `_talking` 가드로 로밍 정지라 계속 응시.
 
 ## 로드맵 (권장 순서)
 1. ~~아키텍처 분리~~ ✅ 완료 (src 413KB + assets + dist 빌드).
