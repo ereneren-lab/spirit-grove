@@ -2153,8 +2153,8 @@ const COAST_LORE=[
   {name:"뱃사람",text:"물가엔 이곳에서만 사는 정령들이 있소. 조개돌을 품은 이들도… 잘 살펴보시게."},
   {name:"뱃사람",text:"배가 고쳐지면 바다 건너로 데려다주겠소. 그때까진 이 해안을 마음껏 누비시게, 젊은 정령사여."}
 ];
-function sailToIsle(){ W=INTERIORS.isle.W; H=INTERIORS.isle.H; MAP_STR=INTERIORS.isle.str; G.pos={x:INTERIORS.isle.startX,y:INTERIORS.isle.startY}; G.indoor="isle"; if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"up"); Audio.sfx("step"); if(!G.inBattle)Audio.startMusic(fieldMusic()); }
-function sailToCoast(){ W=INTERIORS.coast.W; H=INTERIORS.coast.H; MAP_STR=INTERIORS.coast.str; G.pos={x:INTERIORS.coast.dockX,y:INTERIORS.coast.dockY}; G.indoor="coast"; if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"down"); Audio.sfx("step"); if(!G.inBattle)Audio.startMusic(fieldMusic()); }
+function sailToIsle(){ warpFade(()=>{ W=INTERIORS.isle.W; H=INTERIORS.isle.H; MAP_STR=INTERIORS.isle.str; G.pos={x:INTERIORS.isle.startX,y:INTERIORS.isle.startY}; G.indoor="isle"; if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"up"); Audio.sfx("step"); if(!G.inBattle)Audio.startMusic(fieldMusic()); }); }
+function sailToCoast(){ warpFade(()=>{ W=INTERIORS.coast.W; H=INTERIORS.coast.H; MAP_STR=INTERIORS.coast.str; G.pos={x:INTERIORS.coast.dockX,y:INTERIORS.coast.dockY}; G.indoor="coast"; if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"down"); Audio.sfx("step"); if(!G.inBattle)Audio.startMusic(fieldMusic()); }); }
 const _isleSVG="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><rect width='160' height='110' rx='12' fill='#7fc9e8'/><rect y='72' width='160' height='38' fill='#3f82ac'/><ellipse cx='80' cy='76' rx='60' ry='16' fill='#5aa85a'/><ellipse cx='80' cy='72' rx='42' ry='12' fill='#6fbf6a'/><rect x='58' y='48' width='6' height='26' fill='#7a5a3a'/><circle cx='61' cy='46' r='12' fill='#3f8b52'/><rect x='98' y='52' width='6' height='22' fill='#7a5a3a'/><circle cx='101' cy='50' r='10' fill='#3f8b52'/><circle cx='128' cy='26' r='13' fill='#ffe07a'/></svg>";
 const ISLE_INTRO=[
   {art:_isleSVG,t:"작은 배가 파도를 가른다. 이윽고 안개가 걷히며 <b>낯선 초록빛 섬</b>이 모습을 드러낸다."},
@@ -2166,8 +2166,8 @@ const ISLE_LORE=[
   {name:"섬사람",text:"여기 정령들은 강하고 낯설다오. 함부로 덤비지 말고, 마음으로 다가가시게."},
   {name:"섬사람",text:"언젠가 두 땅의 인장이 하나로 이어질 날이 온다지… 그대가 그 다리가 될지도 모르겠구려."}
 ];
-function sailToShrine(){ W=INTERIORS.shrine.W; H=INTERIORS.shrine.H; MAP_STR=INTERIORS.shrine.str; G.pos={x:INTERIORS.shrine.startX,y:INTERIORS.shrine.startY}; G.indoor="shrine"; if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"up"); Audio.sfx("step"); if(!G.inBattle)Audio.startMusic(fieldMusic()); }
-function sailFromShrine(){ W=INTERIORS.isle.W; H=INTERIORS.isle.H; MAP_STR=INTERIORS.isle.str; G.pos={x:13,y:9}; G.indoor="isle"; if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"down"); Audio.sfx("step"); if(!G.inBattle)Audio.startMusic(fieldMusic()); }
+function sailToShrine(){ warpFade(()=>{ W=INTERIORS.shrine.W; H=INTERIORS.shrine.H; MAP_STR=INTERIORS.shrine.str; G.pos={x:INTERIORS.shrine.startX,y:INTERIORS.shrine.startY}; G.indoor="shrine"; if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"up"); Audio.sfx("step"); if(!G.inBattle)Audio.startMusic(fieldMusic()); }); }
+function sailFromShrine(){ warpFade(()=>{ W=INTERIORS.isle.W; H=INTERIORS.isle.H; MAP_STR=INTERIORS.isle.str; G.pos={x:13,y:9}; G.indoor="isle"; if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"down"); Audio.sfx("step"); if(!G.inBattle)Audio.startMusic(fieldMusic()); }); }
 const _shrSVG="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><rect width='160' height='110' rx='12' fill='#cbe0f2'/><ellipse cx='40' cy='28' rx='26' ry='11' fill='#fff' opacity='.7'/><ellipse cx='122' cy='22' rx='30' ry='12' fill='#fff' opacity='.7'/><rect x='54' y='58' width='52' height='10' fill='#d8c8a0'/><rect x='60' y='34' width='8' height='24' fill='#e8dcc0'/><rect x='92' y='34' width='8' height='24' fill='#e8dcc0'/><rect x='50' y='28' width='60' height='8' fill='#c8b890'/><circle cx='80' cy='48' r='11' fill='#ffe07a'/><circle cx='80' cy='48' r='17' fill='#ffe07a' opacity='.3'/></svg>";
 const SHRINE_INTRO=[
   {art:_shrSVG,t:"구름을 헤치고 배가 닿은 곳은 <b>하늘 신전</b>. 두 인장의 힘이 교차하는 성소다."},
@@ -4122,7 +4122,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)

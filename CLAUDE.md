@@ -90,6 +90,7 @@ verify 내용:
 ### 문 페이드 전환 (포켓몬식)
 `warpFade(swap)`: 검정 오버레이(`#warpFade`, canvasWrap 내부 `.warp-fade`)를 페이드아웃(→검정, 150ms)→**완전히 덮인 시점에 맵 스왑**→페이드인(→새 장면, 220ms). `enterInterior`/`exitInterior`가 실제 로직(`_enterInterior`/`_exitInterior`)을 `warpFade`로 감싼다. reduceMotion이면 즉시(swap 바로 호출). `_warpLock`(now+470)이 페이드 동안 입력 잠금.
 - ⚠️ `blackout`은 `exitInterior` 후 **동기적으로 G.pos를 STARTPOS로 덮어쓰므로** 지연 페이드판(`exitInterior`)이 아니라 즉시판 `_exitInterior()`를 호출해야 한다(안 그러면 지연 스왑이 STARTPOS를 덮어씀).
+- 배 이동(`sailToIsle`/`sailToCoast`/`sailToShrine`/`sailFromShrine`)도 본문을 `warpFade`로 감싸 암전 전환 적용. 호출부의 스토리 힌트 setTimeout(420ms)은 지연 스왑(150ms)보다 늦어 안전. 회귀 `scripts/sail_fade_test.js`.
 - 지연 스왑(150ms)이라 입장 직후 G.indoor/G.pos가 잠깐 그대로임 — 스토리 힌트 setTimeout들은 모두 400ms+라 안전.
 - 회귀: `door_bounce_test.js`가 문 페이드 opacity 피크(>0.5)도 확인.
 
