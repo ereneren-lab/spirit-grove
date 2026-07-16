@@ -21,9 +21,11 @@ const { chromium } = require("playwright"); const path=require("path");
   // 트레이너 격파 처리 시작(비동기) — 첫 await(mw) 전에 startMusic("victory")가 동기 실행됨
   await p.evaluate(()=>{ try{ window.SG.flow.trainerDefeated(); }catch(e){} });
   await p.waitForTimeout(200);   // endBattle(수 초 뒤) 전에 확인
-  const mid=await p.evaluate(()=>window.SG.Audio.track);
-  ok(mid==="victory", `승리 시 팡파르 트랙으로 교체 (track=${mid})`);
-  ok(mid!=="battle", "전투 음악이 계속 깔리지 않음");
+  const mid=await p.evaluate(()=>({track:window.SG.Audio.track, gain:window.SG.Audio.musicGain.gain.value}));
+  ok(mid.track==="victory", `승리 시 팡파르 트랙으로 교체 (track=${mid.track})`);
+  ok(mid.track!=="battle", "전투 음악이 계속 깔리지 않음");
+  // 스팅어는 페이드인 없이 즉시 풀볼륨(≈0.30). 페이드였다면 200ms 시점에 ~0.11.
+  ok(mid.gain>0.2, `승리 팡파르 즉시 풀볼륨 — 포켓몬식 '팡' (gain=${mid.gain.toFixed(3)})`);
 
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 승리 음악 통과");

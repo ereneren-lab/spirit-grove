@@ -798,9 +798,10 @@ const Audio={ctx:null,master:null,musicGain:null,sfxGain:null,muted:false,track:
     victory:{bpm:140,mel:[523,659,784,1047,784,1047,0,0,880,0,784,0,1047,0,0,0,523,659,784,1047,880,1047,0,0,1047,0,0,0,0,0,0,0],
       bass:[131,0,165,0,196,0,262,0,196,0,165,0,131,0,0,0,131,0,165,0,220,0,262,0,131,0,0,0,0,0,0,0]}
   },
-  startMusic(name){ if(!this.ctx)return; if(this.track===name&&this.timer)return; this.track=name;this.step=0;
+  startMusic(name,immediate){ if(!this.ctx)return; if(this.track===name&&this.timer)return; this.track=name;this.step=0;
     if(this.musicGain){ const g=this.musicGain.gain,now=this.ctx.currentTime; g.cancelScheduledValues(now);
-      g.setValueAtTime(0.02,now); g.linearRampToValueAtTime(0.30,now+0.6); }
+      if(immediate){ g.setValueAtTime(0.30,now); }                                       // 스팅어(승리 팡파르): 페이드 없이 즉시 풀볼륨 = 포켓몬식 '팡' 임팩트
+      else { g.setValueAtTime(0.02,now); g.linearRampToValueAtTime(0.30,now+0.6); } }     // 앰비언트: 은은한 페이드인
     this.nextTime=this.ctx.currentTime+0.06; if(this.timer)clearInterval(this.timer); this.timer=setInterval(()=>this._sched(),25); },
   stopMusic(){ if(this.timer){clearInterval(this.timer);this.timer=null;} this.track=null; },
   _sched(){ if(!this.ctx||!this.track)return; const tr=this.tracks[this.track]; const sd=60/tr.bpm/2; const len=tr.mel.length;
@@ -3158,7 +3159,7 @@ function gainEV(m, foeId){ if(!m)return; if(!m.evs)m.evs={hp:0,atk:0,def:0,spa:0
   const b=sp.base; const keys=["hp","atk","def","spa","spDef","spd"].slice().sort((a,c)=>(b[c]||0)-(b[a]||0));
   [[keys[0],2],[keys[1],1]].forEach(pair=>{ const k=pair[0],g=pair[1]; if(tot>=510)return; const add=Math.min(g,252-(m.evs[k]||0),510-tot); if(add>0){ m.evs[k]=(m.evs[k]||0)+add; tot+=add; } });
   recalc(m); }
-async function winBattle(){ $("foeSprite").classList.add("faint"); Audio.sfx("faint"); if(!G.trainer)Audio.startMusic("victory"); if(G.party[G.active]&&G.foe)gainEV(G.party[G.active],G.foe.id); G.party.forEach((pm,i)=>{ if(pm)pm.friendship=(pm.friendship||0)+(i===G.active?6:2); });
+async function winBattle(){ $("foeSprite").classList.add("faint"); Audio.sfx("faint"); if(!G.trainer)Audio.startMusic("victory",true); if(G.party[G.active]&&G.foe)gainEV(G.party[G.active],G.foe.id); G.party.forEach((pm,i)=>{ if(pm)pm.friendship=(pm.friendship||0)+(i===G.active?6:2); });
   setMsg(`<b>${G.foe.name}</b>을(를) 쓰러뜨렸다!`); await mw(640);
   const me=activeMon(); const base=Math.floor(G.foe.level*19+14+(G.trainer?G.foe.level*4:0));
   setMsg(`<b>${me.name}</b> 경험치 +${base}`); await mw(540);
@@ -3179,7 +3180,7 @@ async function winBattle(){ $("foeSprite").classList.add("faint"); Audio.sfx("fa
 
 async function trainerDefeated(){ const tr=G.trainer; const firstWin=!G.defeated.has(tr.key);
   G.defeated.add(tr.key); if(G.rematchWanted)G.rematchWanted.delete(tr.key); Field.removeNpc(tr.key); if(tr._npcId)Field.removeNpc("NPC_"+tr._npcId);
-  Audio.sfx("win"); Audio.startMusic("victory");   // 야생 승리처럼 깨끗한 승리 팡파르 트랙으로 통일(전투 음악 교체). endBattle이 필드 음악으로 복귀.
+  Audio.sfx("win"); Audio.startMusic("victory",true);   // 야생 승리처럼 깨끗한 승리 팡파르 트랙으로 통일(전투 음악 교체). endBattle이 필드 음악으로 복귀.
   setMsg(`<b>${tr.name}</b>을(를) 물리쳤다!`); await mw(900);
   const money=tr.rematch?Math.floor(tr.money*0.5):tr.money; G.money+=money; updateMoney();
   let parts=["💰 "+money];
@@ -3317,7 +3318,7 @@ async function tryCatch(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너
   const wobbles=caught?3:(chance<0.22?1:chance<0.5?2:3);
   for(let i=0;i<wobbles;i++){ ballEl.animate([{transform:"translate(-50%,-50%) rotate(0deg)"},{transform:"translate(-50%,-50%) rotate(-24deg)"},{transform:"translate(-50%,-50%) rotate(24deg)"},{transform:"translate(-50%,-50%) rotate(0deg)"}],{duration:fxT(520),easing:"ease-in-out"});
     Audio.sfx("blip"); setMsg("…흔들…".repeat(i+1)); await wait(fxT(560)); }
-  if(caught){ await wait(fxT(240)); ballEl.animate([{transform:"translate(-50%,-50%) scale(1.15)"},{transform:"translate(-50%,-50%) scale(0.9)"},{transform:"translate(-50%,-50%) scale(1)"}],{duration:fxT(180)}); if(typeof impactFlash==="function")impactFlash(); Audio.sfx("catch"); Audio.startMusic("victory"); await wait(fxT(220)); setMsg(`✨ <b>${foe.name}</b>을(를) 포획했다!`);   /* 포켓몬식: 포획 성공 = 승리 팡파르(전투 음악 교체). endBattle이 필드 음악 복귀 */
+  if(caught){ await wait(fxT(240)); ballEl.animate([{transform:"translate(-50%,-50%) scale(1.15)"},{transform:"translate(-50%,-50%) scale(0.9)"},{transform:"translate(-50%,-50%) scale(1)"}],{duration:fxT(180)}); if(typeof impactFlash==="function")impactFlash(); Audio.sfx("catch"); Audio.startMusic("victory",true); await wait(fxT(220)); setMsg(`✨ <b>${foe.name}</b>을(를) 포획했다!`);   /* 포켓몬식: 포획 성공 = 승리 팡파르(전투 음악 교체). endBattle이 필드 음악 복귀 */
     ballEl.animate([{transform:"translate(-50%,-50%) scale(1)"},{transform:"translate(-50%,-50%) scale(1.25)"},{transform:"translate(-50%,-50%) scale(1)"}],{duration:fxT(360)});
     fxCaptureFlash(foeC); particles("foe","✨",14); for(let k=0;k<8;k++){ const a=k/8*6.28,e=fxGlyph("⭐",{x:foeC.x,y:foeC.y},"#ffe08a","fx-particle"); e.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:`translate(-50%,-50%) translate(${Math.cos(a)*44}px,${Math.sin(a)*44}px) scale(1)`,opacity:0}],{duration:fxT(620),easing:"ease-out",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); } foeSp.classList.add("faint"); await wait(fxT(560)); ballEl.remove();
     const _dexNew=!G.caught.has(foe.id);   // 포획 전 도감 신규 여부
