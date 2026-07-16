@@ -365,13 +365,19 @@
 /* double battle */
 .dbfoes,.dballies{display:flex;gap:8px;margin:6px 0}
 .dbmon{flex:1;background:#2a2f48;border:1px solid #3a4060;border-radius:10px;padding:6px 8px;display:flex;gap:8px;align-items:center;transition:opacity .3s}
-.dbmon.dead{opacity:.35;filter:grayscale(1)}
-.dbmon.empty{opacity:.3;justify-content:center;min-height:44px}
-.dbmon .dbsp{font-size:30px}
+.dbmon.foe{background:linear-gradient(180deg,#332a42,#2a2438)}
+.dbmon.ally{background:linear-gradient(180deg,#26324a,#222b40)}
+.dbmon.dead{opacity:.4;filter:grayscale(1)}
+.dbmon.empty{opacity:.3;justify-content:center;min-height:52px}
+.dbmon .dbsp{width:52px;height:52px;flex:none;display:flex;align-items:end;justify-content:center;position:relative}
+.dbmon .dbsp::after{content:"";position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:38px;height:8px;background:radial-gradient(ellipse,rgba(0,0,0,.35),transparent 70%);border-radius:50%}
+.dbmon .dbsp img,.dbmon .dbsp svg{width:50px;height:50px;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.dbmon .dbsp.shiny img{filter:drop-shadow(0 2px 3px rgba(0,0,0,.35)) hue-rotate(150deg) saturate(1.4) brightness(1.05)}
 .dbinfo{flex:1;min-width:0}
 .dbnm{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dblv{font-size:10px;opacity:.7;font-weight:400}
-.dbst{font-size:9px;background:#c25b5b;color:#fff;border-radius:4px;padding:0 4px;margin-left:4px}
+.dbst{font-size:9px;color:#fff;border-radius:4px;padding:0 4px;margin-left:4px;background:#6a6f8a}
+.dbst.b-psn{background:var(--psn)} .dbst.b-brn{background:var(--brn)} .dbst.b-par{background:var(--par)} .dbst.b-slp{background:#6a7fb0}
 .dbhpbar{height:6px;background:#1a1e30;border-radius:3px;overflow:hidden;margin:3px 0}
 .dbhpfill{height:100%;background:#5ac26a;transition:width .35s}
 .dbhpfill.warn{background:#e0c05a}.dbhpfill.crit{background:#e05a5a}
@@ -2949,9 +2955,9 @@ function startDouble(foeSpecs,name,key){
 }
 function dbHpClass(r){ return r>0.5?"":r>0.2?"warn":"crit"; }
 function dbCard(m,who,slot){ if(!m)return `<div class="dbmon empty">—</div>`;
-  const r=Math.max(0,m.hp/m.maxHp); const st=m.status?`<span class="dbst">${STATUS_KO[m.status]||""}</span>`:"";
-  const dead=m.hp<=0?" dead":"";
-  return `<div class="dbmon ${who}${dead}" data-slot="${slot}"><div class="dbsp">${m.em||"❔"}</div>`+
+  const r=Math.max(0,m.hp/m.maxHp); const st=m.status?`<span class="dbst ${STATUS_CLS[m.status]||""}">${STATUS_KO[m.status]||""}</span>`:"";
+  const dead=m.hp<=0?" dead":""; const shy=m.shiny?" shiny":"";
+  return `<div class="dbmon ${who}${dead}" data-slot="${slot}"><div class="dbsp${shy}">${creatureVisual(m.id,m.type)}</div>`+
     `<div class="dbinfo"><div class="dbnm">${dbName(m)} <span class="dblv">L${m.level}</span>${st}</div>`+
     `<div class="dbhpbar"><div class="dbhpfill ${dbHpClass(r)}" style="width:${r*100}%"></div></div>`+
     `<div class="dbhptxt">${Math.max(0,m.hp)}/${m.maxHp}</div></div></div>`;
@@ -3972,7 +3978,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)

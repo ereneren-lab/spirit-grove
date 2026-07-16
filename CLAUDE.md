@@ -66,6 +66,10 @@ verify 내용:
 - **소수점 레벨**: 특수 조우(파도/낚시/설원/섬/해안/용암/동굴)가 `clamp(avgLevel()+...)`만 하고 floor 안 해 소수점 레벨. → `makeMon`에서 `level=Math.max(1,Math.floor(level))`로 정수화(모든 조우/스탯 커버).
 - 회귀: 위 세 가지 + 파티 재정렬 + 돌 진화는 `scripts/bugfix_batch_test.js`.
 
+### 듀오 배틀(2v2) UI
+`dbCard`가 예전엔 `m.em`(작은 이모지)로 정령을 그려 허접했다. → `creatureVisual(m.id,m.type)` 크리처 아트로 렌더(`.dbsp` 52px 박스 + 지면 그림자 + drop-shadow), foe/ally 카드 배경 틴트 구분, shiny 필터. 상태칩(`.dbst`)은 하드코딩 빨강 대신 `STATUS_CLS` 색 클래스 사용(`.dbst.b-*`가 `.dbst`를 specificity로 이김). 별도 오버레이 시스템(`#dbOverlay`, `dbRender`/`dbCard`/`dbLog`)이라 메인 배틀과 무관. 회귀 `scripts/duo_battle_test.js`. `startDouble`/`dbRender`를 `SG.flow`에 노출(테스트용).
+- 상태이상 표기 전수 점검 결과: `slp` 누락(수정됨)이 유일한 갭. 독/화상/마비 잔뎀·혼란·풀죽음·씨앗 메시지는 모두 완비. 듀오 배틀 상태칩 색도 이참에 정상화.
+
 ### 진화 장면 (배틀 밖 · 진화의 돌)
 배틀 밖 진화(진화의 돌 `evostone`)는 예전엔 `flashHint` 텍스트만 뜨고 애니가 없었고 `type2`도 안 넣었다. → `evolveScene(m,to,itemKey)`: 전용 오버레이(`#evoOverlay`, `.evo-art`/`.evo-msg`)에서 포켓몬식 실루엣 모프(`brightness(0) invert(1)` 글로우 + 펄스, 중간에 새 종으로 스왑)를 보여주고 "어라…? → 축하해!" 메시지. B/✕로 취소 가능(취소 시 **돌 소모 안 함** — 소모는 성공 시점). `type2`·친밀도·울음소리·도감 반영. 배틀 내 진화는 기존 `evolveAnimate`(배틀 스프라이트) 유지.
 
