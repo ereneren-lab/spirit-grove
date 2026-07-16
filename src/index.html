@@ -781,6 +781,8 @@ const Audio={ctx:null,master:null,musicGain:null,sfxGain:null,muted:false,track:
       bass:[98,98,98,98,116,116,116,116,87,87,87,87,98,98,116,116, 110,110,110,110,87,87,87,87,98,98,116,116,131,131,98,98]},
     town:{bpm:96,mel:[523,0,659,0,784,0,659,0,587,0,523,0,494,0,523,0, 587,0,659,0,587,0,523,0,494,0,440,0,494,0,523,0],
       bass:[131,0,0,0,165,0,0,0,147,0,0,0,131,0,0,0, 147,0,0,0,131,0,0,0,123,0,0,0,131,0,0,0]},
+    title:{bpm:72,mel:[523,0,659,0,784,0,659,0,587,0,523,0,494,0,587,0, 659,0,784,0,880,0,784,659,587,0,523,0,494,0,523,0],
+      bass:[131,0,0,0,98,0,0,0,110,0,0,0,87,0,0,0, 131,0,0,0,98,0,0,0,110,0,0,0,116,0,0,0]},
     forest:{bpm:78,mel:[440,0,523,0,494,0,392,0,440,0,587,0,523,0,494,0,392,0,440,0,349,0,392,0,440,0,523,0,494,0,440,0],
       bass:[110,0,0,0,131,0,0,0,98,0,0,0,110,0,0,0,87,0,0,0,98,0,0,0,110,0,0,0,131,0,0,0]},
     lake:{bpm:74,mel:[523,659,784,659,587,523,494,523,587,659,587,523,494,440,494,523,587,698,587,523,494,440,392,440,494,587,659,587,523,494,440,392],
@@ -812,6 +814,13 @@ const Audio={ctx:null,master:null,musicGain:null,sfxGain:null,muted:false,track:
   toggleMute(){ this.muted=!this.muted; if(this.master)this.master.gain.value=this.muted?0:CONFIG.volume; return this.muted; }
 };
 $("muteBtn").addEventListener("click",()=>{ Audio.init(); const m=Audio.toggleMute(); $("muteBtn").textContent=m?"🔇":"🔊"; });
+// 첫 사용자 제스처에 오디오 언락(브라우저 오토플레이 정책) → 메뉴 화면이면 잔잔한 타이틀 테마. 맵/전투 진입 시 startMusic이 교체.
+(function menuMusicUnlock(){ const start=()=>{ try{ Audio.init(); Audio.resume();
+    const mapOn=(function(){ const m=document.getElementById("map"); return m&&m.classList.contains("active"); })();
+    const inBattle=(typeof G!=="undefined"&&G&&G.inBattle);
+    if(Audio.ctx && !Audio.timer && !mapOn && !inBattle) Audio.startMusic("title");
+  }catch(_){} document.removeEventListener("pointerdown",start,true); document.removeEventListener("keydown",start,true); };
+  document.addEventListener("pointerdown",start,true); document.addEventListener("keydown",start,true); })();
 
 /* ===== TYPES / MOVES ===== */
 const TYPE_KO={fire:"불",water:"물",grass:"풀",elec:"전기",normal:"노말",flying:"비행",rock:"바위"};
