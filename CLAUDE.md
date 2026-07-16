@@ -105,6 +105,9 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+## 타입 시스템 (10종)
+불·물·풀·전기·노말·비행·바위 + **얼음·독·땅**(추가됨). `EFF`는 10×10 완전표(모든 조합 정의 — 누락 시 `damage`에서 NaN). 특수 타입(spa/spDef)=불·물·풀·전기·**얼음**(`damage`의 `SPEC`), 나머지 물리. `TYPE_KO`/`TYPE_CLASS`/`TYPE_COLOR`/CSS `--<type>`·`.type-tag.t-<type>`·`.b-<st>`·`.dbst.b-<st>` 동기화 필수. 상태이상에 **냉동(frz)** 추가(잠듦류: 매턴 20% 해동, 못 움직임). 얼음 크리처(빙구리·서리강아지·빙하곰·얼음정·빙하룡·동결룡·설올빼미·빙하제 등)를 water→ice 재타이핑, 독(해파리정·개굴몽), 땅(굴다람·바위정·마그마룡) 재배치. 새 기술 얼음/독/땅 각 몇 종. 회귀 `scripts/type_chart_test.js`·`scripts/newtypes_test.js`.
+
 ## 완료된 개선 (되돌리지 말 것)
 - 86종 전원 v2 아트 통일 (DEX 86 = PAINT_ART 86).
 - 불여우 라인 파라꼬→파라울→파라온을 구미호 계보로 재설계, 이모지 🦊 통일.

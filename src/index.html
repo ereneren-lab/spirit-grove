@@ -8,7 +8,7 @@
   :root{
     --bg:#171326;--bg2:#221c34;--panel:#2a2440;--panel2:#352e4f;--line:#433a5e;--cream:#f3ecdd;--muted:#9a90b0;
     --amber:#f0a868;--mint:#7fd1ae;--rose:#e8788a;
-    --fire:#f08a5d;--water:#5d9cf0;--grass:#7fd16f;--elec:#f0cf5d;--normal:#c7bca6;--flying:#9db8e0;--rock:#c2a878;
+    --fire:#f08a5d;--water:#5d9cf0;--grass:#7fd16f;--elec:#f0cf5d;--normal:#c7bca6;--flying:#9db8e0;--rock:#c2a878;--ice:#88d6e6;--poison:#b57fd0;--ground:#d2a862;
     --psn:#b07fd1;--brn:#f0875d;--par:#f0cf5d;
     --shadow:0 10px 30px rgba(0,0,0,.45);--r:14px;
   }
@@ -72,9 +72,9 @@
   .pick-card .nm{font-weight:800;font-size:14px}
   .pick-card .ds{font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.5}
   .type-tag{display:inline-block;font-size:10px;font-weight:800;color:#1a1626;padding:2px 8px;border-radius:999px;margin-top:7px;letter-spacing:.4px}
-  .type-tag.t-fire{background:var(--fire)} .type-tag.t-water{background:var(--water)} .type-tag.t-grass{background:var(--grass)} .type-tag.t-elec{background:var(--elec)} .type-tag.t-normal{background:var(--normal)} .type-tag.t-flying{background:var(--flying)} .type-tag.t-rock{background:var(--rock)}
+  .type-tag.t-fire{background:var(--fire)} .type-tag.t-water{background:var(--water)} .type-tag.t-grass{background:var(--grass)} .type-tag.t-elec{background:var(--elec)} .type-tag.t-normal{background:var(--normal)} .type-tag.t-flying{background:var(--flying)} .type-tag.t-rock{background:var(--rock)} .type-tag.t-ice{background:var(--ice)} .type-tag.t-poison{background:var(--poison);color:#f3ecdd} .type-tag.t-ground{background:var(--ground)}
   .st-badge{display:inline-block;font-size:9px;font-weight:800;color:#1a1626;padding:1px 6px;border-radius:6px;margin-left:5px}
-  .b-psn{background:var(--psn)} .b-brn{background:var(--brn)} .b-par{background:var(--par)} .b-slp{background:#6a7fb0}
+  .b-psn{background:var(--psn)} .b-brn{background:var(--brn)} .b-par{background:var(--par)} .b-slp{background:#6a7fb0} .b-frz{background:#6fc4e0}
   #evoOverlay .evo-art{width:min(58vw,230px);height:min(58vw,230px);display:flex;align-items:center;justify-content:center;position:relative}
   #evoOverlay .evo-art img,#evoOverlay .evo-art svg{width:100%;height:100%;object-fit:contain}
   #evoOverlay .evo-art.sil img,#evoOverlay .evo-art.sil svg{filter:brightness(0) invert(1) drop-shadow(0 0 16px #cfe8ff)}
@@ -386,7 +386,7 @@
 .dbnm{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dblv{font-size:10px;opacity:.7;font-weight:400}
 .dbst{font-size:9px;color:#fff;border-radius:4px;padding:0 4px;margin-left:4px;background:#6a6f8a}
-.dbst.b-psn{background:var(--psn)} .dbst.b-brn{background:var(--brn)} .dbst.b-par{background:var(--par)} .dbst.b-slp{background:#6a7fb0}
+.dbst.b-psn{background:var(--psn)} .dbst.b-brn{background:var(--brn)} .dbst.b-par{background:var(--par)} .dbst.b-slp{background:#6a7fb0} .dbst.b-frz{background:#6fc4e0}
 .dbhpbar{height:6px;background:#1a1e30;border-radius:3px;overflow:hidden;margin:3px 0}
 .dbhpfill{height:100%;background:#5ac26a;transition:width .35s}
 .dbhpfill.warn{background:#e0c05a}.dbhpfill.crit{background:#e05a5a}
@@ -854,9 +854,9 @@ $("muteBtn").addEventListener("click",()=>{ Audio.init(); const m=Audio.toggleMu
   document.addEventListener("pointerdown",start,true); document.addEventListener("keydown",start,true); })();
 
 /* ===== TYPES / MOVES ===== */
-const TYPE_KO={fire:"불",water:"물",grass:"풀",elec:"전기",normal:"노말",flying:"비행",rock:"바위"};
-const TYPE_CLASS={fire:"t-fire",water:"t-water",grass:"t-grass",elec:"t-elec",normal:"t-normal",flying:"t-flying",rock:"t-rock"};
-const TYPE_COLOR={fire:"#f08a5d",water:"#5d9cf0",grass:"#7fd16f",elec:"#f0cf5d",normal:"#c7bca6",flying:"#9db8e0",rock:"#c2a878"};
+const TYPE_KO={fire:"불",water:"물",grass:"풀",elec:"전기",normal:"노말",flying:"비행",rock:"바위",ice:"얼음",poison:"독",ground:"땅"};
+const TYPE_CLASS={fire:"t-fire",water:"t-water",grass:"t-grass",elec:"t-elec",normal:"t-normal",flying:"t-flying",rock:"t-rock",ice:"t-ice",poison:"t-poison",ground:"t-ground"};
+const TYPE_COLOR={fire:"#f08a5d",water:"#5d9cf0",grass:"#7fd16f",elec:"#f0cf5d",normal:"#c7bca6",flying:"#9db8e0",rock:"#c2a878",ice:"#88d6e6",poison:"#b57fd0",ground:"#d2a862"};
 const TYPE_ICON={fire:"🔥",water:"💧",grass:"🍃",elec:"⚡",normal:"⭐",flying:"🪶",rock:"🪨"};
 const ABILITY_KO={blaze:"맹화",torrent:"급류",overgrow:"신록",static:"정전기",intimidate:"위협",sturdy:"옹골참",thickfat:"두꺼운지방",guts:"근성"};
 const ABILITY_DESC={blaze:"HP가 낮으면 불 기술 위력 ↑",torrent:"HP가 낮으면 물 기술 위력 ↑",overgrow:"HP가 낮으면 풀 기술 위력 ↑",static:"맞으면 30% 확률로 상대 마비",intimidate:"등장 시 상대 공격 1 ↓",sturdy:"풀피일 때 한 방에 안 쓰러짐",thickfat:"불 기술 피해 절반",guts:"상태이상이면 공격 ↑"};
@@ -879,16 +879,19 @@ const HELD_ITEMS={
   powerband:{ko:"힘의띠",em:"💪",desc:"기술 위력이 약간 오른다"},
 };
 const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts"};
-const STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦"};
-const STATUS_CLS={psn:"b-psn",brn:"b-brn",par:"b-par",slp:"b-slp"};
+const STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦",frz:"냉동"};
+const STATUS_CLS={psn:"b-psn",brn:"b-brn",par:"b-par",slp:"b-slp",frz:"b-frz"};
 const EFF={
-  fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5},
-  water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2},
-  grass:  {fire:.5,water:2, grass:.5,elec:1, normal:1,flying:.5,rock:2},
-  elec:   {fire:1, water:2, grass:.5,elec:.5,normal:1,flying:2, rock:1},
-  normal: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:.5},
-  flying: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5},
-  rock:   {fire:2, water:1, grass:1, elec:1, normal:1,flying:2, rock:1},
+  fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1},
+  water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2},
+  grass:  {fire:.5,water:2, grass:.5,elec:1, normal:1,flying:.5,rock:2, ice:1, poison:.5,ground:2},
+  elec:   {fire:1, water:2, grass:.5,elec:.5,normal:1,flying:2, rock:1, ice:1, poison:1, ground:0},
+  normal: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1},
+  flying: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1},
+  rock:   {fire:2, water:1, grass:1, elec:1, normal:1,flying:2, rock:1, ice:2, poison:1, ground:.5},
+  ice:    {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:2, rock:1, ice:.5,poison:1, ground:2},
+  poison: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:.5,ground:.5},
+  ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1},
 };
 // eff: {status:'brn',chance} | {stat:'atk',stage:-1,target:'foe'|'self',chance}
 const MOVES={
@@ -940,6 +943,19 @@ const MOVES={
   rockthrow:{name:"바위던지기",type:"rock",power:45,acc:90,pp:20,pri:0},
   rockslide:{name:"락슬라이드",type:"rock",power:60,acc:90,pp:12,pri:0},
   boulder:{name:"거석충돌",type:"rock",power:74,acc:85,pp:8,pri:0},
+  // ===== 얼음(특수) =====
+  iceshard:{name:"얼음뭉치",type:"ice",power:40,acc:100,pp:20,pri:1},
+  frostbreath:{name:"서리숨결",type:"ice",power:48,acc:100,pp:15,pri:0,eff:{status:"frz",chance:0.1}},
+  icebeam:{name:"냉동빔",type:"ice",power:60,acc:95,pp:12,pri:0,eff:{status:"frz",chance:0.12}},
+  blizzard:{name:"눈보라",type:"ice",power:76,acc:80,pp:6,pri:0,eff:{status:"frz",chance:0.15}},
+  chill:{name:"한기",type:"ice",power:0,acc:95,pp:20,pri:0,eff:{stat:"spd",stage:-1,target:"foe",chance:1}},
+  // ===== 독(물리 계열) =====
+  poisonjab:{name:"독찌르기",type:"poison",power:50,acc:100,pp:20,pri:0,eff:{status:"psn",chance:0.2}},
+  sludge:{name:"오물폭탄",type:"poison",power:62,acc:95,pp:10,pri:0,eff:{status:"psn",chance:0.3}},
+  // ===== 땅(물리) =====
+  mudshot:{name:"머드샷",type:"ground",power:42,acc:95,pp:15,pri:0,eff:{stat:"spd",stage:-1,target:"foe",chance:1}},
+  dig:{name:"땅파기",type:"ground",power:60,acc:100,pp:10,pri:0},
+  quake:{name:"지진",type:"ground",power:78,acc:100,pp:8,pri:0},
   struggle:{name:"발버둥",type:"normal",power:40,acc:100,pp:Infinity,pri:0,recoil:0.25},
 };
 // 기술 효과를 사람이 읽을 수 있는 한 줄로. 배우기/잊기/재습득 UI에서 "어떤 기술인지" 보여준다.
@@ -979,15 +995,15 @@ const DEX=[
   {id:"voltrat",name:"찌리볼",em:"🐀",type:"elec",tier:2,base:{hp:58,atk:13,def:12,spd:21,spa:18,spDef:12},moves:["spark","bolt"],learn:[[28,"thunder"]]},
   {id:"bunnyhop",name:"토롱이",em:"🐇",type:"normal",tier:1,base:{hp:44,atk:11,def:10,spd:16,spa:8,spDef:10},moves:["tackle","quickjab"],learn:[[8,"furyswipe"],[10,"slam"],[14,"recover"]],evolveTo:"harelord",evolveFriend:100},
   {id:"harelord",name:"토롱크",em:"🐇",type:"normal",tier:2,base:{hp:58,atk:16,def:13,spd:22,spa:12,spDef:13},moves:["slam","quickjab"],learn:[[28,"crush"]]},
-  {id:"frostfish",name:"빙구리",em:"🐟",type:"water",tier:1,base:{hp:46,atk:9,def:11,spd:13,spa:12,spDef:11},moves:["tackle","splash"],learn:[[12,"hydro"]],evolveTo:"sharkfin",evolveItem:"waterstone"},
-  {id:"sharkfin",name:"빙구악",em:"🦈",type:"water",type2:"rock",tier:2,base:{hp:62,atk:14,def:13,spd:16,spa:19,spDef:13},moves:["splash","hydro"],learn:[[28,"tsunami"]]},
+  {id:"frostfish",name:"빙구리",em:"🐟",type:"ice",tier:1,base:{hp:46,atk:9,def:11,spd:13,spa:12,spDef:11},moves:["tackle","iceshard"],learn:[[12,"icebeam"]],evolveTo:"sharkfin",evolveItem:"waterstone"},
+  {id:"sharkfin",name:"빙구악",em:"🦈",type:"ice",type2:"rock",tier:2,base:{hp:62,atk:14,def:13,spd:16,spa:19,spDef:13},moves:["iceshard","icebeam"],learn:[[28,"blizzard"]]},
   {id:"cindercat",name:"냥불",em:"🐈‍⬛",type:"fire",tier:1,base:{hp:45,atk:11,def:10,spd:15,spa:15,spDef:10},moves:["tackle","ember"],learn:[[12,"flare"]],evolveTo:"tigerflame",evolveItem:"firestone"},
   {id:"tigerflame",name:"냥호",em:"🐅",type:"fire",tier:2,base:{hp:60,atk:14,def:13,spd:17,spa:20,spDef:13},moves:["ember","flare"],learn:[[28,"inferno"]]},
   {id:"racoonmon",name:"라꾸리",em:"🦝",type:"normal",tier:1,base:{hp:50,atk:12,def:12,spd:12,spa:9,spDef:12},moves:["tackle","growl"],learn:[[9,"slam"],[12,"furyswipe"],[15,"drainfang"]]},
   {id:"hedgemoss",name:"가시몽",em:"🦔",type:"rock",type2:"grass",tier:1,base:{hp:56,atk:12,def:15,spd:8,spa:9,spDef:15},moves:["tackle","rockthrow"],learn:[[8,"harden"],[13,"rockslide"]]},
   {id:"sprigfawn",name:"푸르사",em:"🦌",type:"grass",type2:"normal",tier:1,base:{hp:50,atk:9,def:12,spd:13,spa:13,spDef:12},moves:["tackle","leaf"],learn:[[12,"vine"]]},
   {id:"voltbeetle",name:"찌리딱",em:"🪲",type:"elec",tier:1,base:{hp:48,atk:9,def:13,spd:12,spa:13,spDef:13},moves:["tackle","spark"],learn:[[13,"bolt"]]},
-  {id:"swampfrog",name:"개굴몽",em:"🐸",type:"water",type2:"grass",tier:2,base:{hp:54,atk:10,def:13,spd:11,spa:14,spDef:13},moves:["splash","leaf"],learn:[[16,"hydro"]]},
+  {id:"swampfrog",name:"개굴몽",em:"🐸",type:"water",type2:"poison",tier:2,base:{hp:54,atk:10,def:13,spd:11,spa:14,spDef:13},moves:["splash","poisonjab"],learn:[[16,"sludge"]]},
   {id:"emberdrake",name:"마그룡",em:"🐉",type:"fire",type2:"flying",tier:2,base:{hp:60,atk:13,def:13,spd:11,spa:18,spDef:13},moves:["ember","flare"],learn:[[24,"inferno"]]},
   {id:"otterwave",name:"무라리",em:"🦦",type:"water",type2:"normal",tier:2,base:{hp:54,atk:11,def:12,spd:14,spa:15,spDef:12},moves:["splash","hydro"],learn:[[24,"tsunami"]]},
   {id:"vinesnake",name:"넝쿠리",em:"🐍",type:"grass",tier:2,base:{hp:50,atk:12,def:10,spd:15,spa:17,spDef:10},moves:["leaf","vine"],learn:[[20,"toxic"],[24,"bloom"]]},
@@ -1000,7 +1016,7 @@ const DEX=[
   {id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"rock",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","hydro","boulder"],learn:[]},
   {id:"gullian",name:"갈매정",em:"🐦",type:"flying",type2:"water",tier:2,base:{hp:58,atk:16,def:12,spd:23,spa:16,spDef:13},moves:["peck","gust","wingatk","splash"],learn:[[16,"skyrush"]]},
   {id:"palmore",name:"야자정",em:"🌴",type:"grass",tier:2,base:{hp:72,atk:18,def:22,spd:8,spa:16,spDef:18},moves:["vine","bloom","slam","absorb"],learn:[[20,"megadrain"]]},
-  {id:"jellure",name:"해파리정",em:"🪼",type:"water",tier:1,base:{hp:54,atk:8,def:12,spd:15,spa:20,spDef:20},moves:["splash","absorb","hydro"],learn:[[22,"tsunami"]]},
+  {id:"jellure",name:"해파리정",em:"🪼",type:"water",type2:"poison",tier:1,base:{hp:54,atk:8,def:12,spd:15,spa:20,spDef:20},moves:["splash","sludge","hydro"],learn:[[22,"tsunami"]]},
   {id:"emberlix",name:"불도롱",em:"🦎",type:"fire",tier:2,base:{hp:56,atk:20,def:14,spd:21,spa:19,spDef:12},moves:["ember","furyswipe","quickjab","flare"],learn:[[24,"inferno"]]},
   {id:"seedbean",name:"씨앗콩",em:"🌱",type:"grass",tier:1,base:{hp:48,atk:11,def:14,spd:10,spa:13,spDef:13},moves:["tackle","leaf"],learn:[[10,"absorb"],[16,"vine"]],evolveTo:"titanoak",evolveLv:30},
   {id:"titanoak",name:"거목령",em:"🌳",type:"grass",tier:3,base:{hp:88,atk:22,def:26,spd:9,spa:20,spDef:22},moves:["slam","bloom","megadrain","harden"],learn:[[38,"bloomheal"]]},
@@ -1008,8 +1024,8 @@ const DEX=[
   {id:"pyrmoth",name:"화염나방",em:"🦋",type:"fire",type2:"flying",tier:3,base:{hp:74,atk:18,def:14,spd:22,spa:26,spDef:16},moves:["flare","wingatk","inferno","gust"],learn:[[40,"skyrush"]]},
   {id:"voltsnake",name:"번개뱀",em:"🐍",type:"elec",tier:1,base:{hp:46,atk:14,def:11,spd:15,spa:16,spDef:11},moves:["spark","tackle"],learn:[[14,"bolt"],[22,"twinbolt"]],evolveTo:"thundwyrm",evolveLv:32},
   {id:"thundwyrm",name:"뇌전룡",em:"⚡",type:"elec",type2:"flying",tier:3,base:{hp:80,atk:20,def:16,spd:24,spa:26,spDef:18},moves:["thunder","skyrush","twinbolt","crush"],learn:[]},
-  {id:"frostpup",name:"서리강아지",em:"🐕",type:"water",tier:1,base:{hp:50,atk:13,def:13,spd:12,spa:14,spDef:14},moves:["tackle","splash"],learn:[[12,"hydro"],[18,"harden"]],evolveTo:"glacibear",evolveLv:30},
-  {id:"glacibear",name:"빙하곰",em:"🐻‍❄️",type:"water",type2:"rock",tier:3,base:{hp:90,atk:24,def:24,spd:10,spa:16,spDef:22},moves:["crush","hydro","rockslide","boulder"],learn:[[38,"tsunami"]]},
+  {id:"frostpup",name:"서리강아지",em:"🐕",type:"ice",tier:1,base:{hp:50,atk:13,def:13,spd:12,spa:14,spDef:14},moves:["tackle","frostbreath"],learn:[[12,"icebeam"],[18,"harden"]],evolveTo:"glacibear",evolveLv:30},
+  {id:"glacibear",name:"빙하곰",em:"🐻‍❄️",type:"ice",type2:"rock",tier:3,base:{hp:90,atk:24,def:24,spd:10,spa:16,spDef:22},moves:["crush","icebeam","rockslide","boulder"],learn:[[38,"blizzard"]]},
   {id:"dewdrop",name:"이슬방울",em:"💧",type:"water",tier:1,base:{hp:45,atk:9,def:11,spd:13,spa:14,spDef:12},moves:["tackle","splash"],learn:[[10,"hydro"],[16,"absorb"]],evolveBranch:[{to:"glimmertide",lv:24,time:"day"},{to:"moonytide",lv:24,time:"night"}]},
   {id:"glimmertide",name:"윤슬정",em:"🌊",type:"water",type2:"flying",tier:3,base:{hp:70,atk:16,def:16,spd:24,spa:24,spDef:18},moves:["hydro","wingatk","tsunami","skyrush"],learn:[]},
   {id:"moonytide",name:"월광정",em:"🌙",type:"water",tier:3,base:{hp:82,atk:18,def:22,spd:14,spa:24,spDef:24},moves:["hydro","tsunami","absorb","recover"],learn:[]},
@@ -1021,10 +1037,10 @@ const DEX=[
   {id:"petalwing",name:"꽃날개",em:"🦋",type:"grass",type2:"flying",tier:1,base:{hp:44,atk:12,def:11,spd:18,spa:16,spDef:13},moves:["gust","leaf"],learn:[[14,"absorb"],[20,"wingatk"]],evolveTo:"blossomhawk",evolveLv:30},
   {id:"blossomhawk",name:"꽃매",em:"🦅",type:"grass",type2:"flying",tier:3,base:{hp:74,atk:20,def:16,spd:26,spa:26,spDef:18},moves:["skyrush","megadrain","wingatk","bloom"],learn:[]},
   {id:"lumbeast",name:"우직수",em:"🐂",type:"normal",tier:2,base:{hp:80,atk:24,def:22,spd:12,spa:12,spDef:18},moves:["crush","headbutt","slam","growl"],learn:[[36,"boulder"]]},
-  {id:"snowl",name:"설올빼미",em:"🦉",type:"flying",type2:"water",tier:2,base:{hp:62,atk:16,def:14,spd:24,spa:20,spDef:16},moves:["peck","hydro","gust","wingatk"],learn:[[32,"skyrush"]]},
-  {id:"cryogon",name:"동결룡",em:"🐋",type:"water",type2:"rock",tier:3,base:{hp:84,atk:24,def:28,spd:14,spa:24,spDef:22},moves:["tsunami","rockslide","hydro","boulder"],learn:[]},
-  {id:"iceling",name:"얼음정",em:"🧊",type:"water",tier:1,base:{hp:48,atk:12,def:16,spd:12,spa:16,spDef:16},moves:["tackle","splash"],learn:[[14,"hydro"],[20,"harden"]],evolveTo:"frostwyrm",evolveLv:32},
-  {id:"frostwyrm",name:"빙하룡",em:"❄️",type:"water",tier:3,base:{hp:82,atk:22,def:26,spd:16,spa:26,spDef:24},moves:["tsunami","hydro","crush","harden"],learn:[]},
+  {id:"snowl",name:"설올빼미",em:"🦉",type:"flying",type2:"ice",tier:2,base:{hp:62,atk:16,def:14,spd:24,spa:20,spDef:16},moves:["peck","icebeam","gust","wingatk"],learn:[[32,"skyrush"]]},
+  {id:"cryogon",name:"동결룡",em:"🐋",type:"ice",type2:"water",tier:3,base:{hp:84,atk:24,def:28,spd:14,spa:24,spDef:22},moves:["blizzard","rockslide","icebeam","boulder"],learn:[]},
+  {id:"iceling",name:"얼음정",em:"🧊",type:"ice",tier:1,base:{hp:48,atk:12,def:16,spd:12,spa:16,spDef:16},moves:["tackle","iceshard"],learn:[[14,"icebeam"],[20,"harden"]],evolveTo:"frostwyrm",evolveLv:32},
+  {id:"frostwyrm",name:"빙하룡",em:"❄️",type:"ice",tier:3,base:{hp:82,atk:22,def:26,spd:16,spa:26,spDef:24},moves:["blizzard","icebeam","crush","harden"],learn:[]},
   {id:"drakeling",name:"새끼용",em:"🦎",type:"normal",tier:1,base:{hp:50,atk:16,def:14,spd:14,spa:12,spDef:12},moves:["tackle","headbutt"],learn:[[16,"crush"],[22,"slam"]],evolveTo:"wyverna",evolveLv:25},
   {id:"wyverna",name:"비룡",em:"🐉",type:"normal",tier:2,base:{hp:70,atk:22,def:20,spd:18,spa:16,spDef:16},moves:["crush","headbutt","slam","furyswipe"],learn:[[36,"gust"]],evolveTo:"skydrake",evolveLv:42},
   {id:"skydrake",name:"천공룡",em:"🐲",type:"normal",type2:"flying",tier:3,base:{hp:96,atk:30,def:26,spd:26,spa:22,spDef:24},moves:["skyrush","crush","wingatk","headbutt"],learn:[]},
@@ -1040,14 +1056,14 @@ const DEX=[
   {id:"glowfly",name:"반딧불이",em:"🪰",type:"elec",tier:1,base:{hp:40,atk:10,def:10,spd:18,spa:18,spDef:12},moves:["spark","tackle"],learn:[[14,"bolt"],[22,"confuse"]],evolveTo:"arcmoth",evolveLv:30},
   {id:"arcmoth",name:"뇌광나방",em:"🦋",type:"elec",tier:3,base:{hp:70,atk:16,def:16,spd:24,spa:28,spDef:20},moves:["thunder","twinbolt","gust","spark"],learn:[]},
   {id:"pebblet",name:"조약돌",em:"🪨",type:"rock",tier:1,base:{hp:44,atk:14,def:22,spd:8,spa:6,spDef:14},moves:["tackle","rockthrow"],learn:[[12,"harden"],[18,"rockslide"]],evolveTo:"boulderin",evolveLv:22},
-  {id:"boulderin",name:"바위정",em:"⛰️",type:"rock",tier:2,base:{hp:64,atk:20,def:34,spd:8,spa:8,spDef:20},moves:["rockthrow","rockslide","slam","harden"],learn:[[30,"boulder"]],evolveTo:"megalith",evolveLv:36},
+  {id:"boulderin",name:"바위정",em:"⛰️",type:"rock",type2:"ground",tier:2,base:{hp:64,atk:20,def:34,spd:8,spa:8,spDef:20},moves:["rockthrow","rockslide","quake","harden"],learn:[[30,"boulder"]],evolveTo:"megalith",evolveLv:36},
   {id:"megalith",name:"거암왕",em:"🗿",type:"rock",tier:3,base:{hp:88,atk:28,def:44,spd:9,spa:10,spDef:26},moves:["boulder","rockslide","crush","harden"],learn:[]},
   {id:"lavakit",name:"용암구리",em:"🌋",type:"fire",type2:"rock",tier:1,base:{hp:48,atk:15,def:16,spd:12,spa:16,spDef:12},moves:["ember","rockthrow"],learn:[[16,"flare"],[22,"rockslide"]],evolveTo:"magmadon",evolveLv:32},
-  {id:"magmadon",name:"마그마룡",em:"🔥",type:"fire",type2:"rock",tier:3,base:{hp:82,atk:26,def:26,spd:14,spa:24,spDef:18},moves:["inferno","boulder","flare","rockslide"],learn:[]},
-  {id:"burrowmouse",name:"굴다람",em:"🐹",type:"normal",type2:"rock",tier:1,base:{hp:46,atk:14,def:15,spd:16,spa:9,spDef:12},moves:["tackle","rockthrow"],learn:[[14,"furyswipe"],[20,"headbutt"]],evolveTo:"burrowlord",evolveLv:30},
+  {id:"magmadon",name:"마그마룡",em:"🔥",type:"fire",type2:"ground",tier:3,base:{hp:82,atk:26,def:26,spd:14,spa:24,spDef:18},moves:["inferno","boulder","flare","quake"],learn:[]},
+  {id:"burrowmouse",name:"굴다람",em:"🐹",type:"ground",tier:1,base:{hp:46,atk:14,def:15,spd:16,spa:9,spDef:12},moves:["tackle","mudshot"],learn:[[14,"furyswipe"],[20,"dig"]],evolveTo:"burrowlord",evolveLv:30},
   {id:"burrowlord",name:"대굴왕",em:"🦫",type:"normal",type2:"rock",tier:3,base:{hp:78,atk:24,def:26,spd:18,spa:12,spDef:20},moves:["crush","rockslide","headbutt","furyswipe"],learn:[]},
   {id:"crystalgon",name:"결정룡",em:"💎",type:"rock",type2:"elec",tier:3,base:{hp:74,atk:20,def:30,spd:16,spa:26,spDef:24},moves:["rockslide","twinbolt","boulder","spark"],learn:[[40,"thunder"]]},
-  {id:"glaciarch",name:"빙하제",em:"🐉",type:"water",type2:"rock",tier:4,secret:true,base:{hp:96,atk:26,def:30,spd:18,spa:32,spDef:28},moves:["tsunami","hydro","boulder","rockslide"],learn:[]},
+  {id:"glaciarch",name:"빙하제",em:"🐉",type:"ice",type2:"water",tier:4,secret:true,base:{hp:96,atk:26,def:30,spd:18,spa:32,spDef:28},moves:["blizzard","icebeam","boulder","rockslide"],learn:[]},
   {id:"aqualord",name:"수룡왕",em:"🐉",type:"water",type2:"rock",tier:4,secret:true,base:{hp:96,atk:26,def:28,spd:22,spa:34,spDef:28},moves:["hydro","tsunami","rockslide","crush"],learn:[]},
   {id:"shadowlord",name:"흑요마",em:"👁️",type:"elec",type2:"rock",tier:3,secret:true,base:{hp:96,atk:22,def:26,spd:28,spa:33,spDef:26},moves:["thunder","crush","toxic","lullaby"],learn:[]},
   {id:"dawnguard",name:"오로르",em:"🕊️",type:"flying",tier:3,secret:true,base:{hp:96,atk:31,def:30,spd:28,spa:20,spDef:27},moves:["skyrush","wingatk","crush","recover"],learn:[]},
@@ -1104,7 +1120,7 @@ function stageMul(s){ return s>=0?(2+s)/2:2/(2-s); }
 function effSpd(m){ return m.spd*stageMul(m.stages.spd)*(m.status==="par"?0.5:1); }
 function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&def.type2!==def.type)eff*=EFF[move.type][def.type2];
   const burnMul=(att.status==="brn" && att.ability!=="guts")?0.5:1;
-  const SPEC={fire:1,water:1,grass:1,elec:1}; const isSpec=!!SPEC[move.type];
+  const SPEC={fire:1,water:1,grass:1,elec:1,ice:1}; const isSpec=!!SPEC[move.type];   // 얼음도 특수(독·땅은 물리)
   const A=isSpec?(att.spa||att.atk):att.atk, D=isSpec?(def.spDef||def.def):def.def;
   const aMul=isSpec?1:(stageMul(att.stages.atk)*burnMul); const dMul=isSpec?1:stageMul(def.stages.def);
   let abil=1;
@@ -1176,7 +1192,7 @@ TRAINERS.V3={key:"V3",name:"라이벌 카이",em:"🧑‍🎤",team:[["voltrat",
 TRAINERS.V4={key:"V4",name:"라이벌 카이",em:"🧑‍🎤",team:[["thunderowl",29],["voltrat",28],["harelord",30],["stormhawk",30]],reward:{greatball:5,hyperpotion:3,revive:2,candy:1},money:2800,intro:"라이벌 카이: 여기까지 왔구나. 군주께 닿기 전에 — 내 전부를 받아!",outro:"…졌다. 완전히. 가, 군주를 꺾어. 네가 이 숲을 지킬 자야. 친구."};
 const NPCS=[
   {id:"mina",x:14,y:48,chat:["미나: 도감은 채울수록 연구소가 보상을 준대. 부지런히 모아봐!","미나: 긴 풀숲엔 정령이 많이 숨어 있어. 나와도 놀라지 말고!","미나: 특수형 정령은 특공으로 싸우는 게 유리해. 도감 봤지?","미나: 힘내! 네가 인장을 되살릴 유일한 희망이야."],em:"🧑‍🔬",name:"조수 미나",spr:{outfit:"#eef0f2",accent:"#4cae9b",skin:"#e8c39a",hair:"#6b4a2e",boots:"#6a6f78",extra:"glasses"},
-    lines:["연구소 조수 미나: 위로 갈수록 정령이 강해져. 진한 풀숲일수록 조우 확률이 높으니 조심해!","모닥불 🔥 에 닿으면 정령이 모두 회복돼. 한 번 발견한 모닥불은 언제든 워프로 돌아올 수 있어.","참! 정령마다 물리형·특수형이 있어. 불·물·풀·전기 기술은 특수공격, 그 밖의 기술은 물리공격으로 피해가 계산돼. 도감에서 특공·특방을 확인해봐!"]},
+    lines:["연구소 조수 미나: 위로 갈수록 정령이 강해져. 진한 풀숲일수록 조우 확률이 높으니 조심해!","모닥불 🔥 에 닿으면 정령이 모두 회복돼. 한 번 발견한 모닥불은 언제든 워프로 돌아올 수 있어.","참! 정령마다 물리형·특수형이 있어. 불·물·풀·전기·얼음 기술은 특수공격, 그 밖의 기술은 물리공격으로 피해가 계산돼. 도감에서 특공·특방을 확인해봐!"]},
   {id:"rival",x:16,y:41,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V",spr:{outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
     lines:["라이벌 카이: 어이! 너도 정령 연구소에서 왔다며? 누가 더 센지 한 판 가려보자!"],
     linesAfter:["라이벌 카이: 큭… 이번엔 운이 좋았어. 다음엔 진짜 안 봐준다. 위에서 보자고!"]},
@@ -2840,7 +2856,7 @@ async function moveFx(move,side,dSide,mv){ const type=move.type; const pw=move.p
   else if(type==="flying"){ for(let i=0;i<3;i++){ fxSlash(dSide); await wait(fxT(80)); } fxBurst(dSide,type,inten); }
   else { const from=fxCenter(side),to=fxCenter(dSide); await fxProjectile(from,to,TYPE_PARTICLE[type],TYPE_COLOR[type]); fxBurst(dSide,type,inten); }
   if(inten>=3)screenShake(false); }
-function fxStatusAura(side,status){ if(CONFIG.reduceMotion)return; const c=fxCenter(side); const map={psn:{g:"🫧",col:"#b07fd1"},brn:{g:"🔥",col:"#f0795d"},par:{g:"⚡",col:"#f0cf5d"},slp:{g:"💤",col:"#9fb4d8"}}[status]; if(!map)return;
+function fxStatusAura(side,status){ if(CONFIG.reduceMotion)return; const c=fxCenter(side); const map={psn:{g:"🫧",col:"#b07fd1"},brn:{g:"🔥",col:"#f0795d"},par:{g:"⚡",col:"#f0cf5d"},slp:{g:"💤",col:"#9fb4d8"},frz:{g:"❄️",col:"#6fc4e0"}}[status]; if(!map)return;
   const sp=spriteEl(side); sp.style.filter=`drop-shadow(0 0 9px ${map.col})`; setTimeout(()=>{sp.style.filter="";},720);
   for(let i=0;i<6;i++){ const p=fxGlyph(map.g,{x:c.x+rand(-22,22),y:c.y+12},map.col,"fx-particle");
     p.animate([{transform:"translate(-50%,-50%) translateY(0) scale(.5)",opacity:1},{transform:"translate(-50%,-50%) translateY(-48px) scale(1.1)",opacity:0}],{duration:fxT(rand(620,900)),delay:i*45,easing:"ease-out"}).finished.then(()=>p.remove()).catch(()=>p.remove()); } }
@@ -2855,7 +2871,7 @@ function fxCaptureFlash(c){ if(CONFIG.reduceMotion)return; const fl=document.cre
 
 /* ===================== STATUS / STAGES ===================== */
 function applyStatus(mon,st,side){ if(mon.status){ return; } mon.status=st; if(st==="slp")mon._slp=ri(1,3); Audio.sfx("status"); fxStatusAura(side,st);
-  const w={psn:"중독되었다!",brn:"화상을 입었다!",par:"마비되었다!",slp:"잠들어버렸다!"}[st];
+  const w={psn:"중독되었다!",brn:"화상을 입었다!",par:"마비되었다!",slp:"잠들어버렸다!",frz:"꽁꽁 얼어붙었다!"}[st];
   setMsg(`<b>${mon.name}</b>은(는) ${w}`); renderStages(); }
 function applyStage(mon,stat,delta,side){ const old=mon.stages[stat]; const nv=clamp(old+delta,-6,6);
   const lbl={atk:"공격",def:"방어",spd:"속도"}[stat];
@@ -2932,6 +2948,8 @@ async function canAct(att,side){
   if(att.status==="slp"){ att._slp=(att._slp||1)-1;
     if(att._slp>0){ setMsg(`<b>${att.name}</b>은(는) 새근새근 잠들어 있다…`); Audio.sfx("status"); await mw(620); return false; }
     att.status=null; renderStages(); setMsg(`<b>${att.name}</b>은(는) 잠에서 깨어났다!`); await mw(560); }
+  if(att.status==="frz"){ if(Math.random()<0.2){ att.status=null; renderStages(); setMsg(`<b>${att.name}</b>의 얼음이 녹았다!`); await mw(560); }
+    else { setMsg(`<b>${att.name}</b>은(는) 꽁꽁 얼어 움직일 수 없다!`); Audio.sfx("status"); await mw(620); return false; } }
   if(att.status==="par" && Math.random()<0.25){ setMsg(`<b>${att.name}</b>은(는) 몸이 저려 움직일 수 없다!`); Audio.sfx("status"); await mw(620); return false; }
   return true; }
 
