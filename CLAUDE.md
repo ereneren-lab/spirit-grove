@@ -60,6 +60,9 @@ verify 내용:
 ## 버그 수정 이력 (재발 주의)
 - **HP바 갈라짐**: HP fill이 저체력 시 `crit`/`warn` 클래스를 붙이는데, `crit`이 **크리처 아트 컨테이너 클래스와 이름 충돌**(`.crit{position:relative;margin:0 auto}`)해서 fill이 중앙정렬 → 왼쪽 ghost와 갭 발생. → HP fill 클래스를 `hpcrit`/`hpwarn`으로 개명 + `.hpfill`을 `position:absolute;left:0`로 명시 고정. (`scripts/gym_test.js` 아님, probe로 확인)
 - **체육관 관장 전투 안 걸림**: 관장 타일 1~4가 `walkable` 가드 분기와 move()-into 트리거 목록에서 빠져 있어(5,6,가드만), 실내에서 관장에게 걸어가도 전투가 안 걸렸음. `onArrived`도 실내 블록에서 조기 return. → walkable·트리거 두 곳에 1~4 추가(가드처럼 취급: 벽으로 걸어들면 전투, 이기면 통과). 회귀 테스트 `scripts/gym_test.js`.
+- **포획 시 정령 정체성 소실**: `tryCatch`가 `makeMon(foe.id,foe.level)`로 **새 정령을 랜덤 생성**하고 hp/status만 복사 → 샤이니(이로치)·IV·성격·성별·기술이 전부 사라졌다. → 잡은 정령 = 그 야생 `foe` 객체 그대로(`const cap=foe`), 전투 잔여상태(stages/_confuse 등)만 리셋.
+- **세이브 시 기술셋 소실**: `serMon`이 `moves`/`pp`를 저장 안 하고 `reviveMon`이 `makeMon` 기본 학습셋으로 재생성 → TM으로 배운 기술·커스텀 기술셋이 세이브/로드로 초기화됐다. → `serMon`에 `mv`/`pp` 추가, `reviveMon`이 있으면 복원(구세이브는 기본값 폴백). (샤이니·IV·성격·성별은 원래 저장됨.)
+- 회귀 `scripts/catch_identity_test.js`(포획·세이브 후 샤이니/IV/성격/성별/기술/PP 보존).
 - **주인공/팔로워 좌우 플립 반대**: 크리처·주인공 아트는 기본이 **좌향**(foxfire 코가 왼쪽. 배틀 me가 `.sprite.me` scaleX(-1)로 항상 뒤집혀 적을 향하는 것도 이 규칙). 그런데 오버월드 주인공은 `dir==="left"`일 때, 팔로워는 `facing<0`(왼쪽 이동)일 때 뒤집어서 **진행방향과 반대로** 봤다. → 주인공은 `dir==="right"`, 팔로워는 `facing>0`(오른쪽 이동)일 때 뒤집도록 반전. 이제 좌향 이동=기본 아트, 우향 이동=미러 → 진행방향을 본다.
 - **경험치 바 애니 없음**: `gainXpFor`가 XP를 즉시 반영하고 레벨업 시 잔여치로 뚝 떨어져 포켓몬 느낌이 없었다. → 선두 정령은 `animExp(pct)`로 **100%까지 차오름 → 레벨업 0 리셋(`setExpBar0`) → 잔여치까지 계속** + `sfx("exp")` 상승음. 비선두는 기존처럼 즉시. 회귀 `scripts/exp_test.js`(바 폭 100→0→잔여치 확인).
 - **정령 등장 애니 이중 재생**: `setupBattleUI`의 `.enter` CSS 애니 ✕ `sendOutAnim` JS 충돌 → `.enter` 제거(`scripts/sendout_test.js`).
