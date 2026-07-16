@@ -81,7 +81,7 @@ verify 내용:
 - NPC가 말 걸면 플레이어 쪽으로 돌아봄(`faceNpcToPlayer`, `talkNPC` 진입 시). 대화 중엔 `_talking` 가드로 로밍 정지라 계속 응시.
 - 인접 힐끗: 플레이어가 로밍 NPC 옆(8방)에 멈추면 그쪽을 본다(`faceAdjacentNpcs`, `onArrived`에서 즉시 + `npcRoamTick`에서 인접 시 배회 대신 응시 유지). 떠나면 다시 배회. 회귀 `scripts/npc_roam_test.js`에 포함.
 - 타이틀/메뉴 음악: `Audio.tracks.title`(잔잔한 테마) + 첫 사용자 제스처 언락 리스너(오토플레이 정책). 메뉴 화면(맵/전투 아님)이면 재생 → 맵 진입 시 `startMusic(fieldMusic())`이 필드 음악으로 교체. 이전엔 타이틀~스토리 전 구간이 무음이었음. 회귀 `scripts/title_music_test.js`.
-- 승리 팡파르 통일: 트레이너 격파(`trainerDefeated`)도 야생 승리처럼 `victory` 트랙으로 교체(전에는 전투 음악이 계속 깔린 채 일회성 SFX만 얹힘). `endBattle`이 필드 음악으로 복귀. 회귀 `scripts/victory_music_test.js`(트랙 battle→victory 확인). `trainerDefeated`/`winBattle`을 `SG.flow`에 노출(테스트용).
+- 승리 팡파르 통일: 트레이너 격파(`trainerDefeated`)·야생 포획 성공(`tryCatch`) 모두 야생 격파처럼 `victory` 트랙으로 교체(전에는 전투 음악이 계속 깔린 채 일회성 SFX만 얹힘). 포켓몬식으로 승리/포획=팡파르. `endBattle`이 필드 음악으로 복귀. 회귀 `scripts/victory_music_test.js`·`scripts/catch_music_test.js`(트랙 battle→victory 확인). `trainerDefeated`/`winBattle`을 `SG.flow`에 노출(테스트용).
 - 눈 깜빡임: `_char`가 스프라이트별 위상(`spec._bseed`, 색 문자열 해시)으로 3.6초마다 ~0.12초 눈을 감았다 뜬다. reduceMotion이면 생략. 모든 `_char`(NPC·트레이너·캐릭터 미리보기)에 적용.
 
 ## 로드맵 (권장 순서)
