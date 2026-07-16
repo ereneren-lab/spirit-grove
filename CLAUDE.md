@@ -60,6 +60,9 @@ verify 내용:
 ## 버그 수정 이력 (재발 주의)
 - **HP바 갈라짐**: HP fill이 저체력 시 `crit`/`warn` 클래스를 붙이는데, `crit`이 **크리처 아트 컨테이너 클래스와 이름 충돌**(`.crit{position:relative;margin:0 auto}`)해서 fill이 중앙정렬 → 왼쪽 ghost와 갭 발생. → HP fill 클래스를 `hpcrit`/`hpwarn`으로 개명 + `.hpfill`을 `position:absolute;left:0`로 명시 고정. (`scripts/gym_test.js` 아님, probe로 확인)
 - **체육관 관장 전투 안 걸림**: 관장 타일 1~4가 `walkable` 가드 분기와 move()-into 트리거 목록에서 빠져 있어(5,6,가드만), 실내에서 관장에게 걸어가도 전투가 안 걸렸음. `onArrived`도 실내 블록에서 조기 return. → walkable·트리거 두 곳에 1~4 추가(가드처럼 취급: 벽으로 걸어들면 전투, 이기면 통과). 회귀 테스트 `scripts/gym_test.js`.
+- **주인공/팔로워 좌우 플립 반대**: 크리처·주인공 아트는 기본이 **좌향**(foxfire 코가 왼쪽. 배틀 me가 `.sprite.me` scaleX(-1)로 항상 뒤집혀 적을 향하는 것도 이 규칙). 그런데 오버월드 주인공은 `dir==="left"`일 때, 팔로워는 `facing<0`(왼쪽 이동)일 때 뒤집어서 **진행방향과 반대로** 봤다. → 주인공은 `dir==="right"`, 팔로워는 `facing>0`(오른쪽 이동)일 때 뒤집도록 반전. 이제 좌향 이동=기본 아트, 우향 이동=미러 → 진행방향을 본다.
+- **경험치 바 애니 없음**: `gainXpFor`가 XP를 즉시 반영하고 레벨업 시 잔여치로 뚝 떨어져 포켓몬 느낌이 없었다. → 선두 정령은 `animExp(pct)`로 **100%까지 차오름 → 레벨업 0 리셋(`setExpBar0`) → 잔여치까지 계속** + `sfx("exp")` 상승음. 비선두는 기존처럼 즉시. 회귀 `scripts/exp_test.js`(바 폭 100→0→잔여치 확인).
+- **정령 등장 애니 이중 재생**: `setupBattleUI`의 `.enter` CSS 애니 ✕ `sendOutAnim` JS 충돌 → `.enter` 제거(`scripts/sendout_test.js`).
 - **문 진입 즉시 튕김**: 상점/체육관 등 인테리어는 입장 위치(startY)가 출구(exitY) 바로 위라, 위에서 아래키로 들어가면 `heldDir="down"`이 입장 후에도 남아 `onArrived`→`continueMovement`가 다시 아래로 이동→출구 타일→즉시 퇴장(튕김). → `_enterInterior`/`_exitInterior`에서 `heldDir=null; stopPath()` + `_warpLock`(입력잠금, `move()` 첫 줄에서 `performance.now()<_warpLock`이면 return). 회귀 `scripts/door_bounce_test.js`(아래키 홀드 입장 후 indoor 유지 확인, 구코드는 indoor=null로 튕김).
 
 - **잠듦 상태 undefined**: `STATUS_KO`/`STATUS_CLS`에 `slp` 누락(psn/brn/par만) → 잠들면 상태 칩이 `undefined`. `_MV_STATUS_KO`엔 있었음. → `STATUS_KO.slp="잠듦"`, `STATUS_CLS.slp="b-slp"`(+`.b-slp` CSS) 추가.

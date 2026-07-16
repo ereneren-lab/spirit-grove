@@ -788,6 +788,7 @@ const Audio={ctx:null,master:null,musicGain:null,sfxGain:null,muted:false,track:
     else if(name==="boss")[196,233,196,294,262,392].forEach((f,i)=>this.note(f,t+i*0.1,0.2,"sawtooth",0.2));
     else if(name==="buy")[523,784].forEach((f,i)=>this.note(f,t+i*0.08,0.18,"triangle",0.18));
     else if(name==="step")this.note(140,t,0.05,"sine",0.07);
+    else if(name==="exp")this.note(720,t,0.42,"square",0.045);   // 경험치 차오르는 소리(포켓몬식 상승 톤)
     else if(name==="heal")[392,523,659].forEach((f,i)=>this.note(f,t+i*0.1,0.2,"sine",0.16));
     else if(name==="win")[523,659,784,1046].forEach((f,i)=>this.note(f,t+i*0.12,0.3,"triangle",0.22,this.master));
     else if(name==="victory"){[523,659,784,1046,988,1046,1318].forEach((f,i)=>this.note(f,t+i*0.12,0.28,"triangle",0.22,this.master)); [131,165,196].forEach((f,i)=>this.note(f,t+i*0.24,0.45,"sine",0.16,this.master)); } },
@@ -1540,14 +1541,14 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
           ctx.save(); ctx.globalAlpha=CONFIG.reduceMotion?0.4:0.4+Math.sin(now*2.2)*0.14;
           const _grad=ctx.createRadialGradient(fsx,fsy-_bob,0,fsx,fsy-_bob,_gr); _grad.addColorStop(0,_tc+"66"); _grad.addColorStop(0.55,_tc+"22"); _grad.addColorStop(1,_tc+"00");
           ctx.fillStyle=_grad; ctx.beginPath(); ctx.arc(fsx,fsy-_bob,_gr,0,6.29); ctx.fill(); ctx.restore();
-          ctx.save(); if(fol.facing<0){ ctx.translate(fsx,0); ctx.scale(-1,1); ctx.translate(-fsx,0); }
+          ctx.save(); if(fol.facing>0){ ctx.translate(fsx,0); ctx.scale(-1,1); ctx.translate(-fsx,0); }   // 크리처 아트는 기본이 좌향 — 오른쪽 이동 시 뒤집어 진행방향을 본다
           ctx.drawImage(_img, fsx-_sz/2, fsy-_sz/2-_bob, _sz, _sz); ctx.restore(); } } }
     { const _sidx=(typeof G!=="undefined"&&G.styleIdx)||0, _upd=(this.dir||"down")==="up";
       let _hi=_upd?heroImgBack(_sidx):null; const _back=!!(_hi&&_hi.complete&&_hi.naturalWidth); if(!_back){ _hi=heroImg(_sidx); }
       if(_hi&&_hi.complete&&_hi.naturalWidth){ const hx=pcx, gy=pcy+ts*0.30, S=ts*0.98;
         const _hb=moving?Math.abs(Math.sin(now*10))*ts*0.06:Math.sin(now*2.2)*ts*0.012;
         ctx.fillStyle="rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(hx,gy,ts*0.30,ts*0.11,0,0,6.29); ctx.fill();
-        ctx.save(); if(!_back&&(this.dir||"down")==="left"){ ctx.translate(hx,0); ctx.scale(-1,1); ctx.translate(-hx,0); }
+        ctx.save(); if(!_back&&(this.dir||"down")==="right"){ ctx.translate(hx,0); ctx.scale(-1,1); ctx.translate(-hx,0); }   // 주인공 아트 기본이 좌향 — 오른쪽 이동 시 뒤집어 진행방향을 본다
         ctx.drawImage(_hi, hx-S/2, gy-S-_hb, S, S); ctx.restore(); }
       else { this._walker(ctx, pcx, pcy, ts, this.dir||"down", moving, now); } }
     if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; } },
@@ -3108,6 +3109,11 @@ async function sendOutAnim(side){ const sp=spriteEl(side); if(!sp)return; const 
   fxCaptureFlash({x:tx,y:ty}); Audio.sfx("blip"); particles(side,"✨",7); ball.remove();
   await _scaleInSprite(sp,mir); }
 function setExpBar(){ const el=$("meExp"); if(!el)return; const m=activeMon(); if(!m){el.style.width="0%";return;} const need=m.level*30; el.style.width=clamp((m.xp/need)*100,0,100)+"%"; }
+function setExpBar0(){ const el=$("meExp"); if(!el)return; el.style.transition="none"; el.style.width="0%"; void el.offsetWidth; el.style.transition=""; }   // 레벨업 시 바 즉시 0으로 리셋
+// 포켓몬식 경험치 바 채우기: 목표 %까지 부드럽게 차오르며 상승음. reduceMotion이면 즉시.
+async function animExp(pct){ const el=$("meExp"); if(!el)return; const w=clamp(pct*100,0,100)+"%";
+  if(CONFIG.reduceMotion){ el.style.transition="none"; el.style.width=w; return; }
+  el.style.transition="width .45s ease"; el.style.width=w; if(Audio.sfx)Audio.sfx("exp"); await wait(fxT(470)); }
 async function evolveAnimate(side,m){ const sp=spriteEl(side); const mir=side==="me"?"scaleX(-1) ":"";
   sp.style.animation="none";
   if(CONFIG.reduceMotion){ setCrit(side,m); fxEvolveFlash(side); await mw(400); sp.style.animation=""; return; }
@@ -3184,20 +3190,26 @@ async function evolveScene(m,to,itemKey){ const old=m.name; const art=$("evoArt"
 function xpMult(level){ if(!G||G.indoor||!G.pos||typeof region!=="function")return 1;
   const anc=WILD_FLOOR[region(G.pos.y)]||0, over=level-anc;
   return over<0?1.4:over<=2?1.0:over<=5?0.45:0.15; }
-async function gainXpFor(m,gain,isLead){ m.xp+=Math.floor(gain*(isLead?1:0.4)*xpMult(m.level));
-  if(isLead)setExpBar();
-  let need=m.level*30; let leveled=false;
-  while(m.xp>=need && m.level<60){ m.xp-=need; m.level++; const sp=byId(m.id);
-    const _pre=isLead?{hp:m.maxHp,atk:m.atk,def:m.def,spa:m.spa,spDef:m.spDef,spd:m.spd}:null;   // 레벨업 전 스탯
-    recalc(m,sp); m.hp=m.maxHp; leveled=true; m.friendship=(m.friendship||0)+5;
-    if(sp.learn){ for(const [lv,mv] of sp.learn){ if(lv===m.level) await learnMoveFlow(m,mv,isLead); } }
-    if(isLead){ triggerLevelup(m.level); Audio.sfx("levelup"); setMsg(`<b>${m.name}</b>이(가) Lv ${m.level}(으)로 성장했다!`); renderCombatants(); setExpBar();
+async function gainXpFor(m,gain,isLead){ const add=Math.floor(gain*(isLead?1:0.4)*xpMult(m.level));
+  let leveled=false;
+  if(!isLead){ m.xp+=add; let need=m.level*30;
+    while(m.xp>=need && m.level<60){ m.xp-=need; m.level++; recalc(m,byId(m.id)); m.hp=m.maxHp; leveled=true; m.friendship=(m.friendship||0)+5; await evolveCheck(m,false); need=m.level*30; }
+    if(m.level>=60)m.xp=0; return leveled; }
+  // 선두: 포켓몬식 애니 — 100%까지 차오르고 레벨업 시 0으로 리셋 후 계속
+  let remaining=add;
+  while(remaining>0 && m.level<60){ const need=m.level*30; const toNext=need-m.xp;
+    if(remaining<toNext){ m.xp+=remaining; remaining=0; await animExp(m.xp/need); }
+    else { remaining-=toNext; m.xp=need; await animExp(1);   // 100%까지 채움
+      const sp=byId(m.id); const _pre={hp:m.maxHp,atk:m.atk,def:m.def,spa:m.spa,spDef:m.spDef,spd:m.spd};
+      m.xp=0; m.level++; recalc(m,sp); m.hp=m.maxHp; leveled=true; m.friendship=(m.friendship||0)+5; setExpBar0();   // 바 0 리셋
+      if(sp.learn){ for(const [lv,mv] of sp.learn){ if(lv===m.level) await learnMoveFlow(m,mv,true); } }
+      triggerLevelup(m.level); Audio.sfx("levelup"); setMsg(`<b>${m.name}</b>이(가) Lv ${m.level}(으)로 성장했다!`); renderCombatants(); setExpBar0();
       await mw(900);
       const _g=[["HP",m.maxHp-_pre.hp],["공격",m.atk-_pre.atk],["방어",m.def-_pre.def],["특공",m.spa-_pre.spa],["특방",m.spDef-_pre.spDef],["속도",m.spd-_pre.spd]];
       setMsg("📈 "+_g.map(([n,v])=>`${n} +${v}`).join(" · ")); Audio.sfx("blip"); await mw(1100);
       await evolveCheck(m,true); }
-    else { await evolveCheck(m,false); }
-    need=m.level*30; }
+  }
+  if(m.level>=60)m.xp=0;
   return leveled; }
 async function learnMoveFlow(m,mv,isLead){ if(m.moves.includes(mv))return;
   if(m.moves.length<4){ m.moves.push(mv); m.pp[mv]=MOVES[mv].pp; if(isLead)toast(`${m.name}이(가) ${MOVES[mv].name} 습득!`); return; }
