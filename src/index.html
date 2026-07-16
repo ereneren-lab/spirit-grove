@@ -1063,11 +1063,11 @@ const DEX=[
   {id:"burrowmouse",name:"굴다람",em:"🐹",type:"ground",tier:1,base:{hp:46,atk:14,def:15,spd:16,spa:9,spDef:12},moves:["tackle","mudshot"],learn:[[14,"furyswipe"],[20,"dig"]],evolveTo:"burrowlord",evolveLv:30},
   {id:"burrowlord",name:"대굴왕",em:"🦫",type:"normal",type2:"rock",tier:3,base:{hp:78,atk:24,def:26,spd:18,spa:12,spDef:20},moves:["crush","rockslide","headbutt","furyswipe"],learn:[]},
   {id:"crystalgon",name:"결정룡",em:"💎",type:"rock",type2:"elec",tier:3,base:{hp:74,atk:20,def:30,spd:16,spa:26,spDef:24},moves:["rockslide","twinbolt","boulder","spark"],learn:[[40,"thunder"]]},
-  {id:"glaciarch",name:"빙하제",em:"🐉",type:"ice",type2:"water",tier:4,secret:true,base:{hp:96,atk:26,def:30,spd:18,spa:32,spDef:28},moves:["blizzard","icebeam","boulder","rockslide"],learn:[]},
-  {id:"aqualord",name:"수룡왕",em:"🐉",type:"water",type2:"rock",tier:4,secret:true,base:{hp:96,atk:26,def:28,spd:22,spa:34,spDef:28},moves:["hydro","tsunami","rockslide","crush"],learn:[]},
-  {id:"shadowlord",name:"흑요마",em:"👁️",type:"elec",type2:"rock",tier:3,secret:true,base:{hp:96,atk:22,def:26,spd:28,spa:33,spDef:26},moves:["thunder","crush","toxic","lullaby"],learn:[]},
-  {id:"dawnguard",name:"오로르",em:"🕊️",type:"flying",tier:3,secret:true,base:{hp:96,atk:31,def:30,spd:28,spa:20,spDef:27},moves:["skyrush","wingatk","crush","recover"],learn:[]},
-  {id:"dawnwyrm",name:"여명룡",em:"🐉",type:"flying",type2:"rock",tier:4,secret:true,base:{hp:100,atk:28,def:27,spd:29,spa:28,spDef:27},moves:["skyrush","rockslide","crush","recover"],learn:[]},
+  {id:"glaciarch",name:"빙하제",em:"🐉",type:"ice",type2:"water",tier:4,secret:true,legend:true,base:{hp:112,atk:33,def:37,spd:23,spa:41,spDef:35},moves:["blizzard","icebeam","boulder","rockslide"],learn:[]},
+  {id:"aqualord",name:"수룡왕",em:"🐉",type:"water",type2:"rock",tier:4,secret:true,legend:true,base:{hp:112,atk:33,def:35,spd:27,spa:43,spDef:35},moves:["hydro","tsunami","rockslide","crush"],learn:[]},
+  {id:"shadowlord",name:"흑요마",em:"👁️",type:"elec",type2:"rock",tier:4,secret:true,legend:true,base:{hp:110,atk:29,def:33,spd:33,spa:41,spDef:33},moves:["thunder","crush","toxic","lullaby"],learn:[]},
+  {id:"dawnguard",name:"오로르",em:"🕊️",type:"flying",tier:4,secret:true,legend:true,base:{hp:110,atk:39,def:37,spd:33,spa:28,spDef:34},moves:["skyrush","wingatk","crush","recover"],learn:[]},
+  {id:"dawnwyrm",name:"여명룡",em:"🐉",type:"flying",type2:"rock",tier:4,secret:true,legend:true,base:{hp:118,atk:37,def:35,spd:35,spa:37,spDef:35},moves:["skyrush","rockslide","crush","recover"],learn:[]},
 ];
 const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);
@@ -2197,9 +2197,9 @@ const SHRINE_LORE=[
   {name:"신관",text:"제단의 <b>여명룡</b>은 함부로 깨어나지 않아요. 준비되었을 때 제단에 다가서세요."},
   {name:"신관",text:"용을 쓰러뜨리거나 벗으로 삼는다면… 두 땅의 인장이 이어질 새 시대가 열릴지도 모릅니다."}
 ];
-function startSnowLegendary(){ const lvl=clamp(46+DIFF[CONFIG.difficulty].lvl,42,60); G.foe=makeMon("glaciarch",lvl); G.foe.hp=G.foe.maxHp; G.trainer=null; G.seen.add("glaciarch"); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ setMsg("빙하가 굉음과 함께 갈라지며… <b>빙하제</b>가 모습을 드러냈다!"); Audio.startMusic("boss"); }); updateDexPill(); }
-function startLakeLegendary(){ const lvl=clamp(45+DIFF[CONFIG.difficulty].lvl,42,60); G.foe=makeMon("aqualord",lvl); G.foe.hp=G.foe.maxHp; G.trainer=null; G.seen.add("aqualord"); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ setMsg("호수가 거대한 소용돌이를 일으킨다… <b>수룡왕</b>이 떠올랐다!"); Audio.startMusic("boss"); }); updateDexPill(); }
-function startLegendary(){ const lvl=clamp(46+DIFF[CONFIG.difficulty].lvl,44,62); G.foe=makeMon("dawnwyrm",lvl); G.foe.hp=G.foe.maxHp; G.trainer=null; G.seen.add("dawnwyrm"); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ setMsg("신전이 진동한다… <b>여명룡</b>이 모습을 드러냈다!"); Audio.startMusic("boss"); }); updateDexPill(); }
+function startSnowLegendary(){ const lvl=clamp(52+DIFF[CONFIG.difficulty].lvl,48,64); G.foe=makeMon("glaciarch",lvl); G.foe.hp=G.foe.maxHp; G.trainer=null; G.seen.add("glaciarch"); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ setMsg("빙하가 굉음과 함께 갈라지며… <b>빙하제</b>가 모습을 드러냈다!"); Audio.startMusic("boss"); }); updateDexPill(); }
+function startLakeLegendary(){ const lvl=clamp(52+DIFF[CONFIG.difficulty].lvl,48,64); G.foe=makeMon("aqualord",lvl); G.foe.hp=G.foe.maxHp; G.trainer=null; G.seen.add("aqualord"); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ setMsg("호수가 거대한 소용돌이를 일으킨다… <b>수룡왕</b>이 떠올랐다!"); Audio.startMusic("boss"); }); updateDexPill(); }
+function startLegendary(){ const lvl=clamp(56+DIFF[CONFIG.difficulty].lvl,50,66); G.foe=makeMon("dawnwyrm",lvl); G.foe.hp=G.foe.maxHp; G.trainer=null; G.seen.add("dawnwyrm"); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ setMsg("신전이 진동한다… <b>여명룡</b>이 모습을 드러냈다!"); Audio.startMusic("boss"); }); updateDexPill(); }
 const SNOW_LORE={name:"설원 주민",text:"이 눈밭엔 추위를 견디는 정령만 산다네. 저 오두막에서 쉬어가게 — 바깥은 얼어붙을 만큼 춥거든."};
 function startSnowEncounter(){ const pool=["iceling","frostpup","frostfish","dustbunny","frostwyrm","glacibear","drakeling","mossback","snowl","cryogon"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,10,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}눈보라 속에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 function startIsleEncounter(){ const pool=["stormhawk","tigerflame","magmahound","krakentide","tidewhale","harelord","emberdrake","grovespirit","palmore","emberlix","crablord"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(1,4)+DIFF[CONFIG.difficulty].lvl,6,60); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}섬에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
@@ -2217,10 +2217,10 @@ async function startFishing(){ if(G.busy||G.inBattle)return; G.busy=true; if(typ
 function startFishEncounter(){ const pool=(Math.random()<0.25&&["tidewhale","krakentide","riverdrake","sharkfin","crablord"].filter(id=>byId(id)).length)?["tidewhale","krakentide","riverdrake","sharkfin","crablord"].filter(id=>byId(id)):["shellow","frostfish","otterwave","swampfrog","jellure","nipling"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,4,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}낚싯줄에 <b>${G.foe.name}</b>이(가) 걸렸다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 function startLavaEncounter(){ const pool=["pebblet","lavakit","burrowmouse","pebblet","lavakit","boulderin","magmadon","crystalgon"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,8,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}용암 사이에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 function startCaveEncounter(){ const pool=["hedgemoss","racoonmon","sparkmouse","voltbeetle","swampfrog"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,3,55); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}동굴 깊은 곳에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
-function startShadowBoss(){ const lvl=clamp(40+DIFF[CONFIG.difficulty].lvl,38,60); G.foe=makeMon("shadowlord",lvl); G.foe.hp=G.foe.maxHp;
+function startShadowBoss(){ const lvl=clamp(50+DIFF[CONFIG.difficulty].lvl,46,64); G.foe=makeMon("shadowlord",lvl); G.foe.hp=G.foe.maxHp;
   G.trainer=null; G.seen.add("shadowlord"); G.inBattle=true; G.busy=false; Audio.sfx("boss");
   transitionToBattle(()=>{ setMsg("⚫ 인장의 틈에서 <b>흑요마</b>가 모습을 드러냈다! 쓰러뜨리거나… 포획하라."); Audio.startMusic("boss"); }); updateDexPill(); }
-function startDawnBoss(){ const lvl=clamp(44+DIFF[CONFIG.difficulty].lvl,42,60); G.foe=makeMon("dawnguard",lvl); G.foe.hp=G.foe.maxHp;
+function startDawnBoss(){ const lvl=clamp(53+DIFF[CONFIG.difficulty].lvl,49,64); G.foe=makeMon("dawnguard",lvl); G.foe.hp=G.foe.maxHp;
   G.trainer=null; G.seen.add("dawnguard"); G.inBattle=true; G.busy=false; Audio.sfx("boss");
   transitionToBattle(()=>{ setMsg("🕊️ 그림자가 걷히자, 빛 속에서 <b>오로르</b>가 내려왔다!"); Audio.startMusic("boss"); }); updateDexPill(); }
 function startTrainer(key){ const tr=TRAINERS[key];
@@ -3445,7 +3445,8 @@ async function tryCatch(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너
   const foe=G.foe,sp=byId(foe.id); const hpR=foe.hp/foe.maxHp;
   const lvPen=clamp(foe.level*0.006,0,0.24), tierPen=sp.tier===2?0.10:sp.tier===3?0.18:0;
   const statusBonus=foe.status?0.12:0;
-  const chance=clamp((1-hpR)*0.55+0.10+bonus+statusBonus+DIFF[CONFIG.difficulty].catch-lvPen-tierPen,0.03,0.92);
+  const legendPen=sp.legend?0.38:0;   // 전설은 전설답게 — 빈사+상태이상으로 만들어도 쉽게 안 잡힌다
+  const chance=clamp((1-hpR)*0.55+0.10+bonus+statusBonus+DIFF[CONFIG.difficulty].catch-lvPen-tierPen-legendPen,0.02,0.92);
   setMsg(`${ITEM_KO[ball]}를 던졌다!`); Audio.sfx("throw");
   const field=$("battleField"); const fr=field.getBoundingClientRect(); const foeC=fxCenter("foe"); const foeSp=$("foeSprite");
   const ballEl=document.createElement("div"); ballEl.className="catchball "+(ball==="ball"?"ball":"great");   // CSS 구(球): 정령구=민트, 고급=보라+금 (예전 🟣 이모지 대체)
