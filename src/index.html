@@ -1197,6 +1197,8 @@ function npcRoamTick(){
   for(const n of NPCS){
     if(n.battleKey||!n.lines||!npcAvailable(n)) continue;
     if(n.hx===undefined){ n.hx=n.x; n.hy=n.y; }
+    { const adx=G.pos.x-n.x, ady=G.pos.y-n.y;                       // 플레이어 옆이면 힐끗 보고 멈춤(안 돌아다님)
+      if(Math.abs(adx)<=1&&Math.abs(ady)<=1&&(adx||ady)){ faceNpcToPlayer(n); continue; } }
     if(Math.random()<0.45){ n.dir=dirs[ri(0,3)][0]; continue; }   // 가끔 제자리에서 방향만
     const c=dirs[ri(0,3)]; const nx=n.x+c[1], ny=n.y+c[2];
     n.dir=c[0];
@@ -1308,6 +1310,11 @@ function handleQuestTalk(q,npc){ G.quests=G.quests||{}; const st=G.quests[q.id];
 function stripNamePrefix(name,text){ if(!name||!text)return text; const p=name+":"; return text.indexOf(p)===0?text.slice(p.length).replace(/^\s+/,""):text; }
 function faceNpcToPlayer(npc){ if(!npc||typeof G==="undefined"||!G||!G.pos)return; const dx=G.pos.x-npc.x, dy=G.pos.y-npc.y; if(!dx&&!dy)return;
   npc.dir = Math.abs(dx)>=Math.abs(dy) ? (dx<0?"left":"right") : (dy<0?"up":"down"); }
+// 플레이어 옆(8방 인접)에 선 로밍 NPC는 그쪽을 힐끗 본다. onArrived에서 즉시 반응(로밍 틱은 별도로 멈춤 유지).
+function faceAdjacentNpcs(){ if(typeof NPCS==="undefined"||typeof G==="undefined"||!G||!G.pos||G.indoor)return;
+  for(const n of NPCS){ if(!n.lines||n.battleKey||!npcAvailable(n))continue;
+    const dx=G.pos.x-n.x, dy=G.pos.y-n.y;
+    if(Math.abs(dx)<=1&&Math.abs(dy)<=1&&(dx||dy)) faceNpcToPlayer(n); } }
 function talkNPC(npc){ if(_talking||dialogActive())return;
   faceNpcToPlayer(npc);   // 말 걸면 플레이어 쪽으로 돌아본다 — 로밍 NPC가 딴 데 보던 문제
   if(npc.daycare){ Audio.sfx&&Audio.sfx("blip"); openDaycare(); return; }
@@ -1770,6 +1777,7 @@ function altarStage(){
 }
 function onArrived(){
   updateGoal();
+  faceAdjacentNpcs();   // 플레이어가 멈추면 옆 NPC가 즉시 힐끗
   if(_justExited){ _justExited=false; return; }
   if(G.indoor){ const _it=INTERIORS[G.indoor]; const _t=tileAt(G.pos.x,G.pos.y);
     if(_it && G.pos.x===_it.exitX && G.pos.y===_it.exitY){ stopPath(); exitInterior(); return; }

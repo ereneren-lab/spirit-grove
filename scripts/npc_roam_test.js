@@ -45,6 +45,14 @@ const { chromium } = require("playwright"); const path=require("path");
     let cnt=0; for(const n of cur){ const b=base.find(z=>z.id===n.id); if(b&&(b.x!==n.x||b.y!==n.y))cnt++; } return cnt; }, base);
   ok(moved>=1, `로밍 동작: ${moved}종이 이동함`);
 
+  // 인접 힐끗: 플레이어 옆(좌측)에 미나를 두면 그쪽(left)을 보고 제자리에 멈춘다.
+  await evalP(()=>{ const G=window.SG.G(); G.busy=false; G.pos={x:12,y:48};
+    const m=window.SG.NPCS.find(z=>z.id==="mina"); m.x=13; m.y=48; m.dir="up"; });   // 일부러 엉뚱한 방향
+  await p.waitForTimeout(1100);   // 로밍 틱(820ms) 최소 1회
+  const gl=await evalP(()=>{ const m=window.SG.NPCS.find(z=>z.id==="mina"); return {dir:m.dir,x:m.x,y:m.y}; });
+  ok(gl.dir==="left", `인접 힐끗: 플레이어(좌) 향해 회전 (dir=${gl.dir})`);
+  ok(gl.x===13&&gl.y===48, `인접 시 제자리 유지(안 돌아다님) (${gl.x},${gl.y})`);
+
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,2).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 NPC 로밍/보간 통과");
   await b.close(); process.exit(process.exitCode||0);

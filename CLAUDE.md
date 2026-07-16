@@ -79,6 +79,7 @@ verify 내용:
 - NPC 생동감: 소프트 셰이딩(`_grad`/`_tint`) + 걸음 애니메이션(`_char`의 `moving` 인자 → 다리 번갈아+통통, 멈추면 아이들 바운스).
 - **로밍 NPC 부드러운 보간**: NPC 그리기를 그리드 루프에서 분리해 별도 패스로. 각 NPC의 렌더 좌표 `rx/ry`가 논리 타일(`n.x/n.y`)로 이징(3.2 tiles/s) → 타일 텔레포트(툭툭 튐) 제거. `npcRoamTick`은 논리 좌표만 바꾸고, 상호작용은 논리 타일(`NPC_AT`) 기준이라 그대로. 회귀 테스트 `scripts/npc_roam_test.js`(G.busy로 로밍 얼려 보간 결정적 관찰). 계측용으로 `window.SG.NPCS`/`SG.Field` 노출.
 - NPC가 말 걸면 플레이어 쪽으로 돌아봄(`faceNpcToPlayer`, `talkNPC` 진입 시). 대화 중엔 `_talking` 가드로 로밍 정지라 계속 응시.
+- 인접 힐끗: 플레이어가 로밍 NPC 옆(8방)에 멈추면 그쪽을 본다(`faceAdjacentNpcs`, `onArrived`에서 즉시 + `npcRoamTick`에서 인접 시 배회 대신 응시 유지). 떠나면 다시 배회. 회귀 `scripts/npc_roam_test.js`에 포함.
 - 눈 깜빡임: `_char`가 스프라이트별 위상(`spec._bseed`, 색 문자열 해시)으로 3.6초마다 ~0.12초 눈을 감았다 뜬다. reduceMotion이면 생략. 모든 `_char`(NPC·트레이너·캐릭터 미리보기)에 적용.
 
 ## 로드맵 (권장 순서)
