@@ -83,6 +83,7 @@ verify 내용:
 - 타이틀/메뉴 음악: `Audio.tracks.title`(잔잔한 테마) + 첫 사용자 제스처 언락 리스너(오토플레이 정책). 메뉴 화면(맵/전투 아님)이면 재생 → 맵 진입 시 `startMusic(fieldMusic())`이 필드 음악으로 교체. 이전엔 타이틀~스토리 전 구간이 무음이었음. 회귀 `scripts/title_music_test.js`.
 - 승리 팡파르 통일: 트레이너 격파(`trainerDefeated`)·야생 포획 성공(`tryCatch`)·야생 격파(`winBattle`) 모두 `victory` 트랙으로 교체(전에는 전투 음악이 계속 깔린 채 일회성 SFX만 얹힘). 포켓몬식으로 승리/포획=팡파르. `endBattle`이 필드 음악으로 복귀. 회귀 `scripts/victory_music_test.js`·`scripts/catch_music_test.js`(트랙 battle→victory 확인). `trainerDefeated`/`winBattle`을 `SG.flow`에 노출(테스트용).
 - 스팅어 즉시 재생: `startMusic(name,immediate)` — `immediate=true`면 페이드인 없이 즉시 풀볼륨(0.30). 승리 팡파르 3곳에 적용 → 포켓몬식으로 '팡' 하고 터진다(예전엔 0.6초 페이드인으로 물러섬). 앰비언트 필드 음악은 기존대로 은은한 페이드인. 회귀 `victory_music_test.js`가 gain≈0.30 확인.
+- 전멸(화이트아웃) 음악: `faintMine` 전멸 분기에서 `stopMusic()`+`sfx("defeat")`(느리게 하강하는 구슬픈 6음). 전에는 전투 음악이 깔린 채 그냥 필드 복귀. `endBattle`/`blackout`이 이후 필드 음악 복귀. 회귀 `scripts/defeat_music_test.js`(패배 사운드 노트 수 + stopMusic 호출 확인). `faintMine`을 `SG.flow`에 노출(테스트용).
 - 눈 깜빡임: `_char`가 스프라이트별 위상(`spec._bseed`, 색 문자열 해시)으로 3.6초마다 ~0.12초 눈을 감았다 뜬다. reduceMotion이면 생략. 모든 `_char`(NPC·트레이너·캐릭터 미리보기)에 적용.
 
 ## 로드맵 (권장 순서)
