@@ -15,9 +15,13 @@ const { chromium } = require("playwright"); const path=require("path");
 
   // 아래키를 누른 채로 문으로 입장 (heldDir="down" 유지). Playwright keydown은 자동 리핏 없음.
   await p.keyboard.down("ArrowDown");
-  await p.waitForTimeout(1200);   // 입장 + (버그라면) 튕김이 일어날 충분한 시간
+  // 입장 중 문 페이드(#warpFade) opacity 피크 관측
+  let fadePeak=0;
+  for(let i=0;i<16;i++){ const o=await p.evaluate(()=>{ const e=document.getElementById("warpFade"); return e?parseFloat(getComputedStyle(e).opacity):0; }); if(o>fadePeak)fadePeak=o; await p.waitForTimeout(45); }
+  await p.waitForTimeout(700);   // 입장 + (버그라면) 튕김이 일어날 충분한 시간
   await p.keyboard.up("ArrowDown");
   await p.waitForTimeout(200);
+  ok(fadePeak>0.5, `문 진입 시 검정 페이드 재생 (peak opacity=${fadePeak.toFixed(2)})`);
 
   const st=await p.evaluate(()=>({indoor:window.SG.G().indoor, pos:window.SG.G().pos}));
   ok(st.indoor==="shop", `아래키 홀드로 상점 입장 유지 — 튕겨나오지 않음 (indoor=${st.indoor})`);
