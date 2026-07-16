@@ -65,6 +65,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   node scripts/catch_music_test.js "$F" || exit 1
   node scripts/defeat_music_test.js "$F" || exit 1
   node scripts/door_bounce_test.js "$F" || exit 1
+  node scripts/bugfix_batch_test.js "$F" || exit 1
 else
   echo "⏭️  오디오 테스트 건너뜀 (npm install playwright 하면 실행됨)"
 fi

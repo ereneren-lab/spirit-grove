@@ -62,6 +62,16 @@ verify 내용:
 - **체육관 관장 전투 안 걸림**: 관장 타일 1~4가 `walkable` 가드 분기와 move()-into 트리거 목록에서 빠져 있어(5,6,가드만), 실내에서 관장에게 걸어가도 전투가 안 걸렸음. `onArrived`도 실내 블록에서 조기 return. → walkable·트리거 두 곳에 1~4 추가(가드처럼 취급: 벽으로 걸어들면 전투, 이기면 통과). 회귀 테스트 `scripts/gym_test.js`.
 - **문 진입 즉시 튕김**: 상점/체육관 등 인테리어는 입장 위치(startY)가 출구(exitY) 바로 위라, 위에서 아래키로 들어가면 `heldDir="down"`이 입장 후에도 남아 `onArrived`→`continueMovement`가 다시 아래로 이동→출구 타일→즉시 퇴장(튕김). → `_enterInterior`/`_exitInterior`에서 `heldDir=null; stopPath()` + `_warpLock`(입력잠금, `move()` 첫 줄에서 `performance.now()<_warpLock`이면 return). 회귀 `scripts/door_bounce_test.js`(아래키 홀드 입장 후 indoor 유지 확인, 구코드는 indoor=null로 튕김).
 
+- **잠듦 상태 undefined**: `STATUS_KO`/`STATUS_CLS`에 `slp` 누락(psn/brn/par만) → 잠들면 상태 칩이 `undefined`. `_MV_STATUS_KO`엔 있었음. → `STATUS_KO.slp="잠듦"`, `STATUS_CLS.slp="b-slp"`(+`.b-slp` CSS) 추가.
+- **소수점 레벨**: 특수 조우(파도/낚시/설원/섬/해안/용암/동굴)가 `clamp(avgLevel()+...)`만 하고 floor 안 해 소수점 레벨. → `makeMon`에서 `level=Math.max(1,Math.floor(level))`로 정수화(모든 조우/스탯 커버).
+- 회귀: 위 세 가지 + 파티 재정렬 + 돌 진화는 `scripts/bugfix_batch_test.js`.
+
+### 진화 장면 (배틀 밖 · 진화의 돌)
+배틀 밖 진화(진화의 돌 `evostone`)는 예전엔 `flashHint` 텍스트만 뜨고 애니가 없었고 `type2`도 안 넣었다. → `evolveScene(m,to,itemKey)`: 전용 오버레이(`#evoOverlay`, `.evo-art`/`.evo-msg`)에서 포켓몬식 실루엣 모프(`brightness(0) invert(1)` 글로우 + 펄스, 중간에 새 종으로 스왑)를 보여주고 "어라…? → 축하해!" 메시지. B/✕로 취소 가능(취소 시 **돌 소모 안 함** — 소모는 성공 시점). `type2`·친밀도·울음소리·도감 반영. 배틀 내 진화는 기존 `evolveAnimate`(배틀 스프라이트) 유지.
+
+### 정령 순서 조절 (포켓몬식)
+정령관리(PC) 파티 탭 카드에 ▲▼ 재정렬 버튼. `pcAction("up"/"down",i)`가 `G.party[i]`↔이웃을 스왑하고 `G.active`가 옮긴 정령을 따라간다. 회귀 `bugfix_batch_test.js`.
+
 ### 문 페이드 전환 (포켓몬식)
 `warpFade(swap)`: 검정 오버레이(`#warpFade`, canvasWrap 내부 `.warp-fade`)를 페이드아웃(→검정, 150ms)→**완전히 덮인 시점에 맵 스왑**→페이드인(→새 장면, 220ms). `enterInterior`/`exitInterior`가 실제 로직(`_enterInterior`/`_exitInterior`)을 `warpFade`로 감싼다. reduceMotion이면 즉시(swap 바로 호출). `_warpLock`(now+470)이 페이드 동안 입력 잠금.
 - ⚠️ `blackout`은 `exitInterior` 후 **동기적으로 G.pos를 STARTPOS로 덮어쓰므로** 지연 페이드판(`exitInterior`)이 아니라 즉시판 `_exitInterior()`를 호출해야 한다(안 그러면 지연 스왑이 STARTPOS를 덮어씀).

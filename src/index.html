@@ -74,7 +74,12 @@
   .type-tag{display:inline-block;font-size:10px;font-weight:800;color:#1a1626;padding:2px 8px;border-radius:999px;margin-top:7px;letter-spacing:.4px}
   .type-tag.t-fire{background:var(--fire)} .type-tag.t-water{background:var(--water)} .type-tag.t-grass{background:var(--grass)} .type-tag.t-elec{background:var(--elec)} .type-tag.t-normal{background:var(--normal)} .type-tag.t-flying{background:var(--flying)} .type-tag.t-rock{background:var(--rock)}
   .st-badge{display:inline-block;font-size:9px;font-weight:800;color:#1a1626;padding:1px 6px;border-radius:6px;margin-left:5px}
-  .b-psn{background:var(--psn)} .b-brn{background:var(--brn)} .b-par{background:var(--par)}
+  .b-psn{background:var(--psn)} .b-brn{background:var(--brn)} .b-par{background:var(--par)} .b-slp{background:#6a7fb0}
+  #evoOverlay .evo-art{width:min(58vw,230px);height:min(58vw,230px);display:flex;align-items:center;justify-content:center;position:relative}
+  #evoOverlay .evo-art img,#evoOverlay .evo-art svg{width:100%;height:100%;object-fit:contain}
+  #evoOverlay .evo-art.sil img,#evoOverlay .evo-art.sil svg{filter:brightness(0) invert(1) drop-shadow(0 0 16px #cfe8ff)}
+  #evoOverlay .evo-msg{font-size:15px;font-weight:700;color:var(--cream);text-align:center;min-height:22px;margin-top:22px;padding:0 24px;text-shadow:0 2px 6px rgba(0,0,0,.7)}
+  #evoOverlay #evoCancel{margin-top:18px}
 
   #map{padding:14px 14px 0}
   .canvas-wrap{position:relative;width:100%;aspect-ratio:9/10.5;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:#0e1419;transition:transform .26s ease}
@@ -658,6 +663,11 @@
         <button class="btn ghost" id="nickSkip">건너뛰기 (종족명 사용)</button>
       </div>
     </div>
+    <div class="overlay" id="evoOverlay" style="align-items:center;justify-content:center;background:rgba(8,6,16,.94)">
+      <div class="evo-art" id="evoArt"></div>
+      <div class="evo-msg" id="evoMsg"></div>
+      <button class="btn ghost" id="evoCancel" style="max-width:220px">✕ 진화 취소</button>
+    </div>
     <div class="overlay" id="logOverlay">
       <div class="ov-head"><h3>📜 전투 기록</h3><button class="closex" data-close="logOverlay">✕</button></div>
       <div class="ov-body" id="logBody"></div>
@@ -852,8 +862,8 @@ const HELD_ITEMS={
   powerband:{ko:"힘의띠",em:"💪",desc:"기술 위력이 약간 오른다"},
 };
 const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts"};
-const STATUS_KO={psn:"독",brn:"화상",par:"마비"};
-const STATUS_CLS={psn:"b-psn",brn:"b-brn",par:"b-par"};
+const STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦"};
+const STATUS_CLS={psn:"b-psn",brn:"b-brn",par:"b-par",slp:"b-slp"};
 const EFF={
   fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5},
   water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2},
@@ -1053,7 +1063,7 @@ function hatchEgg(egg){ const m=makeMon(egg.species,5); if(egg.ivInherit)m.ivs=e
 function dayStep(){ if(!G.daycare)return; const d=G.daycare;
   if(d.a&&d.b&&!d.eggReady&&canBreed(d.a,d.b)){ d.steps=(d.steps||0)+1; if(d.steps>=160){ d.eggReady=true; d.steps=0; flashHint("🥚 육아방에 알이 생긴 것 같다!"); saveGame&&saveGame(); } }
   if(G.party){ for(let i=0;i<G.party.length;i++){ const m=G.party[i]; if(m&&m.isEgg){ m.hatch=(m.hatch||1)-1; if(m.hatch<=0){ const baby=hatchEgg(m); G.party[i]=baby; Audio.sfx&&Audio.sfx("levelup"); if(Audio.cry)Audio.cry(baby.id,baby.type); flashHint(`🐣 알에서 <b>${baby.name}</b>이(가) 태어났다!`); saveGame&&saveGame(); } else if(m.hatch===6){ Audio.sfx&&Audio.sfx("blip"); flashHint("🥚 품 속의 알이 이따금 꿈틀거린다…"); } } } } }
-function makeMon(speciesId,level){ const sp=byId(speciesId);
+function makeMon(speciesId,level){ const sp=byId(speciesId); level=Math.max(1,Math.floor(level||1));   // 레벨은 항상 정수(avgLevel 등 float가 새어들어와 소수점 레벨 방지)
   const m={id:speciesId,name:sp.name,em:sp.em,type:sp.type, type2:sp.type2||null,level:level,moves:sp.moves.slice(),xp:0,
     status:null,stages:{atk:0,def:0,spd:0},pp:{},ability:sp.ability||ABILITY_OVERRIDE[speciesId]||DEFAULT_ABILITY[sp.type]||"guts",
     nature:NATURES[ri(0,NATURES.length-1)].k, shiny:Math.random()<((typeof G!=="undefined"&&G&&G.dexMaster)?SHINY_RATE*3:SHINY_RATE), held:null, friendship:0, ivs:{hp:ri(0,31),atk:ri(0,31),def:ri(0,31),spa:ri(0,31),spDef:ri(0,31),spd:ri(0,31)}, evs:{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}, gender:(sp.secret||sp.genderless)?"N":(Math.random()<0.5?"M":"F")};
@@ -3129,6 +3139,36 @@ async function evolveCheck(m,animate){ const sp=byId(m.id);
   if(sp.evolveTo && !sp.evolveItem && !sp.evolveFriend && m.level>=sp.evolveLv){ const to=byId(sp.evolveTo); if(to)return await applyEvolution(m,to,animate); }
   if(sp.evolveTo && sp.evolveFriend && (m.friendship||0)>=sp.evolveFriend){ const to=byId(sp.evolveTo); if(to)return await applyEvolution(m,to,animate); }
   return false; }
+// 배틀 밖(진화의 돌 등) 진화 장면 — 배틀 스프라이트가 없으므로 전용 오버레이에서 실루엣 모프를 보여준다(포켓몬식).
+async function evolveScene(m,to,itemKey){ const old=m.name; const art=$("evoArt"), msg=$("evoMsg"), cx=$("evoCancel");
+  const setArt=(id,type,sil)=>{ art.innerHTML=creatureVisual(id,type); art.classList.toggle("sil",!!sil); };
+  setArt(m.id,m.type,false); msg.textContent=`어라…? ${old}의 모습이…`; if(cx)cx.style.display="";
+  openOverlay("evoOverlay"); if(Audio.stopMusic)Audio.stopMusic();
+  let cancelled=false;
+  const onKey=e=>{ const k=(e.key||"").toLowerCase(); if(k==="x"||k==="b"||k==="escape"||k==="backspace"){ e.preventDefault(); cancelled=true; } };
+  document.addEventListener("keydown",onKey); if(cx)cx.onclick=()=>{ cancelled=true; };
+  await delay(950); if(cx)cx.style.display="none";
+  if(!cancelled){
+    if(CONFIG.reduceMotion){ setArt(to.id,to.type,false); Audio.sfx("evolve"); }
+    else{ Audio.sfx("evolve"); art.classList.add("sil");
+      for(let i=0;i<6 && !cancelled;i++){ const d=Math.max(150,430-i*52);
+        await art.animate([{transform:"scale(1)"},{transform:"scale(1.2)"},{transform:"scale(.96)"}],{duration:d,easing:"ease-in-out"}).finished.catch(()=>{});
+        if(i===3) setArt(to.id,to.type,true); }
+      if(!cancelled){ art.animate([{filter:"brightness(2.6)"},{filter:"brightness(1)"}],{duration:320}); await delay(220);
+        art.classList.remove("sil"); setArt(to.id,to.type,false); } }
+  }
+  document.removeEventListener("keydown",onKey); if(cx)cx.onclick=null;
+  if(cancelled){ art.classList.remove("sil"); setArt(m.id,m.type,false); msg.textContent=`${old}은(는) 진화를 멈췄다!`; if(Audio.sfx)Audio.sfx("blip");
+    await delay(950); closeOverlay("evoOverlay"); if(typeof fieldMusic==="function")Audio.startMusic(fieldMusic()); saveGame(); if(typeof renderBag==="function")renderBag(); return false; }
+  if(itemKey)G.items[itemKey]=Math.max(0,(G.items[itemKey]||0)-1);   // 성공 시에만 돌 소모(취소하면 안 씀)
+  m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type; m.type2=to.type2||null;
+  if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
+  m.friendship=(m.friendship||0)+5; if(Audio.cry)Audio.cry(m.id,m.type);
+  G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
+  Audio.sfx("levelup"); msg.textContent=`축하해! ${old}은(는) ${m.name}(으)로 진화했다!`;
+  await delay(1700); closeOverlay("evoOverlay");
+  if(typeof fieldMusic==="function")Audio.startMusic(fieldMusic());
+  saveGame(); if(typeof renderBag==="function")renderBag(); if(typeof renderPC==="function")renderPC(); return true; }
 
 // XP 끌개: 오버월드에서만, 정령 레벨이 지역 앵커를 넘을수록 획득 XP를 급감시켜
 // 레벨이 지역에 수렴하게 한다. 실내(체육관·특수지역)에선 관여하지 않는다(mult=1).
@@ -3572,11 +3612,10 @@ function applyItemEffect(it){ const m=activeMon();
   if(it.use==="candy"){ if(m.level>=60){flashHint(m.name+"은(는) 이미 최고 레벨");return false;} G.items[it.key]--; m.level++; recalc(m); m.hp=m.maxHp; Audio.sfx("levelup"); flashHint(`🍬 ${m.name}이(가) Lv ${m.level}(으)로!`); return true; }
   if(it.use==="evostone"){ const sp=byId(m.id);
     if(sp.evolveItem!==it.key){ flashHint(m.name+"에게는 아무 반응이 없다..."); return false; }
-    G.items[it.key]--; const to=byId(sp.evolveTo); const old=m.name;
-    m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type;
-    if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
-    G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
-    Audio.sfx("evolve"); setTimeout(()=>Audio.sfx("levelup"),400); flashHint(`🎉 ${old}이(가) ${m.name}(으)로 진화했다!`); return true; }
+    const to=byId(sp.evolveTo); if(!to){ flashHint("아무 반응이 없다..."); return false; }
+    if(typeof closeOverlay==="function")closeOverlay("bagOverlay");
+    evolveScene(m,to,it.key);   // 포켓몬식 진화 장면(돌 소모/적용/저장/재렌더 포함). 취소하면 돌 안 씀.
+    return false; }             // useItem 중복 렌더 방지(장면이 처리)
   return false; }
 function useItem(it){ if((G.items[it.key]||0)<=0)return; if(applyItemEffect(it)){ renderBag(); if(G.inBattle)renderCombatants(); saveGame(); } }
 async function battleUseItem(it){ if(G.busy)return; if((G.items[it.key]||0)<=0)return;
@@ -3694,7 +3733,7 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
     let actions="";
     if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<button class="pick" data-a="nick">✏️</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
     else { const canWith=G.party.length<6; actions=`<button class="pick" data-a="nick">✏️</button><button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel">방생</button>`; }
-    if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<button class="pick" data-a="sum">📋</button><button class="pick" data-a="nick">✏️</button><button class="pick" data-a="held">🎒</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
+    if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<div style="display:flex;gap:4px"><button class="pick" data-a="up" ${i>0?"":"disabled"} style="padding:7px 9px" title="위로">▲</button><button class="pick" data-a="down" ${i<G.party.length-1?"":"disabled"} style="padding:7px 9px" title="아래로">▼</button></div><button class="pick" data-a="sum">📋</button><button class="pick" data-a="nick">✏️</button><button class="pick" data-a="held">🎒</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
     else { const canWith=G.party.length<6; actions=`<button class="pick" data-a="sum">📋</button><button class="pick" data-a="nick">✏️</button><button class="pick" data-a="held">🎒</button><button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel">방생</button>`; }
     const nmeta=m.nick?`<span style="font-size:9px;color:var(--muted)"> (${m.name})</span>`:"";
     const heldTag=m.held?` <span style="font-size:9px;color:#ffd98a">${HELD_ITEMS[m.held].em}${HELD_ITEMS[m.held].ko}</span>`:"";
@@ -3705,6 +3744,10 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
     card.querySelectorAll(".pick").forEach(btn=>btn.addEventListener("click",()=>pcAction(btn.dataset.a,i)));
     body.appendChild(card); }); }
 function pcAction(a,i){ Audio.sfx("blip");
+  if((a==="up"||a==="down")&&pcTab==="party"){ const j=a==="up"?i-1:i+1; if(j<0||j>=G.party.length)return;   // 포켓몬식 파티 순서 조절
+    const tmp=G.party[i]; G.party[i]=G.party[j]; G.party[j]=tmp;
+    if(G.active===i)G.active=j; else if(G.active===j)G.active=i;                                              // 선택 정령 인덱스 따라가기
+    setPcTab(); renderPC(); updateDexPill(); saveGame(); return; }
   if(a==="sum"){ const m=(pcTab==="party"?G.party:G.box)[i]; if(m)showMonSummary(m); return; }
   if(a==="nick"){ const m=(pcTab==="party"?G.party:G.box)[i]; if(m) askNickname(m).then(()=>{ renderPC(); saveGame(); }); return; }
   if(a==="held"){ openHeld(pcTab,i); return; }
@@ -3929,7 +3972,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
