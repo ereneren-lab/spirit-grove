@@ -1736,9 +1736,13 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(spec.spiky){ ctx.beginPath(); for(let i=0;i<4;i++){ const bx=cx-u*0.24+i*u*0.16; ctx.moveTo(bx,cy-u*0.72); ctx.lineTo(bx+u*0.08,cy-u*0.9); ctx.lineTo(bx+u*0.16,cy-u*0.72); } ctx.fill(); ctx.stroke(); } }
     if(spec.extra==="beard"){ ctx.fillStyle="#d8d4cc"; this._rr(ctx,cx-u*0.2,cy-u*0.3,u*0.4,u*0.22,u*0.08); ctx.fill(); }
     if(dir!=="up"){ ctx.fillStyle="#2a2230";
-      if(dir==="left"){ ctx.fillRect(cx-u*0.14,cy-u*0.46,u*0.09,u*0.12); }
-      else if(dir==="right"){ ctx.fillRect(cx+u*0.05,cy-u*0.46,u*0.09,u*0.12); }
-      else { ctx.fillRect(cx-u*0.15,cy-u*0.46,u*0.08,u*0.12); ctx.fillRect(cx+u*0.07,cy-u*0.46,u*0.08,u*0.12); }
+      // 가끔 눈 깜빡임 — 스프라이트별 위상(spec._bseed)으로 제각각, 짧게 감았다 뜬다. reduceMotion이면 생략.
+      if(spec._bseed===undefined){ let s=0; const str=(spec.outfit||"")+(spec.skin||"")+(spec.hair||""); for(let i=0;i<str.length;i++)s=(s*31+str.charCodeAt(i))>>>0; spec._bseed=(s%1000)/1000*3.6; }
+      const _blk=!CONFIG.reduceMotion&&now&&(((now+spec._bseed)%3.6)<0.12);
+      const _ey=_blk?cy-u*0.39:cy-u*0.46, _eh=_blk?u*0.03:u*0.12;
+      if(dir==="left"){ ctx.fillRect(cx-u*0.14,_ey,u*0.09,_eh); }
+      else if(dir==="right"){ ctx.fillRect(cx+u*0.05,_ey,u*0.09,_eh); }
+      else { ctx.fillRect(cx-u*0.15,_ey,u*0.08,_eh); ctx.fillRect(cx+u*0.07,_ey,u*0.08,_eh); }
       if(spec.extra==="glasses"){ ctx.strokeStyle="#1a1a22"; ctx.lineWidth=Math.max(1,u*0.04); ctx.strokeRect(cx-u*0.17,cy-u*0.48,u*0.14,u*0.14); ctx.strokeRect(cx+u*0.04,cy-u*0.48,u*0.14,u*0.14); } }
     ctx.restore(); },
 };
