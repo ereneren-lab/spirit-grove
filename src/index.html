@@ -191,7 +191,13 @@
   @keyframes dmg{0%{opacity:0;transform:translateY(6px) scale(.7)}20%{opacity:1;transform:translateY(-6px) scale(1.1)}100%{opacity:0;transform:translateY(-46px) scale(1)}}
   .particle{position:absolute;font-size:20px;z-index:6;pointer-events:none;animation:part .8s ease-out forwards}
   @keyframes part{0%{opacity:1;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.3)}}
-  .catchball{position:absolute;font-size:34px;z-index:7;pointer-events:none}
+  .catchball{position:absolute;width:34px;height:34px;border-radius:50%;z-index:7;pointer-events:none;
+    box-shadow:0 3px 7px rgba(0,0,0,.4),inset 0 -4px 6px rgba(0,0,0,.3),inset 0 3px 5px rgba(255,255,255,.25)}
+  .catchball::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:12px;transform:translate(-50%,-50%);
+    border-radius:50%;background:radial-gradient(circle,#fff 42%,#e6eef5 100%);box-shadow:0 0 5px rgba(255,255,255,.9),0 0 0 2px rgba(30,40,50,.3)}
+  .catchball.ball{background:radial-gradient(circle at 34% 26%,#eafff8 3%,#8fe6c8 24%,#3ab492 54%,#1a6650 100%)}
+  .catchball.great{background:radial-gradient(circle at 34% 26%,#f3e8ff 3%,#c69bef 22%,#8248cf 52%,#431d7a 100%)}
+  .catchball.great::after{background:radial-gradient(circle,#ffe9a8 40%,#f0b83a 100%);box-shadow:0 0 6px rgba(255,210,90,.95),0 0 0 2px rgba(60,40,10,.35)}
   .fx-glyph{position:absolute;font-size:28px;z-index:7;pointer-events:none;transform:translate(-50%,-50%);will-change:transform,left,top,opacity}
   .fx-proj{font-size:32px}
   .fx-particle{position:absolute;font-size:18px;z-index:7;pointer-events:none;transform:translate(-50%,-50%);will-change:transform,opacity}
@@ -789,6 +795,7 @@ const Audio={ctx:null,master:null,musicGain:null,sfxGain:null,muted:false,track:
     else if(name==="buy")[523,784].forEach((f,i)=>this.note(f,t+i*0.08,0.18,"triangle",0.18));
     else if(name==="step")this.note(140,t,0.05,"sine",0.07);
     else if(name==="exp")this.note(720,t,0.42,"square",0.045);   // 경험치 차오르는 소리(포켓몬식 상승 톤)
+    else if(name==="type")this.note(560,t,0.014,"square",0.02);   // 대화 타이핑 틱(아주 짧고 작게)
     else if(name==="heal")[392,523,659].forEach((f,i)=>this.note(f,t+i*0.1,0.2,"sine",0.16));
     else if(name==="win")[523,659,784,1046].forEach((f,i)=>this.note(f,t+i*0.12,0.3,"triangle",0.22,this.master));
     else if(name==="victory"){[523,659,784,1046,988,1046,1318].forEach((f,i)=>this.note(f,t+i*0.12,0.28,"triangle",0.22,this.master)); [131,165,196].forEach((f,i)=>this.note(f,t+i*0.24,0.45,"sine",0.16,this.master)); } },
@@ -1875,13 +1882,23 @@ function healFx(onDone){
   setTimeout(()=>{ ov.classList.remove("show"); setTimeout(()=>ov.remove(),320);
     if(G)G.busy=false; if(onDone)onDone(); }, litDone+950);
 }
-let _dlgQueue=null,_dlgIdx=0,_dlgCb=null;
+let _dlgQueue=null,_dlgIdx=0,_dlgCb=null,_dlgTimer=null,_dlgTyping=false;
 function showDialog(pages,onDone){ if(!Array.isArray(pages))pages=[pages];
   _dlgQueue=pages.map(p=>typeof p==="string"?{name:"",text:p}:p); _dlgIdx=0; _dlgCb=onDone||null; G.busy=true;
   $("dialogBox").classList.add("show"); _renderDlgPage(); }
-function _renderDlgPage(){ const p=_dlgQueue[_dlgIdx]; const nm=$("dlgName"); nm.textContent=p.name||""; nm.style.display=p.name?"block":"none"; $("dlgText").textContent=p.text; $("dlgNext").style.display=(_dlgIdx<_dlgQueue.length-1)?"block":"none"; }
-function advanceDialog(){ if(!_dlgQueue)return; _dlgIdx++;
-  if(_dlgIdx>=_dlgQueue.length){ $("dialogBox").classList.remove("show"); _dlgQueue=null; G.busy=false; const cb=_dlgCb; _dlgCb=null; Audio.sfx&&Audio.sfx("blip"); if(cb)cb(); }
+// 포켓몬식 타이핑: 태그 제거한 평문을 한 글자씩 → 완료 시 서식(innerHTML) 적용 + ▼ 커서. 탭/A로 즉시완성→진행.
+function _renderDlgPage(){ const p=_dlgQueue[_dlgIdx]; const nm=$("dlgName"); nm.textContent=p.name||""; nm.style.display=p.name?"block":"none";
+  const txt=$("dlgText"), cue=$("dlgNext"); if(_dlgTimer){ clearInterval(_dlgTimer); _dlgTimer=null; } cue.style.display="none";
+  const full=String(p.text||"");
+  if(CONFIG.reduceMotion){ txt.innerHTML=full; _dlgTyping=false; cue.style.display="block"; return; }
+  const chars=[...full.replace(/<[^>]+>/g,"")]; txt.textContent=""; _dlgTyping=true; let i=0;
+  const speed=Math.max(12, Math.round(30*(CONFIG.textSpeed||1)));
+  _dlgTimer=setInterval(()=>{ if(i>=chars.length){ clearInterval(_dlgTimer); _dlgTimer=null; _dlgTyping=false; txt.innerHTML=full; cue.style.display="block"; return; }
+    txt.textContent+=chars[i]; if(i%2===0 && Audio.sfx)Audio.sfx("type"); i++; }, speed); }
+function _dlgComplete(){ if(!_dlgTyping)return false; if(_dlgTimer){ clearInterval(_dlgTimer); _dlgTimer=null; } $("dlgText").innerHTML=String(_dlgQueue[_dlgIdx].text||""); _dlgTyping=false; $("dlgNext").style.display="block"; return true; }
+function advanceDialog(){ if(!_dlgQueue)return; if(_dlgComplete())return;   // 타이핑 중이면 먼저 즉시완성
+  _dlgIdx++;
+  if(_dlgIdx>=_dlgQueue.length){ if(_dlgTimer){clearInterval(_dlgTimer);_dlgTimer=null;} _dlgTyping=false; $("dialogBox").classList.remove("show"); _dlgQueue=null; G.busy=false; const cb=_dlgCb; _dlgCb=null; Audio.sfx&&Audio.sfx("blip"); if(cb)cb(); }
   else { Audio.sfx&&Audio.sfx("blip"); _renderDlgPage(); } }
 function dialogActive(){ return !!_dlgQueue; }
 function flashHint(txt){ const h=$("mapHint"); h.textContent=txt; clearTimeout(h._t);
@@ -2019,7 +2036,7 @@ function tapToMove(e){ if(dialogActive()){ advanceDialog(); return; } if(!$("map
   if(path&&path.length){ gamePath=path; if(Field.setDest)Field.setDest(tile.x,tile.y); rippleAt(e.clientX,e.clientY); if(Field.arrived)pathStep(); } }
 $("mapCanvas").addEventListener("pointerdown",tapToMove);
 $("dialogBox").addEventListener("click",advanceDialog);
-const _ab=document.getElementById("actBtn"); if(_ab){ const _ai=e=>{ if(e&&e.cancelable)e.preventDefault(); interact(); }; _ab.addEventListener("click",_ai); _ab.addEventListener("touchstart",_ai,{passive:false}); }
+const _ab=document.getElementById("actBtn"); if(_ab){ const _ai=e=>{ if(e&&e.cancelable)e.preventDefault(); if(dialogActive()){ advanceDialog(); return; } interact(); }; _ab.addEventListener("click",_ai); _ab.addEventListener("touchstart",_ai,{passive:false}); }
 const _rb=document.getElementById("runBtn"); if(_rb)_rb.addEventListener("click",e=>{ if(e&&e.cancelable)e.preventDefault(); toggleRun(); });
 const _bb=document.getElementById("backBtn"); if(_bb){ const _bi=e=>{ if(e&&e.cancelable)e.preventDefault(); cancelBtn(); }; _bb.addEventListener("click",_bi); _bb.addEventListener("touchstart",_bi,{passive:false}); }
 document.querySelectorAll(".dpad button[data-dir]").forEach(btn=>{ const dir=btn.dataset.dir;
@@ -3379,7 +3396,7 @@ async function tryCatch(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너
   const chance=clamp((1-hpR)*0.55+0.10+bonus+statusBonus+DIFF[CONFIG.difficulty].catch-lvPen-tierPen,0.03,0.92);
   setMsg(`${ITEM_KO[ball]}를 던졌다!`); Audio.sfx("throw");
   const field=$("battleField"); const fr=field.getBoundingClientRect(); const foeC=fxCenter("foe"); const foeSp=$("foeSprite");
-  const ballEl=document.createElement("div"); ballEl.className="catchball"; ballEl.textContent=ball==="ball"?"🔮":"🟣";
+  const ballEl=document.createElement("div"); ballEl.className="catchball "+(ball==="ball"?"ball":"great");   // CSS 구(球): 정령구=민트, 고급=보라+금 (예전 🟣 이모지 대체)
   const startX=fr.width*0.18, startY=fr.height*0.78; ballEl.style.left=startX+"px"; ballEl.style.top=startY+"px"; field.appendChild(ballEl);
   // arc throw
   await ballEl.animate([{left:startX+"px",top:startY+"px",transform:"translate(-50%,-50%) rotate(0deg)"},
@@ -3995,7 +4012,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
