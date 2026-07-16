@@ -235,6 +235,7 @@
   .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:auto}
   .mbtn{border:1px solid var(--line);background:var(--panel2);color:var(--cream);border-radius:11px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;transition:transform .1s}
   .mbtn:active{transform:scale(.97)} .mbtn:disabled{opacity:.4}
+  .mbtn.kbfocus{outline:2.5px solid var(--mint);outline-offset:1px;box-shadow:0 0 11px rgba(127,209,174,.55);border-color:var(--mint)}
   .move-btn{flex-direction:column;align-items:flex-start;gap:3px;padding:9px 12px}
   .move-btn .top{display:flex;justify-content:space-between;width:100%;align-items:center}
   .move-btn .mp{font-size:9.5px;color:var(--muted);font-weight:600}
@@ -2721,25 +2722,49 @@ function stageChips(m){ let h=""; if(m.status)h+=`<span class="sc ${STATUS_CLS[m
     h+=`<span class="sc ${v>0?"up":"down"}">${lbl}${v>0?"+":""}${v}</span>`; } }); return h; }
 function renderStages(){ if(!G.foe)return; $("foeStages").innerHTML=stageChips(G.foe); $("meStages").innerHTML=stageChips(activeMon()); }
 
-function showMain(){ mainMenu.style.display="grid"; moveMenu.style.display="none"; moveBack.style.display="none"; setMenuEnabled(true); }
+function showMain(){ mainMenu.style.display="grid"; moveMenu.style.display="none"; moveBack.style.display="none"; setMenuEnabled(true); battleFocus(0); }
 function showMoves(){ mainMenu.style.display="none"; moveMenu.style.display="grid"; moveBack.style.display="block"; moveMenu.innerHTML="";
   const me=activeMon();
   if(noPP(me)){ const b=document.createElement("button"); b.className="mbtn move-btn";
     b.innerHTML=`<div class="top"><span>발버둥</span><span class="pp">PP —</span></div><span class="mp">노말 · 반동</span>`;
-    b.addEventListener("click",()=>{Audio.sfx("blip");doMove("struggle");}); moveMenu.appendChild(b); return; }
+    b.addEventListener("click",()=>{Audio.sfx("blip");doMove("struggle");}); moveMenu.appendChild(b); battleFocus(0); return; }
   me.moves.forEach(mv=>{ const mo=MOVES[mv]; const pp=me.pp[mv]||0; const b=document.createElement("button"); b.className="mbtn move-btn"; b.disabled=pp<=0;
     let eff=""; if(mo.power>0 && G.foe){ let e=EFF[mo.type][G.foe.type]; if(G.foe.type2&&G.foe.type2!==G.foe.type)e*=EFF[mo.type][G.foe.type2];
       if(e>=4)eff=`<span class="eff-tag eff-good">효과 매우 굉장</span>`; else if(e>1)eff=`<span class="eff-tag eff-good">효과 굉장</span>`; else if(e>0&&e<=0.25)eff=`<span class="eff-tag eff-bad">효과 매우 별로</span>`; else if(e<1)eff=`<span class="eff-tag eff-bad">효과 별로</span>`; }
     const desc=`${TYPE_KO[mo.type]} · ${moveDesc(mv)||"변화"}`;
     b.innerHTML=`<div class="top"><span>${mo.name}</span><span class="pp">PP ${pp}/${mo.pp}</span></div><span class="mp">${desc}${eff}</span>`;
     b.addEventListener("click",()=>{Audio.sfx("blip");doMove(mv);}); moveMenu.appendChild(b); });
-  Coach.onMoves(); }
+  Coach.onMoves(); battleFocus(0); }
 function setMenuEnabled(on){ document.querySelectorAll("#mainMenu .mbtn").forEach(b=>{ let dis=!on;
     if(G.trainer&&(b.dataset.act==="catch"||b.dataset.act==="run"))dis=true; b.disabled=dis; });
   document.querySelectorAll("#moveMenu .mbtn").forEach(b=>{ if(on){ /* leave pp-based disabled as set */ } else b.disabled=true; }); }
 mainMenu.addEventListener("click",e=>{ const b=e.target.closest(".mbtn"); if(!b||G.busy||b.disabled)return; Audio.sfx("blip");
   const act=b.dataset.act; if(act==="fight")showMoves(); else if(act==="catch")tryCatch(); else if(act==="party")openSwitch(false); else if(act==="run")tryRun(); else if(act==="item")openBattleBag(); });
 $("moveBackBtn").addEventListener("click",()=>{Audio.sfx("blip");showMain();});
+// 전투 메뉴 방향키 커서(포켓몬식). 모바일 탭도 그대로 동작. 방향키=커서, Enter/Z=선택(A), Esc/X=뒤로(B).
+let _bfi=0;
+function battleMenuBtns(){ const mm=$("mainMenu"), vm=$("moveMenu");
+  if(mm && getComputedStyle(mm).display!=="none") return [...mm.querySelectorAll(".mbtn")];
+  if(vm && getComputedStyle(vm).display!=="none"){ const a=[...vm.querySelectorAll(".mbtn")]; const bk=$("moveBackBtn"); if(bk&&getComputedStyle($("moveBack")||bk).display!=="none")a.push(bk); return a; }
+  return []; }
+function battleFocus(i){ const btns=battleMenuBtns(); document.querySelectorAll(".mbtn.kbfocus").forEach(b=>b.classList.remove("kbfocus"));   // 다른(숨은) 메뉴 잔여 커서 제거
+  if(!btns.length)return; _bfi=Math.max(0,Math.min(i,btns.length-1)); const f=btns[_bfi]; if(f)f.classList.add("kbfocus"); }
+function battleNavActive(){ return typeof G!=="undefined"&&G&&G.inBattle&&!G.busy
+  && $("battle")&&$("battle").classList.contains("active") && !($("dbOverlay")&&$("dbOverlay").classList.contains("active"))
+  && battleMenuBtns().length>0; }
+function battleNav(dir){ const btns=battleMenuBtns(); if(!btns.length)return; const n=btns.length, cols=2; let i=_bfi;
+  if(dir==="right"){ if(i%cols<cols-1 && i+1<n)i++; }
+  else if(dir==="left"){ if(i%cols>0)i--; }
+  else if(dir==="down"){ if(i+cols<n)i+=cols; }
+  else if(dir==="up"){ if(i-cols>=0)i-=cols; }
+  if(i!==_bfi){ battleFocus(i); Audio.sfx&&Audio.sfx("type"); } }
+function battleSelect(){ const b=battleMenuBtns()[_bfi]; if(b&&!b.disabled)b.click(); }
+function battleBack(){ const vm=$("moveMenu"); if(vm&&getComputedStyle(vm).display!=="none"){ const bk=$("moveBackBtn"); if(bk)bk.click(); } }
+document.addEventListener("keydown",e=>{ if(!battleNavActive())return; const k=e.key.toLowerCase();
+  const arrow={arrowup:"up",w:"up",arrowdown:"down",s:"down",arrowleft:"left",a:"left",arrowright:"right",d:"right"}[k];
+  if(arrow){ e.preventDefault(); battleNav(arrow); return; }
+  if(k==="enter"||k===" "||k==="z"){ e.preventDefault(); battleSelect(); return; }
+  if(k==="x"||k==="escape"||k==="backspace"){ e.preventDefault(); battleBack(); return; } });
 
 /* FX */
 function spriteEl(side){ return side==="me"?$("meSprite"):$("foeSprite"); }
@@ -4012,7 +4037,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)

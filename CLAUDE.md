@@ -82,6 +82,11 @@ verify 내용:
 ### 정령 순서 조절 (포켓몬식)
 정령관리(PC) 파티 탭 카드에 ▲▼ 재정렬 버튼. `pcAction("up"/"down",i)`가 `G.party[i]`↔이웃을 스왑하고 `G.active`가 옮긴 정령을 따라간다. 회귀 `bugfix_batch_test.js`.
 
+### 조작·UI 포켓몬화
+- **대화창 타이핑**: `_renderDlgPage`가 태그 제거한 평문을 한 글자씩 타이핑(setInterval, `sfx("type")`) → 완료 시 `innerHTML`로 서식 적용 + ▼커서. `_dlgComplete`로 탭/A 즉시완성→진행. `.dialogbox`는 원래부터 포켓몬풍 크림 박스. A 버튼(`#actBtn`)이 대화 중 `advanceDialog` 호출(예전엔 interact 조기 return으로 무반응). 회귀 `scripts/dialog_type_test.js`.
+- **전투 메뉴 방향키 조작**: 전투는 별도 `#battle` 뷰라 오버월드 D패드/키가 안 닿았다. 전용 keydown 추가 — 방향키=커서(`battleNav`, 2열 그리드), Enter/Z=선택(A, `battleSelect`→button.click), Esc/X=뒤로(B, `battleBack`→기술→메인). 커서 하이라이트 `.mbtn.kbfocus`. `battleFocus`가 전환 시 전역 kbfocus를 지워 숨은 메뉴 잔여 커서 제거. `showMain`/`showMoves`가 커서를 0번에 리셋. 모바일 탭은 그대로. `battleNavActive()`가 `#battle` active·`!G.busy`·메뉴 표시일 때만 동작(메시지 탭게이트와 충돌 방지). 회귀 `scripts/battle_nav_test.js`.
+- **고급정령구**: 납작한 🟣 → CSS 3D 구체(`.catchball.great` 보라+금 버튼/글로우). 정령구는 `.catchball.ball`(민트). 포획 애니에서 프리미엄.
+
 ### 문 페이드 전환 (포켓몬식)
 `warpFade(swap)`: 검정 오버레이(`#warpFade`, canvasWrap 내부 `.warp-fade`)를 페이드아웃(→검정, 150ms)→**완전히 덮인 시점에 맵 스왑**→페이드인(→새 장면, 220ms). `enterInterior`/`exitInterior`가 실제 로직(`_enterInterior`/`_exitInterior`)을 `warpFade`로 감싼다. reduceMotion이면 즉시(swap 바로 호출). `_warpLock`(now+470)이 페이드 동안 입력 잠금.
 - ⚠️ `blackout`은 `exitInterior` 후 **동기적으로 G.pos를 STARTPOS로 덮어쓰므로** 지연 페이드판(`exitInterior`)이 아니라 즉시판 `_exitInterior()`를 호출해야 한다(안 그러면 지연 스왑이 STARTPOS를 덮어씀).
