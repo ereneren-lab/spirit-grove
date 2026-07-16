@@ -3882,6 +3882,7 @@ if($("artBulk")) $("artBulk").addEventListener("change",async e=>{ const files=[
 if($("artClear")) $("artClear").addEventListener("click",async()=>{ if(!confirm("가져온 정령 아트를 모두 삭제하고 기본 그림으로 되돌릴까요?"))return; await artClearAll(); renderArtGrid(); _artRefresh(); });
 artLoadAll().then(()=>{ _artRefresh(); });
 window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVisual=creatureVisual; window.SG.ART=ART;
+window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
