@@ -12,6 +12,7 @@
 //
 // 사용: node scripts/league_test.js <dist> [판수]
 const { chromium } = require("playwright"); const path=require("path");
+const SIM=require("./battle_sim.js");   // 두 하네스가 공유하는 전투 시뮬레이터
 
 (async()=>{
   let b=null;
@@ -26,51 +27,13 @@ const { chromium } = require("playwright"); const path=require("path");
   await p.waitForTimeout(900);
   const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)process.exitCode=1; };
 
+  await p.addScriptTag({content:SIM});   // window.__SIM 설치
   const R=await p.evaluate(async(N)=>{
     const S=window.SG; S.setG(S.freshState());
-
-    // 한 전투를 굴린다. 내 팀은 상태를 이어받는다(HP·PP 누적).
-    function battle(mine, foeTeam, potions){
-      const foes=foeTeam.map(([id,lv])=>S.makeMon(id,lv));
-      foes.forEach(m=>m.hp=m.maxHp);
-      let mi=mine.findIndex(m=>m.hp>0), fi=0, t=0;
-      const alive=a=>a.some(m=>m.hp>0);
-      let used=0;
-      while(alive(mine)&&alive(foes)&&t<300){
-        t++;
-        while(mine[mi]&&mine[mi].hp<=0)mi++;
-        if(mi>=mine.length)mi=mine.findIndex(m=>m.hp>0);
-        while(foes[fi]&&foes[fi].hp<=0)fi++;
-        if(mi<0||!mine[mi]||!foes[fi])break;
-        const me=mine[mi], fo=foes[fi];
-        // 위험하면 회복약(리그에서도 아이템은 쓸 수 있다)
-        if(potions && potions.n>0 && me.hp/me.maxHp<0.3){
-          me.hp=Math.min(me.maxHp, me.hp+130); potions.n--; used++;
-          // 회복은 턴을 소모하므로 상대만 공격한다
-          const fk=pickMove(fo,me); applyMove(fo,me,fk);
-          continue;
-        }
-        const mk=pickMove(me,fo), fk=pickMove(fo,me);
-        const ord=S.effSpd(me)>=S.effSpd(fo)?[[me,fo,mk],[fo,me,fk]]:[[fo,me,fk],[me,fo,mk]];
-        for(const [a,d,k] of ord){ if(a.hp<=0||d.hp<=0)continue; applyMove(a,d,k); }
-      }
-      return { win: alive(mine)&&!alive(foes), potionsUsed:used };
-    }
-    function pickMove(a,d){ let k=S.foeChooseMove(a,d);
-      if(!S.MOVES[k]||(a.pp[k]||0)<=0){ const u=(a.moves||[]).filter(x=>S.MOVES[x]&&(a.pp[x]||0)>0); k=u.length?u[0]:"struggle"; }
-      return k; }
-    function applyMove(a,d,k){
-      const mv=S.MOVES[k]; if(!mv)return;
-      if(a.pp[k]!=null)a.pp[k]=Math.max(0,a.pp[k]-1);
-      if(mv.power>0){
-        if(mv.acc<100 && Math.random()*100>mv.acc)return;
-        const hits=mv.multi?(mv.multi[0]+Math.floor(Math.random()*(mv.multi[1]-mv.multi[0]+1))):1;
-        for(let h=0;h<hits&&d.hp>0;h++) d.hp=Math.max(0,d.hp-S.damage(a,d,mv).dmg);
-      } else if(mv.heal){ a.hp=Math.min(a.maxHp,a.hp+Math.floor(a.maxHp*mv.heal)); }
-      else if(mv.eff&&mv.eff.stat){ const t=mv.eff.target==="self"?a:d;
-        t.stages=t.stages||S.newStages();
-        if(mv.eff.stat in t.stages)t.stages[mv.eff.stat]=Math.max(-6,Math.min(6,(t.stages[mv.eff.stat]||0)+mv.eff.stage)); }
-    }
+    // 전투 한 판 — 공용 시뮬레이터(scripts/battle_sim.js). 내 팀은 상태를 이어받는다(HP·PP·상태이상 누적).
+    // ⚠️ 예전엔 balance_test와 각자 사본을 갖고 있어, 한쪽만 고치면 두 측정이 서로 다른 규칙으로
+    //    돌아가는데도 티가 안 났다.
+    const battle=(mine,foeTeam,potions)=>window.__SIM.battle(mine,foeTeam,potions);
 
     const T3=S.DEX.filter(d=>d.tier===3&&!d.legend&&!d.secret).map(d=>d.id);
     // 리그 전에 하늘 신전이 열리므로 플레이어도 전설 1마리를 데려올 수 있다.

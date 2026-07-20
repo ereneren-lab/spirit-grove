@@ -25,6 +25,7 @@ run "도달성 증명"      reachability_test.js
 run "실입력 플레이스루" playthrough_test.js
 run "몽키 퍼즈(${SECS}초)" monkey_test.js "$SECS"
 run "장기 플레이스루(${LONG}초)" longrun_test.js "$LONG"
+run "시뮬레이터 상태이상 모델링" sim_status_test.js
 run "밸런스 실측" balance_test.js 300
 run "리그 연속 관문 실측" league_test.js 250
 

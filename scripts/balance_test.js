@@ -12,6 +12,7 @@
 //
 // 사용: node scripts/balance_test.js <dist> [판수]
 const { chromium } = require("playwright"); const path=require("path");
+const SIM=require("./battle_sim.js");   // 두 하네스가 공유하는 전투 시뮬레이터
 
 (async()=>{
   let b=null;
@@ -26,54 +27,20 @@ const { chromium } = require("playwright"); const path=require("path");
   await p.waitForTimeout(900);
   const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)process.exitCode=1; };
 
+  await p.addScriptTag({content:SIM});   // window.__SIM 설치
   const R=await p.evaluate(async(N)=>{
     const S=window.SG;
     S.setG(S.freshState());
     const G=S.G();
 
     // 전투 한 판을 게임 로직으로 굴린다(연출·await 없이 계산만).
+    // 전투 한 판 — 공용 시뮬레이터(scripts/battle_sim.js)를 쓴다.
+    // ⚠️ 예전엔 여기 자체 사본이 있었고, 반동을 maxHp*0.06으로 손대중하는 등 실제 게임 규칙과
+    //    어긋나 있었다(league_test의 사본과도 달랐다). 이제 두 하네스가 같은 시뮬을 쓴다.
     function fight(myTeam, foeTeam, maxTurns){
-      const mine=myTeam.map(([id,lv])=>S.makeMon(id,lv));
-      const foes=foeTeam.map(([id,lv])=>S.makeMon(id,lv));
-      mine.forEach(m=>{m.hp=m.maxHp;}); foes.forEach(m=>{m.hp=m.maxHp;});
-      let mi=0, fi=0, turns=0;
-      const alive=a=>a.some(m=>m.hp>0);
-      while(alive(mine)&&alive(foes)&&turns<(maxTurns||300)){
-        turns++;
-        while(mine[mi] && mine[mi].hp<=0) mi++;
-        while(foes[fi] && foes[fi].hp<=0) fi++;
-        if(!mine[mi]||!foes[fi])break;
-        const me=mine[mi], fo=foes[fi];
-        // 양쪽 다 게임의 적 AI로 기술 선택 → "평범한 플레이어" 기준
-        const pick=(a,d)=>{ let k=S.foeChooseMove(a,d);
-          if(!S.MOVES[k]||(a.pp[k]||0)<=0){ const u=(a.moves||[]).filter(x=>S.MOVES[x]&&(a.pp[x]||0)>0); k=u.length?u[0]:"struggle"; }
-          return k; };
-        const mk=pick(me,fo), fk=pick(fo,me);
-        const meFirst=S.effSpd(me)>=S.effSpd(fo);
-        const order=meFirst?[[me,fo,mk],[fo,me,fk]]:[[fo,me,fk],[me,fo,mk]];
-        for(const [a,d,k] of order){
-          if(a.hp<=0||d.hp<=0)continue;
-          const mv=S.MOVES[k]; if(!mv)continue;
-          if(a.pp[k]!=null)a.pp[k]=Math.max(0,a.pp[k]-1);
-          if(mv.power>0){
-            if(mv.acc<100 && Math.random()*100>mv.acc)continue;
-            const hits=mv.multi?(1+Math.floor(Math.random()*(mv.multi[1]-mv.multi[0]+1))+mv.multi[0]-1):1;
-            for(let h=0;h<hits && d.hp>0;h++){
-              const r=S.damage(a,d,mv); d.hp=Math.max(0,d.hp-r.dmg);
-            }
-            if(mv.drain)a.hp=Math.min(a.maxHp,a.hp+Math.floor((a.maxHp-a.hp)*0.15));
-            if(mv.recoil)a.hp=Math.max(0,a.hp-Math.floor(a.maxHp*0.06));
-          } else if(mv.heal){
-            a.hp=Math.min(a.maxHp,a.hp+Math.floor(a.maxHp*mv.heal));
-          } else if(mv.eff&&mv.eff.stat){
-            const t=mv.eff.target==="self"?a:d;
-            t.stages=t.stages||S.newStages();
-            if(mv.eff.stat in t.stages)
-              t.stages[mv.eff.stat]=Math.max(-6,Math.min(6,(t.stages[mv.eff.stat]||0)+mv.eff.stage));
-          }
-        }
-      }
-      return { win: alive(mine)&&!alive(foes), turns,
+      const mine=myTeam.map(([id,lv])=>{ const m=S.makeMon(id,lv); m.hp=m.maxHp; return m; });
+      const r=window.__SIM.battle(mine, foeTeam, null);
+      return { win:r.win, turns:0,
                hpLeft: mine.filter(m=>m.hp>0).reduce((a,m)=>a+m.hp/m.maxHp,0) };
     }
 
