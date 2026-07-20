@@ -1281,6 +1281,9 @@ TRAINERS.T21={key:"T21",name:"숲의 사냥꾼 강",em:"🏹",team:[["cindercub"
 TRAINERS.T15={key:"T15",name:"초보 정령사 준",em:"🧒",team:[["dustbunny",6],["drakeling",7]],reward:{potion:2,ball:3},money:400,intro:"초보 정령사 준: 나도 이제 정령사야! 한 판 붙자!",outro:"초보 정령사 준: 역시 넌 대단해…"};
 TRAINERS.T16={key:"T16",name:"풀숲 소녀 미나",em:"🌸",team:[["sproutcat",11],["mossback",12]],reward:{potion:3,greatball:2},money:800,intro:"풀숲 소녀 미나: 풀 정령의 끈기를 보여줄게!",outro:"풀숲 소녀 미나: 끈질기게 잘 버텼네."};
 TRAINERS.T17={key:"T17",name:"숲지기 도윤",em:"🌲",team:[["iceling",15],["sandwhirl",16]],reward:{greatball:3,hyperpotion:2},money:1300,intro:"숲지기 도윤: 이 숲을 지나려면 날 이겨야 해.",outro:"숲지기 도윤: …통과다. 조심히 가."};
+TRAINERS.T22={key:"T22",name:"호수 낚시꾼 도윤",em:"🎣",team:[["frostfish",23],["otterwave",24],["sharkfin",25]],reward:{greatball:3,hyperpotion:2,ether:1},money:2100,intro:"호수 낚시꾼 도윤: 이 호수의 물 정령은 내가 제일 잘 알지!",outro:"호수 낚시꾼 도윤: …내 낚싯대가 부끄럽구먼."};
+TRAINERS.T23={key:"T23",name:"수정 연구가 예린",em:"🔬",team:[["voltbeetle",24],["sparkmouse",25],["crystalgon",26]],reward:{hyperpotion:3,scopelens:1},money:2400,intro:"수정 연구가 예린: 수정의 공명을 데이터로 남기는 중이야. 표본이 되어줄래?",outro:"수정 연구가 예린: 훌륭한 데이터였어. 고마워!"};
+TRAINERS.T24={key:"T24",name:"제단 파수꾼 무진",em:"⚔️",team:[["hedgemoss",33],["magmahound",34],["riverdrake",36]],reward:{hyperpotion:4,revive:2,elixir:1},money:4200,intro:"제단 파수꾼 무진: 제단에 다가서려는 자여, 자격을 보여라.",outro:"제단 파수꾼 무진: …통과하라. 군주가 기다린다."};
 TRAINERS.T18={key:"T18",name:"용 수련생 하늘",em:"🐉",team:[["drakeling",20],["wyverna",23]],reward:{greatball:4,hyperpotion:3,revive:1},money:1900,intro:"용 수련생 하늘: 언젠가 천공룡을 키울 거야! 그 전에 널 넘겠어!",outro:"용 수련생 하늘: 아직 멀었나… 더 강해질게."};
 TRAINERS.T12={key:"T12",name:"새싹 채집가 이든",em:"🌿",team:[["sproutcat",10],["dustbunny",11]],reward:{potion:3,ball:3},money:600,intro:"새싹 채집가 이든: 초원의 새 친구들을 소개하지!",outro:"새싹 채집가 이든: 우와, 강하다!"};
 TRAINERS.T13={key:"T13",name:"들새 관찰자 소라",em:"🐤",team:[["zapfinch",15],["glowfly",16]],reward:{greatball:2,potion:3},money:1100,intro:"들새 관찰자 소라: 하늘의 정령은 빠르다구!",outro:"들새 관찰자 소라: 잘 나는 만큼 잘 싸우네."};
@@ -1348,6 +1351,11 @@ const NPCS=[
   {id:"t21",x:15,y:31,em:"🏹",name:"숲의 사냥꾼 강",battleKey:"T21",spr:{outfit:"#5a6a3a",accent:"#3a4a22",skin:"#e3b07e",hair:"#2a2416",hat:"cap",hatc:"#4a5a2a",boots:"#2a3a1a"},lines:["숲의 사냥꾼 강: 이 숲의 규칙은 강함이다."],linesAfter:["숲의 사냥꾼 강: …네가 더 강했다."]},
   {id:"altar_pilgrim",x:6,y:10,em:"🧎",name:"제단의 순례자",spr:{outfit:"#6a5a7a",accent:"#a898c0",skin:"#e0bd96",hair:"#3a3446",hat:"none",boots:"#4a4258"},lines:["제단의 순례자: 여기까지 왔군요… 군주는 홀로 그림자를 막아내고 있습니다.","제단의 순례자: 인장 조각을 모두 모았다면, 리그로 가세요. 챔피언만이 군주를 도울 수 있습니다."]},
   {id:"altar_watcher",x:20,y:11,em:"🔭",name:"제단 감시인",spr:{outfit:"#4a5a6a",accent:"#8a9aaa",skin:"#e8c39a",hair:"#2a3440",hat:"cap",hatc:"#3a4a5a",boots:"#2a3440"},lines:["제단 감시인: 밤이 길어졌어. 인장의 빛이 약해진 탓이지.","제단 감시인: 이 근방엔 아직 아무도 줍지 않은 물건이 남아 있을 거야. 잘 둘러봐."]},
+  {id:"trade1",x:9,y:45,em:"🔄",name:"교환하는 소녀 하늘",trade:"tr_forest",spr:{outfit:"#e0a0c0",accent:"#c07a9a",skin:"#e8c39a",hair:"#6a4a5a",hat:"none",boots:"#8a5a7a"},lines:["교환하는 소녀 하늘: 정령 교환, 관심 있어?"]},
+  {id:"trade2",x:10,y:21,em:"🔄",name:"교환하는 청년 재하",trade:"tr_lake",spr:{outfit:"#7a9ac0",accent:"#4a6a9a",skin:"#e0bd96",hair:"#3a3a4a",hat:"none",boots:"#3a4a6a"},lines:["교환하는 청년 재하: 교환할 정령 있어?"]},
+  {id:"t22",x:8,y:22,em:"🎣",name:"호수 낚시꾼 도윤",battleKey:"T22",spr:{outfit:"#4a7a9a",accent:"#2a5a7a",skin:"#e0bd96",hair:"#3a3a2a",hat:"cap",hatc:"#2a5a7a",boots:"#2a4a5a"},lines:["호수 낚시꾼 도윤: 이 호수의 물 정령은 내가 제일 잘 알지!"],linesAfter:["호수 낚시꾼 도윤: …내 낚싯대가 부끄럽구먼."]},
+  {id:"t23",x:12,y:25,em:"🔬",name:"수정 연구가 예린",battleKey:"T23",spr:{outfit:"#d8d8e8",accent:"#8a8ab0",skin:"#e8c39a",hair:"#4a4a6a",hat:"none",boots:"#6a6a8a"},lines:["수정 연구가 예린: 수정의 공명을 데이터로 남기는 중이야."],linesAfter:["수정 연구가 예린: 훌륭한 데이터였어. 고마워!"]},
+  {id:"t24",x:9,y:11,em:"⚔️",name:"제단 파수꾼 무진",battleKey:"T24",spr:{outfit:"#5a4a5a",accent:"#a08a70",skin:"#d8ab7e",hair:"#2a2422",hat:"none",boots:"#3a3030"},lines:["제단 파수꾼 무진: 제단에 다가서려는 자여, 자격을 보여라."],linesAfter:["제단 파수꾼 무진: …통과하라. 군주가 기다린다."]},
   {id:"daycare",x:13,y:47,em:"🏡",name:"육아방 관리인",daycare:true,spr:{outfit:"#8a6a4a",accent:"#c0a070",skin:"#e3b07e",hair:"#5a4a3a",hat:"none",boots:"#5a4636"},lines:["육아방 관리인: 정령을 맡겨보시겠어요?"]},
   {id:"movexpert",x:9,y:47,em:"📖",name:"기술 전문가",moveExpert:true,spr:{outfit:"#5a5a8a",accent:"#a0a0d0",skin:"#e3b07e",hair:"#3a3a5a",hat:"none",boots:"#3a3a5a"},lines:["기술 전문가: 잊은 기술을 되살리거나, 필요 없는 기술을 지워드립니다."]},
 ];
@@ -1391,8 +1399,26 @@ const GROUND_ITEMS=[
   {k:"g_hi3",x:12,y:15,item:"candy",qty:1},{k:"g_hi4",x:6,y:12,item:"elixir",qty:1},
   {k:"g_ar1",x:2,y:10,item:"leftovers",qty:1},{k:"g_ar2",x:22,y:11,item:"candy",qty:2},
 ];
-const GROUND_AT={}; GROUND_ITEMS.forEach(g=>{ GROUND_AT[g.x+","+g.y]=g; });
-function groundItemAt(x,y){ const g=GROUND_AT[x+","+y]; if(!g)return null;
+// ⚠️ 실내는 좌표계가 따로라, 범위를 안 나누면 늪지 (2,10)에서 오버월드 아이템을 줍는다.
+//    g.in 이 없으면 오버월드 전용, 있으면 그 인테리어 전용.
+// 인테리어 바닥 아이템(in 지정). 용암 동굴·수정 동굴·늪지가 사실상 빈 방이었다.
+GROUND_ITEMS.push(
+  {k:"gi_lava1",in:"lavacave",x:7,y:1,item:"firestone",qty:1},
+  {k:"gi_lava2",in:"lavacave",x:2,y:1,item:"hyperpotion",qty:2},
+  {k:"gi_lava3",in:"lavacave",x:1,y:2,item:"ether",qty:2},
+  {k:"gi_cave1",in:"cave",x:11,y:1,item:"greatball",qty:4},
+  {k:"gi_cave2",in:"cave",x:2,y:1,item:"thunderstone",qty:1},
+  {k:"gi_cave3",in:"cave",x:1,y:2,item:"revive",qty:2},
+  {k:"gi_cave4",in:"cave",x:11,y:2,item:"elixir",qty:1},
+  {k:"gi_cave5",in:"cave",x:3,y:1,item:"scopelens",qty:1},
+  {k:"gi_marsh1",in:"marsh",x:15,y:1,item:"antidote",qty:3},
+  {k:"gi_marsh2",in:"marsh",x:2,y:1,item:"cureberry",qty:2},
+  {k:"gi_marsh3",in:"marsh",x:1,y:2,item:"elixir",qty:1},
+  {k:"gi_snow1",in:"snowfield",x:15,y:1,item:"waterstone",qty:1},
+  {k:"gi_snow2",in:"snowfield",x:2,y:1,item:"hyperpotion",qty:3},
+);
+const GROUND_AT={}; GROUND_ITEMS.forEach(g=>{ GROUND_AT[(g.in||"")+"|"+g.x+","+g.y]=g; });
+function groundItemAt(x,y){ const g=GROUND_AT[(G.indoor||"")+"|"+x+","+y]; if(!g)return null;
   return (G.found||[]).includes(g.k)?null:g; }
 const HIDDEN=[
   {k:"h1",x:1,y:47,item:"potion",qty:1},{k:"h2",x:1,y:41,item:"ball",qty:3},{k:"h3",x:2,y:34,item:"greatball",qty:2},
@@ -1500,6 +1526,7 @@ function talkNPC(npc){ if(_talking||dialogActive())return;
   faceNpcToPlayer(npc);   // 말 걸면 플레이어 쪽으로 돌아본다 — 로밍 NPC가 딴 데 보던 문제
   if(npc.daycare){ Audio.sfx&&Audio.sfx("blip"); openDaycare(); return; }
   if(npc.moveExpert){ Audio.sfx&&Audio.sfx("blip"); openMoveExpert(); return; }
+  if(npc.trade){ Audio.sfx&&Audio.sfx("blip"); tradeNPC(npc); return; }
   if(typeof QUESTS!=="undefined"){ const _q=questForGiver(npc.id); if(_q){ _talking=true; Audio.sfx("blip"); handleQuestTalk(_q,npc); return; } }
   const key=npc.battleKey; const cleared=key&&G.defeated.has(key);
   let src;
@@ -1519,7 +1546,7 @@ const STARTPOS={x:8,y:48};
 let G=null;
 function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box:[],active:0,caught:new Set(),seen:new Set(),
   items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
-  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,hasCut:false,hasSurf:false,hasStrength:false,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
+  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
 function activeMon(){return G.party[G.active];}
 function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
 function updateDexPill(){$("dexPill").textContent=`도감 ${G.caught.size} / ${DEX.length}${G.dexMaster?" 🏆":""}`;}
@@ -2070,6 +2097,43 @@ function onArrived(){
   if(enc){ stopPath(); return; }
   continueMovement(); }
 function healParty(clearStatus){ G.party.forEach(m=>{recalc(m);m.hp=m.maxHp;if(clearStatus){m.status=null;} m.friendship=(m.friendship||0)+2; m.moves.forEach(mv=>{m.pp[mv]=MOVES[mv].pp;});}); }
+/* ===== 인게임 교환 (포켓몬의 교환 아저씨) ===== */
+// 원하는 종을 데려오면 자기 정령과 바꿔준다. 받은 정령은 친밀도가 높고 닉네임이 붙는다.
+const TRADES={
+  tr_forest:{ want:"racoonmon", give:"sproutcat", nick:"새싹이", lv:18,
+    name:"교환하는 소녀 하늘",
+    ask:["교환하는 소녀 하늘: 저기, 혹시 <b>라꾸리</b> 있어? 내 <b>새싹냥</b>이랑 바꾸지 않을래?",
+         "교환하는 소녀 하늘: 이 아이는 정말 잘 따라. 소중히 해줄 사람한테 보내고 싶어."],
+    none:["교환하는 소녀 하늘: <b>라꾸리</b>를 데려오면 <b>새싹냥</b>이랑 바꿔줄게!"],
+    done:["교환하는 소녀 하늘: 새싹냥, 잘 지내? …고마워, 정말로."] },
+  tr_lake:{ want:"otterwave", give:"frostpup", nick:"서리", lv:26,
+    name:"교환하는 청년 재하",
+    ask:["교환하는 청년 재하: <b>수달정</b>이구나! 내 <b>서리강아지</b>랑 교환할래?",
+         "교환하는 청년 재하: 호수 건너에서 데려온 아이야. 추운 데서 왔지."],
+    none:["교환하는 청년 재하: <b>수달정</b>을 데려오면 <b>서리강아지</b>랑 바꿔줄게."],
+    done:["교환하는 청년 재하: 수달정은 잘 있어! 좋은 거래였어."] },
+};
+function tradeNPC(npc){
+  const T=TRADES[npc.trade]; if(!T)return;
+  G.trades=G.trades||{};
+  if(G.trades[npc.trade]){ showDialog({name:T.name,text:T.done.join("<br>")}); return; }
+  const idx=(G.party||[]).findIndex(m=>m&&!m.isEgg&&m.id===T.want);
+  if(idx<0){ showDialog({name:T.name,text:T.none.join("<br>")}); return; }
+  if(G.party.filter(m=>m&&!m.isEgg).length<=1){
+    showDialog({name:T.name,text:"…마지막 한 마리를 가져갈 순 없지. 다른 정령을 더 데려와."}); return; }
+  showDialog(T.ask.map(t=>({name:T.name,text:t})),()=>{
+    const gone=G.party[idx];
+    const got=makeMon(T.give,T.lv);
+    got.nick=T.nick; got.friendship=120; got.wild=false;
+    G.party[idx]=got; G.caught.add(got.id); G.seen.add(got.id);
+    G.trades[npc.trade]=true;
+    if(G.active>=G.party.length)G.active=0;
+    Audio.sfx&&Audio.sfx("levelup"); saveGame(); updateDexPill&&updateDexPill();
+    showDialog([{name:T.name,text:`고마워! 잘 키워줘 — <b>${T.nick}</b>(${got.name})이야.`},
+                {name:"",text:`🔄 <b>${dispName(gone)}</b>을(를) 보내고 <b>${T.nick}</b>을(를) 받았다!`}]);
+  });
+}
+
 /* ===== 정령 회관 서비스 ===== */
 // IV·친밀도·닉네임은 데이터로만 있고 플레이어가 볼/만질 창구가 없었다. 회관이 그 창구다.
 const IV_JUDGE=[  // 합계 구간별 총평 (본가 감정사 말투)
@@ -4755,7 +4819,7 @@ function serialize(){ return {v:4, pe:G.playerEmoji, ps:G.styleIdx||0,
   party:G.party.map(serMon),
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
-  active:G.active, hof:G.hallOfFame||[], caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
+  active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
   pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, lakeDone:!!G.lakeDone, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, dexMaster:!!G.dexMaster, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
@@ -4765,7 +4829,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.items=Object.assign({ball:0,greatball:0,potion:0,revive:0,antidote:0,hyperpotion:0,repel:0,candy:0,xatk:0,xdef:0,xspd:0},o.items||{});
   s.money=o.money!=null?o.money:600; s.pos=o.pos||{x:STARTPOS.x,y:STARTPOS.y}; s.repel=o.repel||0;
   s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.lakeDone=!!o.lakeDone; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.dexMaster=!!o.dexMaster; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
-  s.hallOfFame=Array.isArray(o.hof)?o.hof:[];
+  s.hallOfFame=Array.isArray(o.hof)?o.hof:[]; s.trades=o.trades||{};
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
   if(!s.party.length)return false;
@@ -4841,7 +4905,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
