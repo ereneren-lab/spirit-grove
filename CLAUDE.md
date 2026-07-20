@@ -117,8 +117,20 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+## 타입·상태 단일 출처 (`TYPES` / `STATUSES`)
+이 프로젝트에서 **가장 자주 재발한 버그가 "병렬 테이블 중 하나를 빠뜨림"** 이었다(TYPE_PARTICLE·STATUS_KO.slp·_MV_STATUS_KO.frz). 고칠 때마다 "한 세트로 보라"고 적었지만 사람이 지켜야 하는 규칙이라 계속 뚫렸다 → 이제 **객체 하나에서 전부 파생**된다.
+
+- **타입을 추가/수정할 땐 `TYPES`만 고친다.** 파생: `TYPE_KO`·`TYPE_CLASS`·`TYPE_COLOR`·`TYPE_PARTICLE`·`TYPE_ICON`·`SPEC_TYPES`·`DEFAULT_ABILITY`·CSS `--<type>`·`.type-tag.t-<type>`·도감 타입 필터(`TYPE_LIST`)·`Audio.cry` 울음 파형.
+  - 필드: `ko`(한글명) `col`(색) `par`(연출 파티클) `ic`(아이콘) `spec`(특수판정) `ab`(기본 특성) `wav`(울음 파형) `fg`(태그 글자색, 선택).
+  - ⚠️ **`EFF`만은 파생이 아니다** — 10×10 상성값은 설계 데이터라 손으로 채워야 한다. 타입을 추가하면 `EFF`의 **행 하나와 모든 행의 열 하나**를 같이 넣을 것(누락 시 `damage`에서 NaN). 회귀가 전 조합을 검사한다.
+- **상태를 추가할 땐 `STATUSES`만 고친다.** 파생: `STATUS_KO`·`STATUS_CLS`·`_MV_STATUS_KO`·`STATUS_TYPE_IMMUNE`·연출 글리프 2곳(`statusMoveFx`/`fxStatusAura`)·`.b-<st>`·`.dbst.b-<st>`.
+  - 필드: `ko` `chip`(상태칩 배경) `g`(연출 글리프) `fx`(연출 색 — chip과 다를 수 있다) `imm`(면역 타입, 없으면 `null`).
+- CSS는 `injectPalette()`가 `<style>`을 만들어 주입한다. ⚠️ `.dbst.b-*`는 `.dbst`를 specificity로 이겨야 하므로 규칙 형태를 유지할 것.
+- 회귀 `scripts/palette_source_test.js`. ⚠️ **이 테스트는 개별 테이블을 손으로 나열하지 않는다** — 그러면 테스트 자체가 또 하나의 병렬 테이블이 되어 같은 실수를 반복하게 된다. `TYPES`/`STATUSES`의 키를 돌면서 파생 여부와 CSS 적용을 **실제 DOM에서** 확인한다.
+- 이 리팩터로 드러나 같이 메워진 누락: `TYPE_ICON`이 7종뿐이라 얼음·독·땅이 `tkLabel`에서 아이콘 없이 렌더됐고, `Audio.cry` 파형도 7종뿐이라 신규 3타입은 전부 기본값 울음이었다.
+
 ## 타입 시스템 (10종)
-불·물·풀·전기·노말·비행·바위 + **얼음·독·땅**(추가됨). 새 기술: 얼음(얼음뭉치[우선]/서리숨결/냉동빔/눈보라/한기/얼음바람), 독(독찌르기/오물폭탄/독가루), 땅(머드샷/땅파기/지진). 전설 5종은 `legend:true`+tier4+종족값 대폭 상향(여명룡 297)+조우 레벨↑(50~56)+포획 페널티(-0.38). XP base `foe.level*15+11`(완화 ~20%, 진행도 천천히 — `curve_test.js` sim과 동기화 필수). ⚠️ **jsdom 미설치면 jsdom 게이트 테스트(스모크·코치·목표·제단·커브·기술설명·대화)가 조용히 스킵됨** — 밸런스/커브 변경 시 `npm install jsdom` 후 `verify.sh`로 실제 실행 확인. `EFF`는 10×10 완전표(모든 조합 정의 — 누락 시 `damage`에서 NaN). 특수 타입(spa/spDef)=불·물·풀·전기·**얼음**(`damage`의 `SPEC`), 나머지 물리. `TYPE_KO`/`TYPE_CLASS`/`TYPE_COLOR`/CSS `--<type>`·`.type-tag.t-<type>`·`.b-<st>`·`.dbst.b-<st>` 동기화 필수. 상태이상에 **냉동(frz)** 추가(잠듦류: 매턴 20% 해동, 못 움직임). 얼음 크리처(빙구리·서리강아지·빙하곰·얼음정·빙하룡·동결룡·설올빼미·빙하제 등)를 water→ice 재타이핑, 독(해파리정·개굴몽), 땅(굴다람·바위정·마그마룡) 재배치. 새 기술 얼음/독/땅 각 몇 종. 회귀 `scripts/type_chart_test.js`·`scripts/newtypes_test.js`.
+불·물·풀·전기·노말·비행·바위 + **얼음·독·땅**(추가됨). 새 기술: 얼음(얼음뭉치[우선]/서리숨결/냉동빔/눈보라/한기/얼음바람), 독(독찌르기/오물폭탄/독가루), 땅(머드샷/땅파기/지진). 전설 5종은 `legend:true`+tier4+종족값 대폭 상향(여명룡 297)+조우 레벨↑(50~56)+포획 페널티(-0.38). XP base `foe.level*15+11`(완화 ~20%, 진행도 천천히 — `curve_test.js` sim과 동기화 필수). ⚠️ **jsdom 미설치면 jsdom 게이트 테스트(스모크·코치·목표·제단·커브·기술설명·대화)가 조용히 스킵됨** — 밸런스/커브 변경 시 `npm install jsdom` 후 `verify.sh`로 실제 실행 확인. `EFF`는 10×10 완전표(모든 조합 정의 — 누락 시 `damage`에서 NaN). 특수 타입(spa/spDef)=불·물·풀·전기·**얼음**(`damage`의 `SPEC`), 나머지 물리. 타입/상태 관련 테이블·CSS는 이제 `TYPES`/`STATUSES`에서 파생된다(위 「타입·상태 단일 출처」) — 손으로 동기화하지 말 것. 상태이상에 **냉동(frz)** 추가(잠듦류: 매턴 20% 해동, 못 움직임). 얼음 크리처(빙구리·서리강아지·빙하곰·얼음정·빙하룡·동결룡·설올빼미·빙하제 등)를 water→ice 재타이핑, 독(해파리정·개굴몽), 땅(굴다람·바위정·마그마룡) 재배치. 새 기술 얼음/독/땅 각 몇 종. 회귀 `scripts/type_chart_test.js`·`scripts/newtypes_test.js`.
 
 ## 완료된 개선 (되돌리지 말 것)
 - 86종 전원 v2 아트 통일 (DEX 86 = PAINT_ART 86).
@@ -282,7 +294,8 @@ verify 내용:
 - 전 기술 전수 스윕은 `doMove`(턴 전체)가 아니라 `moveFx`를 직접 부른다 — 대사 대기 때문에 86종에 5분 넘게 걸렸다.
 
 #### 타입 폴백
-- **`TYPE_PARTICLE` 누락 = 화면에 "undefined"**: 타입 확장(얼음·독·땅) 때 `TYPE_COLOR`는 채웠는데 `TYPE_PARTICLE`을 안 채워서, `moveFx` 폴백과 `fxBurst`가 `fxGlyph(undefined)`를 호출 → `textContent=undefined`가 문자열 "undefined"로 변환돼 **전투 화면에 그 글자가 날아다녔다**(피해 기술 11종). → 10타입 전부 채움. **타입 추가 시 `TYPE_COLOR`/`TYPE_PARTICLE`/`TYPE_KO`/`TYPE_CLASS`/CSS/`renderDex`의 필터 버튼 목록을 한 세트로 볼 것** — 도감 타입 필터도 신규 3타입이 빠져 있었다.
+- **`TYPE_PARTICLE` 누락 = 화면에 "undefined"** (과거 이력): 타입 확장(얼음·독·땅) 때 `TYPE_COLOR`는 채웠는데 `TYPE_PARTICLE`을 안 채워서, `moveFx` 폴백과 `fxBurst`가 `fxGlyph(undefined)`를 호출 → **전투 화면에 그 글자가 날아다녔다**(피해 기술 11종).
+  → **지금은 `TYPES` 단일 출처에서 파생되므로 이 부류는 구조적으로 불가능하다.** 아래 「타입·상태 단일 출처」 참조.
 - 얼음·독·땅은 폴백(이모지 1발)에서 전용 연출로 승격: 얼음=파편 다발+서리 필터, 독=거품 상승+색조 틀기, 땅=발밑에서 솟구침+충격.
 - `SIGFX` 10 → 16종 (눈보라·냉동빔·지진·땅파기·오물폭탄·독찌르기 추가).
 - 회귀 `scripts/battlefx_daynight_test.js`가 **실제 전투를 돌려 MutationObserver로 "undefined" 글리프를 잡는다**.
