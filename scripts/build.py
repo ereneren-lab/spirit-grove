@@ -36,7 +36,16 @@ hero = "const HERO_ART={%s};" % ",".join(
 back = "const HERO_ART_BACK={%s};" % ",".join(
     f'"{k}":"{url("assets/art/hero_back/" + k + ".webp")}"' for k in man["hero_back"])
 
+# 순수 규칙(src/rules/*.js)을 마커 자리에 그대로 끼워 넣는다.
+# 브라우저는 이 인라인 결과를, node 단위 테스트(scripts/rules_env.js)는 같은 파일들을
+# 같은 순서로 이어붙여 평가한다 — 즉 양쪽이 문자 그대로 동일한 코드를 돈다.
+def rules(name):
+    return open(A("src/rules/%s.js" % name), encoding="utf-8").read()
+
 repl = {
+    "//@@RULES_UTIL@@": rules("util"),
+    "//@@RULES_TYPES@@": rules("tables"),
+    "//@@RULES_BATTLE@@": rules("battle"),
     "//@@HERO_ART@@": hero,
     "//@@HERO_ART_BACK@@": back,
     "//@@PAINT_ART@@": paint,

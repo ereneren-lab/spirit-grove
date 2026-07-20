@@ -717,9 +717,11 @@
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
+/* 순수 수학 헬퍼 — 브라우저/node 양쪽에서 그대로 쓰인다 */
 const rand=(a,b)=>Math.random()*(b-a)+a;
 const ri=(a,b)=>Math.floor(rand(a,b+1));
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 const SAVE_KEY="spiritGroveSave_v4";
 
@@ -929,6 +931,7 @@ const STATUS_KO=_derive(STATUSES,s=>s.ko);
 const STATUS_CLS=_derive(STATUSES,(s,k)=>"b-"+k);
 // 타입 면역(본가): 불=화상, 얼음=냉동, 독=중독, 전기=마비. 잠듦은 면역이 없다.
 const STATUS_TYPE_IMMUNE=(()=>{ const o={}; for(const k in STATUSES)if(STATUSES[k].imm)o[k]=STATUSES[k].imm; return o; })();
+const _MV_STATUS_KO=STATUS_KO;   // 기술 설명용 = 상태 한글명. STATUSES 단일 출처에서 파생.
 
 // 타입·상태 팔레트 CSS를 단일 출처에서 생성해 주입한다.
 // 예전엔 CSS에 손으로 적어둬서 타입을 늘릴 때 --ice/--poison/--ground 같은 게 빠지기 쉬웠다.
@@ -946,7 +949,13 @@ function injectPalette(){
   const el=document.createElement("style"); el.id="palette"; el.textContent=L.join("");
   document.head.appendChild(el);
 }
-injectPalette();
+// node(규칙 단위 테스트)에는 document가 없다 — 브라우저에서만 주입한다.
+if(typeof document!=="undefined")injectPalette();
+
+/* 타입 상성 10×10 완전표.
+   ⚠️ 이것만은 TYPES에서 파생할 수 없다(설계 데이터). 타입을 추가하면
+   행 하나와 '모든 행의 열 하나'를 같이 넣을 것 — 누락 시 damage()에서 NaN.
+   회귀(palette_source_test)가 전 조합을 검사한다. */
 const EFF={
   fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1},
   water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2},
@@ -959,6 +968,7 @@ const EFF={
   poison: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:.5,ground:.5},
   ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1},
 };
+
 // eff: {status:'brn',chance} | {stat:'atk',stage:-1,target:'foe'|'self',chance}
 const MOVES={
   tackle:{name:"몸통박치기",type:"normal",power:35,acc:100,pp:30,pri:0},
@@ -1058,7 +1068,6 @@ const MOVES={
   struggle:{name:"발버둥",type:"normal",power:40,acc:100,pp:Infinity,pri:0,recoil:0.25},
 };
 // 기술 효과를 사람이 읽을 수 있는 한 줄로. 배우기/잊기/재습득 UI에서 "어떤 기술인지" 보여준다.
-const _MV_STATUS_KO=STATUS_KO;   // 기술 설명용 = 상태 한글명. STATUSES 단일 출처에서 파생.
 function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; const e=mo.eff||{};
   if(mo.power>0)p.push("위력 "+mo.power);
   if(mo.heal)p.push("HP "+Math.round(mo.heal*100)+"% 회복");
@@ -1299,6 +1308,7 @@ function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&d
   let scrMul=1; if(typeof G!=="undefined"&&G&&G.screens){ const _ds=(def===G.foe)?"foe":"me"; const _sc=G.screens[_ds]; if(_sc){ if(isSpec&&_sc.light>0)scrMul=0.5; else if(!isSpec&&_sc.reflect>0)scrMul=0.5; } }
   let dmg=Math.floor((lvf*move.power*((A*aMul)/(D*dMul)))/9+2);
   dmg=Math.floor(dmg*eff*stab*crit*abil*wMul*scrMul*rand(0.85,1.0)); return {dmg:Math.max(1,dmg),eff,crit:crit>1}; }
+
 function noPP(m){ return m.moves.every(mv=>(m.pp[mv]||0)<=0); }
 function foeChooseMove(foe,target){
   if(!foe||!foe.moves)return "struggle"; const st=foe.stages||newStages(); const tgt=target||{status:null,hp:1,maxHp:1,type:"normal"};

@@ -35,7 +35,12 @@ assert not notcov and not dups, "❌ PAINT_ART/DEX 불일치"
 print("✅ PAINT_ART/DEX 일치")
 PY
 
-# 4) 스모크 + 코치 테스트 (jsdom 필요 — 없으면 건너뜀)
+# 4) 순수 규칙 단위 테스트 (브라우저 불필요 — 밀리초 단위, 가장 먼저 돈다)
+#    src/rules/*.js 를 node vm에서 그대로 평가한다. 브라우저 테스트가 무거워 구간을 나눠 돌리는
+#    환경에서도 이건 항상 전부 돈다 → 규칙 회귀는 여기서 즉시 걸린다.
+node scripts/rules_unit_test.js || exit 1
+
+# 5) 스모크 + 코치 테스트 (jsdom 필요 — 없으면 건너뜀)
 if node -e "require.resolve('jsdom')" 2>/dev/null; then
 # ⚠️ playwright 테스트를 연달아 45개 돌리면 브라우저 기동이 겹쳐
 #    "Target page, context or browser has been closed"가 매번 다른 테스트에서 터진다.
@@ -62,7 +67,7 @@ else
   echo "⏭️  스모크 테스트 건너뜀 (npm install jsdom 하면 실행됨)"
 fi
 
-# 5) 오디오 테스트 (Playwright 필요 — jsdom엔 Web Audio가 없어 실제 브라우저로만 검증 가능)
+# 6) 오디오 테스트 (Playwright 필요 — jsdom엔 Web Audio가 없어 실제 브라우저로만 검증 가능)
 if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw audio_test.js
   pw lowhp_flow_test.js
