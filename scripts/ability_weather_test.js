@@ -14,13 +14,13 @@ const { chromium } = require("playwright"); const path=require("path");
     // 싸라기눈: 얼음 위력 ×1.2 (실제 mon + 랜덤 고정으로 결정적 비교)
     Math.random=()=>0.9; const A=S.makeMon("frostwyrm",40), D=S.makeMon("seedbean",40);
     const g=S.G(); const noHail=S.damage(A,D,S.MOVES.icebeam).dmg; g.weather="hail"; const yesHail=S.damage(A,D,S.MOVES.icebeam).dmg; g.weather=null;
-    return { levEff, normEff, iceAbil:S.makeMon("iceling",20).ability, groundAbil:S.makeMon("burrowmouse",20).ability, jellureAbil:S.makeMon("jellure",20).ability,
+    return { levEff, normEff, iceAbil:S.DEFAULT_ABILITY.ice, groundAbil:S.DEFAULT_ABILITY.ground, jellureAbil:S.makeMon("jellure",20).ability,
       hailMv:!!S.MOVES.hailstorm, noHail, yesHail }; });
 
   ok(r.levEff===0, `부유: 땅 기술 무효 (eff=${r.levEff})`);
   ok(r.normEff>0, `부유 없으면 땅 기술 유효 (eff=${r.normEff})`);
-  ok(r.iceAbil==="icebody", `얼음 기본특성=얼음몸 (${r.iceAbil})`);
-  ok(r.groundAbil==="sturdy", `땅 기본특성=옹골참 (${r.groundAbil})`);
+  ok(r.iceAbil==="icebody", `얼음 타입 기본특성=얼음몸 (${r.iceAbil})`);
+  ok(r.groundAbil==="sturdy", `땅 타입 기본특성=옹골참 (${r.groundAbil})`);
   ok(r.jellureAbil==="levitate", `해파리정 특성=부유 (${r.jellureAbil})`);
   ok(r.hailMv, "싸라기눈 기술 정의됨");
   ok(r.yesHail>r.noHail, `싸라기눈 때 얼음 위력↑ (${r.noHail}→${r.yesHail})`);

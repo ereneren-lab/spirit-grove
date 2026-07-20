@@ -863,8 +863,11 @@ const TYPE_KO={fire:"불",water:"물",grass:"풀",elec:"전기",normal:"노말",
 const TYPE_CLASS={fire:"t-fire",water:"t-water",grass:"t-grass",elec:"t-elec",normal:"t-normal",flying:"t-flying",rock:"t-rock",ice:"t-ice",poison:"t-poison",ground:"t-ground"};
 const TYPE_COLOR={fire:"#f08a5d",water:"#5d9cf0",grass:"#7fd16f",elec:"#f0cf5d",normal:"#c7bca6",flying:"#9db8e0",rock:"#c2a878",ice:"#88d6e6",poison:"#b57fd0",ground:"#d2a862"};
 const TYPE_ICON={fire:"🔥",water:"💧",grass:"🍃",elec:"⚡",normal:"⭐",flying:"🪶",rock:"🪨"};
-const ABILITY_KO={blaze:"맹화",torrent:"급류",overgrow:"신록",static:"정전기",intimidate:"위협",sturdy:"옹골참",thickfat:"두꺼운지방",guts:"근성"};
-const ABILITY_DESC={blaze:"HP가 낮으면 불 기술 위력 ↑",torrent:"HP가 낮으면 물 기술 위력 ↑",overgrow:"HP가 낮으면 풀 기술 위력 ↑",static:"맞으면 30% 확률로 상대 마비",intimidate:"등장 시 상대 공격 1 ↓",sturdy:"풀피일 때 한 방에 안 쓰러짐",thickfat:"불 기술 피해 절반",guts:"상태이상이면 공격 ↑",levitate:"땅 타입 기술 무효",poisonpoint:"맞으면 30% 확률로 상대 중독",icebody:"싸라기눈일 때 매턴 회복"};
+// ⚠️ 특성을 추가하면 ABILITY_KO·ABILITY_DESC 둘 다 채울 것(회귀가 강제).
+const ABILITY_KO={blaze:"맹화",torrent:"급류",overgrow:"신록",static:"정전기",intimidate:"위협",sturdy:"옹골참",thickfat:"두꺼운지방",guts:"근성",levitate:"부유",poisonpoint:"독가시",icebody:"얼음몸",flamebody:"불꽃몸",roughskin:"까칠한피부",swiftswim:"쓸비늘",chlorophyll:"엽록소",insomnia:"불면",immunity:"면역",waterveil:"수의베일",sniper:"스나이퍼",naturalcure:"자연회복",hugepower:"순수한힘"};
+const ABILITY_DESC={blaze:"HP가 낮으면 불 기술 위력 ↑",torrent:"HP가 낮으면 물 기술 위력 ↑",overgrow:"HP가 낮으면 풀 기술 위력 ↑",static:"맞으면 30% 확률로 상대 마비",intimidate:"등장 시 상대 공격 1 ↓",sturdy:"풀피일 때 한 방에 안 쓰러짐",thickfat:"불 기술 피해 절반",guts:"상태이상이면 공격 ↑",levitate:"땅 타입 기술 무효",poisonpoint:"맞으면 30% 확률로 상대 중독",icebody:"싸라기눈일 때 매턴 회복",flamebody:"맞으면 30% 확률로 상대 화상",roughskin:"물리 기술로 맞으면 상대도 깎인다",swiftswim:"비가 오면 속도 2배",chlorophyll:"햇살이 강하면 속도 2배",insomnia:"잠들지 않는다",immunity:"독에 걸리지 않는다",waterveil:"화상을 입지 않는다",sniper:"급소에 맞히면 위력이 더 오른다",naturalcure:"교체하면 상태이상이 낫는다",hugepower:"물리 기술 위력이 크게 오른다"};
+// 특수 판정 타입(나머지는 물리). damage()·까칠한피부 등이 공유하는 단일 출처.
+const SPEC_TYPES={fire:1,water:1,grass:1,elec:1,ice:1};
 const DEFAULT_ABILITY={fire:"blaze",water:"torrent",grass:"overgrow",elec:"static",normal:"guts",flying:"intimidate",rock:"sturdy",ice:"icebody",poison:"poisonpoint",ground:"sturdy"};
 const NATURES=[
   {k:"hardy",ko:"노력하는",up:null,down:null},{k:"docile",ko:"온순한",up:null,down:null},
@@ -884,7 +887,9 @@ const HELD_ITEMS={
   powerband:{ko:"힘의띠",em:"💪",desc:"기술 위력이 약간 오른다"},
   scopelens:{ko:"초점렌즈",em:"🔍",desc:"급소에 맞히기 쉬워진다(급소 랭크 +1)"},
 };
-const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate"};
+// 종별 특성 지정. 없으면 DEFAULT_ABILITY[type] → "guts" 폴백이라
+// 지정을 안 하면 같은 타입 정령이 죄다 같은 특성이 된다. 라인마다 흩뿌릴 것.
+const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate",emberfly:"flamebody",pyrmoth:"flamebody",cindercat:"flamebody",lavakit:"flamebody",boulderin:"roughskin",crablord:"roughskin",hedgemoss:"roughskin",otterwave:"swiftswim",sharkfin:"swiftswim",frostfish:"swiftswim",nipling:"swiftswim",seedbean:"chlorophyll",sproutcat:"chlorophyll",palmore:"chlorophyll",leafwyrm:"chlorophyll",thunderowl:"insomnia",lunarmoth:"insomnia",swampfrog:"immunity",burrowmouse:"immunity",tidalore:"waterveil",shellow:"waterveil",stormhawk:"sniper",sandwhirl:"sniper",sprigfawn:"naturalcure",bunnyhop:"naturalcure",dewdrop:"naturalcure",tigerflame:"hugepower",magmadon:"hugepower"};
 const STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦",frz:"냉동"};
 const STATUS_CLS={psn:"b-psn",brn:"b-brn",par:"b-par",slp:"b-slp",frz:"b-frz"};
 const EFF={
@@ -1155,10 +1160,19 @@ function hatchEgg(egg){ const m=makeMon(egg.species,5); if(egg.ivInherit)m.ivs=e
 function dayStep(){ if(!G.daycare)return; const d=G.daycare;
   if(d.a&&d.b&&!d.eggReady&&canBreed(d.a,d.b)){ d.steps=(d.steps||0)+1; if(d.steps>=160){ d.eggReady=true; d.steps=0; flashHint("🥚 육아방에 알이 생긴 것 같다!"); saveGame&&saveGame(); } }
   if(G.party){ for(let i=0;i<G.party.length;i++){ const m=G.party[i]; if(m&&m.isEgg){ m.hatch=(m.hatch||1)-1; if(m.hatch<=0){ const baby=hatchEgg(m); G.party[i]=baby; Audio.sfx&&Audio.sfx("levelup"); if(Audio.cry)Audio.cry(baby.id,baby.type); flashHint(`🐣 알에서 <b>${baby.name}</b>이(가) 태어났다!`); saveGame&&saveGame(); } else if(m.hatch===6){ Audio.sfx&&Audio.sfx("blip"); flashHint("🥚 품 속의 알이 이따금 꿈틀거린다…"); } } } } }
+// 야생 정령이 들고 나오는 도구. 예전엔 held:null 고정이라 야생에서 도구를 얻을 길이 없었다.
+// 티어가 높을수록 확률·품질이 오른다. 트레이너/알 정령은 makeMon 이후 별도로 덮어쓴다.
+const WILD_HELD={1:["oranberry","cureberry"],2:["oranberry","cureberry","scopelens"],3:["leftovers","powerband","scopelens"]};
+function wildHeld(sp){
+  if(!sp||sp.legend)return null;
+  const rate=sp.tier>=3?0.14:sp.tier===2?0.09:0.05;
+  if(Math.random()>=rate)return null;
+  const pool=WILD_HELD[sp.tier]||WILD_HELD[1];
+  return pool[ri(0,pool.length-1)]; }
 function makeMon(speciesId,level){ const sp=byId(speciesId); level=Math.max(1,Math.floor(level||1));   // 레벨은 항상 정수(avgLevel 등 float가 새어들어와 소수점 레벨 방지)
   const m={id:speciesId,name:sp.name,em:sp.em,type:sp.type, type2:sp.type2||null,level:level,moves:sp.moves.slice(),xp:0,
     status:null,stages:newStages(),pp:{},ability:sp.ability||ABILITY_OVERRIDE[speciesId]||DEFAULT_ABILITY[sp.type]||"guts",
-    nature:NATURES[ri(0,NATURES.length-1)].k, shiny:Math.random()<((typeof G!=="undefined"&&G&&G.dexMaster)?SHINY_RATE*3:SHINY_RATE), held:null, friendship:0, ivs:{hp:ri(0,31),atk:ri(0,31),def:ri(0,31),spa:ri(0,31),spDef:ri(0,31),spd:ri(0,31)}, evs:{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}, gender:(sp.secret||sp.genderless)?"N":(Math.random()<0.5?"M":"F")};
+    nature:NATURES[ri(0,NATURES.length-1)].k, shiny:Math.random()<((typeof G!=="undefined"&&G&&G.dexMaster)?SHINY_RATE*3:SHINY_RATE), held:wildHeld(sp), friendship:0, ivs:{hp:ri(0,31),atk:ri(0,31),def:ri(0,31),spa:ri(0,31),spDef:ri(0,31),spd:ri(0,31)}, evs:{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}, gender:(sp.secret||sp.genderless)?"N":(Math.random()<0.5?"M":"F")};
   if(sp.learn)sp.learn.forEach(([lv,mv])=>{if(level>=lv)addMove(m,mv);});
   m.moves.forEach(mv=>{m.pp[mv]=MOVES[mv].pp;});
   recalc(m,sp,true); return m; }
@@ -1187,7 +1201,9 @@ function newStages(){ return {atk:0,def:0,spd:0,spa:0,spDef:0,acc:0,eva:0}; }
 const STAGE_KO={atk:"공격",def:"방어",spd:"속도",spa:"특수공격",spDef:"특수방어",acc:"명중률",eva:"회피율"};
 const STAGE_ABBR={atk:"공",def:"방",spd:"속",spa:"특공",spDef:"특방",acc:"명중",eva:"회피"};
 function resetStages(m){ if(m){ m.stages=newStages(); m._critStage=0; } }   // 급소 랭크도 휘발성(교체·전투종료로 사라짐)
-function effSpd(m){ return m.spd*stageMul(m.stages.spd)*(m.status==="par"?0.5:1); }
+function effSpd(m){ let w=1;
+  if(typeof G!=="undefined"&&G&&G.weather){ if(m.ability==="swiftswim"&&G.weather==="rain")w=2; else if(m.ability==="chlorophyll"&&G.weather==="sun")w=2; }
+  return m.spd*stageMul(m.stages.spd)*(m.status==="par"?0.5:1)*w; }
 // 혼란 자해: 본가는 "위력 40 무타입 물리 기술을 자신에게" 맞는 것과 같다.
 // 예전엔 maxHp의 고정 9%라, 방어가 높은 정령이 혼란에 강하다는 성질이 통째로 사라져 있었다.
 function confusionSelfHit(m){
@@ -1203,10 +1219,11 @@ function confusionSelfHit(m){
 function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&def.type2!==def.type)eff*=EFF[move.type][def.type2];
   if(def.ability==="levitate" && move.type==="ground")eff=0;   // 부유: 땅 기술 무효
   const burnMul=(att.status==="brn" && att.ability!=="guts")?0.5:1;
-  const SPEC={fire:1,water:1,grass:1,elec:1,ice:1}; const isSpec=!!SPEC[move.type];   // 얼음도 특수(독·땅은 물리)
+  const isSpec=!!SPEC_TYPES[move.type];   // 얼음도 특수(독·땅은 물리)
   const A=isSpec?(att.spa||att.atk):att.atk, D=isSpec?(def.spDef||def.def):def.def;
   const aSt=att.stages||{}, dSt=def.stages||{};
-  const crit=Math.random()<critChance(att,move)?1.5:1;   // 배율은 6세대 1.5배 유지(밸런스 보존)
+  let crit=Math.random()<critChance(att,move)?1.5:1;   // 배율은 6세대 1.5배 유지(밸런스 보존)
+  if(crit>1 && att.ability==="sniper")crit=2.25;        // 스나이퍼
   // 급소는 공격자의 마이너스 랭크 / 방어자의 플러스 랭크를 무시한다(본가 규칙)
   let aRank=isSpec?(aSt.spa||0):(aSt.atk||0), dRank=isSpec?(dSt.spDef||0):(dSt.def||0);
   if(crit>1){ if(aRank<0)aRank=0; if(dRank>0)dRank=0; }
@@ -1216,6 +1233,7 @@ function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&d
   if(att.ability==="guts" && att.status) abil*=1.5;
   if(def.ability==="thickfat" && move.type==="fire") abil*=0.5;
   if(att.held==="powerband") abil*=1.1;
+  if(att.ability==="hugepower" && !isSpec) abil*=1.5;   // 순수한힘: 물리만
   const lvf=2*att.level/5+2; const stab=(move.type===att.type||(att.type2&&move.type===att.type2))?1.5:1;
   let wMul=1; if(typeof G!=="undefined"&&G&&G.weather){ if(G.weather==="sun"){ if(move.type==="fire")wMul=1.3; else if(move.type==="water")wMul=0.7; } else if(G.weather==="rain"){ if(move.type==="water")wMul=1.3; else if(move.type==="fire")wMul=0.7; } else if(G.weather==="sand"){ if(move.type==="rock")wMul=1.2; } else if(G.weather==="hail"){ if(move.type==="ice")wMul=1.2; } }
   let scrMul=1; if(typeof G!=="undefined"&&G&&G.screens){ const _ds=(def===G.foe)?"foe":"me"; const _sc=G.screens[_ds]; if(_sc){ if(isSpec&&_sc.light>0)scrMul=0.5; else if(!isSpec&&_sc.reflect>0)scrMul=0.5; } }
@@ -1482,7 +1500,7 @@ const STARTPOS={x:8,y:48};
 let G=null;
 function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box:[],active:0,caught:new Set(),seen:new Set(),
   items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
-  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],hasCut:false,hasSurf:false,hasStrength:false,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
+  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,hasCut:false,hasSurf:false,hasStrength:false,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
 function activeMon(){return G.party[G.active];}
 function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
 function updateDexPill(){$("dexPill").textContent=`도감 ${G.caught.size} / ${DEX.length}${G.dexMaster?" 🏆":""}`;}
@@ -2370,6 +2388,7 @@ function maybeRematch(t){ const tr=TRAINERS[t];
   if(confirm(`${tr.name}에게 재대결을 신청할까?\n(레벨이 오르고 보상은 절반)`)) startTrainer(t); }
 function firstAliveIdx(){ if(!G||!G.party)return 0; for(let i=0;i<G.party.length;i++){ if(G.party[i]&&G.party[i].hp>0)return i; } return 0; }
 function transitionToBattle(after){ heldDir=null; stopPath(); if(G)G.active=firstAliveIdx();   // 포켓몬식: 전투 선두 = 파티 첫 생존 정령(슬롯0). 재정렬로 순서 바꾸면 나오는 정령도 바뀜.
+  G.runTries=0;
   G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; if(G.party)G.party.forEach(m=>{ if(m){ m._confuse=0; m._seeded=false; m._flinch=false; m._acted=false; } }); if(G.foe){ G.foe._confuse=0; G.foe._seeded=false; G.foe._flinch=false; G.foe._acted=false; } const wrap=$("canvasWrap"); wrap.classList.add("zoom");
   const fl=$("flash"); fl.classList.remove("go"); void fl.offsetWidth; fl.classList.add("go");
   const covered=playBattleWipe();   // 블라인드 바가 화면을 덮는 시점(ms)을 돌려줌
@@ -3278,7 +3297,10 @@ function fxCaptureFlash(c){ if(CONFIG.reduceMotion)return; const fl=document.cre
   ring.animate([{transform:"translate(-50%,-50%) scale(1.6)",opacity:.9},{transform:"translate(-50%,-50%) scale(.4)",opacity:0}],{duration:fxT(360),easing:"ease-in"}).finished.then(()=>ring.remove()).catch(()=>ring.remove()); }
 
 /* ===================== STATUS / STAGES ===================== */
-function applyStatus(mon,st,side){ if(mon.status){ return; } mon.status=st; if(st==="slp")mon._slp=ri(1,3); Audio.sfx("status"); fxStatusAura(side,st);
+function applyStatus(mon,st,side){ if(mon.status){ return; }
+  // 특성 면역: 불면(잠듦)·면역(독)·수의베일(화상)
+  const _imm={insomnia:"slp",immunity:"psn",waterveil:"brn"}[mon.ability];
+  if(_imm && _imm===st){ setMsg(`<b>${dispName(mon)}</b>은(는) <b>${ABILITY_KO[mon.ability]||mon.ability}</b> 덕분에 아무렇지 않다!`); return; } mon.status=st; if(st==="slp")mon._slp=ri(1,3); Audio.sfx("status"); fxStatusAura(side,st);
   const w={psn:"중독되었다!",brn:"화상을 입었다!",par:"마비되었다!",slp:"잠들어버렸다!",frz:"꽁꽁 얼어붙었다!"}[st];
   setMsg(`<b>${mon.name}</b>은(는) ${w}`); renderStages(); }
 function applyStage(mon,stat,delta,side){ if(!mon.stages)mon.stages=newStages(); const old=mon.stages[stat]||0; const nv=clamp(old+delta,-6,6);
@@ -3354,6 +3376,11 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
   if(move.drain && total>0){ await mw(220); setMsg(`<b>${dispName(att)}</b>이(가) 체력을 흡수했다!`); }
   if(def.hp>0 && def.ability==="static" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"par",side); }
   if(def.hp>0 && def.ability==="poisonpoint" && !att.status && move.power>0 && (att.type!=="poison"&&att.type2!=="poison") && Math.random()<0.3){ await mw(240); applyStatus(att,"psn",side); }   // 독가시
+  if(def.hp>0 && def.ability==="flamebody" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"brn",side); }   // 불꽃몸
+  if(def.hp>0 && att.hp>0 && def.ability==="roughskin" && move.power>0 && !SPEC_TYPES[move.type]){   // 까칠한피부: 물리 접촉 반동
+    const r=Math.max(1,Math.floor(att.maxHp/8)); const _b=att.hp; att.hp=Math.max(0,att.hp-r); renderCombatants();
+    if(Audio.hpTick)Audio.hpTick(_b/att.maxHp*100, att.hp/att.maxHp*100);
+    await mw(240); setMsg(`<b>${dispName(att)}</b>은(는) <b>까칠한피부</b>에 상처를 입었다!`); Audio.sfx("hit"); await mw(420); }
   if(def.hp>0 && move.eff && move.eff.status && Math.random()<(move.eff.chance||0)) applyStatus(def,move.eff.status,dSide);
   if(def.hp>0 && move.eff && move.eff.flinch && !def._acted && Math.random()<move.eff.flinch) def._flinch=true;
   if(move.recoil)setMsg(`<b>${att.name}</b>도 반동 피해를 입었다!`);
@@ -4027,7 +4054,12 @@ async function tryCatch(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너
     if(activeMon().hp<=0){ await faintMine(); return; } G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); } }
 
 async function tryRun(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너 전투에서는 도망칠 수 없다!"); return; }
-  const me=activeMon(); const chance=effSpd(me)>=effSpd(G.foe)?0.82:0.45; G.busy=true; setMenuEnabled(false);
+  const me=activeMon();
+  // 본가 공식: (내속도*128/상대속도 + 30*시도횟수) / 256. 시도할수록 잘 도망친다.
+  G.runTries=(G.runTries||0)+1;
+  const A=Math.max(1,effSpd(me)), B=Math.max(1,effSpd(G.foe));
+  const chance=clamp((A*128/B + 30*G.runTries)/256, 0.12, 0.98);
+  G.busy=true; setMenuEnabled(false);
   if(Math.random()<chance){ setMsg("무사히 도망쳤다!"); Audio.sfx("escape"); await mw(680); endBattle(); }
   else{ setMsg("도망치지 못했다!"); await mw(680); await foeFreeTurn();
     if(me.hp<=0){ await faintMine(); return; } G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); } }
@@ -4044,7 +4076,8 @@ function renderSwitch(){ const body=$("switchBody"); body.innerHTML="";
     card.querySelector(".pick").addEventListener("click",()=>chooseSwitch(i)); body.appendChild(card); }); }
 async function chooseSwitch(i){ if(i===G.active||!G.party[i]||G.party[i].hp<=0)return; if(G.party[i].isEgg){ flashHint("알은 전투에 낼 수 없다!"); return; } Audio.sfx("blip");
   // 물러나는 정령은 랭크·혼란·씨앗이 사라진다(본가 규칙). 뒤로 뺐다 내보내며 부스트 유지하는 익스플로잇 차단.
-  const _out=G.party[G.active]; if(_out&&_out.hp>0){ resetStages(_out); _out._confuse=0; _out._seeded=false; _out._flinch=false; }
+  const _out=G.party[G.active]; if(_out&&_out.hp>0){ resetStages(_out); _out._confuse=0; _out._seeded=false; _out._flinch=false;
+    if(_out.ability==="naturalcure" && _out.status){ _out.status=null; flashHint(`${dispName(_out)}의 상태이상이 나았다! (자연회복)`); } }
   const _bc=_batonCarry;   // 배턴터치면 랭크·급소랭크·씨앗을 새 정령이 이어받는다
   G.active=i; closeOverlay("switchOverlay"); $("meSprite").classList.remove("faint");
   if(_bc){ const nm=G.party[i]; nm.stages=Object.assign(newStages(),_bc.stages); nm._critStage=_bc.crit; nm._seeded=_bc.seeded; } renderCombatants(); sendOutAnim("me"); applyIntimidate(activeMon(),G.foe); renderStages(); setMsg(`가라, <b>${dispName(activeMon())}</b>!`); await applyHazards(activeMon(),"me");
@@ -4687,13 +4720,13 @@ window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVi
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.FLAVOR=FLAVOR;
-Object.assign(window.SG,{TYPE_PARTICLE,SIGFX,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
+Object.assign(window.SG,{TYPE_PARTICLE,SIGFX,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
