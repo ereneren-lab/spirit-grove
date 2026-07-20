@@ -157,8 +157,16 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(eliteShare>=8, `엘리트 4가 실제로 관문 역할을 한다 (Lv48 탈락 중 엘리트 구간 ${eliteShare.toFixed(1)}%p)`);
   ok(mid.fellAt[4]>=20, `챔피언이 최종 벽이다 (Lv48 탈락 ${mid.fellAt[4]}%p)`);
   // 전설을 데려오면 유의미하게 쉬워져야 한다(신전 개방이 리그 준비의 일부라는 설계)
-  const a51=R.out.find(x=>x.lv===51&&!x.withLegend), b51=R.out.find(x=>x.lv===51&&x.withLegend);
-  ok(b51.rate>a51.rate+5, `전설 준비가 보상된다 (Lv51: ${a51.rate}% → ${b51.rate}%)`);
+  // ⚠️ 한 레벨만 보면 플레이키하다 — n=250에서 비율 하나의 se가 ~3%p, 두 비율의 차는 ~4.3%p라
+  //    임계값 5%p가 노이즈 안에 들어온다(실제로 3.6%p가 나와 실패한 적 있다).
+  //    실측 효과는 ~9~19%p로 충분히 크므로, 세 레벨 평균으로 재서 분산만 줄인다(민감도는 유지).
+  const gains=[48,51,54].map(lv=>{
+    const a=R.out.find(x=>x.lv===lv&&!x.withLegend), b=R.out.find(x=>x.lv===lv&&x.withLegend);
+    return (a&&b)?b.rate-a.rate:null;
+  }).filter(v=>v!==null);
+  const avgGain=gains.reduce((a,b)=>a+b,0)/gains.length;
+  ok(gains.length===3, `전설 비교 표본 3개 레벨 확보 (${gains.length})`);
+  ok(avgGain>5, `전설 준비가 보상된다 (48/51/54 평균 +${avgGain.toFixed(1)}%p · 각 ${gains.map(g=>g.toFixed(1)).join("/")})`);
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 리그 실측 통과");
   await b.close(); process.exit(process.exitCode||0);
 })();
