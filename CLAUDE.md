@@ -17,7 +17,8 @@
 
 | 경로 | 역할 |
 |------|------|
-| `src/index.html` | **편집용 소스 (~440KB)**. DEX·MOVES·전투·맵·UI 전부. 아트 자리에는 주입 마커(`//@@PAINT_ART@@` 등)만. |
+| `src/index.html` | **편집용 소스**. DEX·MOVES·전투 흐름·맵·UI. 아트/규칙 자리에는 주입 마커(`//@@PAINT_ART@@`, `//@@RULES_*@@`)만. |
+| `src/rules/*.js` | **순수 규칙 계층** — DOM을 안 쓴다. `util`(rand·ri·clamp) · `tables`(TYPES·STATUSES·파생·EFF·특성/성격) · `battle`(damage·랭크·급소·다단히트 등). |
 | `assets/art/creatures/<id>.webp` | 크리처 아트 86종 (진짜 이미지 파일, 바로 열어볼 수 있음) |
 | `assets/art/hero/<0-3>.webp`, `hero_back/<0-3>.webp` | 주인공 4명 앞/뒤 |
 | `assets/manifest.json` | 번들에 넣을 크리처 id 순서. **새 종 추가 시 여기에도 추가해야 함** |
@@ -116,6 +117,17 @@ verify 내용:
 - **전투 텍스트** `CONFIG.battleText`: `auto`(기본, 자동진행+누르는동안 빨리감기) / `tap`(수동, 메시지마다 탭 진행 + ▼큐, 8초 폴백). 메시지 대기는 `mw()`, 애니메이션 대기는 `wait(fxT())`로 구분. `scripts/movedesc_test.js` 아님 — 동작은 btext 측정으로 확인.
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
+
+## 순수 규칙 계층 (`src/rules/`) — 브라우저 없는 단위 테스트
+테스트 64개 중 56개가 Chromium을 띄우고 있었는데, 상당수는 **브라우저가 필요해서가 아니라 코드가 HTML 안에 갇혀 있어서**였다. 순수 로직을 떼어내 node에서 바로 돌린다.
+
+- `src/rules/util.js` · `tables.js` · `battle.js` — **DOM을 쓰지 않는다.**
+- **브라우저와 node가 문자 그대로 같은 코드를 돈다**: `build.py`가 `//@@RULES_*@@` 마커에 파일을 인라인하고, `scripts/rules_env.js`가 **같은 파일을 같은 순서로** 이어붙여 node `vm`에서 평가한다.
+  - ⚠️ **순서는 `build.py`의 `repl`과 `rules_env.js`의 `ORDER`가 일치해야 한다**(util → tables → battle).
+  - ⚠️ 파일마다 `module.exports`를 다는 방식은 **일부러 피했다** — 그 export 목록이 또 하나의 동기화 대상(=위에서 없앤 병렬 테이블)이 된다. 대신 선언 이름을 소스에서 정규식으로 자동 추출한다. 그래서 규칙 파일의 **최상위 선언은 들여쓰기 없이** 쓸 것(추출 정규식이 행 첫 칸을 앵커로 쓴다).
+  - ⚠️ vm 컨텍스트에 `document`/`window`가 **없다** = 규칙 계층에 브라우저 코드가 섞이면 즉시 터진다. `injectPalette`만 `typeof document!=="undefined"` 가드 뒤에서 호출된다.
+- `scripts/rules_unit_test.js` — 46개 단정이 **0.07초**(브라우저 테스트는 개당 5~20초). `verify.sh` **맨 앞**에 있어, 구간을 나눠 돌리는 환경에서도 규칙 회귀는 항상 즉시 걸린다.
+- 새 순수 로직(데미지·랭크·상태 규칙 등)은 **`src/rules/`에 넣고 여기서 테스트**할 것. 브라우저 테스트는 DOM/캔버스/오디오/입력이 실제로 필요한 것만.
 
 ## 타입·상태 단일 출처 (`TYPES` / `STATUSES`)
 이 프로젝트에서 **가장 자주 재발한 버그가 "병렬 테이블 중 하나를 빠뜨림"** 이었다(TYPE_PARTICLE·STATUS_KO.slp·_MV_STATUS_KO.frz). 고칠 때마다 "한 세트로 보라"고 적었지만 사람이 지켜야 하는 규칙이라 계속 뚫렸다 → 이제 **객체 하나에서 전부 파생**된다.
