@@ -3054,6 +3054,80 @@ function fxSlash(side){ const c=fxCenter(side); const s=document.createElement("
 function _fly(g,from,to,col,dur,sc){ const e=fxGlyph(g,from,col,"fx-proj"); e.animate([{left:from.x+"px",top:from.y+"px",transform:"translate(-50%,-50%) scale(.5)",opacity:.35},{left:to.x+"px",top:to.y+"px",transform:"translate(-50%,-50%) scale("+(sc||1)+")",opacity:1}],{duration:fxT(dur),easing:"ease-in",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); return e; }
 function _pop(g,at,col,dx,dy,dur){ const e=fxGlyph(g,at,col,"fx-particle"); e.animate([{transform:"translate(-50%,-50%) translate(0,0) scale(.4)",opacity:1},{transform:"translate(-50%,-50%) translate("+(dx||0)+"px,"+(dy||-40)+"px) scale(1.2)",opacity:0}],{duration:fxT(dur||rand(520,780)),easing:"ease-out",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); return e; }
 const SIGFX={
+  // ── 불: 세례(작은 불티) / 방사(화염 줄기) / 인페르노(소용돌이) / 플레어드라이브(몸통 돌진)
+  ember: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<5;i++){ const g=_fly("🔥",{x:from.x+rand(-10,10),y:from.y+rand(-10,10)},{x:to.x+rand(-20,20),y:to.y+rand(-16,16)},TYPE_COLOR.fire,fxT(180),0.9); g.style.fontSize="19px"; await wait(fxT(38)); }
+    fxBurst(d,"fire",1); await wait(fxT(90)); },
+  flare: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<9;i++){ const t=i/8; const g=fxGlyph("🔥",{x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t+Math.sin(t*3.1)*10},TYPE_COLOR.fire,"fx-particle"); g.style.fontSize=(20+t*14)+"px";
+      g.animate([{opacity:1,transform:"translate(-50%,-50%) scale(.7)"},{opacity:0,transform:"translate(-50%,-50%) scale(1.3)"}],{duration:fxT(420)}).finished.then(()=>g.remove()).catch(()=>g.remove()); await wait(fxT(26)); }
+    fxBurst(d,"fire",3); impactFlash(); screenShake(false); await wait(fxT(110)); },
+  inferno: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<16;i++){ const a=i/16*6.28*2, rr=12+i*3.2;
+      const g=fxGlyph("🔥",{x:c.x+Math.cos(a)*rr,y:c.y+Math.sin(a)*rr*0.55},TYPE_COLOR.fire,"fx-particle"); g.style.fontSize="22px";
+      g.animate([{opacity:1,transform:"translate(-50%,-50%) scale(.6)"},{opacity:0,transform:"translate(-50%,-50%) scale(1.4)"}],{duration:fxT(520)}).finished.then(()=>g.remove()).catch(()=>g.remove()); await wait(fxT(22)); }
+    fxBurst(d,"fire",3); impactFlash(); screenShake(true); await wait(fxT(130)); },
+  flareblitz: async(s,d)=>{ const aS=spriteEl(s); const from=fxCenter(s),to=fxCenter(d);
+    aS.style.filter=`drop-shadow(0 0 18px ${TYPE_COLOR.fire}) brightness(1.3)`;
+    for(let i=0;i<6;i++)_pop("🔥",from,TYPE_COLOR.fire,rand(-30,30),rand(-30,10),rand(300,460));
+    aS.classList.add("lunge"); await wait(fxT(230)); aS.classList.remove("lunge");
+    for(let i=0;i<10;i++){ const a=i/10*6.28; _pop("🔥",to,TYPE_COLOR.fire,Math.cos(a)*52,Math.sin(a)*52,rand(420,620)); }
+    setTimeout(()=>{aS.style.filter="";},fxT(520));
+    fxBurst(d,"fire",3); impactFlash(); screenShake(true); await wait(fxT(120)); },
+  // ── 풀: 잎날(회전 칼날) / 덩굴채찍(휘어드는 덩굴) / 흡수계(초록 실이 빨려옴)
+  leaf: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<3;i++){ const g=_fly("🍃",from,{x:to.x+rand(-18,18),y:to.y+rand(-14,14)},TYPE_COLOR.grass,fxT(200),1.1);
+      g.animate([{transform:"translate(-50%,-50%) rotate(0)"},{transform:"translate(-50%,-50%) rotate(720deg)"}],{duration:fxT(200)}); await wait(fxT(58)); }
+    fxSlash(d); fxBurst(d,"grass",2); await wait(fxT(90)); },
+  vine: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<2;i++){ const g=_fly("🌿",from,to,TYPE_COLOR.grass,fxT(190),1.4); g.style.fontSize="30px"; await wait(fxT(110)); fxSlash(d); }
+    fxBurst(d,"grass",2); screenShake(false); await wait(fxT(90)); },
+  // ── 전기: 쇼크(작은 스파크) / 번개(하늘에서 내리꽂힘) / 천둥강타(굵은 낙뢰+흔들림)
+  spark: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<6;i++)_pop("⚡",{x:c.x+rand(-24,24),y:c.y+rand(-20,20)},TYPE_COLOR.elec,rand(-20,20),rand(-24,24),rand(280,420));
+    fxBurst(d,"elec",1); await wait(fxT(140)); },
+  thunder: async(s,d)=>{ const c=fxCenter(d); const f=$("battleField");
+    const bolt=document.createElement("div"); bolt.className="fx-glyph";
+    bolt.style.cssText=`left:${c.x}px;top:0;width:9px;height:${c.y}px;transform:translateX(-50%);background:linear-gradient(${TYPE_COLOR.elec},#fff);box-shadow:0 0 22px ${TYPE_COLOR.elec}`;
+    f.appendChild(bolt); await bolt.animate([{opacity:0,transform:"translateX(-50%) scaleY(.1)"},{opacity:1,transform:"translateX(-50%) scaleY(1)"}],{duration:fxT(150),easing:"ease-in"}).finished.catch(()=>{});
+    impactFlash(); screenShake(true); await wait(fxT(120)); bolt.remove();
+    for(let i=0;i<8;i++)_pop("⚡",c,TYPE_COLOR.elec,rand(-46,46),rand(-40,20),rand(360,520));
+    fxBurst(d,"elec",3); await wait(fxT(100)); },
+  // ── 비행: 바람일격(기류 호) / 쪼기(빠른 연속 찌르기)
+  gust: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<7;i++){ const y=c.y+rand(-40,40); const g=fxGlyph("🪶",{x:c.x-110,y},TYPE_COLOR.flying,"fx-proj"); g.style.fontSize="20px";
+      g.animate([{left:(c.x-110)+"px",opacity:0},{left:c.x+"px",opacity:1},{left:(c.x+110)+"px",opacity:0}],{duration:fxT(420),easing:"linear"}).finished.then(()=>g.remove()).catch(()=>g.remove()); await wait(fxT(34)); }
+    fxBurst(d,"flying",2); await wait(fxT(110)); },
+  peck: async(s,d)=>{ const aS=spriteEl(s);
+    for(let i=0;i<3;i++){ aS.classList.add("lunge"); await wait(fxT(110)); aS.classList.remove("lunge"); fxSlash(d); await wait(fxT(60)); }
+    fxBurst(d,"flying",1); await wait(fxT(70)); },
+  // ── 노말: 몸통박치기(부딪힘) / 돌진(반동까지 보이게) / 전광석화(잔상 선공)
+  tackle: async(s,d)=>{ const aS=spriteEl(s); aS.classList.add("lunge"); await wait(fxT(190)); aS.classList.remove("lunge");
+    fxSlash(d); fxBurst(d,"normal",1); await wait(fxT(80)); },
+  takedown: async(s,d)=>{ const aS=spriteEl(s); aS.classList.add("lunge");
+    await wait(fxT(230)); aS.classList.remove("lunge"); fxSlash(d); impactFlash(); screenShake(true);
+    const c=fxCenter(s); for(let i=0;i<4;i++)_pop("💢",c,"#e8788a",rand(-26,26),rand(-30,6),rand(320,460));
+    fxBurst(d,"normal",3); await wait(fxT(110)); },
+  quickstrike: async(s,d)=>{ const aS=spriteEl(s); const c=fxCenter(s);
+    for(let i=0;i<3;i++){ const g=fxGlyph("💨",{x:c.x+i*10,y:c.y},"#cfe3ff","fx-particle");
+      g.animate([{opacity:.8,transform:"translate(-50%,-50%) scale(1)"},{opacity:0,transform:"translate(-50%,-50%) scale(1.5)"}],{duration:fxT(260)}).finished.then(()=>g.remove()).catch(()=>g.remove()); }
+    aS.classList.add("lunge"); await wait(fxT(120)); aS.classList.remove("lunge");
+    fxSlash(d); fxBurst(d,"normal",1); await wait(fxT(60)); },
+  slash: async(s,d)=>{ for(let i=0;i<2;i++){ fxSlash(d); await wait(fxT(90)); }
+    const c=fxCenter(d); _pop("✨",c,"#fff2c4",0,-26,420); fxBurst(d,"normal",2); await wait(fxT(80)); },
+  // ── 얼음: 얼음뭉치(작고 빠른 선공) / 서리숨결(입김) / 얼음바람(찬바람)
+  iceshard: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const g=_fly("❄️",from,to,TYPE_COLOR.ice,fxT(130),1.0);
+    g.style.fontSize="22px"; await wait(fxT(130)); fxBurst(d,"ice",1); await wait(fxT(70)); },
+  frostbreath: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<8;i++){ const t=i/7; const g=fxGlyph("❄️",{x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t},TYPE_COLOR.ice,"fx-particle"); g.style.fontSize=(14+t*14)+"px";
+      g.animate([{opacity:1},{opacity:0}],{duration:fxT(400)}).finished.then(()=>g.remove()).catch(()=>g.remove()); await wait(fxT(26)); }
+    const tg=spriteEl(d); tg.style.filter=`drop-shadow(0 0 10px ${TYPE_COLOR.ice}) brightness(1.2) saturate(.7)`; setTimeout(()=>{tg.style.filter="";},fxT(500));
+    fxBurst(d,"ice",2); await wait(fxT(90)); },
+  // ── 땅: 머드샷(진흙 튀김)
+  mudshot: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const g=_fly("🪨",from,to,TYPE_COLOR.ground,fxT(240),1.2);
+    g.style.filter="hue-rotate(-25deg) brightness(.8)"; await wait(fxT(240));
+    for(let i=0;i<6;i++)_pop("💧",{x:to.x+rand(-20,20),y:to.y+rand(-10,18)},"#8a6a44",rand(-26,26),rand(-30,4),rand(340,480));
+    fxBurst(d,"ground",2); await wait(fxT(90)); },
   // 눈보라: 화면을 가로지르는 횡풍 + 서리
   blizzard: async(s,d)=>{ const c=fxCenter(d); screenShake(false);
     for(let i=0;i<14;i++){ const y=c.y+rand(-52,52); const f=fxGlyph("❄️",{x:c.x-150,y},TYPE_COLOR.ice,"fx-proj"); f.style.fontSize="20px";
@@ -3104,8 +3178,8 @@ const SIGFX={
 };
 async function moveFx(move,side,dSide,mv){ const type=move.type; const pw=move.power||0; const inten=pw<=0?1:pw<=45?1:pw<=62?2:3; fieldFlash(type); if(CONFIG.reduceMotion){ await mw(60); return; }
   if(inten>=3){ const aS=spriteEl(side); aS.style.filter=`drop-shadow(0 0 13px ${TYPE_COLOR[type]})`; setTimeout(()=>{aS.style.filter="";},300); }
-  if(move.power===0){ fxBurst(side,type,1); await wait(fxT(90)); return; }
-  if(mv&&SIGFX[mv]){ await SIGFX[mv](side,dSide,inten,type); return; }
+  if(mv&&SIGFX[mv]){ await SIGFX[mv](side,dSide,inten,type); return; }   // ⚠️ 변화기도 전용 연출을 가질 수 있게 power 체크보다 앞
+  if(move.power===0){ await statusMoveFx(move,side,dSide,type); return; }
   if(type==="elec"){ const c=fxCenter(dSide); const bolt=fxGlyph("⚡",{x:c.x,y:c.y-80},TYPE_COLOR.elec,"fx-proj");
     await bolt.animate([{top:(c.y-80)+"px",opacity:.2},{top:c.y+"px",opacity:1}],{duration:fxT(150),easing:"ease-in",fill:"forwards"}).finished.then(()=>bolt.remove()).catch(()=>bolt.remove());
     fxBurst(dSide,type,inten); }
@@ -3129,6 +3203,61 @@ async function moveFx(move,side,dSide,mv){ const type=move.type; const pw=move.p
     fxBurst(dSide,type,inten); impactFlash(); screenShake(inten>=3); }
   else { const from=fxCenter(side),to=fxCenter(dSide); await fxProjectile(from,to,TYPE_PARTICLE[type]||"💥",TYPE_COLOR[type]); fxBurst(dSide,type,inten); }
   if(inten>=3)screenShake(false); }
+// 변화기 연출. 예전엔 전부 fxBurst 하나라 칼춤·리플렉터·모래바람·씨뿌리기가 똑같이 보였다.
+// move.eff의 종류로 갈라 34종이 각자의 인상을 갖게 한다.
+function fxAuraRing(side,col,up){ if(CONFIG.reduceMotion)return; const c=fxCenter(side);
+  const r=document.createElement("div"); r.className="fx-glyph"; r.style.cssText=
+    `left:${c.x}px;top:${c.y+26}px;width:74px;height:20px;border-radius:50%;border:2px solid ${col};box-shadow:0 0 14px ${col};transform:translate(-50%,-50%)`;
+  $("battleField").appendChild(r);
+  r.animate([{opacity:0,transform:"translate(-50%,-50%) scale(.4)"},{opacity:1,transform:"translate(-50%,-50%) scale(1)"},
+             {opacity:0,transform:`translate(-50%,-50%) translateY(${up?-46:34}px) scale(1.25)`}],
+            {duration:fxT(620),easing:"ease-out"}).finished.then(()=>r.remove()).catch(()=>r.remove()); }
+function fxRain(side,glyph,col,cnt,from){ const c=fxCenter(side);
+  for(let i=0;i<cnt;i++){ const x=c.x+rand(-40,40); const y0=from==="up"?c.y-70:c.y+40;
+    const g=fxGlyph(glyph,{x,y:y0},col,"fx-particle");
+    g.animate([{transform:"translate(-50%,-50%) scale(.5)",opacity:0},{transform:"translate(-50%,-50%) scale(1)",opacity:1},
+               {transform:`translate(-50%,-50%) translateY(${from==="up"?70:-70}px) scale(.8)`,opacity:0}],
+              {duration:fxT(680),delay:i*52,easing:"ease-out"}).finished.then(()=>g.remove()).catch(()=>g.remove()); } }
+function fxScreenWall(side,col){ const c=fxCenter(side);
+  const w=document.createElement("div"); w.className="fx-glyph"; w.style.cssText=
+    `left:${c.x}px;top:${c.y}px;width:96px;height:104px;border-radius:14px;transform:translate(-50%,-50%);
+     background:linear-gradient(135deg,${col}55,${col}18);border:2px solid ${col};box-shadow:0 0 20px ${col}`;
+  $("battleField").appendChild(w);
+  w.animate([{opacity:0,transform:"translate(-50%,-50%) scaleY(.2)"},{opacity:1,transform:"translate(-50%,-50%) scaleY(1)"},
+             {opacity:0,transform:"translate(-50%,-50%) scaleY(1)"}],{duration:fxT(760),easing:"ease-out"})
+   .finished.then(()=>w.remove()).catch(()=>w.remove()); }
+async function statusMoveFx(move,side,dSide,type){
+  const e=move.eff||{}; const oc=TYPE_COLOR[type]||"#cfe3ff";
+  if(move.heal){ fxAuraRing(side,"#7fd1ae",true); fxRain(side,"💚","#7fd1ae",5,"down"); await wait(fxT(240)); return; }
+  if(e.weather){ const wm={sun:["☀️","#f2c14e"],rain:["🌧️","#5d9cf0"],sand:["🌪️","#d2a862"],hail:["🌨️","#88d6e6"]}[e.weather]||["✨",oc];
+    const f=$("battleField"); const ov=document.createElement("div"); ov.className="fx-glyph";
+    ov.style.cssText=`left:50%;top:50%;width:100%;height:100%;transform:translate(-50%,-50%);background:${wm[1]}22;pointer-events:none`;
+    f.appendChild(ov); ov.animate([{opacity:0},{opacity:1},{opacity:0}],{duration:fxT(900)}).finished.then(()=>ov.remove()).catch(()=>ov.remove());
+    for(const sd of ["me","foe"])fxRain(sd,wm[0],wm[1],5,"up");
+    await wait(fxT(420)); return; }
+  if(e.screen){ fxScreenWall(side,e.screen==="reflect"?"#f2c14e":"#8fb8f0"); await wait(fxT(320)); return; }
+  if(e.rock||e.spikes){ const c=fxCenter(dSide); const g=e.rock?"🪨":"⚠️";
+    for(let i=0;i<5;i++){ const x=c.x+rand(-40,40); const p=fxGlyph(g,{x,y:c.y-50},TYPE_COLOR.rock,"fx-proj");
+      p.animate([{top:(c.y-50)+"px",opacity:0},{top:(c.y+30)+"px",opacity:1},{top:(c.y+34)+"px",opacity:.85}],
+                {duration:fxT(460),delay:i*60,easing:"ease-in",fill:"forwards"}).finished.then(()=>setTimeout(()=>p.remove(),260)).catch(()=>p.remove()); }
+    await wait(fxT(400)); return; }
+  if(e.seed){ const from=fxCenter(side),to=fxCenter(dSide); _fly("🌱",from,to,TYPE_COLOR.grass,fxT(300),1.3);
+    await wait(fxT(300)); for(let i=0;i<6;i++){ const a=i/6*6.28; _pop("🍃",to,TYPE_COLOR.grass,Math.cos(a)*34,Math.sin(a)*34,rand(420,600)); }
+    await wait(fxT(180)); return; }
+  if(e.status){ const sm={psn:["🫧","#b07fd1"],brn:["🔥","#f0795d"],par:["⚡","#f0cf5d"],slp:["💤","#9fb4d8"],frz:["❄️","#6fc4e0"]}[e.status]||["✨",oc];
+    fxRain(dSide,sm[0],sm[1],6,"up"); await wait(fxT(300)); return; }
+  if(e.confuse){ const c=fxCenter(dSide);
+    for(let i=0;i<7;i++){ const a=i/7*6.28; const g=fxGlyph("💫",{x:c.x+Math.cos(a)*30,y:c.y-16+Math.sin(a)*14},"#e8c85d","fx-particle");
+      g.animate([{transform:"translate(-50%,-50%) scale(.4)",opacity:1},{transform:"translate(-50%,-50%) scale(1.15) rotate(360deg)",opacity:0}],
+                {duration:fxT(620),delay:i*46}).finished.then(()=>g.remove()).catch(()=>g.remove()); }
+    await wait(fxT(300)); return; }
+  if(e.crit){ fxAuraRing(side,"#f0795d",true); fxRain(side,"🔥","#f0795d",4,"down"); await wait(fxT(260)); return; }
+  if(e.baton||e.phase){ fxAuraRing(side,oc,true); await wait(fxT(200)); return; }
+  if(e.stat){ const self=e.target==="self"; const tgt=self?side:dSide; const up=(e.stage||0)>0;
+    fxAuraRing(tgt,up?"#7fd1ae":"#e8788a",up);
+    if(!self&&!up){ const sp=spriteEl(tgt); sp.style.filter="saturate(.5) brightness(.85)"; setTimeout(()=>{sp.style.filter="";},fxT(560)); }
+    await wait(fxT(240)); return; }
+  fxBurst(side,type,1); await wait(fxT(90)); }
 function fxStatusAura(side,status){ if(CONFIG.reduceMotion)return; const c=fxCenter(side); const map={psn:{g:"🫧",col:"#b07fd1"},brn:{g:"🔥",col:"#f0795d"},par:{g:"⚡",col:"#f0cf5d"},slp:{g:"💤",col:"#9fb4d8"},frz:{g:"❄️",col:"#6fc4e0"}}[status]; if(!map)return;
   const sp=spriteEl(side); sp.style.filter=`drop-shadow(0 0 9px ${map.col})`; setTimeout(()=>{sp.style.filter="";},720);
   for(let i=0;i<6;i++){ const p=fxGlyph(map.g,{x:c.x+rand(-22,22),y:c.y+12},map.col,"fx-particle");
