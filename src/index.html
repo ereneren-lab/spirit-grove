@@ -2324,7 +2324,20 @@ if($("goalTrack")) $("goalTrack").addEventListener("click",()=>{
   const g=$("goalTrack")._goal;
   if(!g||g.x==null||G.indoor||G.busy||G.inBattle){ Audio.sfx("blip"); return; }
   Audio.sfx("blip");
-  const p=bfsPath(G.pos.x,G.pos.y,g.x,g.y);
+  // ⚠️ 목표가 체육관(G)·리그(U)·제단(X)·센터(+)·회관(E)이면 그 타일 자체는 "부딪혀 들어가는"
+  //    비보행 문이다. 거기로 bfsPath를 걸면 항상 null이라 자동 이동이 통째로 먹지 않았다.
+  //    → 목표가 비보행이면 인접한 보행 칸 중 가장 가까운 곳까지 안내한다.
+  let p=walkable(g.x,g.y)?bfsPath(G.pos.x,G.pos.y,g.x,g.y):null;
+  if(!p||!p.length){
+    let best=null;
+    for(const d of [[0,1],[0,-1],[1,0],[-1,0]]){
+      const nx=g.x+d[0], ny=g.y+d[1];
+      if(!walkable(nx,ny))continue;
+      const q=bfsPath(G.pos.x,G.pos.y,nx,ny);
+      if(q&&q.length&&(!best||q.length<best.length))best=q;
+    }
+    p=best;
+  }
   if(!p||!p.length){ flashHint("지금은 그곳까지 가는 길이 막혀 있다."); return; }
   gamePath=p; if(Field.setDest)Field.setDest(g.x,g.y); pathStep();
 });
@@ -4941,7 +4954,7 @@ window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVi
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.FLAVOR=FLAVOR;
-Object.assign(window.SG,{TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
+Object.assign(window.SG,{EFF,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
