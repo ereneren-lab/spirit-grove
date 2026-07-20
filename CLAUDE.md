@@ -71,6 +71,10 @@ verify 내용:
 - **잠듦 상태 undefined**: `STATUS_KO`/`STATUS_CLS`에 `slp` 누락(psn/brn/par만) → 잠들면 상태 칩이 `undefined`. `_MV_STATUS_KO`엔 있었음. → `STATUS_KO.slp="잠듦"`, `STATUS_CLS.slp="b-slp"`(+`.b-slp` CSS) 추가.
 - **소수점 레벨**: 특수 조우(파도/낚시/설원/섬/해안/용암/동굴)가 `clamp(avgLevel()+...)`만 하고 floor 안 해 소수점 레벨. → `makeMon`에서 `level=Math.max(1,Math.floor(level))`로 정수화(모든 조우/스탯 커버).
 - 회귀: 위 세 가지 + 파티 재정렬 + 돌 진화는 `scripts/bugfix_batch_test.js`.
+- **특수기가 랭크를 무시**: `damage()`가 `const aMul=isSpec?1:...` / `dMul=isSpec?1:...`로 **특수기일 때 능력변화 배율을 통째로 1** 처리 → 불·물·풀·전기·얼음 기술은 칼춤·철벽류가 전혀 안 걸렸다(랭크 게임이 물리 타입 전용이었음). 동시에 `stages`가 `{atk,def,spd}` 3종뿐이라 특공/특방/명중/회피 랭크 자체가 부재. → `stages` 7종(`newStages()`), 특수기는 `spa`/`spDef` 랭크 적용, 화상 반감은 물리에만, 명중 판정에 `accMul`(본가 3/3 표) 곱, 급소는 공격자 마이너스·방어자 플러스 랭크 무시. **`stages` 초기화 지점이 14곳이라 반드시 `newStages()`/`resetStages()`만 쓸 것** (리터럴 `{atk:0,def:0,spd:0}` 부활 금지).
+- **교체로 랭크 유지 익스플로잇**: `chooseSwitch`가 물러나는 정령의 랭크를 안 지워, 뒤로 뺐다 다시 내보내면 +6 부스트가 그대로 남았다. → 교체 시 `resetStages` + `_confuse`/`_seeded`/`_flinch` 해제(본가 규칙).
+- ⚠️ 화상·상태이상 데미지 테스트를 짤 땐 **기본 특성 폴백이 `guts`(근성)** 라는 걸 기억할 것 — 상태이상이 오히려 공격 1.5배라 화상 반감 검증이 뒤집힌다. 중립 특성(`sturdy` 등)으로 고정하고 재라.
+- 회귀 `scripts/stage_rank_test.js`(특수기 랭크·화상·명중표·급소 랭크무시·교체 리셋).
 
 ### 듀오 배틀(2v2) UI
 `dbCard`가 예전엔 `m.em`(작은 이모지)로 정령을 그려 허접했다. → `creatureVisual(m.id,m.type)` 크리처 아트로 렌더(`.dbsp` 52px 박스 + 지면 그림자 + drop-shadow), foe/ally 카드 배경 틴트 구분, shiny 필터. 상태칩(`.dbst`)은 하드코딩 빨강 대신 `STATUS_CLS` 색 클래스 사용(`.dbst.b-*`가 `.dbst`를 specificity로 이김). 별도 오버레이 시스템(`#dbOverlay`, `dbRender`/`dbCard`/`dbLog`)이라 메인 배틀과 무관. 회귀 `scripts/duo_battle_test.js`. `startDouble`/`dbRender`를 `SG.flow`에 노출(테스트용).
