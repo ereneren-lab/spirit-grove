@@ -110,6 +110,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw blackout_test.js
   pw bugfix_round2_test.js
   pw bugfix_round3_test.js
+  pw palette_source_test.js
 else
   echo "⏭️  오디오 테스트 건너뜀 (npm install playwright 하면 실행됨)"
 fi

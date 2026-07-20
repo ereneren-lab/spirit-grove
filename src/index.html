@@ -8,8 +8,8 @@
   :root{
     --bg:#171326;--bg2:#221c34;--panel:#2a2440;--panel2:#352e4f;--line:#433a5e;--cream:#f3ecdd;--muted:#9a90b0;
     --amber:#f0a868;--mint:#7fd1ae;--rose:#e8788a;
-    --fire:#f08a5d;--water:#5d9cf0;--grass:#7fd16f;--elec:#f0cf5d;--normal:#c7bca6;--flying:#9db8e0;--rock:#c2a878;--ice:#88d6e6;--poison:#b57fd0;--ground:#d2a862;
-    --psn:#b07fd1;--brn:#f0875d;--par:#f0cf5d;
+    /* 타입 색 변수(--fire 등)는 TYPES에서 생성해 주입한다 — injectPalette() 참조 */
+    /* 상태 색 변수(--psn 등)는 STATUSES에서 생성해 주입한다 */
     --shadow:0 10px 30px rgba(0,0,0,.45);--r:14px;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -72,9 +72,9 @@
   .pick-card .nm{font-weight:800;font-size:14px}
   .pick-card .ds{font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.5}
   .type-tag{display:inline-block;font-size:10px;font-weight:800;color:#1a1626;padding:2px 8px;border-radius:999px;margin-top:7px;letter-spacing:.4px}
-  .type-tag.t-fire{background:var(--fire)} .type-tag.t-water{background:var(--water)} .type-tag.t-grass{background:var(--grass)} .type-tag.t-elec{background:var(--elec)} .type-tag.t-normal{background:var(--normal)} .type-tag.t-flying{background:var(--flying)} .type-tag.t-rock{background:var(--rock)} .type-tag.t-ice{background:var(--ice)} .type-tag.t-poison{background:var(--poison);color:#f3ecdd} .type-tag.t-ground{background:var(--ground)}
+  /* .type-tag.t-<type> 은 TYPES에서 생성 — injectPalette() */
   .st-badge{display:inline-block;font-size:9px;font-weight:800;color:#1a1626;padding:1px 6px;border-radius:6px;margin-left:5px}
-  .b-psn{background:var(--psn)} .b-brn{background:var(--brn)} .b-par{background:var(--par)} .b-slp{background:#6a7fb0} .b-frz{background:#6fc4e0}
+  /* .b-<status> 는 STATUSES에서 생성 — injectPalette() */
   #evoOverlay .evo-art{width:min(58vw,230px);height:min(58vw,230px);display:flex;align-items:center;justify-content:center;position:relative}
   #evoOverlay .evo-art img,#evoOverlay .evo-art svg{width:100%;height:100%;object-fit:contain}
   #evoOverlay .evo-art.sil img,#evoOverlay .evo-art.sil svg{filter:brightness(0) invert(1) drop-shadow(0 0 16px #cfe8ff)}
@@ -391,7 +391,7 @@
 .dbnm{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dblv{font-size:10px;opacity:.7;font-weight:400}
 .dbst{font-size:9px;color:#fff;border-radius:4px;padding:0 4px;margin-left:4px;background:#6a6f8a}
-.dbst.b-psn{background:var(--psn)} .dbst.b-brn{background:var(--brn)} .dbst.b-par{background:var(--par)} .dbst.b-slp{background:#6a7fb0} .dbst.b-frz{background:#6fc4e0}
+/* .dbst.b-<status> 는 STATUSES에서 생성 — injectPalette() */
 .dbhpbar{height:6px;background:#1a1e30;border-radius:3px;overflow:hidden;margin:3px 0}
 .dbhpfill{height:100%;background:#5ac26a;transition:width .35s}
 .dbhpfill.warn{background:#e0c05a}.dbhpfill.crit{background:#e05a5a}
@@ -756,7 +756,7 @@ const Audio={ctx:null,master:null,musicGain:null,sfxGain:null,muted:false,track:
   }catch(e){this.ctx=null;} },
   resume(){ if(this.ctx&&this.ctx.state==="suspended")this.ctx.resume(); },
   setVolume(v){ CONFIG.volume=v; if(this.master&&!this.muted)this.master.gain.value=v; },
-  cry(id,type){ if(!this.ctx||this.muted)return; try{ let h=0; const s=String(id||"x"); for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0; const base=170+(h%250); const W={fire:"sawtooth",water:"sine",grass:"triangle",elec:"square",flying:"sine",rock:"square",normal:"triangle"}; const t0=this.ctx.currentTime; const o=this.ctx.createOscillator(),g=this.ctx.createGain(); o.type=W[type]||"triangle"; o.connect(g); g.connect(this.sfxGain||this.master||this.ctx.destination); o.frequency.setValueAtTime(base,t0); o.frequency.setValueAtTime(base*(1+((h>>3)%6)/10),t0+0.07); o.frequency.setValueAtTime(base*(0.78+((h>>6)%7)/12),t0+0.15); o.frequency.exponentialRampToValueAtTime(base*0.85,t0+0.3); g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.16,t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.33); o.start(t0); o.stop(t0+0.35); }catch(e){} },
+  cry(id,type){ if(!this.ctx||this.muted)return; try{ let h=0; const s=String(id||"x"); for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0; const base=170+(h%250); const t0=this.ctx.currentTime; const o=this.ctx.createOscillator(),g=this.ctx.createGain(); o.type=(TYPES[type]&&TYPES[type].wav)||"triangle"; o.connect(g); g.connect(this.sfxGain||this.master||this.ctx.destination); o.frequency.setValueAtTime(base,t0); o.frequency.setValueAtTime(base*(1+((h>>3)%6)/10),t0+0.07); o.frequency.setValueAtTime(base*(0.78+((h>>6)%7)/12),t0+0.15); o.frequency.exponentialRampToValueAtTime(base*0.85,t0+0.3); g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.16,t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+0.33); o.start(t0); o.stop(t0+0.35); }catch(e){} },
   // 포켓몬식 HP 드레인 틱. 감소량에 비례한 짧은 비프 연쇄, 위험권(≤20%)으로 떨어지면 급하게+경고음.
   hpTick(fromPct,toPct){ if(!this.ctx||this.muted)return; this.resume(); const t0=this.ctx.currentTime;
     const delta=Math.max(0,fromPct-toPct); if(delta<0.5)return;
@@ -859,16 +859,38 @@ $("muteBtn").addEventListener("click",()=>{ Audio.init(); const m=Audio.toggleMu
   document.addEventListener("pointerdown",start,true); document.addEventListener("keydown",start,true); })();
 
 /* ===== TYPES / MOVES ===== */
-const TYPE_KO={fire:"불",water:"물",grass:"풀",elec:"전기",normal:"노말",flying:"비행",rock:"바위",ice:"얼음",poison:"독",ground:"땅"};
-const TYPE_CLASS={fire:"t-fire",water:"t-water",grass:"t-grass",elec:"t-elec",normal:"t-normal",flying:"t-flying",rock:"t-rock",ice:"t-ice",poison:"t-poison",ground:"t-ground"};
-const TYPE_COLOR={fire:"#f08a5d",water:"#5d9cf0",grass:"#7fd16f",elec:"#f0cf5d",normal:"#c7bca6",flying:"#9db8e0",rock:"#c2a878",ice:"#88d6e6",poison:"#b57fd0",ground:"#d2a862"};
-const TYPE_ICON={fire:"🔥",water:"💧",grass:"🍃",elec:"⚡",normal:"⭐",flying:"🪶",rock:"🪨"};
+/* ===== 타입 단일 출처 =====
+   ⚠️ 타입을 추가/수정할 땐 여기만 고친다. 예전엔 TYPE_KO·TYPE_CLASS·TYPE_COLOR·TYPE_ICON·
+   TYPE_PARTICLE·SPEC_TYPES·DEFAULT_ABILITY·CSS 변수·.type-tag·도감 필터·Audio.cry가
+   따로 놀아서, 타입을 늘릴 때마다 어딘가 하나가 빠졌다(TYPE_PARTICLE 누락 → 화면에 "undefined",
+   TYPE_ICON·Audio.cry는 신규 3타입이 아직도 비어 있었다). 이제 전부 여기서 파생된다.
+     ko=한글명 · col=색 · par=연출 파티클 · ic=아이콘 · spec=특수판정 · ab=기본 특성 · wav=울음 파형
+     fg=태그 글자색(생략 시 기본) */
+const TYPES={
+  fire:   {ko:"불",  col:"#f08a5d", par:"🔥", ic:"🔥", spec:1, ab:"blaze",       wav:"sawtooth"},
+  water:  {ko:"물",  col:"#5d9cf0", par:"💧", ic:"💧", spec:1, ab:"torrent",     wav:"sine"},
+  grass:  {ko:"풀",  col:"#7fd16f", par:"🍃", ic:"🍃", spec:1, ab:"overgrow",    wav:"triangle"},
+  elec:   {ko:"전기",col:"#f0cf5d", par:"⚡", ic:"⚡", spec:1, ab:"static",      wav:"square"},
+  normal: {ko:"노말",col:"#c7bca6", par:"💢", ic:"⭐", spec:0, ab:"guts",        wav:"triangle"},
+  flying: {ko:"비행",col:"#9db8e0", par:"🪶", ic:"🪶", spec:0, ab:"intimidate",  wav:"sine"},
+  rock:   {ko:"바위",col:"#c2a878", par:"🪨", ic:"🪨", spec:0, ab:"sturdy",      wav:"square"},
+  ice:    {ko:"얼음",col:"#88d6e6", par:"❄️", ic:"❄️", spec:1, ab:"icebody",     wav:"sine"},
+  poison: {ko:"독",  col:"#b57fd0", par:"🫧", ic:"🫧", spec:0, ab:"poisonpoint", wav:"sawtooth", fg:"#f3ecdd"},
+  ground: {ko:"땅",  col:"#d2a862", par:"🪨", ic:"⛰️", spec:0, ab:"sturdy",      wav:"square"},
+};
+const TYPE_LIST=Object.keys(TYPES);
+const _derive=(src,f)=>{ const o={}; for(const k in src)o[k]=f(src[k],k); return o; };
+const TYPE_KO=_derive(TYPES,t=>t.ko);
+const TYPE_CLASS=_derive(TYPES,(t,k)=>"t-"+k);
+const TYPE_COLOR=_derive(TYPES,t=>t.col);
+const TYPE_PARTICLE=_derive(TYPES,t=>t.par);
+const TYPE_ICON=_derive(TYPES,t=>t.ic);
+// 특수 판정 타입(나머지는 물리). damage()·까칠한피부 등이 공유하는 단일 출처.
+const SPEC_TYPES=(()=>{ const o={}; for(const k in TYPES)if(TYPES[k].spec)o[k]=1; return o; })();
+const DEFAULT_ABILITY=_derive(TYPES,t=>t.ab);
 // ⚠️ 특성을 추가하면 ABILITY_KO·ABILITY_DESC 둘 다 채울 것(회귀가 강제).
 const ABILITY_KO={blaze:"맹화",torrent:"급류",overgrow:"신록",static:"정전기",intimidate:"위협",sturdy:"옹골참",thickfat:"두꺼운지방",guts:"근성",levitate:"부유",poisonpoint:"독가시",icebody:"얼음몸",flamebody:"불꽃몸",roughskin:"까칠한피부",swiftswim:"쓸비늘",chlorophyll:"엽록소",insomnia:"불면",immunity:"면역",waterveil:"수의베일",sniper:"스나이퍼",naturalcure:"자연회복",hugepower:"순수한힘"};
 const ABILITY_DESC={blaze:"HP가 낮으면 불 기술 위력 ↑",torrent:"HP가 낮으면 물 기술 위력 ↑",overgrow:"HP가 낮으면 풀 기술 위력 ↑",static:"맞으면 30% 확률로 상대 마비",intimidate:"등장 시 상대 공격 1 ↓",sturdy:"풀피일 때 한 방에 안 쓰러짐",thickfat:"불 기술 피해 절반",guts:"상태이상이면 공격 ↑",levitate:"땅 타입 기술 무효",poisonpoint:"맞으면 30% 확률로 상대 중독",icebody:"싸라기눈일 때 매턴 회복",flamebody:"맞으면 30% 확률로 상대 화상",roughskin:"물리 기술로 맞으면 상대도 깎인다",swiftswim:"비가 오면 속도 2배",chlorophyll:"햇살이 강하면 속도 2배",insomnia:"잠들지 않는다",immunity:"독에 걸리지 않는다",waterveil:"화상을 입지 않는다",sniper:"급소에 맞히면 위력이 더 오른다",naturalcure:"교체하면 상태이상이 낫는다",hugepower:"물리 기술 위력이 크게 오른다"};
-// 특수 판정 타입(나머지는 물리). damage()·까칠한피부 등이 공유하는 단일 출처.
-const SPEC_TYPES={fire:1,water:1,grass:1,elec:1,ice:1};
-const DEFAULT_ABILITY={fire:"blaze",water:"torrent",grass:"overgrow",elec:"static",normal:"guts",flying:"intimidate",rock:"sturdy",ice:"icebody",poison:"poisonpoint",ground:"sturdy"};
 const NATURES=[
   {k:"hardy",ko:"노력하는",up:null,down:null},{k:"docile",ko:"온순한",up:null,down:null},
   {k:"lonely",ko:"외로운",up:"atk",down:"def"},{k:"brave",ko:"용감한",up:"atk",down:"spd"},
@@ -890,8 +912,41 @@ const HELD_ITEMS={
 // 종별 특성 지정. 없으면 DEFAULT_ABILITY[type] → "guts" 폴백이라
 // 지정을 안 하면 같은 타입 정령이 죄다 같은 특성이 된다. 라인마다 흩뿌릴 것.
 const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate",emberfly:"flamebody",pyrmoth:"flamebody",cindercat:"flamebody",lavakit:"flamebody",boulderin:"roughskin",crablord:"roughskin",hedgemoss:"roughskin",otterwave:"swiftswim",sharkfin:"swiftswim",frostfish:"swiftswim",nipling:"swiftswim",seedbean:"chlorophyll",sproutcat:"chlorophyll",palmore:"chlorophyll",leafwyrm:"chlorophyll",thunderowl:"insomnia",lunarmoth:"insomnia",swampfrog:"immunity",burrowmouse:"immunity",tidalore:"waterveil",shellow:"waterveil",stormhawk:"sniper",sandwhirl:"sniper",sprigfawn:"naturalcure",bunnyhop:"naturalcure",dewdrop:"naturalcure",tigerflame:"hugepower",magmadon:"hugepower"};
-const STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦",frz:"냉동"};
-const STATUS_CLS={psn:"b-psn",brn:"b-brn",par:"b-par",slp:"b-slp",frz:"b-frz"};
+/* ===== 상태이상 단일 출처 =====
+   ⚠️ 상태를 추가할 땐 여기만 고친다. 예전엔 STATUS_KO·STATUS_CLS·_MV_STATUS_KO·
+   STATUS_TYPE_IMMUNE·연출 글리프 2곳·.b-* CSS·.dbst.b-* CSS가 따로 놀아서
+   slp와 frz가 각각 한 번씩 누락됐다(상태칩에 "undefined", 기술 설명에 "frz").
+     ko=한글명 · chip=상태칩 배경색 · g=연출 글리프 · fx=연출 색 · imm=면역 타입(없으면 null) */
+const STATUSES={
+  psn:{ko:"독",  chip:"#b07fd1", g:"🫧", fx:"#b07fd1", imm:"poison"},
+  brn:{ko:"화상",chip:"#f0875d", g:"🔥", fx:"#f0795d", imm:"fire"},
+  par:{ko:"마비",chip:"#f0cf5d", g:"⚡", fx:"#f0cf5d", imm:"elec"},
+  slp:{ko:"잠듦",chip:"#6a7fb0", g:"💤", fx:"#9fb4d8", imm:null},
+  frz:{ko:"냉동",chip:"#6fc4e0", g:"❄️", fx:"#6fc4e0", imm:"ice"},
+};
+const STATUS_LIST=Object.keys(STATUSES);
+const STATUS_KO=_derive(STATUSES,s=>s.ko);
+const STATUS_CLS=_derive(STATUSES,(s,k)=>"b-"+k);
+// 타입 면역(본가): 불=화상, 얼음=냉동, 독=중독, 전기=마비. 잠듦은 면역이 없다.
+const STATUS_TYPE_IMMUNE=(()=>{ const o={}; for(const k in STATUSES)if(STATUSES[k].imm)o[k]=STATUSES[k].imm; return o; })();
+
+// 타입·상태 팔레트 CSS를 단일 출처에서 생성해 주입한다.
+// 예전엔 CSS에 손으로 적어둬서 타입을 늘릴 때 --ice/--poison/--ground 같은 게 빠지기 쉬웠다.
+// ⚠️ .dbst.b-*는 .dbst를 specificity로 이겨야 하므로 규칙 형태를 유지할 것.
+function injectPalette(){
+  const L=[":root{"];
+  for(const k in TYPES)L.push(`--${k}:${TYPES[k].col};`);
+  for(const k in STATUSES)L.push(`--${k}:${STATUSES[k].chip};`);
+  L.push("}");
+  for(const k in TYPES){ const t=TYPES[k];
+    L.push(`.type-tag.t-${k}{background:var(--${k})${t.fg?";color:"+t.fg:""}}`); }
+  for(const k in STATUSES){
+    L.push(`.b-${k}{background:var(--${k})}`);
+    L.push(`.dbst.b-${k}{background:var(--${k})}`); }
+  const el=document.createElement("style"); el.id="palette"; el.textContent=L.join("");
+  document.head.appendChild(el);
+}
+injectPalette();
 const EFF={
   fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1},
   water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2},
@@ -1003,7 +1058,7 @@ const MOVES={
   struggle:{name:"발버둥",type:"normal",power:40,acc:100,pp:Infinity,pri:0,recoil:0.25},
 };
 // 기술 효과를 사람이 읽을 수 있는 한 줄로. 배우기/잊기/재습득 UI에서 "어떤 기술인지" 보여준다.
-const _MV_STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦",frz:"냉동"};   // ⚠️ 상태 추가 시 STATUS_KO/STATUS_CLS와 한 세트로 채울 것(frz를 빠뜨려 기술 설명에 "frz"가 그대로 떴다)
+const _MV_STATUS_KO=STATUS_KO;   // 기술 설명용 = 상태 한글명. STATUSES 단일 출처에서 파생.
 function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; const e=mo.eff||{};
   if(mo.power>0)p.push("위력 "+mo.power);
   if(mo.heal)p.push("HP "+Math.round(mo.heal*100)+"% 회복");
@@ -3204,7 +3259,7 @@ function particles(side,emoji,n){ if(CONFIG.reduceMotion)return; const field=$("
 /* ===================== SKILL FX ===================== */
 // ⚠️ 타입 추가 시 여기도 반드시 채울 것. 비면 fxGlyph가 textContent=undefined를 받아
 // 전투 화면에 문자열 "undefined"가 날아간다(얼음·독·땅에서 실제로 그랬다).
-const TYPE_PARTICLE={fire:"🔥",water:"💧",grass:"🍃",elec:"⚡",normal:"💢",flying:"🪶",rock:"🪨",ice:"❄️",poison:"🫧",ground:"🪨"};
+// TYPE_PARTICLE은 TYPES에서 파생된다(위). 여기 다시 정의하지 말 것.
 const fxT=ms=>Math.max(50,Math.round(ms*clamp((typeof SKIP!=="undefined"&&SKIP)?0.35:CONFIG.textSpeed,0.35,1.2)));
 function fxCenter(side){ const sp=spriteEl(side), fr=$("battleField").getBoundingClientRect(), r=sp.getBoundingClientRect();
   return {x:r.left-fr.left+r.width/2, y:r.top-fr.top+r.height/2}; }
@@ -3509,7 +3564,7 @@ async function statusMoveFx(move,side,dSide,type){
   if(e.seed){ const from=fxCenter(side),to=fxCenter(dSide); _fly("🌱",from,to,TYPE_COLOR.grass,fxT(300),1.3);
     await wait(fxT(300)); for(let i=0;i<6;i++){ const a=i/6*6.28; _pop("🍃",to,TYPE_COLOR.grass,Math.cos(a)*34,Math.sin(a)*34,rand(420,600)); }
     await wait(fxT(180)); return; }
-  if(e.status){ const sm={psn:["🫧","#b07fd1"],brn:["🔥","#f0795d"],par:["⚡","#f0cf5d"],slp:["💤","#9fb4d8"],frz:["❄️","#6fc4e0"]}[e.status]||["✨",oc];
+  if(e.status){ const _st=STATUSES[e.status]; const sm=_st?[_st.g,_st.fx]:["✨",oc];
     fxRain(dSide,sm[0],sm[1],6,"up"); await wait(fxT(300)); return; }
   if(e.confuse){ const c=fxCenter(dSide);
     for(let i=0;i<7;i++){ const a=i/7*6.28; const g=fxGlyph("💫",{x:c.x+Math.cos(a)*30,y:c.y-16+Math.sin(a)*14},"#e8c85d","fx-particle");
@@ -3523,7 +3578,7 @@ async function statusMoveFx(move,side,dSide,type){
     if(!self&&!up){ const sp=spriteEl(tgt); sp.style.filter="saturate(.5) brightness(.85)"; setTimeout(()=>{sp.style.filter="";},fxT(560)); }
     await wait(fxT(240)); return; }
   fxBurst(side,type,1); await wait(fxT(90)); }
-function fxStatusAura(side,status){ if(CONFIG.reduceMotion)return; const c=fxCenter(side); const map={psn:{g:"🫧",col:"#b07fd1"},brn:{g:"🔥",col:"#f0795d"},par:{g:"⚡",col:"#f0cf5d"},slp:{g:"💤",col:"#9fb4d8"},frz:{g:"❄️",col:"#6fc4e0"}}[status]; if(!map)return;
+function fxStatusAura(side,status){ if(CONFIG.reduceMotion)return; const c=fxCenter(side); const _st=STATUSES[status]; if(!_st)return; const map={g:_st.g,col:_st.fx};
   const sp=spriteEl(side); sp.style.filter=`drop-shadow(0 0 9px ${map.col})`; setTimeout(()=>{sp.style.filter="";},720);
   for(let i=0;i<6;i++){ const p=fxGlyph(map.g,{x:c.x+rand(-22,22),y:c.y+12},map.col,"fx-particle");
     p.animate([{transform:"translate(-50%,-50%) translateY(0) scale(.5)",opacity:1},{transform:"translate(-50%,-50%) translateY(-48px) scale(1.1)",opacity:0}],{duration:fxT(rand(620,900)),delay:i*45,easing:"ease-out"}).finished.then(()=>p.remove()).catch(()=>p.remove()); } }
@@ -3537,9 +3592,8 @@ function fxCaptureFlash(c){ if(CONFIG.reduceMotion)return; const fl=document.cre
   ring.animate([{transform:"translate(-50%,-50%) scale(1.6)",opacity:.9},{transform:"translate(-50%,-50%) scale(.4)",opacity:0}],{duration:fxT(360),easing:"ease-in"}).finished.then(()=>ring.remove()).catch(()=>ring.remove()); }
 
 /* ===================== STATUS / STAGES ===================== */
-// 타입 면역(본가): 불=화상, 얼음=냉동, 독=중독, 전기=마비. 잠듦은 타입 면역이 없다.
 // ⚠️ 상태 부여는 전부 applyStatus를 지나가므로(기술·특성·잔류효과) 여기 한 곳만 막으면 된다.
-const STATUS_TYPE_IMMUNE={brn:"fire",frz:"ice",psn:"poison",par:"elec"};
+//    면역 표(STATUS_TYPE_IMMUNE)는 STATUSES에서 파생된다 — 여기 다시 정의하지 말 것.
 // badly=true면 맹독(누적). 본가에서 맹독은 '독의 변종'이라 status는 psn 그대로 둔다
 // — 해독제·독타입 면역·면역 특성이 전부 동일하게 걸려야 하기 때문.
 function applyStatus(mon,st,side,badly){ if(mon.status){ return; }
@@ -4402,7 +4456,7 @@ function renderDex(){ $("dexCaught").textContent=G.caught.size; $("dexParty").te
       b.style.cssText="font-size:11px;padding:4px 9px;border-radius:13px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.18);background:"+(active?"rgba(127,209,174,.32)":"rgba(255,255,255,.05)");
       b.addEventListener("click",()=>{ Audio.sfx("blip"); on(); renderDex(); }); return b; };
     bar.appendChild(mk("전체",!_dexFilter.type&&!_dexFilter.uncaught,()=>{_dexFilter={type:null,uncaught:false};}));
-    ["fire","water","grass","elec","normal","flying","rock","ice","poison","ground"].forEach(t=>bar.appendChild(mk(TYPE_KO[t],_dexFilter.type===t,()=>{_dexFilter.type=_dexFilter.type===t?null:t;})));
+    TYPE_LIST.forEach(t=>bar.appendChild(mk(TYPE_KO[t],_dexFilter.type===t,()=>{_dexFilter.type=_dexFilter.type===t?null:t;})));
     bar.appendChild(mk("미포획",_dexFilter.uncaught,()=>{_dexFilter.uncaught=!_dexFilter.uncaught;}));
     body.appendChild(bar); }
   const _list=DEX.filter(sp=>{ if(_dexFilter.type&&sp.type!==_dexFilter.type)return false; if(_dexFilter.uncaught&&G.caught.has(sp.id))return false; return true; });
@@ -5026,7 +5080,7 @@ window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVi
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.FLAVOR=FLAVOR;
-Object.assign(window.SG,{EFF,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
+Object.assign(window.SG,{EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
