@@ -37,14 +37,8 @@ window.__SIM = (function(){
   // 상태 부여. 게임의 applyStatus는 DOM(renderStages/setMsg)을 건드리므로 여기서 규칙만 재현한다.
   // ⚠️ 면역 규칙은 게임과 같은 출처(S.STATUS_TYPE_IMMUNE)를 쓴다 — 손으로 복사하면 또 어긋난다.
   function trySetStatus(m, st, badly){
-    if(m.status) return false;                                  // 이미 상태이상이면 안 걸린다
-    const abilityImm = {insomnia:"slp", immunity:"psn", waterveil:"brn"}[m.ability];
-    if(abilityImm === st) return false;
-    const typeImm = S.STATUS_TYPE_IMMUNE[st];                   // 불=화상, 얼음=냉동, 독=중독, 전기=마비
-    if(typeImm && (m.type === typeImm || m.type2 === typeImm)) return false;
-    m.status = st;
-    if(st === "slp") m._slp = 1 + Math.floor(Math.random()*3);  // 1~3턴
-    if(st === "psn") m._tox = badly ? 1 : 0;
+    if(F.statusBlockReason(m, st)) return false;   // 면역 판정은 게임의 규칙 계층과 같은 출처
+    F.setStatusFields(m, st, badly);
     return true;
   }
 

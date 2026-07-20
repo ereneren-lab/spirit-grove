@@ -2031,7 +2031,16 @@ function onArrived(){
   const _see=sightTrainer();
   if(_see){ stopPath(); spotTrainer(_see); return; }
   const depth=(H-1-G.pos.y)/(H-1); let enc=false;
-  if(G.repel>0){ G.repel--; if(G.repel===0)flashHint("퇴치 스프레이 효과가 끝났다"); }
+  // 퇴치 스프레이는 본가처럼 **선두보다 약한** 야생만 막는다(도구 설명도 "약한 정령 차단"이다).
+  // 예전엔 조우 굴림을 통째로 건너뛰어 60걸음 완전 무적 통로가 됐고, 설명이 거짓말이었다.
+  let _repelOn=false;
+  if(G.repel>0){
+    const _lead=(typeof activeMon==="function")?activeMon():null;
+    const _est=Math.max(avgLevel(), wildFloor());   // 이 지역 야생의 기준 레벨
+    _repelOn = !_lead || _est < _lead.level;
+    G.repel--; if(G.repel===0)flashHint("퇴치 스프레이 효과가 끝났다");
+  }
+  if(_repelOn){ /* 약한 야생은 피해간다 — 조우 굴림 생략 */ }
   else if(encCooldown>0){ encCooldown--; }
   else { if(G.indoor==="cave"){ if(t==="."&&Math.random()<0.11){ enc=true; startCaveEncounter(); } } else if(G.indoor==="lavacave"){ if(t==="."&&Math.random()<0.13){ enc=true; startLavaEncounter(); } } else if(G.indoor==="coast"){ if((t==="T"||t==="g")&&Math.random()<0.12){ enc=true; startCoastEncounter(); } } else if(G.indoor==="isle"||G.indoor==="shrine"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startIsleEncounter(); } } else if(G.indoor==="snowfield"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startSnowEncounter(); } } else if(G.indoor==="marsh"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startMarshEncounter(); } } else if(G.surfing&&t==="~"){ if(Math.random()<0.12){ enc=true; startSurfEncounter(); } } else if(t==="T"&&Math.random()<0.22+depth*0.09){ enc=true; startEncounter(depth); }
     else if(t==="g"&&Math.random()<0.05+depth*0.04){ enc=true; startEncounter(depth); }
@@ -3440,35 +3449,32 @@ function fxCaptureFlash(c){ if(CONFIG.reduceMotion)return; const fl=document.cre
 //    면역 표(STATUS_TYPE_IMMUNE)는 STATUSES에서 파생된다 — 여기 다시 정의하지 말 것.
 // badly=true면 맹독(누적). 본가에서 맹독은 '독의 변종'이라 status는 psn 그대로 둔다
 // — 해독제·독타입 면역·면역 특성이 전부 동일하게 걸려야 하기 때문.
-function applyStatus(mon,st,side,badly){ if(mon.status){ return; }
-  // 특성 면역: 불면(잠듦)·면역(독)·수의베일(화상)
-  const _imm={insomnia:"slp",immunity:"psn",waterveil:"brn"}[mon.ability];
-  if(_imm && _imm===st){ setMsg(`<b>${dispName(mon)}</b>은(는) <b>${ABILITY_KO[mon.ability]||mon.ability}</b> 덕분에 아무렇지 않다!`); return; }
-  const _tImm=STATUS_TYPE_IMMUNE[st];
-  if(_tImm && (mon.type===_tImm || mon.type2===_tImm)){
-    setMsg(`<b>${dispName(mon)}</b>은(는) <b>${TYPE_KO[_tImm]}</b> 타입이라 아무렇지 않다!`); return; }
-  // ⚠️ psn을 걸 때마다 _tox를 반드시 다시 쓴다(맹독이면 1, 아니면 0).
-  //    치료 후 남은 옛 카운터가 새로 걸린 '보통 독'을 맹독으로 만들어버리기 때문.
-  mon.status=st; if(st==="slp")mon._slp=ri(1,3); if(st==="psn")mon._tox=badly?1:0; Audio.sfx("status"); fxStatusAura(side,st);
+// 면역 판정은 규칙 계층(statusBlockReason)에 있다 — 듀오 배틀·밸런스 시뮬과 같은 출처.
+function applyStatus(mon,st,side,badly){
+  const why=statusBlockReason(mon,st);
+  if(why==="already"||why==="dead") return;
+  if(why==="ability"){ setMsg(`<b>${dispName(mon)}</b>은(는) <b>${ABILITY_KO[mon.ability]||mon.ability}</b> 덕분에 아무렇지 않다!`); return; }
+  if(why==="type"){ setMsg(`<b>${dispName(mon)}</b>은(는) <b>${TYPE_KO[STATUS_TYPE_IMMUNE[st]]}</b> 타입이라 아무렇지 않다!`); return; }
+  setStatusFields(mon,st,badly); Audio.sfx("status"); fxStatusAura(side,st);
   const w={psn:"중독되었다!",brn:"화상을 입었다!",par:"마비되었다!",slp:"잠들어버렸다!",frz:"꽁꽁 얼어붙었다!"}[st];
-  setMsg(`<b>${mon.name}</b>은(는) ${w}`); renderStages(); }
+  setMsg(`<b>${dispName(mon)}</b>은(는) ${w}`); renderStages(); }
 function applyStage(mon,stat,delta,side){ if(!mon.stages)mon.stages=newStages(); const old=mon.stages[stat]||0; const nv=clamp(old+delta,-6,6);
   const lbl=STAGE_KO[stat]||stat;
-  if(nv===old){ setMsg(`<b>${mon.name}</b>의 ${lbl} 능력은 더 변하지 않는다!`); }
+  if(nv===old){ setMsg(`<b>${dispName(mon)}</b>의 ${lbl} 능력은 더 변하지 않는다!`); }
   else { mon.stages[stat]=nv; fxStage(side,delta>0); const dir=delta>0?(delta>=2?"크게 올랐다!":"올랐다!"):(delta<=-2?"크게 떨어졌다!":"떨어졌다!");
-    setMsg(`<b>${mon.name}</b>의 ${lbl} 능력이 ${dir}`); Audio.sfx("blip"); } renderStages(); }
+    setMsg(`<b>${dispName(mon)}</b>의 ${lbl} 능력이 ${dir}`); Audio.sfx("blip"); } renderStages(); }
 async function endTurnItems(mon,side){ if(!mon||mon.hp<=0||!mon.held)return;
   if(mon.held==="leftovers" && mon.hp<mon.maxHp){ const h=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.min(mon.maxHp,mon.hp+h); renderCombatants(); particles(side,"💚",3); setMsg(`<b>${dispName(mon)}</b>은(는) 먹다남은음식으로 회복했다!`); Audio.sfx("heal"); await mw(560); }
   else if(mon.held==="oranberry" && mon.hp>0 && mon.hp<mon.maxHp/2){ const h=Math.floor(mon.maxHp*0.25); mon.hp=Math.min(mon.maxHp,mon.hp+h); mon.held=null; renderCombatants(); particles(side,"💚",5); setMsg(`<b>${dispName(mon)}</b>은(는) 오랭열매를 먹고 회복했다!`); Audio.sfx("heal"); await mw(620); }
   else if(mon.held==="cureberry" && mon.status){ mon.status=null; mon._slp=0; mon.held=null; renderStages(); renderCombatants(); setMsg(`<b>${dispName(mon)}</b>은(는) 정화열매로 상태이상이 나았다!`); Audio.sfx("heal"); await mw(620); } }
 async function applyHazards(mon,side){ if(!mon||mon.hp<=0||!G.hazards||!G.hazards[side])return; const hz=G.hazards[side]; const sp=spriteEl(side);
-  if(hz.rock){ let eff=EFF["rock"][mon.type]||1; if(mon.type2&&mon.type2!==mon.type)eff*=(EFF["rock"][mon.type2]||1); const d=Math.max(1,Math.floor(mon.maxHp*eff/8)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); if(sp){sp.classList.add("hurt");setTimeout(()=>sp.classList.remove("hurt"),300);} Audio.sfx("hit"); setMsg(`<b>${mon.name}</b>이(가) 떠도는 바위에 부딪혔다!`); await mw(680); if(mon.hp<=0)return; }
-  if(hz.spikes>0 && mon.type!=="flying" && mon.type2!=="flying"){ const frac=hz.spikes>=3?4:(hz.spikes===2?6:8); const d=Math.max(1,Math.floor(mon.maxHp/frac)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); if(sp){sp.classList.add("hurt");setTimeout(()=>sp.classList.remove("hurt"),300);} Audio.sfx("hit"); setMsg(`<b>${mon.name}</b>이(가) 압정을 밟았다!`); await mw(680); } }
+  if(hz.rock){ let eff=EFF["rock"][mon.type]||1; if(mon.type2&&mon.type2!==mon.type)eff*=(EFF["rock"][mon.type2]||1); const d=Math.max(1,Math.floor(mon.maxHp*eff/8)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); if(sp){sp.classList.add("hurt");setTimeout(()=>sp.classList.remove("hurt"),300);} Audio.sfx("hit"); setMsg(`<b>${dispName(mon)}</b>이(가) 떠도는 바위에 부딪혔다!`); await mw(680); if(mon.hp<=0)return; }
+  if(hz.spikes>0 && mon.type!=="flying" && mon.type2!=="flying"){ const frac=hz.spikes>=3?4:(hz.spikes===2?6:8); const d=Math.max(1,Math.floor(mon.maxHp/frac)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); if(sp){sp.classList.add("hurt");setTimeout(()=>sp.classList.remove("hurt"),300);} Audio.sfx("hit"); setMsg(`<b>${dispName(mon)}</b>이(가) 압정을 밟았다!`); await mw(680); } }
 async function endTurnStatus(mon,side){ if(mon.hp<=0)return;
-  if(G.weather==="sand" && mon.hp>0 && mon.type!=="rock" && mon.type2!=="rock"){ const d=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); setMsg(`<b>${mon.name}</b>이(가) 모래바람에 시달린다!`); Audio.sfx&&Audio.sfx("hit"); await mw(480); if(mon.hp<=0)return; }
-  if(G.weather==="hail" && mon.hp>0 && mon.ability==="icebody" && mon.hp<mon.maxHp){ const h=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.min(mon.maxHp,mon.hp+h); renderCombatants(); setMsg(`<b>${mon.name}</b>은(는) 얼음몸으로 회복했다!`); Audio.sfx&&Audio.sfx("heal"); await mw(480); }
-  if(G.weather==="hail" && mon.hp>0 && mon.type!=="ice" && mon.type2!=="ice"){ const d=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); setMsg(`<b>${mon.name}</b>이(가) 싸라기눈에 시달린다!`); Audio.sfx&&Audio.sfx("hit"); await mw(480); if(mon.hp<=0)return; }
-  if(mon._seeded && mon.hp>0){ const d=Math.max(1,Math.floor(mon.maxHp/8)); mon.hp=Math.max(0,mon.hp-d); const healer=(mon._seeded==="me")?activeMon():G.foe; if(healer&&healer.hp>0&&healer!==mon)healer.hp=Math.min(healer.maxHp,healer.hp+d); renderCombatants(); setMsg(`<b>${mon.name}</b>의 체력이 씨앗에 빨렸다!`); Audio.sfx("blip"); await mw(560); if(mon.hp<=0)return; }
+  if(G.weather==="sand" && mon.hp>0 && mon.type!=="rock" && mon.type2!=="rock"){ const d=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); setMsg(`<b>${dispName(mon)}</b>이(가) 모래바람에 시달린다!`); Audio.sfx&&Audio.sfx("hit"); await mw(480); if(mon.hp<=0)return; }
+  if(G.weather==="hail" && mon.hp>0 && mon.ability==="icebody" && mon.hp<mon.maxHp){ const h=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.min(mon.maxHp,mon.hp+h); renderCombatants(); setMsg(`<b>${dispName(mon)}</b>은(는) 얼음몸으로 회복했다!`); Audio.sfx&&Audio.sfx("heal"); await mw(480); }
+  if(G.weather==="hail" && mon.hp>0 && mon.type!=="ice" && mon.type2!=="ice"){ const d=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.max(0,mon.hp-d); renderCombatants(); setMsg(`<b>${dispName(mon)}</b>이(가) 싸라기눈에 시달린다!`); Audio.sfx&&Audio.sfx("hit"); await mw(480); if(mon.hp<=0)return; }
+  if(mon._seeded && mon.hp>0){ const d=Math.max(1,Math.floor(mon.maxHp/8)); mon.hp=Math.max(0,mon.hp-d); const healer=(mon._seeded==="me")?activeMon():G.foe; if(healer&&healer.hp>0&&healer!==mon)healer.hp=Math.min(healer.maxHp,healer.hp+d); renderCombatants(); setMsg(`<b>${dispName(mon)}</b>의 체력이 씨앗에 빨렸다!`); Audio.sfx("blip"); await mw(560); if(mon.hp<=0)return; }
   if(mon.status==="psn"||mon.status==="brn"){
     // 맹독(_tox)은 본가처럼 매 턴 누적: maxHp*n/16, n은 1부터 늘어 15에서 멈춘다.
     // 일반 독은 고정 1/8, 화상은 1/16.
@@ -3478,20 +3484,20 @@ async function endTurnStatus(mon,side){ if(mon.hp<=0)return;
     if(_bad)mon._tox=Math.min(15,mon._tox+1);
     mon.hp=Math.max(0,mon.hp-dmg); const dS=spriteEl(side); dS.classList.add("hurt"); setTimeout(()=>dS.classList.remove("hurt"),400);
     renderCombatants(); dmgNumber(side,dmg,false);
-    setMsg(`<b>${mon.name}</b>은(는) ${_bad?"맹독":(mon.status==="psn"?"독":"화상")} 피해를 입었다!`); Audio.sfx("weakhit"); await mw(620); } }
+    setMsg(`<b>${dispName(mon)}</b>은(는) ${_bad?"맹독":(mon.status==="psn"?"독":"화상")} 피해를 입었다!`); Audio.sfx("weakhit"); await mw(620); } }
 
 /* ===================== CORE TURN ===================== */
 async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
   if(mvKey!=="struggle" && att.pp[mvKey]!=null) att.pp[mvKey]=Math.max(0,att.pp[mvKey]-1);
-  setMsg(`<b>${att.name}</b>의 ${move.name}!`); const aS=spriteEl(side); const _melee=move.power>0&&(move.type==="normal"||move.type==="flying"); if(!_melee)aS.style.setProperty("--castc",TYPE_COLOR[move.type]||"#fff"); const _wc=_melee?"lunge":"cast"; aS.classList.add(_wc); await wait(fxT(_melee?220:200)); aS.classList.remove(_wc);
+  setMsg(`<b>${dispName(att)}</b>의 ${move.name}!`); const aS=spriteEl(side); const _melee=move.power>0&&(move.type==="normal"||move.type==="flying"); if(!_melee)aS.style.setProperty("--castc",TYPE_COLOR[move.type]||"#fff"); const _wc=_melee?"lunge":"cast"; aS.classList.add(_wc); await wait(fxT(_melee?220:200)); aS.classList.remove(_wc);
   // 명중률 = 기술 명중 × 자신 명중랭크 ÷ 상대 회피랭크 (본가 공식)
   const _accS=(att.stages&&att.stages.acc)||0, _evaS=(def.stages&&def.stages.eva)||0;
   const _hit=move.acc*accMul(_accS)/accMul(_evaS);
-  if(_hit<100 && Math.random()*100>_hit){ setMsg(`<b>${att.name}</b>의 공격은 빗나갔다!`); Audio.sfx("miss"); await mw(600); return; }
+  if(_hit<100 && Math.random()*100>_hit){ setMsg(`<b>${dispName(att)}</b>의 공격은 빗나갔다!`); Audio.sfx("miss"); await mw(600); return; }
   if(move.power===0 && move.heal){ await moveFx(move,side,side,mvKey);
     const bf=att.hp; att.hp=Math.min(att.maxHp, att.hp+Math.floor(att.maxHp*move.heal)); renderCombatants();
     Audio.sfx("heal"); particles(side,"💚",6);
-    setMsg(att.hp>bf?`<b>${att.name}</b>의 체력이 회복되었다!`:`<b>${att.name}</b>의 체력은 가득 차 있다!`); await mw(620); return; }
+    setMsg(att.hp>bf?`<b>${dispName(att)}</b>의 체력이 회복되었다!`:`<b>${dispName(att)}</b>의 체력은 가득 차 있다!`); await mw(620); return; }
   if(move.power===0 && move.eff){
     await moveFx(move,side,side==="me"?"foe":"me",mvKey);
     if(move.eff.status){ if(Math.random()<(move.eff.chance||1)) applyStatus(def,move.eff.status,side==="me"?"foe":"me",move.eff.badly); else { setMsg("효과가 없었다…"); } }
@@ -3533,8 +3539,18 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
     att.hp=Math.max(0,att.hp-rc); _recoiled=true; renderCombatants();
     if(Audio.hpTick)Audio.hpTick(_rb/att.maxHp*100, att.hp/att.maxHp*100); }
   await mw(340);
-  if(move.multi&&hits>1)setMsg(`${hits}번 맞았다!`);
-  else if(r.crit)setMsg("급소에 맞았다! 🎯"); else if(r.eff>1)setMsg("효과가 굉장했다! 💥"); else if(r.eff<1)setMsg("효과가 별로인 듯하다…");
+  // ⚠️ 예전엔 else-if 사슬이라 (1) 급소가 나면 상성 문구가 통째로 묻혔고
+  //    (2) eff===0(무효)이 "효과가 별로"와 같은 문구로 나와 무효를 배울 수가 없었다.
+  //    본가처럼 무효는 전용 문구, 급소·다단히트는 상성 문구와 함께 보여준다.
+  {
+    const _p=[];
+    if(move.multi&&hits>1)_p.push(`${hits}번 맞았다!`);
+    if(r.crit)_p.push("급소에 맞았다! 🎯");
+    if(r.eff===0)_p.push("효과가 없는 것 같다…");
+    else if(r.eff>1)_p.push("효과가 굉장했다! 💥");
+    else if(r.eff<1)_p.push("효과가 별로인 듯하다…");
+    if(_p.length)setMsg(_p.join(" "));
+  }
   if(sturdied){ await mw(260); setMsg(`<b>${dispName(def)}</b>은(는) <b>옹골참</b>으로 한 방을 버텼다!`); Audio.sfx("blip"); }
   if(move.drain && total>0){ await mw(220); setMsg(`<b>${dispName(att)}</b>이(가) 체력을 흡수했다!`); }
   if(def.hp>0 && def.ability==="static" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"par",side); }
@@ -3546,21 +3562,21 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
     await mw(240); setMsg(`<b>${dispName(att)}</b>은(는) <b>까칠한피부</b>에 상처를 입었다!`); Audio.sfx("hit"); await mw(420); }
   if(def.hp>0 && move.eff && move.eff.status && Math.random()<(move.eff.chance||0)) applyStatus(def,move.eff.status,dSide);
   if(def.hp>0 && move.eff && move.eff.flinch && !def._acted && Math.random()<move.eff.flinch) def._flinch=true;
-  if(_recoiled)setMsg(`<b>${att.name}</b>도 반동 피해를 입었다!`);
+  if(_recoiled)setMsg(`<b>${dispName(att)}</b>도 반동 피해를 입었다!`);
   await mw(500); }
 
 function foeKeyResolved(){ let k=foeChooseMove(G.foe,activeMon()); if((G.foe.pp[k]||0)<=0 && k!=="struggle"){ k=noPP(G.foe)?"struggle":k; } return k; }
 function pickFirst(meKey,foeKey){ const me=activeMon(),foe=G.foe; const mp=MOVES[meKey].pri||0, fp=MOVES[foeKey].pri||0;
   if(mp!==fp)return mp>fp; const ms=effSpd(me),fs=effSpd(foe); return ms!==fs?ms>fs:Math.random()<0.5; }
 async function canAct(att,side){
-  if(att._flinch){ att._flinch=false; setMsg(`<b>${att.name}</b>은(는) 풀이 죽어 움직이지 못했다!`); Audio.sfx("status"); await mw(600); return false; }
-  if(att._confuse>0){ att._confuse--; if(att._confuse<=0){ setMsg(`<b>${att.name}</b>의 혼란이 풀렸다!`); await mw(500); } else { setMsg(`<b>${att.name}</b>은(는) 혼란에 빠져있다!`); await mw(560); if(Math.random()<0.33){ const s=confusionSelfHit(att); att.hp=Math.max(0,att.hp-s); renderCombatants(); if(Audio.hpTick)Audio.hpTick((att.hp+s)/att.maxHp*100, att.hp/att.maxHp*100); setMsg("영문도 모른 채 스스로를 공격했다!"); Audio.sfx("hit"); await mw(620); return false; } } }
+  if(att._flinch){ att._flinch=false; setMsg(`<b>${dispName(att)}</b>은(는) 풀이 죽어 움직이지 못했다!`); Audio.sfx("status"); await mw(600); return false; }
+  if(att._confuse>0){ att._confuse--; if(att._confuse<=0){ setMsg(`<b>${dispName(att)}</b>의 혼란이 풀렸다!`); await mw(500); } else { setMsg(`<b>${dispName(att)}</b>은(는) 혼란에 빠져있다!`); await mw(560); if(Math.random()<0.33){ const s=confusionSelfHit(att); att.hp=Math.max(0,att.hp-s); renderCombatants(); if(Audio.hpTick)Audio.hpTick((att.hp+s)/att.maxHp*100, att.hp/att.maxHp*100); setMsg("영문도 모른 채 스스로를 공격했다!"); Audio.sfx("hit"); await mw(620); return false; } } }
   if(att.status==="slp"){ att._slp=(att._slp||1)-1;
-    if(att._slp>0){ setMsg(`<b>${att.name}</b>은(는) 새근새근 잠들어 있다…`); Audio.sfx("status"); await mw(620); return false; }
-    att.status=null; renderStages(); setMsg(`<b>${att.name}</b>은(는) 잠에서 깨어났다!`); await mw(560); }
-  if(att.status==="frz"){ if(Math.random()<0.2){ att.status=null; renderStages(); setMsg(`<b>${att.name}</b>의 얼음이 녹았다!`); await mw(560); }
-    else { setMsg(`<b>${att.name}</b>은(는) 꽁꽁 얼어 움직일 수 없다!`); Audio.sfx("status"); await mw(620); return false; } }
-  if(att.status==="par" && Math.random()<0.25){ setMsg(`<b>${att.name}</b>은(는) 몸이 저려 움직일 수 없다!`); Audio.sfx("status"); await mw(620); return false; }
+    if(att._slp>0){ setMsg(`<b>${dispName(att)}</b>은(는) 새근새근 잠들어 있다…`); Audio.sfx("status"); await mw(620); return false; }
+    att.status=null; renderStages(); setMsg(`<b>${dispName(att)}</b>은(는) 잠에서 깨어났다!`); await mw(560); }
+  if(att.status==="frz"){ if(Math.random()<0.2){ att.status=null; renderStages(); setMsg(`<b>${dispName(att)}</b>의 얼음이 녹았다!`); await mw(560); }
+    else { setMsg(`<b>${dispName(att)}</b>은(는) 꽁꽁 얼어 움직일 수 없다!`); Audio.sfx("status"); await mw(620); return false; } }
+  if(att.status==="par" && Math.random()<0.25){ setMsg(`<b>${dispName(att)}</b>은(는) 몸이 저려 움직일 수 없다!`); Audio.sfx("status"); await mw(620); return false; }
   return true; }
 
 /* ==================== MOVE EXPERT (relearn / forget) ==================== */
@@ -3681,7 +3697,16 @@ async function dbResolve(){ DB.phase="resolve"; $("dbMenu").innerHTML=`<div clas
   }
   await dbAfterRound();
 }
-function dbStatus(m,st){ if(!m||m.status||m.hp<=0)return; m.status=st; if(st==="slp")m._slp=ri(1,3); dbLog(`<b>${dbName(m)}</b>은(는) ${STATUS_KO[st]||"상태이상"}에 걸렸다!`); }
+// 듀오 배틀도 메인 전투와 **같은 면역 규칙**을 쓴다.
+// ⚠️ 예전엔 여기 자체 사본이라 면역 판정이 통째로 빠져 있었고(독 타입이 중독됐다),
+//    _tox도 안 건드려 치료 후 남은 스테일 카운터로 보통 독이 맹독처럼 아팠다.
+function dbStatus(m,st,badly){
+  const why=statusBlockReason(m,st);
+  if(why==="already"||why==="dead")return;
+  if(why==="ability"){ dbLog(`<b>${dbName(m)}</b>은(는) <b>${ABILITY_KO[m.ability]||m.ability}</b> 덕분에 아무렇지 않다!`); return; }
+  if(why==="type"){ dbLog(`<b>${dbName(m)}</b>은(는) <b>${TYPE_KO[STATUS_TYPE_IMMUNE[st]]}</b> 타입이라 아무렇지 않다!`); return; }
+  setStatusFields(m,st,badly);
+  dbLog(`<b>${dbName(m)}</b>은(는) ${badly&&st==="psn"?"맹독":(STATUS_KO[st]||"상태이상")}에 걸렸다!`); }
 function dbCardEl(mon){ if(!DB)return null; let i=DB.foes.indexOf(mon); if(i>=0)return document.querySelector(`#dbFoes .dbmon[data-slot="${i}"]`);
   i=DB.allies.indexOf(mon); if(i>=0)return document.querySelector(`#dbAllies .dbmon[data-slot="${i}"]`); return null; }
 function dbHitFx(mon,eff){ Audio.sfx&&Audio.sfx((eff>1)?"superhit":(eff>0&&eff<1)?"weakhit":"hit"); if(CONFIG.reduceMotion)return;
@@ -3694,10 +3719,10 @@ async function dbExec(att,def,key,side){ const mv=MOVES[key]; if(!mv)return;
     dmg=Math.min(dmg,def.hp); const _pp=def.hp/def.maxHp*100; def.hp=Math.max(0,def.hp-dmg);
     dbLog(`→ <b>${dbName(def)}</b>에게 ${dmg} 데미지${r.eff>1?" · 효과가 굉장했다!":r.eff<1?" · 효과가 별로…":""}`);
     dbRender(); dbHitFx(def,r.eff); if(Audio.hpTick)Audio.hpTick(_pp,def.hp/def.maxHp*100);   // 피격: 카드 흔들림+플래시+타격음+HP틱
-    if(def.hp>0 && mv.eff && mv.eff.status && Math.random()<(mv.eff.chance||0.3)) dbStatus(def,mv.eff.status);
+    if(def.hp>0 && mv.eff && mv.eff.status && Math.random()<(mv.eff.chance||0.3)) dbStatus(def,mv.eff.status,mv.eff.badly);
     await wait(fxT(420));
   } else if(mv.heal){ const h=Math.floor(att.maxHp*mv.heal); att.hp=Math.min(att.maxHp,att.hp+h); dbLog(`${dbName(att)}의 체력이 회복됐다!`); await wait(fxT(360)); }
-  else if(mv.eff && mv.eff.status){ dbStatus(def,mv.eff.status); await wait(fxT(360)); }
+  else if(mv.eff && mv.eff.status){ dbStatus(def,mv.eff.status,mv.eff.badly); await wait(fxT(360)); }
   else if(mv.eff && mv.eff.stat){ const self=mv.eff.target==="self"; const tg=self?att:def; tg.stages=tg.stages||newStages(); if(mv.eff.stat in tg.stages){ tg.stages[mv.eff.stat]=clamp((tg.stages[mv.eff.stat]||0)+mv.eff.stage,-6,6); } dbLog(`${dbName(tg)}의 ${STAGE_KO[mv.eff.stat]||mv.eff.stat}이(가) ${mv.eff.stage>0?"올랐다":"떨어졌다"}!`); await wait(fxT(360)); }
   else { dbLog("하지만 아무 일도 없었다…"); await wait(fxT(320)); }
 }
@@ -3906,7 +3931,7 @@ async function applyEvolution(m,to,animate){
   m.id=to.id; m.name=to.name; m.em=to.em; m.type=to.type; m.type2=to.type2||null; if(Audio.cry)Audio.cry(m.id,m.type);
   if(to.learn)to.learn.forEach(([lv,mv])=>{if(m.level>=lv)addMove(m,mv);}); recalc(m,to,false); m.hp=m.maxHp;
   G.caught.add(to.id); G.seen.add(to.id); updateDexPill(); checkDexRewards();
-  await evolveAnimate("me",m); renderCombatants(); setMsg(`축하해! <b>${oldName}</b>은(는) <b>${m.name}</b>(으)로 진화했다!`); await mw(1100);
+  await evolveAnimate("me",m); renderCombatants(); setMsg(`축하해! <b>${oldName}</b>은(는) <b>${dispName(m)}</b>(으)로 진화했다!`); await mw(1100);
   return true; }
 async function evolveCheck(m,animate){ const sp=byId(m.id);
   if(sp.evolveBranch){ for(const b of sp.evolveBranch){ if(evoCondMet(m,b)){ const to=byId(b.to); if(to)return await applyEvolution(m,to,animate); } } return false; }
@@ -3964,7 +3989,7 @@ async function gainXpFor(m,gain,isLead){ const add=Math.floor(gain*(isLead?1:0.4
       const sp=byId(m.id); const _pre={hp:m.maxHp,atk:m.atk,def:m.def,spa:m.spa,spDef:m.spDef,spd:m.spd};
       m.xp=0; m.level++; recalc(m,sp); m.hp=m.maxHp; leveled=true; m.friendship=(m.friendship||0)+5; setExpBar0();   // 바 0 리셋
       if(sp.learn){ for(const [lv,mv] of sp.learn){ if(lv===m.level) await learnMoveFlow(m,mv,true); } }
-      triggerLevelup(m.level); Audio.sfx("levelup"); setMsg(`<b>${m.name}</b>이(가) Lv ${m.level}(으)로 성장했다!`); renderCombatants(); setExpBar0();
+      triggerLevelup(m.level); Audio.sfx("levelup"); setMsg(`<b>${dispName(m)}</b>이(가) Lv ${m.level}(으)로 성장했다!`); renderCombatants(); setExpBar0();
       await mw(900);
       const _g=[["HP",m.maxHp-_pre.hp],["공격",m.atk-_pre.atk],["방어",m.def-_pre.def],["특공",m.spa-_pre.spa],["특방",m.spDef-_pre.spDef],["속도",m.spd-_pre.spd]];
       setMsg("📈 "+_g.map(([n,v])=>`${n} +${v}`).join(" · ")); Audio.sfx("blip"); await mw(1100);
@@ -4530,7 +4555,7 @@ function applyItemEffect(it){ const m=activeMon();
   if(it.use==="revive"){ const f=firstFainted(); if(!f){flashHint("쓰러진 정령이 없다");return false;} G.items[it.key]--; recalc(f); f.hp=Math.floor(f.maxHp/2); f.status=null; Audio.sfx("levelup"); flashHint(f.name+"이(가) 되살아났다!"); return true; }
   if(it.use==="stage"){ if(!G.inBattle)return false; if((m.stages[it.stat]||0)>=6){flashHint("더 오르지 않는다");return false;} G.items[it.key]--; applyStage(m,it.stat,1,"me"); return true; }
   if(it.use==="repel"){ G.items[it.key]--; G.repel=60; Audio.sfx("blip"); flashHint("🧴 퇴치 스프레이! 60걸음 동안 약한 정령이 피해간다"); return true; }
-  if(it.use==="candy"){ if(m.level>=60){flashHint(m.name+"은(는) 이미 최고 레벨");return false;} G.items[it.key]--; m.level++; recalc(m); m.hp=m.maxHp; Audio.sfx("levelup"); flashHint(`🍬 ${m.name}이(가) Lv ${m.level}(으)로!`);
+  if(it.use==="candy"){ if(m.level>=60){flashHint(m.name+"은(는) 이미 최고 레벨");return false;} G.items[it.key]--; m.level++; recalc(m); m.hp=m.maxHp; Audio.sfx("levelup"); flashHint(`🍬 ${dispName(m)}이(가) Lv ${m.level}(으)로!`);
     if(typeof evolveCheck==="function")evolveCheck(m,false);   // 레벨 진화 조건 충족 시 진화 장면(포켓몬 레어캔디처럼)
     return true; }
   if(it.use==="evostone"){ const sp=byId(m.id);
@@ -4558,7 +4583,7 @@ const SHOP=[
   {key:"ether",em:"💠",nm:"기력의 물방울",ds:"기술 PP +10",price:320,need:1},
   {key:"elixir",em:"🫙",nm:"만능 물방울",ds:"전 기술 PP 완전 회복",price:1200,need:2},
   {key:"revive",em:"⭐",nm:"부활약",ds:"절반 회복 부활",price:700,need:1},
-  {key:"repel",em:"🧴",nm:"퇴치 스프레이",ds:"60걸음 조우 차단",price:200},
+  {key:"repel",em:"🧴",nm:"퇴치 스프레이",ds:"60걸음 동안 약한 정령 차단",price:200},
   {key:"candy",em:"🍬",nm:"정령 사탕",ds:"선두 Lv +1",price:900,need:3},
   {key:"firestone",em:"🔥",nm:"불꽃돌",ds:"특정 정령을 진화시킨다",price:800,need:2},
   {key:"waterstone",em:"💧",nm:"물돌",ds:"특정 정령을 진화시킨다",price:800,need:2},
@@ -4689,7 +4714,7 @@ function pcAction(a,i){ Audio.sfx("blip");
   if(a==="dep"){ if(G.party.length<=1)return; const m=G.party.splice(i,1)[0]; G.box.push(m);
     if(G.active>=G.party.length)G.active=0; flashHint(m.name+"을(를) 보관함에 넣었다"); }
   else if(a==="with"){ if(G.party.length>=6){toast("파티가 가득 찼어");return;} const m=G.box.splice(i,1)[0]; G.party.push(m); flashHint(m.name+"을(를) 파티에 넣었다"); }
-  else if(a==="rel"){ const m=G.box[i]; if(!confirm(`${m.name}을(를) 방생할까? 되돌릴 수 없어.`))return; G.box.splice(i,1); flashHint(m.name+"을(를) 풀어주었다"); }
+  else if(a==="rel"){ const m=G.box[i]; if(!confirm(`${dispName(m)}을(를) 방생할까? 되돌릴 수 없어.`))return; G.box.splice(i,1); flashHint(m.name+"을(를) 풀어주었다"); }
   setPcTab(); renderPC(); updateDexPill(); saveGame(); }
 
 function ivTotal(m){ if(!m.ivs)return 0; return (m.ivs.hp||0)+(m.ivs.atk||0)+(m.ivs.def||0)+(m.ivs.spa||0)+(m.ivs.spDef||0)+(m.ivs.spd||0); }
@@ -4930,7 +4955,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)

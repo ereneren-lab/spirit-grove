@@ -53,3 +53,25 @@ function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&d
   let scrMul=1; if(typeof G!=="undefined"&&G&&G.screens){ const _ds=(def===G.foe)?"foe":"me"; const _sc=G.screens[_ds]; if(_sc){ if(isSpec&&_sc.light>0)scrMul=0.5; else if(!isSpec&&_sc.reflect>0)scrMul=0.5; } }
   let dmg=Math.floor((lvf*move.power*((A*aMul)/(D*dMul)))/9+2);
   dmg=Math.floor(dmg*eff*stab*crit*abil*wMul*scrMul*rand(0.85,1.0)); return {dmg:Math.max(1,dmg),eff,crit:crit>1}; }
+
+/* ===== 상태 부여 규칙 (단일 출처) =====
+   ⚠️ 메인 전투(applyStatus) · 듀오 배틀(dbStatus) · 밸런스 시뮬(battle_sim.js)이 **전부** 이걸 쓴다.
+   예전엔 듀오 배틀이 자체 사본을 갖고 있어서 면역 판정이 통째로 빠져 있었다
+   (독 타입이 중독되고, 맹독 카운터도 안 건드려 스테일 _tox로 보통 독이 맹독처럼 아팠다).
+   면역 사유를 문자열로 돌려주므로 호출부가 각자 맞는 메시지를 낼 수 있다. */
+function statusBlockReason(mon, st){
+  if(!mon || mon.hp<=0) return "dead";
+  if(mon.status) return "already";
+  const ab={insomnia:"slp", immunity:"psn", waterveil:"brn"}[mon.ability];
+  if(ab && ab===st) return "ability";
+  const ty=STATUS_TYPE_IMMUNE[st];
+  if(ty && (mon.type===ty || mon.type2===ty)) return "type";
+  return null;
+}
+// 실제 필드 기록. ⚠️ psn을 걸 때마다 _tox를 다시 쓴다 — 치료 후 남은 옛 카운터가
+// 새로 걸린 '보통 독'을 맹독으로 만들어버리기 때문.
+function setStatusFields(mon, st, badly){
+  mon.status=st;
+  if(st==="slp") mon._slp=ri(1,3);
+  if(st==="psn") mon._tox=badly?1:0;
+}
