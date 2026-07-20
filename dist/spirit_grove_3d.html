@@ -3053,7 +3053,98 @@ function fxSlash(side){ const c=fxCenter(side); const s=document.createElement("
 /* ===== 기술별 시그니처 연출 ===== */
 function _fly(g,from,to,col,dur,sc){ const e=fxGlyph(g,from,col,"fx-proj"); e.animate([{left:from.x+"px",top:from.y+"px",transform:"translate(-50%,-50%) scale(.5)",opacity:.35},{left:to.x+"px",top:to.y+"px",transform:"translate(-50%,-50%) scale("+(sc||1)+")",opacity:1}],{duration:fxT(dur),easing:"ease-in",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); return e; }
 function _pop(g,at,col,dx,dy,dur){ const e=fxGlyph(g,at,col,"fx-particle"); e.animate([{transform:"translate(-50%,-50%) translate(0,0) scale(.4)",opacity:1},{transform:"translate(-50%,-50%) translate("+(dx||0)+"px,"+(dy||-40)+"px) scale(1.2)",opacity:0}],{duration:fxT(dur||rand(520,780)),easing:"ease-out",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); return e; }
+// 흡수계 공용: 상대에게서 나에게로 초록 실이 빨려온다. n=가닥 수, sz=굵기감.
+async function _drainFx(s,d,n,sz){ const from=fxCenter(d),to=fxCenter(s);
+  for(let i=0;i<n;i++){ const g=fxGlyph("🌿",{x:from.x+rand(-22,22),y:from.y+rand(-20,20)},TYPE_COLOR.grass,"fx-proj");
+    g.style.fontSize=sz+"px";
+    g.animate([{left:g.style.left,top:g.style.top,opacity:0},{opacity:1,offset:.25},{left:to.x+"px",top:to.y+"px",opacity:0}],
+              {duration:fxT(420),easing:"ease-in"}).finished.then(()=>g.remove()).catch(()=>g.remove());
+    await wait(fxT(34)); }
+  fxBurst(d,"grass",n>=8?3:2); _pop("💚",fxCenter(s),"#7fd1ae",0,-30,fxT(520)); await wait(fxT(160)); }
 const SIGFX={
+  // ── 노말 근접: 내려찍기(위에서 찍음) / 박치기(머리 충돌+별) / 날쌘일격(짧은 잽) / 물기(이빨 자국) / 발버둥(자기도 아픔)
+  slam: async(s,d)=>{ const aS=spriteEl(s), c=fxCenter(d);
+    aS.animate([{transform:"translateY(0)"},{transform:"translateY(-22px)"},{transform:"translateY(6px)"}],{duration:fxT(280),easing:"ease-in"});
+    await wait(fxT(280)); fxSlash(d);
+    for(let i=0;i<4;i++)_pop("💢",{x:c.x+rand(-24,24),y:c.y+18},"#e8788a",rand(-20,20),rand(-10,16),rand(300,440));
+    fxBurst(d,"normal",2); impactFlash(); screenShake(false); await wait(fxT(90)); },
+  headbutt: async(s,d)=>{ const aS=spriteEl(s); aS.classList.add("lunge"); await wait(fxT(200)); aS.classList.remove("lunge");
+    const c=fxCenter(d); impactFlash(); screenShake(true);
+    for(let i=0;i<6;i++){ const a=i/6*6.28; _pop("💫",c,"#e8c85d",Math.cos(a)*40,Math.sin(a)*40-10,rand(420,600)); }
+    fxBurst(d,"normal",2); await wait(fxT(100)); },
+  quickjab: async(s,d)=>{ const aS=spriteEl(s);
+    for(let i=0;i<2;i++){ aS.classList.add("lunge"); await wait(fxT(80)); aS.classList.remove("lunge"); fxSlash(d); await wait(fxT(40)); }
+    fxBurst(d,"normal",1); await wait(fxT(50)); },
+  bite: async(s,d)=>{ const c=fxCenter(d); const aS=spriteEl(s); aS.classList.add("lunge"); await wait(fxT(150)); aS.classList.remove("lunge");
+    for(const dir of [-1,1]){ const g=fxGlyph("🦷",{x:c.x+dir*26,y:c.y},"#fff6e0","fx-particle"); g.style.fontSize="20px";
+      g.animate([{transform:`translate(-50%,-50%) translateX(${dir*16}px)`,opacity:1},{transform:"translate(-50%,-50%) translateX(0)",opacity:0}],{duration:fxT(320)}).finished.then(()=>g.remove()).catch(()=>g.remove()); }
+    fxSlash(d); fxBurst(d,"normal",2); impactFlash(); await wait(fxT(100)); },
+  struggle: async(s,d)=>{ const aS=spriteEl(s); aS.classList.add("lunge"); await wait(fxT(170)); aS.classList.remove("lunge");
+    fxSlash(d); fxBurst(d,"normal",1);
+    const c=fxCenter(s); for(let i=0;i<5;i++)_pop("💢",c,"#e8788a",rand(-24,24),rand(-30,4),rand(320,460));
+    screenShake(false); await wait(fxT(110)); },
+  // ── 물: 물대포(한 줄기) / 아쿠아제트(물 두르고 돌진)
+  splash: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<7;i++){ const t=i/6; const g=fxGlyph("💧",{x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t},TYPE_COLOR.water,"fx-particle"); g.style.fontSize=(15+t*11)+"px";
+      g.animate([{opacity:1},{opacity:0}],{duration:fxT(360)}).finished.then(()=>g.remove()).catch(()=>g.remove()); await wait(fxT(26)); }
+    fxBurst(d,"water",2); await wait(fxT(80)); },
+  aquajet: async(s,d)=>{ const aS=spriteEl(s), from=fxCenter(s), to=fxCenter(d);
+    aS.style.filter=`drop-shadow(0 0 14px ${TYPE_COLOR.water})`;
+    for(let i=0;i<4;i++)_pop("💧",from,TYPE_COLOR.water,rand(-24,24),rand(-24,8),rand(260,400));
+    aS.classList.add("lunge"); await wait(fxT(140)); aS.classList.remove("lunge");
+    for(let i=0;i<7;i++){ const a=i/7*6.28; _pop("💧",to,TYPE_COLOR.water,Math.cos(a)*38,Math.sin(a)*38,rand(340,480)); }
+    setTimeout(()=>{aS.style.filter="";},fxT(420));
+    fxBurst(d,"water",1); await wait(fxT(70)); },
+  // ── 풀 흡수계: 초록 실이 상대에게서 나에게로 빨려온다(위력에 따라 굵기/개수)
+  absorb:    async(s,d)=>{ await _drainFx(s,d,4,20); },
+  megadrain: async(s,d)=>{ await _drainFx(s,d,6,24); },
+  gigadrain: async(s,d)=>{ await _drainFx(s,d,9,28); },
+  // ── 전기: 번개(지그재그 한 방) / 와일드볼트(감전 돌진, 자기도 튐)
+  bolt: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<6;i++){ const t=i/5; const g=fxGlyph("⚡",{x:from.x+(to.x-from.x)*t+(i%2?14:-14),y:from.y+(to.y-from.y)*t},TYPE_COLOR.elec,"fx-particle");
+      g.animate([{opacity:1,transform:"translate(-50%,-50%) scale(.8)"},{opacity:0,transform:"translate(-50%,-50%) scale(1.2)"}],{duration:fxT(300)}).finished.then(()=>g.remove()).catch(()=>g.remove()); await wait(fxT(24)); }
+    fxBurst(d,"elec",2); impactFlash(); await wait(fxT(90)); },
+  wildbolt: async(s,d)=>{ const aS=spriteEl(s), from=fxCenter(s), to=fxCenter(d);
+    aS.style.filter=`drop-shadow(0 0 18px ${TYPE_COLOR.elec}) brightness(1.25)`;
+    aS.classList.add("lunge"); await wait(fxT(200)); aS.classList.remove("lunge");
+    for(let i=0;i<10;i++){ const a=i/10*6.28; _pop("⚡",to,TYPE_COLOR.elec,Math.cos(a)*50,Math.sin(a)*50,rand(400,580)); }
+    for(let i=0;i<4;i++)_pop("⚡",from,TYPE_COLOR.elec,rand(-26,26),rand(-26,6),rand(300,440));   // 반동
+    setTimeout(()=>{aS.style.filter="";},fxT(520));
+    fxBurst(d,"elec",3); impactFlash(); screenShake(true); await wait(fxT(120)); },
+  // ── 비행: 날개치기(호를 그리며 스쳐감)
+  wingatk: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<2;i++){ const w=_fly("🪶",{x:from.x,y:from.y-10},{x:to.x,y:to.y+(i?18:-18)},TYPE_COLOR.flying,fxT(210),1.3); w.style.fontSize="26px"; await wait(fxT(90)); fxSlash(d); }
+    fxBurst(d,"flying",2); await wait(fxT(80)); },
+  // ── 바위: 던지기(포물선 한 발) / 돌팔매연타(작은 돌 연사) / 크로스촙(교차 베기) / 아이언헤드(강철 박치기)
+  rockthrow: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const g=_fly("🪨",from,to,TYPE_COLOR.rock,fxT(280),1.4); g.style.fontSize="30px";
+    await wait(fxT(280)); fxBurst(d,"rock",2); impactFlash(); screenShake(false); await wait(fxT(90)); },
+  rockblast: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<4;i++){ const g=_fly("🪨",{x:from.x+rand(-10,10),y:from.y+rand(-10,10)},{x:to.x+rand(-22,22),y:to.y+rand(-18,18)},TYPE_COLOR.rock,fxT(150),0.85); g.style.fontSize="18px"; await wait(fxT(58)); }
+    fxBurst(d,"rock",2); await wait(fxT(80)); },
+  crosschop: async(s,d)=>{ const c=fxCenter(d);
+    for(const rot of [-38,38]){ const b=document.createElement("div"); b.className="fx-glyph";
+      b.style.cssText=`left:${c.x}px;top:${c.y}px;width:92px;height:7px;border-radius:4px;background:linear-gradient(90deg,transparent,#fff6e0,transparent);box-shadow:0 0 12px ${TYPE_COLOR.rock};transform:translate(-50%,-50%) rotate(${rot}deg)`;
+      $("battleField").appendChild(b);
+      b.animate([{opacity:0,transform:`translate(-50%,-50%) rotate(${rot}deg) scaleX(.2)`},{opacity:1,transform:`translate(-50%,-50%) rotate(${rot}deg) scaleX(1)`},{opacity:0,transform:`translate(-50%,-50%) rotate(${rot}deg) scaleX(1.1)`}],{duration:fxT(420)}).finished.then(()=>b.remove()).catch(()=>b.remove());
+      await wait(fxT(120)); }
+    fxBurst(d,"rock",3); impactFlash(); screenShake(true); await wait(fxT(110)); },
+  ironhead: async(s,d)=>{ const aS=spriteEl(s); aS.style.filter="brightness(1.4) saturate(.4) drop-shadow(0 0 12px #cfd8e0)";
+    aS.classList.add("lunge"); await wait(fxT(210)); aS.classList.remove("lunge");
+    const c=fxCenter(d); impactFlash(); screenShake(true);
+    for(let i=0;i<5;i++)_pop("✨",c,"#e8f0f8",rand(-40,40),rand(-34,10),rand(360,520));
+    setTimeout(()=>{aS.style.filter="";},fxT(480));
+    fxBurst(d,"rock",3); await wait(fxT(100)); },
+  // ── 얼음: 얼음바람(속도를 깎는 찬바람 — 파랗게 식힌다)
+  icywind: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<9;i++){ const y=c.y+rand(-34,34); const g=fxGlyph("❄️",{x:c.x-100,y},TYPE_COLOR.ice,"fx-proj"); g.style.fontSize="16px";
+      g.animate([{left:(c.x-100)+"px",opacity:0},{left:c.x+"px",opacity:1},{left:(c.x+100)+"px",opacity:0}],{duration:fxT(400),easing:"linear"}).finished.then(()=>g.remove()).catch(()=>g.remove()); await wait(fxT(30)); }
+    const tg=spriteEl(d); tg.style.filter=`drop-shadow(0 0 9px ${TYPE_COLOR.ice}) saturate(.6)`; setTimeout(()=>{tg.style.filter="";},fxT(560));
+    fxBurst(d,"ice",1); await wait(fxT(90)); },
+  // ── 땅: 두번차기(두 번 걷어참)
+  doublekick: async(s,d)=>{ const aS=spriteEl(s), c=fxCenter(d);
+    for(let i=0;i<2;i++){ aS.classList.add("lunge"); await wait(fxT(130)); aS.classList.remove("lunge");
+      fxSlash(d); _pop("💥",{x:c.x+rand(-18,18),y:c.y+rand(0,20)},TYPE_COLOR.ground,rand(-16,16),rand(-30,-8),rand(300,420)); await wait(fxT(70)); }
+    fxBurst(d,"ground",2); await wait(fxT(70)); },
   // ── 불: 세례(작은 불티) / 방사(화염 줄기) / 인페르노(소용돌이) / 플레어드라이브(몸통 돌진)
   ember: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
     for(let i=0;i<5;i++){ const g=_fly("🔥",{x:from.x+rand(-10,10),y:from.y+rand(-10,10)},{x:to.x+rand(-20,20),y:to.y+rand(-16,16)},TYPE_COLOR.fire,fxT(180),0.9); g.style.fontSize="19px"; await wait(fxT(38)); }
@@ -4687,7 +4778,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)

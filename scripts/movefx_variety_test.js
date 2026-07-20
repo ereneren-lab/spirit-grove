@@ -38,10 +38,18 @@ const { chromium } = require("playwright"); const path=require("path");
       })));
       obs.observe(field,{childList:true,subtree:true});
       G.busy=false; G.foe.hp=99999; me.pp[mv]=20;
+      // ⚠️ 빗나가면 연출 자체가 실행되지 않는다(씨뿌리기·전기자극은 명중 90).
+      //    연출 관측이 명중 난수에 휘둘리지 않도록 이 프로브 동안만 100으로 고정한다.
+      const _acc=S.MOVES[mv].acc; S.MOVES[mv].acc=100;
       await F.doMove(mv);
+      S.MOVES[mv].acc=_acc;
       await new Promise(r=>setTimeout(r,260));
       obs.disconnect();
       out[mv]=[...new Set(marks)].sort().join("|");
+      // ⚠️ 앞 턴의 비동기 꼬리(잔뎀·날씨·연출)가 남아 있으면 다음 기술의 관측을 오염시킨다.
+      //    G.busy가 풀리고 잔여 타이머가 정리될 때까지 기다린 뒤 다음으로 넘어간다.
+      for(let w=0; w<30 && S.G().busy; w++) await new Promise(r=>setTimeout(r,60));
+      await new Promise(r=>setTimeout(r,320));
     }
     return out;
   }, moves);
@@ -62,6 +70,30 @@ const { chromium } = require("playwright"); const path=require("path");
 
   const status=await probe(["reflect","sandstorm","leechseed","stealthrock","swordsdance","thunderwave","recover","confuse"]);
   const attack=await probe(["ember","flare","inferno","flareblitz","thunder","spark","gust","peck"]);
+
+  // 전 기술 전수 연출 — 런타임 에러 0 + "undefined" 글리프 0
+  // 턴 전체(doMove)를 돌면 대사 대기 때문에 84종에 수 분이 걸린다. 연출 함수만 직접 부른다.
+  const sweep=await p.evaluate(async()=>{
+    const S=window.SG, F=S.flow;
+    S.setG(S.freshState()); S.CONFIG.reduceMotion=false; S.CONFIG.textSpeed=0.35;
+    const G=S.G();
+    G.party=[S.makeMon("racoonmon",40)]; G.active=0; G.foe=S.makeMon("shellow",40);
+    G.inBattle=true; G.wild=true; F.setupBattleUI();
+    await new Promise(r=>setTimeout(r,120));
+    const field=document.getElementById("battleField");
+    const keys=Object.keys(S.MOVES); const bad=[], undef=[];
+    for(const k of keys){
+      const mv=S.MOVES[k]; const seen=[];
+      const obs=new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{
+        const t=(n.textContent||"").trim(); if(t)seen.push(t); })));
+      obs.observe(field,{childList:true,subtree:true});
+      try{ await F.moveFx(mv,"me","foe",k); }
+      catch(e){ bad.push(k+": "+e.message); }
+      obs.disconnect();
+      if(seen.some(t=>t.indexOf("undefined")>=0))undef.push(k);
+    }
+    return { ran:keys.length, bad, undef };
+  });
 
   const counts=await p.evaluate(()=>{
     const S=window.SG; const sig=new Set(Object.keys(S.SIGFX||{}));
@@ -88,7 +120,9 @@ const { chromium } = require("playwright"); const path=require("path");
      "불 기술 4종이 전부 다른 연출");
   ok(attack.thunder.indexOf("bolt")>=0, `천둥강타=낙뢰 기둥 (${attack.thunder})`);
   ok(counts.sigTotal>=30, `SIGFX ${counts.sigTotal}종 (최초 10종)`);
-  ok(counts.atkSig/counts.atkAll>=0.6, `공격기 전용 연출 비율 ${counts.atkSig}/${counts.atkAll}`);
+  ok(counts.atkSig===counts.atkAll, `공격기 전원 전용 연출 (${counts.atkSig}/${counts.atkAll})`);
+  ok(sweep.bad.length===0, `전 기술 ${sweep.ran}종 발동 시 예외 0 (${sweep.bad.slice(0,3).join(" / ")||"없음"})`);
+  ok(sweep.undef.length===0, `전 기술 발동 시 "undefined" 글리프 0 (${sweep.undef.slice(0,5).join(",")||"없음"})`);
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 기술 연출 다양화 통과");
   await b.close(); process.exit(process.exitCode||0);
