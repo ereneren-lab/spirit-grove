@@ -1346,6 +1346,8 @@ const NPCS=[
   {id:"t19",x:18,y:43,em:"💧",name:"물놀이 소년 하리",battleKey:"T19",spr:{outfit:"#5aa0c0",accent:"#3a7a9a",skin:"#e8c39a",hair:"#3a4a5a",hat:"none",boots:"#3a5a6a"},lines:["물놀이 소년 하리: 물 정령은 시원해! 붙어보자!"],linesAfter:["물놀이 소년 하리: 헉, 실력이 대단해!"]},
   {id:"t20",x:18,y:37,em:"🌷",name:"꽃밭 소녀 채원",battleKey:"T20",spr:{outfit:"#e0709a",accent:"#c04a7a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["꽃밭 소녀 채원: 예쁜 정령이 강하기도 하다구!"],linesAfter:["꽃밭 소녀 채원: 졌지만 즐거웠어!"]},
   {id:"t21",x:15,y:31,em:"🏹",name:"숲의 사냥꾼 강",battleKey:"T21",spr:{outfit:"#5a6a3a",accent:"#3a4a22",skin:"#e3b07e",hair:"#2a2416",hat:"cap",hatc:"#4a5a2a",boots:"#2a3a1a"},lines:["숲의 사냥꾼 강: 이 숲의 규칙은 강함이다."],linesAfter:["숲의 사냥꾼 강: …네가 더 강했다."]},
+  {id:"altar_pilgrim",x:6,y:10,em:"🧎",name:"제단의 순례자",spr:{outfit:"#6a5a7a",accent:"#a898c0",skin:"#e0bd96",hair:"#3a3446",hat:"none",boots:"#4a4258"},lines:["제단의 순례자: 여기까지 왔군요… 군주는 홀로 그림자를 막아내고 있습니다.","제단의 순례자: 인장 조각을 모두 모았다면, 리그로 가세요. 챔피언만이 군주를 도울 수 있습니다."]},
+  {id:"altar_watcher",x:20,y:11,em:"🔭",name:"제단 감시인",spr:{outfit:"#4a5a6a",accent:"#8a9aaa",skin:"#e8c39a",hair:"#2a3440",hat:"cap",hatc:"#3a4a5a",boots:"#2a3440"},lines:["제단 감시인: 밤이 길어졌어. 인장의 빛이 약해진 탓이지.","제단 감시인: 이 근방엔 아직 아무도 줍지 않은 물건이 남아 있을 거야. 잘 둘러봐."]},
   {id:"daycare",x:13,y:47,em:"🏡",name:"육아방 관리인",daycare:true,spr:{outfit:"#8a6a4a",accent:"#c0a070",skin:"#e3b07e",hair:"#5a4a3a",hat:"none",boots:"#5a4636"},lines:["육아방 관리인: 정령을 맡겨보시겠어요?"]},
   {id:"movexpert",x:9,y:47,em:"📖",name:"기술 전문가",moveExpert:true,spr:{outfit:"#5a5a8a",accent:"#a0a0d0",skin:"#e3b07e",hair:"#3a3a5a",hat:"none",boots:"#3a3a5a"},lines:["기술 전문가: 잊은 기술을 되살리거나, 필요 없는 기술을 지워드립니다."]},
 ];
@@ -1375,6 +1377,23 @@ function npcRoamTick(){
 setInterval(npcRoamTick, 820);
 setInterval(()=>{ try{ if(typeof G!=="undefined"&&G&&document.getElementById("map")&&document.getElementById("map").classList.contains("active")&&!G.inBattle)G.playSec=(G.playSec||0)+1; }catch(e){} }, 1000);
 ["t1","t2","t3","t4","t5","t6","t7","t8","t9","t10","t11","t12","t13","t14","t15","t16","t17","t18","t19","t20","t21"].forEach(id=>{ const n=NPCS.find(z=>z.id===id); if(n){ n.dir="down"; n.range=2; } });
+// 바닥에 놓인 도구(포켓몬의 필드 몬스터볼). 걸어 들어가면 줍는다.
+// 숨겨진 아이템(HIDDEN)과 달리 눈에 보여서 "가볼 이유"가 된다. G.found로 1회성.
+const GROUND_ITEMS=[
+  {k:"g_town0",x:5,y:48,item:"ball",qty:3},{k:"g_town1",x:2,y:46,item:"potion",qty:2},
+  {k:"g_mead1",x:21,y:43,item:"ball",qty:5},{k:"g_mead2",x:3,y:42,item:"antidote",qty:2},
+  {k:"g_mead3",x:15,y:45,item:"ether",qty:1},{k:"g_for1",x:2,y:38,item:"greatball",qty:3},
+  {k:"g_for2",x:21,y:35,item:"potion",qty:3},{k:"g_for3",x:11,y:34,item:"oranberry",qty:2},
+  {k:"g_dp1",x:22,y:32,item:"hyperpotion",qty:2},{k:"g_dp2",x:3,y:29,item:"revive",qty:1},
+  {k:"g_dp3",x:13,y:28,item:"ether",qty:2},{k:"g_lk1",x:2,y:25,item:"greatball",qty:4},
+  {k:"g_lk2",x:22,y:21,item:"elixir",qty:1},{k:"g_lk3",x:8,y:25,item:"scopelens",qty:1},
+  {k:"g_hi1",x:2,y:18,item:"hyperpotion",qty:3},{k:"g_hi2",x:20,y:16,item:"revive",qty:2},
+  {k:"g_hi3",x:12,y:15,item:"candy",qty:1},{k:"g_hi4",x:6,y:12,item:"elixir",qty:1},
+  {k:"g_ar1",x:2,y:10,item:"leftovers",qty:1},{k:"g_ar2",x:22,y:11,item:"candy",qty:2},
+];
+const GROUND_AT={}; GROUND_ITEMS.forEach(g=>{ GROUND_AT[g.x+","+g.y]=g; });
+function groundItemAt(x,y){ const g=GROUND_AT[x+","+y]; if(!g)return null;
+  return (G.found||[]).includes(g.k)?null:g; }
 const HIDDEN=[
   {k:"h1",x:1,y:47,item:"potion",qty:1},{k:"h2",x:1,y:41,item:"ball",qty:3},{k:"h3",x:2,y:34,item:"greatball",qty:2},
   {k:"h4",x:1,y:27,item:"hyperpotion",qty:1},{k:"h5",x:4,y:20,item:"revive",qty:1},{k:"h6",x:2,y:12,item:"candy",qty:1},{k:"h7",x:2,y:10,item:"hyperpotion",qty:2},
@@ -1513,7 +1532,7 @@ window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,byId,makeMon,recalc,damage,stageMul,ac
   G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary,stripNamePrefix};
 /* ===== MAP (17 x 42) ===== */
 let MAP_STR=[
-  "#########################","#TTTggggggTggggTggggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg#gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgggggg##ogTg#","#TTT#goggg+g#TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTgg#gT#","#ggTgT~ggggggggDTTggT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g##gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg#gggggx~~~~~~~~~~~g##","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg#gggggCg##TggT#","#gggggPgggg#g#ggTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg#Tg##","#TgggggTgT~~~gTT#TTggg#V#","#gggTg#gggg##g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#T#TT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#gggggggggTgmggTTg##T#gg#","#ggggg#gggT#gggg#g+ggg#T#","##g#g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg#gggggg~~~#g#gggT##","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTg#gTgggg##gT#","#gTTggggggTTggggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT#PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######...######ggggWggg#",
+  "#########################","#TTTggggggTggggTggggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg#gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##ogTg#","#TTT#goggg+g#TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTgPT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g##gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg#gggggx~~~~~~~~~~~g##","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg#gggggCg##TggT#","#gggggPgggg#g#ggTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg#Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTg#gggg##g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#T#TT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#gggggggggTgmggTTg##T#gg#","#ggggg#gggT#gggg#g+ggg#T#","##g#g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg#gggggg~~~#g#gggT##","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg##gT#","#gTTggggggTTgEggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT#PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######...######ggggWggg#",
 ];
 let W=25,H=50;
 const OVERWORLD_STR0=MAP_STR.slice();
@@ -1524,6 +1543,12 @@ const INTERIORS={
     str:["#########","#..N....#","#..SSS..#","#.......#","#.......#","#.......#","####.####"] },
   house:{ id:"house", W:9, H:7, startX:4, startY:5, exitX:4, exitY:6, name:"집",
     str:["#########","#B....N.#","#.......#","#.......#","#.......#","#.......#","####.####"] },
+  // 정령 회관: 숨어 있던 시스템(IV·닉네임·친밀도)을 플레이어에게 여는 창구.
+  // p=감정사, n=이름 짓는 사람, s=마사지사 — 셋 다 비보행(부딪혀 대화).
+  // ⚠️ 세 NPC(p/n/s) 바로 아래가 뚫려 있어야 부딪혀 말을 걸 수 있다(카운터로 막으면 대화 불가).
+  //    폭은 11 이하로 — 13이면 화면 밖으로 잘린다.
+  hall:{ id:"hall", W:11, H:9, startX:5, startY:7, exitX:5, exitY:8, name:"정령 회관",
+    str:["###########","#.p..n..s.#","#.........#","#.#.....#.#","#.........#","#.........#","#.........#","#.........#","#####.#####"] },
   // 정령센터: 카운터(#) 뒤 간호사 N에게 부딪히면 전체 회복 + 세이브. 중앙 x=5가 뚫려 있어야 접근 가능.
   center:{ id:"center", W:11, H:9, startX:5, startY:7, exitX:5, exitY:8, name:"정령센터",
     str:["###########","#....N....#","#..##.##..#","#.........#","#.........#","#.........#","#.........#","#.........#","#####.#####"] },
@@ -1552,7 +1577,7 @@ const INTERIORS={
     str:["#########","#...q...#","#.C...C.#","####l####","#.......#","#.C...C.#","####k####","#.......#","#.C...C.#","####j####","#.......#","#.C...C.#","####i####","#.......#","#.C...C.#","#.......#","####.####"] }
 };
 const GYM_AT={"8,43":"gym1","8,35":"gym2","8,26":"gym3","8,17":"gym4"};
-const INTERIOR_NPC_MSG={center:"간호사 조이: 어서 오세요, 정령센터입니다! 카운터로 오시면 정령들을 회복시켜 드릴게요 💗", shop:"점원: 어서 오세요! 카운터에서 좋은 물건들을 팔고 있어요. 진화의 돌도 있답니다 ✨", house:"엄마: 잘 다녀왔니? 지친 정령들은 침대에서 쉬게 해주렴 😊"};
+const INTERIOR_NPC_MSG={hall:"회관 직원: 감정사·이름 짓는 사람·마사지사가 있어요. 선두 정령을 데리고 말을 걸어보세요!", center:"간호사 조이: 어서 오세요, 정령센터입니다! 카운터로 오시면 정령들을 회복시켜 드릴게요 💗", shop:"점원: 어서 오세요! 카운터에서 좋은 물건들을 팔고 있어요. 진화의 돌도 있답니다 ✨", house:"엄마: 잘 다녀왔니? 지친 정령들은 침대에서 쉬게 해주렴 😊"};
 let _dayStart=Date.now();
 function dayCycle(){ const cyc=720000; return ((Date.now()-_dayStart)%cyc)/cyc; }
 function dayPhase(){ const t=dayCycle(); if(t<0.2||t>=0.86)return "day"; if(t<0.34)return "dusk"; if(t<0.64)return "night"; return "dawn"; }
@@ -1593,9 +1618,10 @@ function _exitInterior(){ if(!_owBackup)return;
 const GUARD_TILES="789abcdef0ijklq";
 // 인테리어 바닥/벽 색 테마. wt는 벽 상단 밴드(생략 시 기본 갈색).
 const GYM_THEME={ gym1:{fl:"#bcd0a0",wl:"#7a9a5a"}, gym2:{fl:"#9ab88a",wl:"#4f7a4a"}, gym3:{fl:"#a6c8cc",wl:"#4a8a8a"}, gym4:{fl:"#c8bfa0",wl:"#8a7a5a"}, league:{fl:"#39344f",wl:"#6a5a8a"},
-  center:{fl:"#eef1f4",wl:"#d4514c",wt:"#b83f3c",gr:"rgba(150,170,190,.42)"} };
+  center:{fl:"#eef1f4",wl:"#d4514c",wt:"#b83f3c",gr:"rgba(150,170,190,.42)"},
+  hall:{fl:"#e4d6b8",wl:"#9a7a4a",wt:"#7a5e36",gr:"rgba(150,120,70,.35)"} };
 const isTrainerTile=t=>t==="1"||t==="2"||t==="3"||t==="4"||t==="5"||t==="6"||t==="X"||(t!==""&&GUARD_TILES.indexOf(t)>=0);
-function walkable(x,y){ if(x<0||y<0||x>=W||y>=H)return false; const t=tileAt(x,y); if(t==="~"&&typeof G!=="undefined"&&G&&G.surfing&&!G.indoor)return true; if(typeof NPC_AT!=="undefined" && !G.indoor && NPC_AT[x+","+y] && npcAvailable(NPC_AT[x+","+y]))return false; if((t==="5"||t==="6"||(t!==""&&"1234".indexOf(t)>=0)||(t!==""&&GUARD_TILES.indexOf(t)>=0))&&G.indoor)return G.defeated.has(t); return t!=="#"&&t!=="~"&&t!=="H"&&t!=="F"&&t!=="P"&&t!=="N"&&t!=="C"&&t!=="o"&&t!=="D"&&t!=="G"&&t!=="W"&&t!=="Y"&&t!=="Z"&&t!=="@"&&t!=="K"&&t!=="L"&&t!=="U"&&t!=="x"&&t!=="%"&&t!=="V"&&t!=="M"&&t!=="&"&&t!=="Q"&&t!=="J"&&t!=="+"; }
+function walkable(x,y){ if(x<0||y<0||x>=W||y>=H)return false; const t=tileAt(x,y); if(t==="~"&&typeof G!=="undefined"&&G&&G.surfing&&!G.indoor)return true; if(typeof NPC_AT!=="undefined" && !G.indoor && NPC_AT[x+","+y] && npcAvailable(NPC_AT[x+","+y]))return false; if((t==="5"||t==="6"||(t!==""&&"1234".indexOf(t)>=0)||(t!==""&&GUARD_TILES.indexOf(t)>=0))&&G.indoor)return G.defeated.has(t); return t!=="#"&&t!=="~"&&t!=="H"&&t!=="F"&&t!=="P"&&t!=="N"&&t!=="C"&&t!=="o"&&t!=="D"&&t!=="G"&&t!=="W"&&t!=="Y"&&t!=="Z"&&t!=="@"&&t!=="K"&&t!=="L"&&t!=="U"&&t!=="x"&&t!=="%"&&t!=="V"&&t!=="M"&&t!=="&"&&t!=="Q"&&t!=="J"&&t!=="+"&&t!=="E"&&t!=="p"&&t!=="n"&&t!=="s"; }
 // region bands (bottom->top): 0 town,1 meadow,2 forest,3 deep,4 lake,5 highland,6 arena
 function region(y){ if(y>=47)return 0; if(y>=41)return 1; if(y>=34)return 2; if(y>=27)return 3; if(y>=20)return 4; if(y>=12)return 5; return 6; }
 const REGION_NAME=["마을","초원","숲","깊은 숲","수정 호수","고원","군주의 제단"];
@@ -1649,7 +1675,9 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     oy = mapH>=ch ? Math.min(0,Math.max(ch-mapH,oy)) : (ch-mapH)/2;
     this._cam={ox,oy,ts};                       // 탭-이동 역변환용
     const pcx=ox+px*ts+ts/2, pcy=oy+py*ts+ts/2; // 플레이어 실제 화면 중심
-    for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const sx=ox+x*ts,sy=oy+y*ts; if(sx<-ts||sy<-ts||sx>cw||sy>ch)continue; this._tile(ctx,tileAt(x,y),sx,sy,ts,x,y,now); }
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const sx=ox+x*ts,sy=oy+y*ts; if(sx<-ts||sy<-ts||sx>cw||sy>ch)continue; this._tile(ctx,tileAt(x,y),sx,sy,ts,x,y,now);
+      // 바닥에 놓인 도구(아직 안 주운 것만) — 타일 위에 얹어 그린다
+      if(!G.indoor && typeof groundItemAt==="function"){ const gi=groundItemAt(x,y); if(gi)this._itemBall(ctx,sx,sy,ts,now,x,y); } }
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const sx=ox+x*ts,sy=oy+y*ts; if(sx<-ts||sy<-ts||sx>cw||sy>ch)continue;
       const t=tileAt(x,y); let emoji=null, spec=null, sdir="down";
       if(isTrainerTile(t)&&!G.defeated.has(t)){ if(TRAINERS[t]&&TRAINERS[t].spr)spec=TRAINERS[t].spr; else emoji=(TRAINERS[t]&&TRAINERS[t].em)||null; }
@@ -1690,6 +1718,21 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         ctx.drawImage(_hi, hx-S/2, gy-S-_hb, S, S); ctx.restore(); }
       else { this._walker(ctx, pcx, pcy, ts, this.dir||"down", moving, now); } }
     if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; } },
+  // 필드 아이템 볼: 살짝 떠오르는 애니 + 반짝임(눈에 띄어야 "가볼 이유"가 된다)
+  _itemBall(ctx,sx,sy,ts,now,x,y){
+    const bob=Math.sin((now||0)*2.2 + (x*0.7+y*1.3))*ts*0.05;
+    const cx=sx+ts*0.5, cy=sy+ts*0.55+bob, r=ts*0.19;
+    ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(cx,sy+ts*0.82,r*0.9,r*0.3,0,0,6.29); ctx.fill();
+    ctx.fillStyle="#e8524e"; ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,0); ctx.fill();
+    ctx.fillStyle="#f4f1ea"; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI); ctx.fill();
+    ctx.strokeStyle="rgba(30,24,20,.7)"; ctx.lineWidth=Math.max(1,ts*0.022);
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,6.29); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-r,cy); ctx.lineTo(cx+r,cy); ctx.stroke();
+    ctx.fillStyle="#f4f1ea"; ctx.beginPath(); ctx.arc(cx,cy,r*0.33,0,6.29); ctx.fill();
+    ctx.strokeStyle="rgba(30,24,20,.7)"; ctx.beginPath(); ctx.arc(cx,cy,r*0.33,0,6.29); ctx.stroke();
+    const tw=(Math.sin((now||0)*3.4 + x*1.1)*0.5+0.5);
+    ctx.globalAlpha=0.35+tw*0.5; ctx.fillStyle="#fff6c0";
+    ctx.beginPath(); ctx.arc(cx+r*0.75,cy-r*0.8,ts*0.045,0,6.29); ctx.fill(); ctx.globalAlpha=1; },
   _tile(ctx,t,sx,sy,ts,x,y,now){ const h=((x*73856093)^(y*19349663))>>>0; const rnd=n=>((h>>(n*3))&7)/7; const ol="rgba(20,42,24,.4)"; sx=Math.round(sx); sy=Math.round(sy); const tb=Math.ceil(ts)+1;
     if(typeof G!=="undefined" && (G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh")){
       const sv=((h>>3)&3), _isle=G.indoor==="isle", _shr=G.indoor==="shrine", _snow=G.indoor==="snowfield", _marsh=G.indoor==="marsh"; ctx.fillStyle=_snow?`rgb(${232-sv*3},${238-sv*3},${248-sv*3})`:_shr?`rgb(${210-sv*3},${216-sv*3},${236-sv*3})`:_marsh?`rgb(${104-sv*4},${120-sv*4},${86-sv*4})`:_isle?`rgb(${96-sv*4},${170-sv*5},${94-sv*4})`:`rgb(${226-sv*5},${206-sv*5},${158-sv*5})`; ctx.fillRect(sx,sy,tb,tb);
@@ -1729,6 +1772,17 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         ctx.strokeStyle="rgba(20,14,30,.5)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.28,sy+ts*0.55,ts*0.44,ts*0.3);
         ctx.fillStyle="rgba(200,180,255,"+(0.5+fl*0.5)+")"; ctx.beginPath(); ctx.arc(cx,sy+ts*0.32,ts*0.1,0,6.29); ctx.fill();
         ctx.fillStyle="#e8e0ff"; ctx.beginPath(); ctx.arc(cx,sy+ts*0.32,ts*0.05,0,6.29); ctx.fill(); }
+      else if(t==="p"||t==="n"||t==="s"){ ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb);
+        const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5;
+        const sk={p:{robe:"#5a6a9a",hair:"#3a3a4a",em:"🔍"},n:{robe:"#8a6aa0",hair:"#4a3a4a",em:"✒️"},s:{robe:"#6aa08a",hair:"#3a4a42",em:"💆"}}[t];
+        ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.42,u*0.32,u*0.1,0,0,6.29); ctx.fill();
+        ctx.fillStyle=sk.robe; ctx.fillRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45);
+        ctx.fillStyle="#e8c39a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.22,u*0.24,0,6.29); ctx.fill();
+        ctx.fillStyle=sk.hair; ctx.beginPath(); ctx.arc(cx,cy-u*0.3,u*0.26,Math.PI,0); ctx.fill();
+        ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.12,cy-u*0.22,u*0.05,u*0.06); ctx.fillRect(cx+u*0.07,cy-u*0.22,u*0.05,u*0.06);
+        ctx.strokeStyle="rgba(30,20,12,.35)"; ctx.lineWidth=Math.max(1,ts*0.015); ctx.strokeRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45);
+        ctx.font=Math.floor(ts*0.34)+"px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(sk.em, cx, sy+ts*0.14); }
       else if(t==="N"){ ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5; const _nurse=G.indoor==="center"; ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.42,u*0.32,u*0.1,0,0,6.29); ctx.fill(); ctx.fillStyle=_nurse?"#f2f2f4":"#5a7db0"; ctx.fillRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45); ctx.fillStyle="#e8c39a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.22,u*0.24,0,6.29); ctx.fill(); ctx.fillStyle=_nurse?"#f08fb0":"#4a3728"; ctx.beginPath(); ctx.arc(cx,cy-u*0.3,u*0.26,Math.PI,0); ctx.fill(); if(_nurse){ ctx.fillStyle="#fff"; ctx.fillRect(cx-u*0.2,cy-u*0.46,u*0.4,u*0.14); ctx.fillStyle="#e0403c"; ctx.fillRect(cx-u*0.03,cy-u*0.44,u*0.06,u*0.1); ctx.fillRect(cx-u*0.08,cy-u*0.42,u*0.16,u*0.045); } ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.12,cy-u*0.22,u*0.05,u*0.06); ctx.fillRect(cx+u*0.07,cy-u*0.22,u*0.05,u*0.06); ctx.strokeStyle="rgba(30,20,12,.35)"; ctx.lineWidth=Math.max(1,ts*0.015); ctx.strokeRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45); }
       else if(t==="B"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="#8a6240"; ctx.fillRect(sx+ts*0.14,sy+ts*0.2,ts*0.72,ts*0.68); ctx.fillStyle="#e8e2d8"; ctx.fillRect(sx+ts*0.18,sy+ts*0.24,ts*0.64,ts*0.4); ctx.fillStyle="#d86a6a"; ctx.fillRect(sx+ts*0.18,sy+ts*0.5,ts*0.64,ts*0.34); ctx.fillStyle="#f0eee8"; ctx.fillRect(sx+ts*0.22,sy+ts*0.27,ts*0.34,ts*0.16); ctx.strokeStyle="rgba(40,26,14,.4)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.14,sy+ts*0.2,ts*0.72,ts*0.68); }
       else if(t==="5"||t==="6"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx,sy,tb,tb);
@@ -1833,6 +1887,13 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       ctx.fillStyle=tc; for(const b of blobs){ ctx.beginPath(); ctx.arc(sx+ts*b[0],sy+ts*b[1],ts*b[2],0,6.29); ctx.fill(); }
       ctx.fillStyle="rgba(20,60,30,.35)"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.58,ts*0.24,0.2,Math.PI-0.2); ctx.fill();
       ctx.fillStyle="#54a05a"; ctx.beginPath(); ctx.arc(sx+ts*0.4,sy+ts*0.3,ts*0.1,0,6.29); ctx.fill(); }
+    else if(t==="E"){ ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.92,ts*0.42,ts*0.1,0,0,6.29); ctx.fill();
+      ctx.fillStyle="#e8dcc0"; ctx.fillRect(sx+ts*0.14,sy+ts*0.48,ts*0.72,ts*0.42);
+      ctx.strokeStyle="rgba(70,50,25,.45)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.14,sy+ts*0.48,ts*0.72,ts*0.42);
+      ctx.fillStyle="#4a7ab0"; ctx.beginPath(); ctx.moveTo(sx+ts*0.06,sy+ts*0.5); ctx.lineTo(sx+ts*0.5,sy+ts*0.14); ctx.lineTo(sx+ts*0.94,sy+ts*0.5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle="#c9a24a"; ctx.fillRect(sx+ts*0.34,sy+ts*0.34,ts*0.32,ts*0.11);
+      ctx.fillStyle="#8a6a4a"; ctx.fillRect(sx+ts*0.44,sy+ts*0.64,ts*0.14,ts*0.26);
+      ctx.fillStyle="#a8d8e8"; ctx.fillRect(sx+ts*0.2,sy+ts*0.56,ts*0.11,ts*0.11); ctx.fillRect(sx+ts*0.69,sy+ts*0.56,ts*0.11,ts*0.11); }
     else if(t==="+"){ ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.92,ts*0.42,ts*0.1,0,0,6.29); ctx.fill();
       ctx.fillStyle="#f2ece0"; ctx.fillRect(sx+ts*0.14,sy+ts*0.46,ts*0.72,ts*0.44);
       ctx.strokeStyle="rgba(70,45,20,.4)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.14,sy+ts*0.46,ts*0.72,ts*0.44);
@@ -1946,12 +2007,12 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
 let Field=Map2D;
 
 /* ===== MOVEMENT ===== */
-const SIGN_MSG={"4,47":"🪧 시작의 마을 — 위로 갈수록 강한 정령이 산다. 조심히!","10,40":"🪧 이 앞은 깊은 숲. 풀숲에서 야생 정령이 자주 나온다.","6,27":"🪧 수정 호수가 가깝다 — 강한 정령이 많으니 준비를 단단히!"};
+const SIGN_MSG={"12,44":"🪧 초원 — 정령 회관에서 자질을 감정받을 수 있다. 바닥에 떨어진 도구도 잊지 말 것!","19,16":"🪧 고원 — 여기서부터 바람이 거세다. 회복약을 넉넉히 챙겼는가?","13,12":"🪧 군주의 제단이 가깝다. 숲의 인장이 흐려진 곳 — 되돌아갈 각오 없이는 들어서지 마라.","4,47":"🪧 시작의 마을 — 위로 갈수록 강한 정령이 산다. 조심히!","10,40":"🪧 이 앞은 깊은 숲. 풀숲에서 야생 정령이 자주 나온다.","6,27":"🪧 수정 호수가 가깝다 — 강한 정령이 많으니 준비를 단단히!"};
 function move(dir,auto){ if(G.busy||G.inBattle||!Field.arrived)return; if(_warpLock&&performance.now()<_warpLock)return;   // 워프 직후 짧은 입력 잠금: 눌린 키 관성이 출구로 걸어나가는 것 방지
   if(Field)Field.moveSpeed=(G&&G.running)?11.4:6.8; if(!auto)stopPath();
   let {x,y}=G.pos;
   if(dir==="up")y--;else if(dir==="down")y++;else if(dir==="left")x--;else if(dir==="right")x++;
-  if(!walkable(x,y)){ if(Field.face)Field.face(dir); if(tileAt(x,y)==="~"&&!G.busy&&!G.inBattle){ if(G.hasSurf&&!G.surfing&&!G.indoor){ stopPath(); G.surfing=true; Audio.sfx("blip"); flashHint("🌊 파도타기 시작!"); move(dir); return; } if(G.hasRod){ stopPath(); startFishing(); return; } } if(tileAt(x,y)==="x"&&G.hasCut&&!G.busy&&!G.indoor){ stopPath(); cutObstacle(x,y); return; } if(tileAt(x,y)==="o"&&G.hasStrength&&!G.busy&&!G.indoor){ stopPath(); pushBoulder(x,y,dir); return; } if(tileAt(x,y)==="Y"&&G.indoor==="coast"){ stopPath(); if(G.hasRod){ if(!G.isleSeen){ G.isleSeen=true; sailToIsle(); setTimeout(()=>{ if(G.indoor==="isle")playStory(ISLE_INTRO,()=>{}); },420); } else { sailToIsle(); } } else { showDialog({name:"뱃사람",text:"배가 아직 준비되지 않았소. 낚싯대라도 챙겨 진짜 뱃사람이 되어 오시게."}); } return; } if(tileAt(x,y)==="Y"&&G.indoor==="isle"){ stopPath(); sailToCoast(); return; } if(tileAt(x,y)==="K"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); openShop(); return; } if(tileAt(x,y)==="H"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); healParty(true); healFx(); flashHint(G.indoor==="snowfield"?"따뜻한 오두막에서 정령들이 푹 쉬었다!":"여관에서 정령들이 푹 쉬었다!"); saveGame(); return; } if(tileAt(x,y)==="L"&&G.indoor==="isle"){ stopPath(); if(!G.defeated.has("L")){ startTrainer("L"); } else { showDialog({name:"여명 관장 하로",text:"또 붙어보고 싶은가? 언제든 환영이다!"}); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="isle"){ stopPath(); sailToShrine(); if(!G.shrineSeen){ G.shrineSeen=true; setTimeout(()=>{ if(G.indoor==="shrine")playStory(SHRINE_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="shrine"){ stopPath(); sailFromShrine(); return; } if(tileAt(x,y)==="@"&&G.indoor==="shrine"){ stopPath(); if(!G.legendDone){ startLegendary(); } else { showDialog({name:"신전",text:"신전은 고요하다. 여명룡은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="%"&&!G.indoor){ stopPath(); if(!G.lakeDone){ startLakeLegendary(); } else { showDialog({name:"호수 제단",text:"호수는 잔잔하다. 수룡왕은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="&"&&G.indoor==="snowfield"){ stopPath(); if(!G.snowDone){ startSnowLegendary(); } else { showDialog({name:"빙하 제단",text:"빙하는 잠잠하다. 빙하제는 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="Q"&&G.indoor==="snowfield"){ stopPath(); if(!G.defeated.has("SNOW")){ startTrainer("SNOW"); } else { showDialog({name:"설산의 주인 빙하",text:"또 겨루고 싶은가? 언제든지."}); } return; } if((tileAt(x,y)==="5"||tileAt(x,y)==="6"||"1234".indexOf(tileAt(x,y))>=0||GUARD_TILES.indexOf(tileAt(x,y))>=0)&&G.indoor&&!G.defeated.has(tileAt(x,y))){ stopPath(); startTrainer(tileAt(x,y)); return; } if(tileAt(x,y)==="+"&&!G.indoor){ enterInterior(INTERIORS.center); return; } if(tileAt(x,y)==="H"&&!G.indoor){ enterInterior(INTERIORS.house); return; } if(tileAt(x,y)==="D"&&!G.indoor){ enterInterior(INTERIORS.cave); return; } if(tileAt(x,y)==="V"&&!G.indoor){ enterInterior(INTERIORS.lavacave); if(!G.lavaSeen){ G.lavaSeen=true; setTimeout(()=>{ if(G.indoor==="lavacave")flashHint("🌋 뜨거운 열기가 밀려온다… 용암 동굴이다!"); },400); } return; } if(tileAt(x,y)==="M"&&!G.indoor){ enterInterior(INTERIORS.snowfield); if(!G.snowSeen){ G.snowSeen=true; setTimeout(()=>{ if(G.indoor==="snowfield")flashHint("❄️ 차가운 바람이 불어온다… 설원 지대다!"); },400); } return; } if(tileAt(x,y)==="J"&&!G.indoor){ enterInterior(INTERIORS.marsh); if(!G.marshSeen){ G.marshSeen=true; setTimeout(()=>{ if(G.indoor==="marsh")flashHint("🌫️ 축축한 안개가 자욱하다… 안개 늪지다!"); },400); } return; } if(tileAt(x,y)==="G"&&!G.indoor&&typeof GYM_AT!=="undefined"&&GYM_AT[x+","+y]){ enterInterior(INTERIORS[GYM_AT[x+","+y]]); return; } if(tileAt(x,y)==="W"&&!G.indoor){ enterInterior(INTERIORS.coast); if(!G.coastSeen){ G.coastSeen=true; setTimeout(()=>{ if(G.indoor==="coast")playStory(COAST_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="U"&&!G.indoor){ if(forestBadges()>=4){ enterInterior(INTERIORS.league); if(!G.leagueSeen){ G.leagueSeen=true; setTimeout(()=>{ if(G.indoor==="league")playStory(LEAGUE_INTRO,()=>{}); },420); } } else { showDialog({name:"리그 안내인",text:`정령 리그는 <b>4개의 인장 조각</b>을 모은 자에게만 열립니다. (현재 ${forestBadges()}/4)`}); } return; } if(tileAt(x,y)==="N"&&G.indoor==="center"){ stopPath(); nurseHeal(); return; } if(tileAt(x,y)==="N"&&G.indoor==="shrine"){ showDialog(SHRINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="snowfield"){ showDialog(SNOW_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="marsh"){ showDialog(MARSH_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="isle"){ showDialog(ISLE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="coast"){ showDialog(COAST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor){ showDialog({name:G.indoor==="shop"?"점원":"집주인",text:(INTERIOR_NPC_MSG[G.indoor]||"...").replace(/^[^:]+:\s*/,"")}); return; } if(tileAt(x,y)==="P"){ showDialog({name:"팻말",text:(SIGN_MSG[x+","+y]||"조심해서 나아가자.").replace(/^🪧\s*/,"")}); return; } return; }
+  if(!walkable(x,y)){ if(Field.face)Field.face(dir); if(tileAt(x,y)==="~"&&!G.busy&&!G.inBattle){ if(G.hasSurf&&!G.surfing&&!G.indoor){ stopPath(); G.surfing=true; Audio.sfx("blip"); flashHint("🌊 파도타기 시작!"); move(dir); return; } if(G.hasRod){ stopPath(); startFishing(); return; } } if(tileAt(x,y)==="x"&&G.hasCut&&!G.busy&&!G.indoor){ stopPath(); cutObstacle(x,y); return; } if(tileAt(x,y)==="o"&&G.hasStrength&&!G.busy&&!G.indoor){ stopPath(); pushBoulder(x,y,dir); return; } if(tileAt(x,y)==="Y"&&G.indoor==="coast"){ stopPath(); if(G.hasRod){ if(!G.isleSeen){ G.isleSeen=true; sailToIsle(); setTimeout(()=>{ if(G.indoor==="isle")playStory(ISLE_INTRO,()=>{}); },420); } else { sailToIsle(); } } else { showDialog({name:"뱃사람",text:"배가 아직 준비되지 않았소. 낚싯대라도 챙겨 진짜 뱃사람이 되어 오시게."}); } return; } if(tileAt(x,y)==="Y"&&G.indoor==="isle"){ stopPath(); sailToCoast(); return; } if(tileAt(x,y)==="K"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); openShop(); return; } if(tileAt(x,y)==="H"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); healParty(true); healFx(); flashHint(G.indoor==="snowfield"?"따뜻한 오두막에서 정령들이 푹 쉬었다!":"여관에서 정령들이 푹 쉬었다!"); saveGame(); return; } if(tileAt(x,y)==="L"&&G.indoor==="isle"){ stopPath(); if(!G.defeated.has("L")){ startTrainer("L"); } else { showDialog({name:"여명 관장 하로",text:"또 붙어보고 싶은가? 언제든 환영이다!"}); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="isle"){ stopPath(); sailToShrine(); if(!G.shrineSeen){ G.shrineSeen=true; setTimeout(()=>{ if(G.indoor==="shrine")playStory(SHRINE_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="shrine"){ stopPath(); sailFromShrine(); return; } if(tileAt(x,y)==="@"&&G.indoor==="shrine"){ stopPath(); if(!G.legendDone){ startLegendary(); } else { showDialog({name:"신전",text:"신전은 고요하다. 여명룡은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="%"&&!G.indoor){ stopPath(); if(!G.lakeDone){ startLakeLegendary(); } else { showDialog({name:"호수 제단",text:"호수는 잔잔하다. 수룡왕은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="&"&&G.indoor==="snowfield"){ stopPath(); if(!G.snowDone){ startSnowLegendary(); } else { showDialog({name:"빙하 제단",text:"빙하는 잠잠하다. 빙하제는 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="Q"&&G.indoor==="snowfield"){ stopPath(); if(!G.defeated.has("SNOW")){ startTrainer("SNOW"); } else { showDialog({name:"설산의 주인 빙하",text:"또 겨루고 싶은가? 언제든지."}); } return; } if((tileAt(x,y)==="5"||tileAt(x,y)==="6"||"1234".indexOf(tileAt(x,y))>=0||GUARD_TILES.indexOf(tileAt(x,y))>=0)&&G.indoor&&!G.defeated.has(tileAt(x,y))){ stopPath(); startTrainer(tileAt(x,y)); return; } if(tileAt(x,y)==="+"&&!G.indoor){ enterInterior(INTERIORS.center); return; } if(tileAt(x,y)==="E"&&!G.indoor){ enterInterior(INTERIORS.hall); return; } if(tileAt(x,y)==="H"&&!G.indoor){ enterInterior(INTERIORS.house); return; } if(tileAt(x,y)==="D"&&!G.indoor){ enterInterior(INTERIORS.cave); return; } if(tileAt(x,y)==="V"&&!G.indoor){ enterInterior(INTERIORS.lavacave); if(!G.lavaSeen){ G.lavaSeen=true; setTimeout(()=>{ if(G.indoor==="lavacave")flashHint("🌋 뜨거운 열기가 밀려온다… 용암 동굴이다!"); },400); } return; } if(tileAt(x,y)==="M"&&!G.indoor){ enterInterior(INTERIORS.snowfield); if(!G.snowSeen){ G.snowSeen=true; setTimeout(()=>{ if(G.indoor==="snowfield")flashHint("❄️ 차가운 바람이 불어온다… 설원 지대다!"); },400); } return; } if(tileAt(x,y)==="J"&&!G.indoor){ enterInterior(INTERIORS.marsh); if(!G.marshSeen){ G.marshSeen=true; setTimeout(()=>{ if(G.indoor==="marsh")flashHint("🌫️ 축축한 안개가 자욱하다… 안개 늪지다!"); },400); } return; } if(tileAt(x,y)==="G"&&!G.indoor&&typeof GYM_AT!=="undefined"&&GYM_AT[x+","+y]){ enterInterior(INTERIORS[GYM_AT[x+","+y]]); return; } if(tileAt(x,y)==="W"&&!G.indoor){ enterInterior(INTERIORS.coast); if(!G.coastSeen){ G.coastSeen=true; setTimeout(()=>{ if(G.indoor==="coast")playStory(COAST_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="U"&&!G.indoor){ if(forestBadges()>=4){ enterInterior(INTERIORS.league); if(!G.leagueSeen){ G.leagueSeen=true; setTimeout(()=>{ if(G.indoor==="league")playStory(LEAGUE_INTRO,()=>{}); },420); } } else { showDialog({name:"리그 안내인",text:`정령 리그는 <b>4개의 인장 조각</b>을 모은 자에게만 열립니다. (현재 ${forestBadges()}/4)`}); } return; } if(G.indoor==="hall"&&"pns".indexOf(tileAt(x,y))>=0&&tileAt(x,y)!==""){ stopPath(); hallService(tileAt(x,y)); return; } if(tileAt(x,y)==="N"&&G.indoor==="center"){ stopPath(); nurseHeal(); return; } if(tileAt(x,y)==="N"&&G.indoor==="shrine"){ showDialog(SHRINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="snowfield"){ showDialog(SNOW_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="marsh"){ showDialog(MARSH_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="isle"){ showDialog(ISLE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="coast"){ showDialog(COAST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor){ showDialog({name:G.indoor==="shop"?"점원":"집주인",text:(INTERIOR_NPC_MSG[G.indoor]||"...").replace(/^[^:]+:\s*/,"")}); return; } if(tileAt(x,y)==="P"){ showDialog({name:"팻말",text:(SIGN_MSG[x+","+y]||"조심해서 나아가자.").replace(/^🪧\s*/,"")}); return; } return; }
   // 그리드 이동(opt-in): 방향키를 처음 누르면 제자리 회전만, 계속 누르면(홀드) 걷기 — 포켓몬식.
   if(CONFIG.gridMove && !auto && Field && Field.dir && Field.dir!==dir){
     if(Field.face)Field.face(dir);
@@ -1991,6 +2052,10 @@ function onArrived(){
     if(!G.defeated.has(t))startTrainer(t); else maybeRematch(t); return; }
   const _npc=NPC_AT[G.pos.x+","+G.pos.y];
   if(_npc && npcAvailable(_npc)){ stopPath(); talkNPC(_npc); return; }
+  const _gi=groundItemAt(G.pos.x,G.pos.y);
+  if(_gi){ G.found=G.found||[]; G.found.push(_gi.k);
+    G.items[_gi.item]=(G.items[_gi.item]||0)+(_gi.qty||1); Audio.sfx("buy");
+    flashHint(`🎁 ${ITEM_KO[_gi.item]||_gi.item} ×${_gi.qty||1} 을(를) 주웠다!`); saveGame(); }
   const _hid=HIDDEN_AT[G.pos.x+","+G.pos.y];
   if(_hid && !(G.found||[]).includes(_hid.k)){ G.found=G.found||[]; G.found.push(_hid.k); const it=_hid.item,q=_hid.qty||1; G.items[it]=(G.items[it]||0)+q; Audio.sfx("buy"); flashHint(`💎 숨겨진 ${ITEM_KO[it]||it} ×${q} 발견!`); saveGame(); }
   if(typeof dayStep==="function")dayStep();
@@ -2005,6 +2070,56 @@ function onArrived(){
   if(enc){ stopPath(); return; }
   continueMovement(); }
 function healParty(clearStatus){ G.party.forEach(m=>{recalc(m);m.hp=m.maxHp;if(clearStatus){m.status=null;} m.friendship=(m.friendship||0)+2; m.moves.forEach(mv=>{m.pp[mv]=MOVES[mv].pp;});}); }
+/* ===== 정령 회관 서비스 ===== */
+// IV·친밀도·닉네임은 데이터로만 있고 플레이어가 볼/만질 창구가 없었다. 회관이 그 창구다.
+const IV_JUDGE=[  // 합계 구간별 총평 (본가 감정사 말투)
+  {min:0 , t:"음… 아직 다듬을 구석이 많은 것 같군요."},
+  {min:61, t:"나쁘지 않아요. 평범하지만 성실한 자질이에요."},
+  {min:91, t:"오, 꽤 좋은 자질이네요! 잘 키우면 강해지겠어요."},
+  {min:121,t:"이건 상당한 자질이에요! 좀처럼 보기 힘든 정령입니다."},
+  {min:151,t:"굉장해요! 이 정령은 <b>타고났습니다</b>. 소중히 키우세요!"},
+];
+const IV_STAT_KO={hp:"체력",atk:"공격",def:"방어",spa:"특공",spDef:"특방",spd:"속도"};
+function ivTotal(m){ const v=m.ivs||{}; return (v.hp||0)+(v.atk||0)+(v.def||0)+(v.spa||0)+(v.spDef||0)+(v.spd||0); }
+function ivBest(m){ const v=m.ivs||{}; let bk="hp",bv=-1;
+  for(const k in IV_STAT_KO){ if((v[k]||0)>bv){ bv=v[k]||0; bk=k; } }
+  const grade=bv>=31?"완벽해요":bv>=26?"훌륭해요":bv>=16?"쓸만해요":"평범해요";
+  return { k:IV_STAT_KO[bk], v:bv, grade }; }
+
+function hallService(tile){
+  const m=activeMon();
+  if(!m||m.isEgg){ showDialog({name:"회관 직원",text:"선두에 정령을 두고 다시 와주세요."}); return; }
+  Audio.sfx&&Audio.sfx("blip");
+  if(tile==="p"){          // 감정사 — IV 판정
+    const tot=ivTotal(m); const best=ivBest(m);
+    let judge=IV_JUDGE[0].t; for(const j of IV_JUDGE) if(tot>=j.min) judge=j.t;
+    showDialog([
+      {name:"감정사",text:`<b>${dispName(m)}</b>이(가)군요. 어디 볼까요…`},
+      {name:"감정사",text:judge},
+      {name:"감정사",text:`특히 <b>${best.k}</b> 자질이 눈에 띄는군요 — ${best.grade}.<br><span style="font-size:12px;opacity:.75">(자질 합계 ${tot}/186)</span>`}]);
+    return; }
+  if(tile==="n"){          // 이름 짓는 사람 — 닉네임
+    showDialog({name:"이름 짓는 사람",text:`<b>${dispName(m)}</b>에게 새 이름을 지어줄까요?`},()=>{
+      const cur=m.nick||m.name;
+      const v=prompt(`${m.name}의 새 이름 (비우면 원래 이름으로)`, cur);
+      if(v===null){ showDialog({name:"이름 짓는 사람",text:"그럼 다음에 또 오세요."}); return; }
+      const nm=String(v).trim().slice(0,8);
+      m.nick=nm && nm!==m.name ? nm : null;
+      saveGame();
+      showDialog({name:"이름 짓는 사람",text:m.nick?`좋은 이름이에요! 이제 <b>${m.nick}</b>이(가) 되었습니다.`:`원래 이름 <b>${m.name}</b>(으)로 돌아왔어요.`});
+    });
+    return; }
+  if(tile==="s"){          // 마사지사 — 친밀도
+    const before=m.friendship||0;
+    if(before>=250){ showDialog({name:"마사지사",text:`<b>${dispName(m)}</b>은(는) 이미 당신을 무척 따르네요. 더 손볼 데가 없어요!`}); return; }
+    showDialog({name:"마사지사",text:`<b>${dispName(m)}</b>을(를) 정성껏 풀어드릴게요…`},()=>{
+      m.friendship=Math.min(255,before+30); saveGame();
+      if(typeof healFx==="function")healFx(()=>{
+        showDialog({name:"마사지사",text:`후련해졌나 봐요! <b>${dispName(m)}</b>이(가) 당신을 더 따르게 되었어요 💗<br><span style="font-size:12px;opacity:.75">(친밀도 ${before} → ${m.friendship})</span>`});
+      });
+    });
+    return; } }
+
 // 정령센터 간호사: 인사 → 회복 연출 → 배웅. 세이브 포인트도 겸한다(본가 포켓몬센터와 동일).
 function nurseHeal(){
   const NURSE="간호사 조이";
@@ -4603,7 +4718,7 @@ function drawTopo(){ const c=$("minimapCanvas"),ctx=c.getContext("2d"); const CW
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const t=tileAt(x,y),r=region(y); let col;
     if(!G.seenTiles.has(x+","+y)){ ctx.fillStyle=((x+y)&1)?"#0d0a16":"#100c1a"; ctx.fillRect(ox+x*cs,oy+y*cs,cs,cs); continue; } _disc.add(r);
     if(t==="~")col="#2f6fb0"; else if(t==="#")col=TREE[r]; else if(t==="T")col=TALL[r];
-    else if(t===".")col=["#5a4a32","#4a4030","#46402e","#3e3346","#363050","#3a2c4e","#302848"][r]; else if(t==="H")col="#c85648"; else if(t==="F")col="#b5824e"; else if(t==="P")col="#caa066"; else if(t==="C")col="#79e6ea"; else if(t==="o")col="#8b8674"; else if(t==="m")col="#9a6cf0"; else if(t==="D")col="#5a4636"; else if(t==="G")col="#8a6ac0"; else if(t==="W")col="#b5643c"; else if(t==="U")col="#6a5a9a"; else if(t==="%")col="#5a8ac0"; else if(t==="V")col="#a04020"; else if(t==="M")col="#8890a0"; else if(t==="J")col="#5c6a44"; else if(t==="+")col="#e8524e"; else if(t==="w")col="#e2a0c8"; else col=FLOOR[r];
+    else if(t===".")col=["#5a4a32","#4a4030","#46402e","#3e3346","#363050","#3a2c4e","#302848"][r]; else if(t==="H")col="#c85648"; else if(t==="F")col="#b5824e"; else if(t==="P")col="#caa066"; else if(t==="C")col="#79e6ea"; else if(t==="o")col="#8b8674"; else if(t==="m")col="#9a6cf0"; else if(t==="D")col="#5a4636"; else if(t==="G")col="#8a6ac0"; else if(t==="W")col="#b5643c"; else if(t==="U")col="#6a5a9a"; else if(t==="%")col="#5a8ac0"; else if(t==="V")col="#a04020"; else if(t==="M")col="#8890a0"; else if(t==="J")col="#5c6a44"; else if(t==="+")col="#e8524e"; else if(t==="E")col="#c9a24a"; else if(t==="w")col="#e2a0c8"; else col=FLOOR[r];
     ctx.fillStyle=col; ctx.fillRect(ox+x*cs,oy+y*cs,cs,cs); }
   // region divider lines
   ctx.strokeStyle="rgba(255,255,255,.08)"; ctx.lineWidth=1;
@@ -4720,13 +4835,13 @@ window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVi
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.FLAVOR=FLAVOR;
-Object.assign(window.SG,{TYPE_PARTICLE,SIGFX,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
+Object.assign(window.SG,{TYPE_PARTICLE,SIGFX,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
