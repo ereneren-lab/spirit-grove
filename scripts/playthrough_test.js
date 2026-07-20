@@ -1,0 +1,172 @@
+// 실입력 플레이스루: 내부 함수를 호출하지 않고, 실제 클릭·키보드 이벤트만으로 게임을 진행한다.
+// 타이틀 → 캐릭터 선택 → 스타터 선택 → 필드 이동 → 야생 전투 → 승리까지.
+//
+// 이 테스트가 잡는 것(단위 테스트가 못 잡는 것):
+//  - 화면 전환 배선이 실제로 이어져 있는가(버튼이 진짜 다음 단계로 데려가는가)
+//  - 키 입력이 실제로 캐릭터를 움직이는가
+//  - 야생 전투가 실제로 걸리고, 실제 버튼으로 이길 수 있는가
+//  - 그 과정에서 런타임 에러가 하나도 안 나는가
+const { chromium } = require("playwright"); const path=require("path");
+
+(async()=>{
+  // ⚠️ 예외로 죽으면 headless 브라우저가 그대로 남는다. 세션 중 66개까지 쌓여
+  //    다른 테스트가 자원 부족으로 실패했다 → 어떤 경로로 끝나든 반드시 닫는다.
+  let b=null;
+  const bail=async(e)=>{ console.log("  ❌ 예외:",e&&e.message||e); try{ if(b)await b.close(); }catch(_){}; process.exit(1); };
+  process.on("uncaughtException",bail); process.on("unhandledRejection",bail);
+  b=await chromium.launch();
+  const p=await b.newPage({viewport:{width:430,height:760}});
+  const errs=[]; p.on("pageerror",e=>errs.push(e.message));
+  await p.goto("file://"+path.resolve(process.argv[2]));
+  await p.waitForTimeout(900);
+  const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)process.exitCode=1; };
+
+  const view=()=>p.evaluate(()=>{
+    const v=[...document.querySelectorAll(".view")].find(x=>x.classList.contains("active"));
+    return v?v.id:null; });
+  const click=async sel=>{ const el=await p.$(sel); if(!el)return false;
+    await el.click({force:true}).catch(()=>{}); return true; };
+  const key=async k=>{ await p.keyboard.press(k); await p.waitForTimeout(90); };
+  // 대화창·스토리 오버레이가 떠 있으면 실제 입력으로 넘긴다.
+  // ⚠️ 스토리는 #dialogBox가 아니라 별도 #storyOverlay(storyNext/storySkip)라서
+  //    대화창만 처리하면 여기서 영영 막힌다.
+  const clearDialog=async(max=40)=>{ for(let i=0;i<max;i++){
+      const st=await p.evaluate(()=>({
+        dlg:document.getElementById("dialogBox").classList.contains("show"),
+        story:!!document.querySelector("#storyOverlay.active"),
+      }));
+      if(!st.dlg && !st.story)return true;
+      if(st.story){
+        const skipped=await p.evaluate(()=>{ const s=document.getElementById("storySkip"); if(s){s.click();return true;}
+          const n=document.getElementById("storyNext"); if(n){n.click();return true;} return false; });
+        if(!skipped)await p.keyboard.press("Enter");
+      } else await p.keyboard.press("Enter");
+      await p.waitForTimeout(220); }
+    return false; };
+
+  /* ── 1. 타이틀 → 새 게임 ── */
+  const v0=await view();
+  await click("#newGameBtn");
+  await p.waitForTimeout(600);
+  const v1=await view();
+  ok(v0==="title", `타이틀에서 시작 (${v0})`);
+  ok(v1==="charsel", `새 게임 버튼 → 캐릭터 선택 (${v1})`);
+
+  /* ── 2. 캐릭터 선택 ── */
+  await p.evaluate(()=>{ const c=document.querySelector("#charRow .charcard, #charRow > *"); if(c)c.click(); });
+  await p.waitForTimeout(250);
+  await click("#confirmChar");
+  await p.waitForTimeout(700);
+  await clearDialog();
+  const v2=await view();
+  ok(v2==="starter", `캐릭터 확정 → 스타터 선택 (${v2})`);
+
+  /* ── 3. 스타터 선택 ── */
+  await p.evaluate(()=>{ const c=document.querySelector("#starterRow > *"); if(c)c.click(); });
+  await p.waitForTimeout(250);
+  await click("#confirmStarter");
+  await p.waitForTimeout(900);
+  await clearDialog(40);
+  await p.waitForTimeout(600);
+  const v3=await view();
+  const party=await p.evaluate(()=>{ const G=window.SG.G();
+    return { n:(G.party||[]).length, id:G.party&&G.party[0]&&G.party[0].id, lv:G.party&&G.party[0]&&G.party[0].level }; });
+  ok(party.n===1 && !!party.id, `스타터 지급됨 (${party.id} Lv${party.lv})`);
+  ok(v3==="map"||v3==="title", `맵으로 진입 (${v3})`);
+
+  /* ── 4. 실제 키로 이동 ── */
+  // 집 안에서 시작하므로 대화를 정리하고 밖으로 나간다
+  await clearDialog(40);
+  const posBefore=await p.evaluate(()=>({...window.SG.G().pos, indoor:window.SG.G().indoor}));
+  let moved=false;
+  for(const k of ["ArrowDown","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowUp"]){
+    await key(k); await p.waitForTimeout(220);
+    const now=await p.evaluate(()=>({...window.SG.G().pos, indoor:window.SG.G().indoor}));
+    if(now.x!==posBefore.x||now.y!==posBefore.y||now.indoor!==posBefore.indoor){ moved=true; break; }
+  }
+  const posAfter=await p.evaluate(()=>({...window.SG.G().pos, indoor:window.SG.G().indoor}));
+  ok(moved, `방향키로 실제 이동 (${posBefore.indoor||"밖"} ${posBefore.x},${posBefore.y} → ${posAfter.indoor||"밖"} ${posAfter.x},${posAfter.y})`);
+
+  /* ── 5. 야생 전투를 실제로 만날 때까지 풀숲을 걷는다 ── */
+  // 실내면 먼저 밖으로
+  await p.evaluate(async()=>{ const S=window.SG,F=S.flow;
+    if(S.G().indoor){ F.exitInterior(); await new Promise(r=>setTimeout(r,600)); } });
+  await p.waitForTimeout(700);
+  await clearDialog(20);
+
+  // ⚠️ 상하좌우를 번갈아 누르면 제자리에서 진동만 한다. 그리고 마을(지역0)엔 야생 조우가 없다.
+  //    같은 방향을 여러 번 눌러 북쪽 풀숲으로 실제로 이동해야 전투가 걸린다.
+  let battles=0, steps=0;
+  const seq=["ArrowUp","ArrowUp","ArrowUp","ArrowUp","ArrowLeft","ArrowUp","ArrowUp","ArrowRight"];
+  const trail=[];
+  for(let i=0;i<400 && battles===0;i++){
+    const st=await p.evaluate(()=>({inB:window.SG.G().inBattle, ...window.SG.G().pos,
+                                    indoor:window.SG.G().indoor,
+                                    dlg:document.getElementById("dialogBox").classList.contains("show")}));
+    if(st.inB){ battles++; break; }
+    if(st.dlg){ await p.keyboard.press("Enter"); await p.waitForTimeout(150); continue; }
+    if(st.indoor){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(200); continue; }
+    if(i%40===0)trail.push(st.x+","+st.y);
+    await p.keyboard.press(seq[i%seq.length]);
+    await p.waitForTimeout(125);
+    steps++;
+  }
+  const walkEnd=await p.evaluate(()=>({...window.SG.G().pos}));
+  console.log(`     (이동 경로 표본: ${trail.join(" → ")} → ${walkEnd.x},${walkEnd.y})`);
+  await p.waitForTimeout(900);
+  const battleView=await view();
+  ok(battles>0, `풀숲을 ${steps}걸음 걸어 야생 전투 발생`);
+  ok(battleView==="battle", `전투 화면으로 전환 (${battleView})`);
+
+  /* ── 6. 실제 버튼으로 전투를 끝낸다 ── */
+  // ⚠️ 고정 반복수(40회 × 320ms)로 잡으면 부하가 걸린 환경(다른 브라우저가 같이 떠 있을 때)에서
+  //    애니메이션이 느려져 전투가 안 끝난 채 실패한다 → 실제 시계 예산으로 기다린다.
+  let turns=0, ended=false;
+  const battleDeadline=Date.now()+70000;
+  while(Date.now()<battleDeadline && !ended){
+    await p.waitForTimeout(260);
+    const st=await p.evaluate(()=>{
+      const G=window.SG.G();
+      const main=document.getElementById("mainMenu");
+      const menuOn=main && getComputedStyle(main).display!=="none";
+      return { busy:G.busy, inBattle:G.inBattle, menuOn,
+               view:([...document.querySelectorAll(".view")].find(x=>x.classList.contains("active"))||{}).id };
+    });
+    if(!st.inBattle || st.view!=="battle"){ ended=true; break; }
+    if(st.busy || !st.menuOn){ await p.keyboard.press("Enter"); await p.waitForTimeout(120); continue; }   // 메시지 진행
+    // 공격 → 첫 기술
+    await p.evaluate(()=>{ const btns=[...document.querySelectorAll("#mainMenu .mbtn")];
+      const atk=btns.find(x=>x.textContent.includes("공격")); if(atk)atk.click(); });
+    await p.waitForTimeout(260);
+    await p.evaluate(()=>{ const mv=document.querySelector("#moveMenu .mbtn"); if(mv)mv.click(); });
+    turns++;
+    await p.waitForTimeout(500);
+  }
+  // 전투 종료 직후엔 승리 연출·경험치 애니가 남아 있다. busy가 풀릴 때까지 기다린다.
+  for(let i=0;i<60;i++){ const bz=await p.evaluate(()=>window.SG.G().busy); if(!bz)break; await p.waitForTimeout(250); }
+  await p.waitForTimeout(600);
+  const after=await p.evaluate(()=>{ const G=window.SG.G();
+    return { inBattle:G.inBattle, caught:G.caught.size, seen:G.seen.size,
+             lv:G.party[0]&&G.party[0].level, xp:G.party[0]&&G.party[0].xp,
+             view:([...document.querySelectorAll(".view")].find(x=>x.classList.contains("active"))||{}).id }; });
+  ok(turns>0, `실제 버튼으로 ${turns}턴 전투`);
+  ok(!after.inBattle && after.view==="map", `전투가 정상 종료되고 맵으로 복귀 (${after.view})`);
+  ok(after.seen>=1, `도감 목격 기록 ${after.seen}종`);
+
+  /* ── 7. 전투 후에도 조작이 살아 있는가(멈춤 방지) ── */
+  await clearDialog(20);
+  const pre=await p.evaluate(()=>({...window.SG.G().pos}));
+  let moved2=false;
+  for(const k of ["ArrowDown","ArrowUp","ArrowLeft","ArrowRight"]){
+    await key(k); await p.waitForTimeout(240);
+    const now=await p.evaluate(()=>({...window.SG.G().pos}));
+    if(now.x!==pre.x||now.y!==pre.y){ moved2=true; break; }
+  }
+  ok(moved2, "전투 후에도 이동이 계속 된다 (입력 잠금 잔존 없음)");
+  const busyStuck=await p.evaluate(()=>window.SG.G().busy);
+  ok(!busyStuck, `G.busy가 풀려 있다 (${busyStuck})`);
+
+  ok(errs.length===0, "플레이 전체에서 런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
+  console.log(process.exitCode?"\n❌ 실패":"\n🎉 실입력 플레이스루 통과");
+  await b.close(); process.exit(process.exitCode||0);
+})();

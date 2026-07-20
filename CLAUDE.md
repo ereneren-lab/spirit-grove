@@ -71,6 +71,9 @@ verify 내용:
 - **잠듦 상태 undefined**: `STATUS_KO`/`STATUS_CLS`에 `slp` 누락(psn/brn/par만) → 잠들면 상태 칩이 `undefined`. `_MV_STATUS_KO`엔 있었음. → `STATUS_KO.slp="잠듦"`, `STATUS_CLS.slp="b-slp"`(+`.b-slp` CSS) 추가.
 - **소수점 레벨**: 특수 조우(파도/낚시/설원/섬/해안/용암/동굴)가 `clamp(avgLevel()+...)`만 하고 floor 안 해 소수점 레벨. → `makeMon`에서 `level=Math.max(1,Math.floor(level))`로 정수화(모든 조우/스탯 커버).
 - 회귀: 위 세 가지 + 파티 재정렬 + 돌 진화는 `scripts/bugfix_batch_test.js`.
+- **(몽키 퍼즈가 발견) 클립보드 미처리 거부**: `navigator.clipboard.writeText`는 **Promise**라 동기 `try/catch`로는 거부를 못 잡는다 → 권한 거부 시 "Write permission denied"가 미처리 에러로 새어나갔다. `.then/.catch`로 감싸고 `execCommand` 폴백.
+- **(몽키 퍼즈가 발견) 전투 종료 후 `G.foe` 참조**: `winBattle`이 `await` 사이사이에 `G.foe`를 다시 읽는데, 그 동안 전투가 끝나면(도망·울부짖기·전멸) null이 되어 `reading 'level'`로 터졌다 → 시작 시점에 `const _foe=G.foe` 스냅샷을 잡고 그것만 쓴다.
+- **(몽키 퍼즈가 발견) 지연 콜백의 `G.foe`**: 조우 연출은 `transitionToBattle(()=>{...})`로 **와이프가 화면을 덮은 뒤(≈340ms)** 실행된다. 그 사이 전투가 끝나면 모든 조우 대사(`G.foe.shiny/name`)가 `reading 'shiny'`로 터졌다 → `transitionToBattle` 한 곳에서 `if(!G.foe||!G.inBattle)return` 가드. `renderCombatants`도 전투 밖에서 불릴 수 있어 같은 가드를 넣었다.
 - **특수기가 랭크를 무시**: `damage()`가 `const aMul=isSpec?1:...` / `dMul=isSpec?1:...`로 **특수기일 때 능력변화 배율을 통째로 1** 처리 → 불·물·풀·전기·얼음 기술은 칼춤·철벽류가 전혀 안 걸렸다(랭크 게임이 물리 타입 전용이었음). 동시에 `stages`가 `{atk,def,spd}` 3종뿐이라 특공/특방/명중/회피 랭크 자체가 부재. → `stages` 7종(`newStages()`), 특수기는 `spa`/`spDef` 랭크 적용, 화상 반감은 물리에만, 명중 판정에 `accMul`(본가 3/3 표) 곱, 급소는 공격자 마이너스·방어자 플러스 랭크 무시. **`stages` 초기화 지점이 14곳이라 반드시 `newStages()`/`resetStages()`만 쓸 것** (리터럴 `{atk:0,def:0,spd:0}` 부활 금지).
 - **교체로 랭크 유지 익스플로잇**: `chooseSwitch`가 물러나는 정령의 랭크를 안 지워, 뒤로 뺐다 다시 내보내면 +6 부스트가 그대로 남았다. → 교체 시 `resetStages` + `_confuse`/`_seeded`/`_flinch` 해제(본가 규칙).
 - ⚠️ 화상·상태이상 데미지 테스트를 짤 땐 **기본 특성 폴백이 `guts`(근성)** 라는 걸 기억할 것 — 상태이상이 오히려 공격 1.5배라 화상 반감 검증이 뒤집힌다. 중립 특성(`sturdy` 등)으로 고정하고 재라.
@@ -308,6 +311,32 @@ verify 내용:
 ### 다이어트 결과 (완료)
 three.js(589KB) + BUNDLED_ART(616KB) + Map3D 코드 216줄 제거 → dist 4.7MB → **3.5MB**.
 남은 용량은 사실상 전부 크리처 아트 86종(PAINT_ART)이라 더 줄이려면 아트 화질/해상도 트레이드오프가 필요하다.
+
+## 실플레이 검증 (`scripts/playtest.sh`)
+`verify.sh`는 "내가 상정한 경로"만 확인한다. 이건 **게임을 실제로 돌려서** 확인하는 쪽이다.
+```bash
+bash scripts/playtest.sh dist/spirit_grove_3d.html 40   # 마지막 인자 = 몽키 퍼즈 초
+```
+- **`reachability_test.js`** — 게임이 쓰는 바로 그 `walkable()`로 시작점부터 BFS. 오버월드 콘텐츠 90개 + 인테리어 17곳 내부가 정말 닿는지 증명한다. "놓았는데 못 가는" 버그(이미 두 번 났다)를 구조적으로 막는다.
+  - ⚠️ **비전기술은 `walkable()`만으론 안 보인다.** 파도타기는 물에 부딪혀야 `G.surfing`이 켜지고, 자르기·괴력은 지형을 실제로 바꾼다 → 보유 플래그로 통행 가능 여부를 직접 모델링해야 한다. 안 하면 파도타기로 열리는 아이템이 "미도달"로 오판된다.
+  - ⚠️ `enterInterior`는 **warpFade로 150ms 지연 스왑**이다. 덜 기다리면 `walkable()`이 아직 오버월드를 보고 있어 내부 콘텐츠가 전부 미도달로 잡힌다(실제로 겪었다 — 게임이 아니라 하네스 버그였다).
+- **`playthrough_test.js`** — 내부 함수를 호출하지 않고 **진짜 키·클릭**으로 타이틀→캐릭터→스타터→이동→야생 전투→승리까지. 화면 전환 배선이 실제로 이어져 있는지 본다.
+  - ⚠️ 스토리는 `#dialogBox`가 아니라 별도 `#storyOverlay`(storyNext/storySkip)다. 대화창만 처리하면 여기서 영영 막힌다.
+  - ⚠️ 방향키를 번갈아 누르면 제자리 진동만 한다. 같은 방향을 여러 번 눌러야 실제로 이동한다. 마을(지역0)엔 야생 조우가 없으니 북쪽 풀숲으로 나가야 전투가 걸린다.
+  - ⚠️ 전투 진행은 **고정 반복수 대신 실제 시계 예산**으로. 부하가 걸린 환경에선 애니가 느려져 고정 횟수로는 안 끝난다.
+- **`monkey_test.js`** — 시드 고정 무작위 실입력을 퍼붓고 런타임 에러·영구 잠금·상태 오염(NaN/음수 HP/파티 소실)을 감시한다. **실제로 버그 3건을 잡았다**(아래 이력 참조).
+  - ⚠️ 전투에 들어가면 무작위 키로는 기술을 못 골라 그대로 갇힌다 → 전투 중엔 실제 메뉴 버튼을 눌러 턴을 진행시켜야 커버리지가 나온다.
+  - ⚠️ busy 계측은 전투 분기보다 **앞**에서 해야 한다. 뒤에 두면 `continue`로 샘플이 건너뛰어져 "연속 busy"가 아니라 샘플 간격을 재게 된다(27초로 보였다).
+  - ⚠️ 무작위 탐험에 의존하는 단정(전투 N회 이상 등)은 **플레이키**다. 게이트는 커버리지로 두고 나머지는 참고치로 출력할 것.
+
+### ⚠️ 브라우저 테스트가 많아 한 번에 못 돌 때
+playwright 테스트가 50개가 넘어 메모리 압박이 큰 환경에선 중간에 `Target page, context or browser has been closed`가 **매번 다른 테스트에서** 난다(게임 버그가 아니다). 구간을 나눠 돌린다:
+```bash
+PW_FROM=1  PW_TO=18 bash scripts/verify.sh
+PW_FROM=19 PW_TO=36 bash scripts/verify.sh
+PW_FROM=37 PW_TO=60 bash scripts/verify.sh
+```
+테스트가 예외로 죽으면 headless 브라우저가 그대로 남는다(세션 중 66개까지 쌓여 다른 테스트를 실패시켰다). 새 브라우저 테스트를 만들 땐 `uncaughtException`/`unhandledRejection`에서 반드시 `b.close()` 할 것. 이미 샜다면 `pkill -f headless_shell`.
 
 ## 시각 검증 (스크린샷)
 `scripts/screenshot.js` — Playwright + Chromium으로 dist를 실제로 띄워 타이틀→캐릭터→스타터→맵→전투까지 자동으로 몰고 가며 PNG 캡처 + 런타임 에러 수집. UI/아트/게임필 변경은 이걸로 눈으로 확인한다.

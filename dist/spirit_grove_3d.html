@@ -2597,7 +2597,11 @@ function transitionToBattle(after){ heldDir=null; stopPath(); if(G)G.active=firs
   const fl=$("flash"); fl.classList.remove("go"); void fl.offsetWidth; fl.classList.add("go");
   const covered=playBattleWipe();   // 블라인드 바가 화면을 덮는 시점(ms)을 돌려줌
   const seq=!(typeof G!=="undefined" && G && G.trainer);   // 야생·보스 = 순차 인트로, 트레이너 = 즉시(별도 등장 대사 있음)
-  setTimeout(()=>{ wrap.classList.remove("zoom"); Field.stop(); show("battle");
+  setTimeout(()=>{
+    // ⚠️ 이 콜백은 와이프가 화면을 덮은 뒤(≈340ms) 실행된다. 그 사이 전투가 끝나면
+    //    G.foe가 null이라 조우 대사(G.foe.shiny/name)가 전부 터진다. 여기서 한 번에 막는다.
+    if(!G||!G.foe||!G.inBattle){ wrap.classList.remove("zoom"); return; }
+    wrap.classList.remove("zoom"); Field.stop(); show("battle");
     setupBattleUI(seq); after();                            // seq면 foeOnly로 상대만 먼저 등장
     if(seq)battleIntroMe(); else showMain(); }, covered); }
 // 포켓몬식 순차 인트로: 상대 등장("야생 X 나타났다") 한 박자 뒤 → "가랏! 내정령!" 볼 던지며 등장 → 메뉴.
@@ -3165,6 +3169,7 @@ function animHpTxt(target,maxHp,snap){ const el=$("meHpTxt"); if(!el)return; tar
     if(k<1)_meHpRaf=requestAnimationFrame(step); else { _meHpShown=to; el.textContent=`${to} / ${maxHp}`; _meHpRaf=null; } }
   _meHpRaf=requestAnimationFrame(step); }
 function renderCombatants(){ const f=G.foe,m=activeMon();
+  if(!f||!m)return;   // 전투 종료 후 잔여 타이머가 부르는 경우가 있다
   $("foeName").textContent=(f.shiny?"✨":"")+f.name; $("foeLv").textContent="Lv "+f.level; setCrit("foe",f);
   $("meName").textContent=dispName(m); $("meLv").textContent="Lv "+m.level; setCrit("me",m);
   const foeSnap=(_lastFoeRef!==f), meSnap=(_lastMeRef!==m); _lastFoeRef=f; _lastMeRef=m;
@@ -4119,15 +4124,19 @@ function gainEV(m, foeId){ if(!m)return; if(!m.evs)m.evs={hp:0,atk:0,def:0,spa:0
   const b=sp.base; const keys=["hp","atk","def","spa","spDef","spd"].slice().sort((a,c)=>(b[c]||0)-(b[a]||0));
   [[keys[0],2],[keys[1],1]].forEach(pair=>{ const k=pair[0],g=pair[1]; if(tot>=510)return; const add=Math.min(g,252-(m.evs[k]||0),510-tot); if(add>0){ m.evs[k]=(m.evs[k]||0)+add; tot+=add; } });
   recalc(m); }
-async function winBattle(){ $("foeSprite").classList.add("faint"); Audio.sfx("faint"); if(!G.trainer)Audio.startMusic("victory",true); if(G.party[G.active]&&G.foe)gainEV(G.party[G.active],G.foe.id); G.party.forEach((pm,i)=>{ if(pm)pm.friendship=(pm.friendship||0)+(i===G.active?6:2); });
-  setMsg(`<b>${G.foe.name}</b>을(를) 쓰러뜨렸다!`); await mw(640);
-  const me=activeMon(); const base=Math.floor(G.foe.level*15+11+(G.trainer?G.foe.level*3:0));   // XP 완화(진행도 천천히): 킬당 레벨업이 느려져 여정이 길어진다. 레벨은 xpMult 앵커로 여전히 수렴.
+async function winBattle(){
+  // ⚠️ 이 함수는 await 사이사이에 G.foe를 다시 읽는다. 그 동안 전투가 끝나면(도망·울부짖기·전멸)
+  //    G.foe가 null이 되어 "reading 'level'"로 터진다 → 시작 시점에 스냅샷을 잡고 그것만 쓴다.
+  const _foe=G.foe; if(!_foe||!G.inBattle)return;
+  $("foeSprite").classList.add("faint"); Audio.sfx("faint"); if(!G.trainer)Audio.startMusic("victory",true); if(G.party[G.active])gainEV(G.party[G.active],_foe.id); G.party.forEach((pm,i)=>{ if(pm)pm.friendship=(pm.friendship||0)+(i===G.active?6:2); });
+  setMsg(`<b>${_foe.name}</b>을(를) 쓰러뜨렸다!`); await mw(640);
+  const me=activeMon(); if(!me)return; const base=Math.floor(_foe.level*15+11+(G.trainer?_foe.level*3:0));   // XP 완화(진행도 천천히): 킬당 레벨업이 느려져 여정이 길어진다. 레벨은 xpMult 앵커로 여전히 수렴.
   setMsg(`<b>${me.name}</b> 경험치 +${base}`); await mw(540);
   await gainXpFor(me,base,true);
   // shared XP to the rest of the (alive) party, silent
   for(const o of G.party){ if(o!==me && o.hp>0){ await gainXpFor(o,base,false); } }
   // coins for wild kill
-  if(!G.trainer){ const c=ri(8,18)+Math.floor(G.foe.level*1.5); G.money+=c; updateMoney(); }
+  if(!G.trainer){ const c=ri(8,18)+Math.floor(_foe.level*1.5); G.money+=c; updateMoney(); }
   if(!G.trainer && G.foe && G.foe.id==="dawnwyrm"){ G.legendDone=true; setMsg("여명룡이 그대를 인정하고 하늘로 솟아올랐다… 두 인장의 힘이 공명한다!"); await mw(1400); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="shadowlord"){ G.shadowDone=true; setMsg("흑요마가 빛 속으로 흩어졌다… 숲에 평온이 돌아온다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="aqualord"){ G.lakeDone=true; setMsg("수룡왕이 호수 깊은 곳으로 잠겨들었다… 물의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="glaciarch"){ G.snowDone=true; setMsg("빙하제가 눈보라 속으로 사라졌다… 얼음의 축복이 그대와 함께한다."); await mw(1300); saveGame(); }
   if(!G.trainer && G.foe && G.foe.id==="dawnguard"){ G.dawnDone=true; setMsg("오로르가 하늘로 날아올라 숲을 축복했다."); await mw(1300); saveGame(); }
   if(G.trainer){ G.trainer.fainted.add(G.trainer.idx);
@@ -4976,7 +4985,15 @@ $("volRange").addEventListener("input",()=>{ const v=parseInt($("volRange").valu
 $("volRange").addEventListener("change",()=>saveGame());
 $("saveNowBtn").addEventListener("click",()=>{ saveGame(); Audio.sfx("heal"); toast("저장 완료"); try{ $("saveBox").value=btoa(unescape(encodeURIComponent(JSON.stringify(serialize())))); }catch(e){} });
 $("copySaveBtn").addEventListener("click",()=>{ const t=$("saveBox"); t.select();
-  try{ navigator.clipboard.writeText(t.value); }catch(e){ try{document.execCommand("copy");}catch(_){} } toast("저장 코드 복사됨"); });
+  // ⚠️ clipboard.writeText는 Promise다 — 동기 try/catch로는 거부를 못 잡아
+  //    "Write permission denied"가 미처리 에러로 새어나갔다(몽키 퍼즈가 발견).
+  const _fallback=()=>{ try{ t.select(); document.execCommand("copy"); toast("저장 코드 복사됨"); }
+                        catch(_){ toast("복사 실패 — 코드를 길게 눌러 직접 복사해줘"); } };
+  try{
+    const _pr=navigator.clipboard && navigator.clipboard.writeText(t.value);
+    if(_pr && _pr.then) _pr.then(()=>toast("저장 코드 복사됨")).catch(_fallback);
+    else _fallback();
+  }catch(e){ _fallback(); } });
 $("loadCodeBtn").addEventListener("click",()=>{ const v=$("loadBox").value.trim(); if(!v){toast("코드를 붙여넣어줘");return;}
   try{ const obj=JSON.parse(decodeURIComponent(escape(atob(v)))); if(deserialize(obj)){ saveGame(); closeOverlay("setOverlay");
     updateDexPill(); updateMoney(); Field.rebuild(); Field.start(); toast("불러오기 완료"); } else toast("올바르지 않은 코드"); }
@@ -5009,13 +5026,13 @@ window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVi
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.FLAVOR=FLAVOR;
-Object.assign(window.SG,{TYPE_PARTICLE,SIGFX,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
+Object.assign(window.SG,{TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
