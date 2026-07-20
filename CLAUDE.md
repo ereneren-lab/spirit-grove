@@ -192,7 +192,7 @@ verify 내용:
 - 회귀 `scripts/center_test.js`(배치·비보행·접근성·카운터 소프트락·HP/상태/PP 회복·세이브).
 
 ### 전투 연출 (`SIGFX` / 타입 폴백)
-- **`TYPE_PARTICLE` 누락 = 화면에 "undefined"**: 타입 확장(얼음·독·땅) 때 `TYPE_COLOR`는 채웠는데 `TYPE_PARTICLE`을 안 채워서, `moveFx` 폴백과 `fxBurst`가 `fxGlyph(undefined)`를 호출 → `textContent=undefined`가 문자열 "undefined"로 변환돼 **전투 화면에 그 글자가 날아다녔다**(피해 기술 11종). → 10타입 전부 채움. **타입 추가 시 `TYPE_COLOR`/`TYPE_PARTICLE`/`TYPE_KO`/`TYPE_CLASS`/CSS를 한 세트로 볼 것.**
+- **`TYPE_PARTICLE` 누락 = 화면에 "undefined"**: 타입 확장(얼음·독·땅) 때 `TYPE_COLOR`는 채웠는데 `TYPE_PARTICLE`을 안 채워서, `moveFx` 폴백과 `fxBurst`가 `fxGlyph(undefined)`를 호출 → `textContent=undefined`가 문자열 "undefined"로 변환돼 **전투 화면에 그 글자가 날아다녔다**(피해 기술 11종). → 10타입 전부 채움. **타입 추가 시 `TYPE_COLOR`/`TYPE_PARTICLE`/`TYPE_KO`/`TYPE_CLASS`/CSS/`renderDex`의 필터 버튼 목록을 한 세트로 볼 것** — 도감 타입 필터도 신규 3타입이 빠져 있었다.
 - 얼음·독·땅은 폴백(이모지 1발)에서 전용 연출로 승격: 얼음=파편 다발+서리 필터, 독=거품 상승+색조 틀기, 땅=발밑에서 솟구침+충격.
 - `SIGFX` 10 → 16종 (눈보라·냉동빔·지진·땅파기·오물폭탄·독찌르기 추가).
 - 회귀 `scripts/battlefx_daynight_test.js`가 **실제 전투를 돌려 MutationObserver로 "undefined" 글리프를 잡는다**.
@@ -216,6 +216,21 @@ verify 내용:
 - 오버월드 표기는 `SEA_MONS`/`NO_WILD`/`legend` 제외 규칙이 `pickWild`와 같아야 한다.
 - ⚠️ `FLAVOR`는 `window.SG` 선언(1445줄)보다 **뒤에** 정의되므로 그 객체 리터럴에 넣으면 TDZ ReferenceError로 `SG` 자체가 죽는다. `window.SG.FLAVOR=FLAVOR;`처럼 flow 내보내기 시점에 붙일 것.
 - 회귀 `scripts/dex_flavor_test.js`(커버리지·진화 크기·풀↔표기 전수 대조·울음 버튼).
+
+### 명예의 전당 (`recordHallOfFame` / `showHallOfFame`)
+챔피언 등극 시점의 파티를 박제한다. 예전엔 `G.champion=true` 플래그 하나뿐이라 "누구와 함께 챔피언이 됐는지"가 어디에도 안 남았다.
+- `G.hallOfFame[]`(최근 10회) — 날짜·플레이시간·도감수 + 파티 스냅샷(id/이름/레벨/샤이니/타입). 세이브 키 `hof`.
+- 챔피언전 승리 → `recordHallOfFame()` → `playStory(LEAGUE_WIN)` 콜백에서 `showHallOfFame()`. 트레이너 카드의 "👑 명예의 전당 보기" 버튼으로 재열람(여러 회차면 ◀▶).
+- ⚠️ 엔딩 오버레이(`#endingOverlay`)를 **`showEnding`과 공유**한다. 헤더(`#endingTitle`)를 양쪽에서 각자 세팅해야 제목이 섞이지 않는다.
+- ⚠️ 스냅샷 이름은 `dispName(m)`이 아니라 `m.nick||m.name`으로 저장할 것 — `dispName`은 샤이니 ✨ 접두어를 붙이는데 렌더에서 또 붙여 이중 표기됐다.
+- ⚠️ `creatureVisual`이 뱉는 `<img class="cart">`는 **크기 제약이 없어 컨테이너를 뚫고 나온다.** 작은 목록에 쓸 땐 `.hofsp`/`.dbsp`처럼 이미지 크기를 강제하는 전용 클래스로 감쌀 것.
+
+### PP 회복 · 급소 랭크
+- **PP 회복**이 여관·센터뿐이라 PP가 마르면 걸어 돌아가야 했다 → `ether`(기력의 물방울, 가장 많이 닳은 기술 +10) / `elixir`(만능 물방울, 전 기술 완전 회복). 가득 찼으면 소모되지 않는다.
+- **급소가 고정 1/16**이라 전략이 아니었다 → 본가 랭크표 `CRIT_RATE=[1/16,1/8,1/4,1/3,1/2]`, `critStage(att,move)`가 기술의 `highCrit` + `att._critStage` + 초점렌즈(`scopelens`)를 합산(상한 4).
+  - 새 기술: 기합충전(`eff.crit:2`), 가르기·크로스촙(`highCrit:true`).
+  - `_critStage`는 **휘발성** — `resetStages`가 같이 지운다(교체·전투 종료·기절).
+  - 배율은 **1.5배 유지**(6세대 값). 2.0배는 기존 난이도 커브를 흔들어서 일부러 안 올렸다.
 
 ### 맵 게이트 참고 (트래커/기획 수정 시)
 - 체육관 입구 = `G` 타일, `GYM_AT`에 정의된 4곳. 뱃지 키는 TRAINERS `"1"~"4"`.

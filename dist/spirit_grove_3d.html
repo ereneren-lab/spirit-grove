@@ -378,6 +378,9 @@
 .dbmon.ally{background:linear-gradient(180deg,#26324a,#222b40)}
 .dbmon.dead{opacity:.4;filter:grayscale(1)}
 .dbmon.empty{opacity:.3;justify-content:center;min-height:52px}
+.hofsp{width:46px;height:46px;flex:none;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.hofsp img,.hofsp svg{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.hofsp.shiny img{filter:hue-rotate(150deg) saturate(1.4) brightness(1.05) drop-shadow(0 2px 3px rgba(0,0,0,.35))}
 .dbmon .dbsp{width:52px;height:52px;flex:none;display:flex;align-items:end;justify-content:center;position:relative}
 .dbmon .dbsp::after{content:"";position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:38px;height:8px;background:radial-gradient(ellipse,rgba(0,0,0,.35),transparent 70%);border-radius:50%}
 .dbmon .dbsp img,.dbmon .dbsp svg{width:50px;height:50px;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
@@ -694,7 +697,7 @@
       <div class="ov-body" id="heldBody"></div>
     </div>
     <div class="overlay" id="endingOverlay">
-      <div class="ov-head"><h3>🏆 숲의 인장</h3><button class="closex" data-close="endingOverlay">✕</button></div>
+      <div class="ov-head"><h3 id="endingTitle">🏆 숲의 인장</h3><button class="closex" data-close="endingOverlay">✕</button></div>
       <div class="ov-body" id="endingBody"></div>
     </div>
 
@@ -879,6 +882,7 @@ const HELD_ITEMS={
   oranberry:{ko:"오랭열매",em:"🫐",desc:"HP 절반 이하가 되면 25% 회복(1회)"},
   cureberry:{ko:"정화열매",em:"🍇",desc:"상태이상이 되면 회복(1회)"},
   powerband:{ko:"힘의띠",em:"💪",desc:"기술 위력이 약간 오른다"},
+  scopelens:{ko:"초점렌즈",em:"🔍",desc:"급소에 맞히기 쉬워진다(급소 랭크 +1)"},
 };
 const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate"};
 const STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦",frz:"냉동"};
@@ -981,6 +985,9 @@ const MOVES={
   amnesia:{name:"기억상실",type:"water",power:0,acc:100,pp:20,pri:0,eff:{stat:"spDef",stage:2,target:"self"}},
   doubleteam:{name:"그림자분신",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{stat:"eva",stage:1,target:"self"}},
   sandattack:{name:"모래뿌리기",type:"ground",power:0,acc:100,pp:15,pri:0,eff:{stat:"acc",stage:-1,target:"foe"}},
+  focusenergy:{name:"기합충전",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{crit:2,target:"self"}},
+  slash:{name:"가르기",type:"normal",power:58,acc:100,pp:20,pri:0,highCrit:true},
+  crosschop:{name:"크로스촙",type:"rock",power:72,acc:85,pp:10,pri:0,highCrit:true},
   charm:{name:"애교부리기",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{stat:"atk",stage:-2,target:"foe"}},
   scaryface:{name:"위협하기",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{stat:"spd",stage:-2,target:"foe"}},
   // ===== 풀죽음 =====
@@ -1002,6 +1009,8 @@ function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; c
   if(e.screen)p.push(e.screen==="reflect"?"물리 피해 5턴 감소":"특수 피해 5턴 감소");
   if(e.seed)p.push("씨뿌리기(매턴 흡수)");
   if(e.confuse)p.push("상대 혼란");
+  if(e.crit)p.push("자신 급소율↑↑");
+  if(mo.highCrit)p.push("급소율 높음");
   if(e.weather)p.push(({sun:"날씨 쨍쨍",rain:"날씨 비",sand:"날씨 모래바람"}[e.weather]||"날씨 변화"));
   if(e.hazard)p.push(e.hazard==="rock"?"바위 설치":"압정 설치");
   if(e.flinch)p.push("풀죽음 유발");
@@ -1013,7 +1022,7 @@ function moveSummary(mvKey){ const mo=MOVES[mvKey]; if(!mo)return mvKey; const d
 /* ===== DEX (30) ===== */
 const DEX=[
   {id:"foxfire",name:"파라꼬",em:"🦊",type:"fire",tier:1,starter:true,base:{hp:46,atk:10,def:9,spd:13,spa:14,spDef:9},moves:["tackle","ember"],learn:[[7,"growl"],[10,"flare"],[12,"furyswipe"],[14,"agility"]],evolveTo:"emberwolf",evolveLv:16},
-  {id:"emberwolf",name:"파라울",em:"🦊",type:"fire",tier:2,base:{hp:60,atk:13,def:12,spd:15,spa:18,spDef:12},moves:["ember","flare"],learn:[[16,"bite",[28,"nastyplot"]],[22,"inferno"],[26,"takedown"]],evolveTo:"blazelion",evolveLv:32},
+  {id:"emberwolf",name:"파라울",em:"🦊",type:"fire",tier:2,base:{hp:60,atk:13,def:12,spd:15,spa:18,spDef:12},moves:["ember","flare"],learn:[[16,"bite",[28,"nastyplot"],[32,"focusenergy"]],[22,"inferno"],[26,"takedown"]],evolveTo:"blazelion",evolveLv:32},
   {id:"blazelion",name:"파라온",em:"🦊",type:"fire",tier:3,base:{hp:78,atk:17,def:16,spd:17,spa:24,spDef:16},moves:["flare","inferno"],learn:[[36,"crush"],[40,"willowisp"],[46,"flareblitz"]]},
   {id:"shellow",name:"무르꼬",em:"🐢",type:"water",tier:1,starter:true,base:{hp:55,atk:8,def:15,spd:7,spa:11,spDef:15},moves:["tackle","splash"],learn:[[7,"harden"],[10,"hydro"],[13,"recover"]],evolveTo:"riverdrake",evolveLv:16},
   {id:"riverdrake",name:"무르롱",em:"🐊",type:"water",tier:2,base:{hp:68,atk:11,def:18,spd:10,spa:15,spDef:18},moves:["splash","hydro"],learn:[[22,"tsunami"]],evolveTo:"krakentide",evolveLv:32},
@@ -1026,10 +1035,10 @@ const DEX=[
   {id:"bunnyhop",name:"토롱이",em:"🐇",type:"normal",tier:1,base:{hp:44,atk:11,def:10,spd:16,spa:8,spDef:10},moves:["tackle","quickjab"],learn:[[8,"furyswipe"],[10,"slam"],[14,"recover"]],evolveTo:"harelord",evolveFriend:100},
   {id:"harelord",name:"토롱크",em:"🐇",type:"normal",tier:2,base:{hp:58,atk:16,def:13,spd:22,spa:12,spDef:13},moves:["slam","quickjab"],learn:[[28,"crush"]]},
   {id:"frostfish",name:"빙구리",em:"🐟",type:"ice",tier:1,base:{hp:46,atk:9,def:11,spd:13,spa:12,spDef:11},moves:["tackle","iceshard"],learn:[[12,"icebeam"]],evolveTo:"sharkfin",evolveItem:"waterstone"},
-  {id:"sharkfin",name:"빙구악",em:"🦈",type:"ice",type2:"rock",tier:2,base:{hp:62,atk:14,def:13,spd:16,spa:19,spDef:13},moves:["iceshard","icebeam"],learn:[[28,"blizzard"]]},
+  {id:"sharkfin",name:"빙구악",em:"🦈",type:"ice",type2:"rock",tier:2,base:{hp:62,atk:14,def:13,spd:16,spa:19,spDef:13},moves:["iceshard","icebeam"],learn:[[28,"blizzard"],[28,"slash"]]},
   {id:"cindercat",name:"냥불",em:"🐈‍⬛",type:"fire",tier:1,base:{hp:45,atk:11,def:10,spd:15,spa:15,spDef:10},moves:["tackle","ember"],learn:[[12,"flare"]],evolveTo:"tigerflame",evolveItem:"firestone"},
-  {id:"tigerflame",name:"냥호",em:"🐅",type:"fire",tier:2,base:{hp:60,atk:14,def:13,spd:17,spa:20,spDef:13},moves:["ember","flare"],learn:[[28,"inferno"]]},
-  {id:"racoonmon",name:"라꾸리",em:"🦝",type:"normal",tier:1,base:{hp:50,atk:12,def:12,spd:12,spa:9,spDef:12},moves:["tackle","growl"],learn:[[9,"slam",[18,"sandattack"]],[12,"furyswipe"],[15,"drainfang"]]},
+  {id:"tigerflame",name:"냥호",em:"🐅",type:"fire",tier:2,base:{hp:60,atk:14,def:13,spd:17,spa:20,spDef:13},moves:["ember","flare"],learn:[[28,"inferno"],[30,"slash"]]},
+  {id:"racoonmon",name:"라꾸리",em:"🦝",type:"normal",tier:1,base:{hp:50,atk:12,def:12,spd:12,spa:9,spDef:12},moves:["tackle","growl"],learn:[[9,"slam",[18,"sandattack"],[24,"slash"]],[12,"furyswipe"],[15,"drainfang"]]},
   {id:"hedgemoss",name:"가시몽",em:"🦔",type:"rock",type2:"grass",tier:1,base:{hp:56,atk:12,def:15,spd:8,spa:9,spDef:15},moves:["tackle","rockthrow"],learn:[[8,"harden"],[13,"rockslide"]]},
   {id:"sprigfawn",name:"푸르사",em:"🦌",type:"grass",type2:"normal",tier:1,base:{hp:50,atk:9,def:12,spd:13,spa:13,spDef:12},moves:["tackle","leaf"],learn:[[12,"vine"]]},
   {id:"voltbeetle",name:"찌리딱",em:"🪲",type:"elec",tier:1,base:{hp:48,atk:9,def:13,spd:12,spa:13,spDef:13},moves:["tackle","spark"],learn:[[13,"bolt"]]},
@@ -1040,10 +1049,10 @@ const DEX=[
   {id:"thunderowl",name:"부르릉",em:"🦉",type:"elec",type2:"flying",tier:2,base:{hp:54,atk:12,def:12,spd:13,spa:17,spDef:12},moves:["spark","bolt"],learn:[[18,"lullaby",[28,"nastyplot"]],[20,"twinbolt"],[24,"thunder"]]},
   {id:"tidewhale",name:"무르경",em:"🐋",type:"water",tier:2,base:{hp:74,atk:10,def:16,spd:7,spa:14,spDef:16},moves:["splash","slam"],learn:[[18,"hydro"],[28,"tsunami"]]},
   {id:"magmahound",name:"마그멍",em:"🐕",type:"fire",tier:2,base:{hp:58,atk:14,def:12,spd:14,spa:19,spDef:12},moves:["ember","slam"],learn:[[18,"flare"]]},
-  {id:"stormhawk",name:"회리매",em:"🦅",type:"flying",type2:"elec",tier:3,base:{hp:62,atk:20,def:13,spd:19,spa:14,spDef:13},moves:["gust","wingatk"],learn:[[26,"skyrush"]]},
+  {id:"stormhawk",name:"회리매",em:"🦅",type:"flying",type2:"elec",tier:3,base:{hp:62,atk:20,def:13,spd:19,spa:14,spDef:13},moves:["gust","wingatk"],learn:[[26,"skyrush"],[30,"focusenergy"]]},
   {id:"lunarmoth",name:"루나비",em:"🦋",type:"flying",type2:"grass",tier:3,base:{hp:66,atk:18,def:16,spd:16,spa:13,spDef:16},moves:["gust","peck"],learn:[[26,"wingatk"],[30,"doubleteam"]]},
   {id:"nipling",name:"집게공",em:"🦀",type:"water",type2:"rock",tier:1,base:{hp:46,atk:15,def:20,spd:9,spa:7,spDef:13},moves:["tackle","rockthrow"],learn:[[12,"crush"],[18,"rockslide"]],evolveTo:"crablord",evolveLv:28},
-  {id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"rock",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","hydro","boulder"],learn:[]},
+  {id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"rock",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","hydro","boulder"],learn:[[38,"crosschop"]]},
   {id:"gullian",name:"갈매정",em:"🐦",type:"flying",type2:"water",tier:2,base:{hp:58,atk:16,def:12,spd:23,spa:16,spDef:13},moves:["peck","gust","wingatk","splash"],learn:[[16,"skyrush"]]},
   {id:"palmore",name:"야자정",em:"🌴",type:"grass",tier:2,base:{hp:72,atk:18,def:22,spd:8,spa:16,spDef:18},moves:["vine","bloom","slam","absorb"],learn:[[20,"megadrain"]]},
   {id:"jellure",name:"해파리정",em:"🪼",type:"water",type2:"poison",tier:1,base:{hp:54,atk:8,def:12,spd:15,spa:20,spDef:20},moves:["splash","sludge","hydro"],learn:[[12,"poisonpowder",[26,"amnesia"]],[22,"tsunami"]]},
@@ -1086,7 +1095,7 @@ const DEX=[
   {id:"glowfly",name:"반딧불이",em:"🪰",type:"elec",tier:1,base:{hp:40,atk:10,def:10,spd:18,spa:18,spDef:12},moves:["spark","tackle"],learn:[[14,"bolt"],[22,"confuse"]],evolveTo:"arcmoth",evolveLv:30},
   {id:"arcmoth",name:"뇌광나방",em:"🦋",type:"elec",tier:3,base:{hp:70,atk:16,def:16,spd:24,spa:28,spDef:20},moves:["thunder","twinbolt","gust","spark"],learn:[]},
   {id:"pebblet",name:"조약돌",em:"🪨",type:"rock",tier:1,base:{hp:44,atk:14,def:22,spd:8,spa:6,spDef:14},moves:["tackle","rockthrow"],learn:[[12,"harden"],[18,"rockslide"]],evolveTo:"boulderin",evolveLv:22},
-  {id:"boulderin",name:"바위정",em:"⛰️",type:"rock",type2:"ground",tier:2,base:{hp:64,atk:20,def:34,spd:8,spa:8,spDef:20},moves:["rockthrow","rockslide","quake","harden"],learn:[[30,"boulder"]],evolveTo:"megalith",evolveLv:36},
+  {id:"boulderin",name:"바위정",em:"⛰️",type:"rock",type2:"ground",tier:2,base:{hp:64,atk:20,def:34,spd:8,spa:8,spDef:20},moves:["rockthrow","rockslide","quake","harden"],learn:[[30,"boulder"],[34,"crosschop"]],evolveTo:"megalith",evolveLv:36},
   {id:"megalith",name:"거암왕",em:"🗿",type:"rock",tier:3,base:{hp:88,atk:28,def:44,spd:9,spa:10,spDef:26},moves:["boulder","rockslide","crush","harden"],learn:[[40,"rockblast"],[44,"ironhead"],[50,"irondefense"]]},
   {id:"lavakit",name:"용암구리",em:"🌋",type:"fire",type2:"rock",tier:1,base:{hp:48,atk:15,def:16,spd:12,spa:16,spDef:12},moves:["ember","rockthrow"],learn:[[16,"flare"],[22,"rockslide"]],evolveTo:"magmadon",evolveLv:32},
   {id:"magmadon",name:"마그마룡",em:"🔥",type:"fire",type2:"ground",tier:3,base:{hp:82,atk:26,def:26,spd:14,spa:24,spDef:18},moves:["inferno","boulder","flare","quake"],learn:[]},
@@ -1163,11 +1172,17 @@ function recalc(m,sp,full){ sp=sp||byId(m.id);
   if(m.evs){ const _ev=m.evs,_l=m.level; m.maxHp+=Math.floor((_ev.hp||0)*_l/450); m.atk+=Math.floor((_ev.atk||0)*_l/500); m.def+=Math.floor((_ev.def||0)*_l/500); m.spa+=Math.floor((_ev.spa||0)*_l/500); m.spDef+=Math.floor((_ev.spDef||0)*_l/500); m.spd+=Math.floor((_ev.spd||0)*_l/500); }
   if(full)m.hp=m.maxHp; if(m.hp>m.maxHp)m.hp=m.maxHp; }
 function stageMul(s){ s=s||0; return s>=0?(2+s)/2:2/(2-s); }
+// 급소 확률 랭크표(본가). 기술의 highCrit·기합충전·초점렌즈가 단계를 올린다.
+const CRIT_RATE=[1/16,1/8,1/4,1/3,1/2];
+function critStage(att,move){ let c=(move&&move.highCrit?1:0)+((att&&att._critStage)||0);
+  if(att&&att.held==="scopelens")c++;
+  return clamp(c,0,4); }
+function critChance(att,move){ return CRIT_RATE[critStage(att,move)]; }
 function accMul(s){ s=s||0; return s>=0?(3+s)/3:3/(3-s); }   // 본가 명중/회피 랭크표(3/3 기준)
 function newStages(){ return {atk:0,def:0,spd:0,spa:0,spDef:0,acc:0,eva:0}; }
 const STAGE_KO={atk:"공격",def:"방어",spd:"속도",spa:"특수공격",spDef:"특수방어",acc:"명중률",eva:"회피율"};
 const STAGE_ABBR={atk:"공",def:"방",spd:"속",spa:"특공",spDef:"특방",acc:"명중",eva:"회피"};
-function resetStages(m){ if(m)m.stages=newStages(); }
+function resetStages(m){ if(m){ m.stages=newStages(); m._critStage=0; } }   // 급소 랭크도 휘발성(교체·전투종료로 사라짐)
 function effSpd(m){ return m.spd*stageMul(m.stages.spd)*(m.status==="par"?0.5:1); }
 function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&def.type2!==def.type)eff*=EFF[move.type][def.type2];
   if(def.ability==="levitate" && move.type==="ground")eff=0;   // 부유: 땅 기술 무효
@@ -1175,7 +1190,7 @@ function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&d
   const SPEC={fire:1,water:1,grass:1,elec:1,ice:1}; const isSpec=!!SPEC[move.type];   // 얼음도 특수(독·땅은 물리)
   const A=isSpec?(att.spa||att.atk):att.atk, D=isSpec?(def.spDef||def.def):def.def;
   const aSt=att.stages||{}, dSt=def.stages||{};
-  const crit=Math.random()<1/16?1.5:1;
+  const crit=Math.random()<critChance(att,move)?1.5:1;   // 배율은 6세대 1.5배 유지(밸런스 보존)
   // 급소는 공격자의 마이너스 랭크 / 방어자의 플러스 랭크를 무시한다(본가 규칙)
   let aRank=isSpec?(aSt.spa||0):(aSt.atk||0), dRank=isSpec?(dSt.spDef||0):(dSt.def||0);
   if(crit>1){ if(aRank<0)aRank=0; if(dRank>0)dRank=0; }
@@ -1451,7 +1466,7 @@ const STARTPOS={x:8,y:48};
 let G=null;
 function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box:[],active:0,caught:new Set(),seen:new Set(),
   items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
-  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hasCut:false,hasSurf:false,hasStrength:false,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
+  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],hasCut:false,hasSurf:false,hasStrength:false,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
 function activeMon(){return G.party[G.active];}
 function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
 function updateDexPill(){$("dexPill").textContent=`도감 ${G.caught.size} / ${DEX.length}${G.dexMaster?" 🏆":""}`;}
@@ -3152,6 +3167,10 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
   if(move.power===0 && move.eff){
     await moveFx(move,side,side==="me"?"foe":"me",mvKey);
     if(move.eff.status){ if(Math.random()<(move.eff.chance||1)) applyStatus(def,move.eff.status,side==="me"?"foe":"me"); else { setMsg("효과가 없었다…"); } }
+    else if(move.eff.crit){ const tg=move.eff.target==="self"?att:def;
+      const before=tg._critStage||0; tg._critStage=clamp(before+move.eff.crit,0,4);
+      if(tg._critStage===before){ setMsg(`<b>${dispName(tg)}</b>의 기합은 더 오르지 않는다!`); }
+      else { Audio.sfx("blip"); fxStage(move.eff.target==="self"?side:(side==="me"?"foe":"me"),true); setMsg(`<b>${dispName(tg)}</b>은(는) 기합을 넣었다! 급소에 맞기 쉬워졌다!`); } }
     else if(move.eff.stat){ const self=move.eff.target==="self"; applyStage(self?att:def, move.eff.stat, move.eff.stage, self?side:(side==="me"?"foe":"me")); }
     else if(move.eff.screen){ if(!G.screens)G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; const sc=(side==="me")?G.screens.me:G.screens.foe; sc[move.eff.screen]=5; Audio.sfx("blip"); setMsg(`${move.eff.screen==="reflect"?"물리":"특수"} 공격을 5턴간 막는 장막이 펼쳐졌다!`); }
     else if(move.eff.seed){ if(def.type==="grass"||def.type2==="grass"){ setMsg("효과가 없었다…"); } else if(def._seeded){ setMsg("이미 씨앗이 심어져 있다."); } else { def._seeded=side; Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>에게 씨앗이 심어졌다!`); } }
@@ -3637,7 +3656,9 @@ async function trainerDefeated(){ const tr=G.trainer; const firstWin=!G.defeated
     if(tr.key!=="L" && forestBadges()>=4){ setMsg("✨ 네 조각이 모두 모였다 — 군주의 제단과 정령 리그가 열렸다!"); await mw(1800); } }
   if(tr.key!=="L" && firstWin){ if(!G.hasCut && forestBadges()>=1){ G.hasCut=true; setMsg("🌿 비전 기술 <b>자르기</b>를 배웠다! 작은 덤불을 벨 수 있다."); await mw(1600); } else if(!G.hasStrength && forestBadges()>=2){ G.hasStrength=true; setMsg("💪 비전 기술 <b>괴력</b>을 배웠다! 바위를 밀 수 있다."); await mw(1600); } else if(!G.hasSurf && forestBadges()>=3){ G.hasSurf=true; setMsg("🌊 비전 기술 <b>파도타기</b>를 배웠다! 물 위를 건널 수 있다."); await mw(1600); } }
   if(tr.key!=="L" && firstWin && !(G.items&&G.items.vsseeker) && forestBadges()>=1){ G.items=G.items||{}; G.items.vsseeker=1; setMsg("📡 <b>VS 시커</b>를 받았다! 가방에서 사용하면 격파한 트레이너와 재대결할 수 있다."); await mw(1700); }
-  if(_gdef && _gdef.champion && firstWin){ G.champion=true; updateBadgePill(); setMsg("👑 그대가 새로운 챔피언이다!"); await mw(1400); saveGame(); endBattle(); playStory(LEAGUE_WIN,()=>{}); return; }
+  if(_gdef && _gdef.champion && firstWin){ G.champion=true; updateBadgePill(); setMsg("👑 그대가 새로운 챔피언이다!"); await mw(1400);
+    recordHallOfFame(); saveGame(); endBattle();
+    playStory(LEAGUE_WIN,()=>{ showHallOfFame(); }); return; }
   if(tr.boss && firstWin){ G.badge=true; setMsg("🏆 숲의 인장을 손에 넣었다!"); await mw(1400); saveGame(); endBattle(); playStory(EPILOGUE,()=>showEnding()); return; }
   saveGame(); endBattle(); }
 const _leagueSVG="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><rect width='160' height='110' rx='12' fill='#2a2540'/><rect x='20' y='30' width='12' height='60' fill='#5a4f7a'/><rect x='128' y='30' width='12' height='60' fill='#5a4f7a'/><rect x='50' y='24' width='12' height='66' fill='#6a5a9a'/><rect x='98' y='24' width='12' height='66' fill='#6a5a9a'/><rect x='0' y='88' width='160' height='22' fill='#3a3358'/><path d='M64 40 l6 -14 6 14 15 3 -12 11 4 15 -13 -8 -13 8 4 -15 -12 -11 z' fill='#ffd23f'/></svg>";
@@ -3657,7 +3678,49 @@ const EPILOGUE=[
   {art:_epiSVG,t:"\"그림자는 제단 깊은 곳에 잠들어 있고, 바다 건너엔 또 다른 인장이 그대를 기다린다.\""},
   {art:_epiSVG,t:"정령들이 당신 곁에 모여든다. 한 정령사의 진짜 이야기는… 이제부터 시작이다."}
 ];
-function showEnding(){ const body=$("endingBody"); const lv=Math.max(...G.party.map(m=>m.level));
+/* ===== 명예의 전당 ===== */
+// 챔피언 등극 시점의 파티를 박제한다. 예전엔 G.champion 플래그 하나뿐이라
+// "누구와 함께 챔피언이 됐는지"가 어디에도 남지 않았다.
+function recordHallOfFame(){
+  G.hallOfFame=G.hallOfFame||[];
+  G.hallOfFame.push({ at:Date.now(), play:G.playSec||0, dex:G.caught.size,
+    party:(G.party||[]).filter(m=>m&&!m.isEgg).map(m=>({
+      // dispName은 샤이니 ✨ 접두어를 붙인다 → 렌더에서 또 붙으면 이중 표기. 원본 이름만 저장.
+      id:m.id, nm:m.nick||m.name, lv:m.level, sh:!!m.shiny, ty:m.type })) });
+  if(G.hallOfFame.length>10)G.hallOfFame=G.hallOfFame.slice(-10);   // 최근 10회만 보관
+}
+function hofTime(sec){ const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60); return h+"시간 "+m+"분"; }
+function showHallOfFame(idx){
+  const list=G.hallOfFame||[]; if(!list.length){ flashHint("아직 명예의 전당 기록이 없다"); return; }
+  let i=(idx==null?list.length-1:idx); i=clamp(i,0,list.length-1);
+  const r=list[i]; const d=new Date(r.at);
+  const dateStr=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`;
+  const body=$("endingBody"); const _t=$("endingTitle"); if(_t)_t.textContent="👑 명예의 전당";
+  body.innerHTML=`<div style="text-align:center;padding:4px 0">
+    <div style="font-size:50px">👑</div>
+    <div style="font-size:18px;font-weight:800;margin:6px 0">명예의 전당</div>
+    <div style="font-size:11.5px;color:var(--muted)">제 ${i+1}대 챔피언 · ${dateStr}</div></div>
+    <div class="dex-stat" style="margin-top:12px">
+      <div class="box"><div class="num">${r.dex}</div><div class="lbl">도감 포획</div></div>
+      <div class="box"><div class="num">${r.party.length}</div><div class="lbl">함께한 정령</div></div>
+      <div class="box"><div class="num" style="font-size:15px">${hofTime(r.play)}</div><div class="lbl">플레이 시간</div></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-top:14px">
+      ${r.party.map(m=>`<div style="display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:7px 11px">
+        <div class="hofsp${m.sh?" shiny":""}">${creatureVisual(m.id,m.ty)}</div>
+        <div style="flex:1;text-align:left"><div style="font-weight:700;font-size:13.5px">${m.sh?"✨ ":""}${m.nm}</div>
+          <div style="font-size:11px;color:var(--muted)">Lv ${m.lv} · <span class="type-tag ${TYPE_CLASS[m.ty]}" style="font-size:9px">${tkLabel(m.ty)}</span></div></div></div>`).join("")}
+    </div>
+    ${list.length>1?`<div style="display:flex;gap:8px;justify-content:center;margin-top:13px">
+      <button class="sbtn" id="hofPrev" ${i<=0?"disabled":""}>◀ 이전</button>
+      <button class="sbtn" id="hofNext" ${i>=list.length-1?"disabled":""}>다음 ▶</button></div>`:""}
+    <button class="btn" id="endingClose" style="margin-top:14px;width:100%">닫기</button>`;
+  body.querySelector("#endingClose").addEventListener("click",()=>{Audio.sfx("blip");closeOverlay("endingOverlay");});
+  const pv=body.querySelector("#hofPrev"), nx=body.querySelector("#hofNext");
+  if(pv)pv.addEventListener("click",()=>{Audio.sfx("blip");showHallOfFame(i-1);});
+  if(nx)nx.addEventListener("click",()=>{Audio.sfx("blip");showHallOfFame(i+1);});
+  Audio.sfx("win"); openOverlay("endingOverlay"); }
+
+function showEnding(){ const body=$("endingBody"); const _t=$("endingTitle"); if(_t)_t.textContent="🏆 숲의 인장"; const lv=Math.max(...G.party.map(m=>m.level));
   body.innerHTML=`<div style="text-align:center;padding:6px 0">
     <div style="font-size:54px">🏆</div>
     <div style="font-size:18px;font-weight:800;margin:8px 0">숲의 군주를 꺾었다!</div>
@@ -3828,7 +3891,10 @@ function renderTrainerCard(){ const b=$("cardBody"); if(!b)return;
     ${row("⏱️ 플레이 시간", `${hh}시간 ${mm<10?"0"+mm:mm}분`)}
     ${row("✨ 전설 정령", `${[G.legendDone,G.lakeDone,G.shadowDone,G.dawnDone].filter(Boolean).length}/4`)}
     ${row("👟 이동 모드", G.running?"달리기":"걷기")}
-    <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--cream);font-weight:600">${title}</div>`;
+    <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--cream);font-weight:600">${title}</div>
+    ${(G.hallOfFame&&G.hallOfFame.length)?`<button class="btn" id="cardHof" style="margin-top:12px;width:100%">👑 명예의 전당 보기 (${G.hallOfFame.length}회)</button>`:""}`;
+  const hb=b.querySelector("#cardHof");
+  if(hb)hb.addEventListener("click",()=>{ Audio.sfx("blip"); closeOverlay("cardOverlay"); showHallOfFame(); });
 }
 function openTrainerCard(){ renderTrainerCard(); openOverlay("cardOverlay"); const c=$("cardClose"); if(c)c.onclick=()=>closeOverlay("cardOverlay"); }
 function renderDex(){ $("dexCaught").textContent=G.caught.size; $("dexParty").textContent=G.party.length; $("dexTotal").textContent=DEX.length;
@@ -3838,7 +3904,7 @@ function renderDex(){ $("dexCaught").textContent=G.caught.size; $("dexParty").te
       b.style.cssText="font-size:11px;padding:4px 9px;border-radius:13px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.18);background:"+(active?"rgba(127,209,174,.32)":"rgba(255,255,255,.05)");
       b.addEventListener("click",()=>{ Audio.sfx("blip"); on(); renderDex(); }); return b; };
     bar.appendChild(mk("전체",!_dexFilter.type&&!_dexFilter.uncaught,()=>{_dexFilter={type:null,uncaught:false};}));
-    ["fire","water","grass","elec","normal","flying","rock"].forEach(t=>bar.appendChild(mk(TYPE_KO[t],_dexFilter.type===t,()=>{_dexFilter.type=_dexFilter.type===t?null:t;})));
+    ["fire","water","grass","elec","normal","flying","rock","ice","poison","ground"].forEach(t=>bar.appendChild(mk(TYPE_KO[t],_dexFilter.type===t,()=>{_dexFilter.type=_dexFilter.type===t?null:t;})));
     bar.appendChild(mk("미포획",_dexFilter.uncaught,()=>{_dexFilter.uncaught=!_dexFilter.uncaught;}));
     body.appendChild(bar); }
   const _list=DEX.filter(sp=>{ if(_dexFilter.type&&sp.type!==_dexFilter.type)return false; if(_dexFilter.uncaught&&G.caught.has(sp.id))return false; return true; });
@@ -3985,6 +4051,8 @@ const BAG_ITEMS=[
   {key:"potion",em:"🧪",nm:"회복약",ds:"선두 HP +50",use:"heal",amt:50,where:"both"},
   {key:"hyperpotion",em:"💉",nm:"고급 회복약",ds:"선두 HP +130",use:"heal",amt:130,where:"both"},
   {key:"antidote",em:"🧴",nm:"해독제",ds:"선두의 상태이상 회복",use:"cure",where:"both"},
+  {key:"ether",em:"💠",nm:"기력의 물방울",ds:"가장 많이 쓴 기술의 PP +10",use:"pp",amt:10,where:"both"},
+  {key:"elixir",em:"🫙",nm:"만능 물방울",ds:"선두 정령의 모든 기술 PP 완전 회복",use:"pp",all:true,where:"both"},
   {key:"revive",em:"⭐",nm:"부활약",ds:"쓰러진 정령을 절반 회복",use:"revive",where:"both"},
   {key:"xatk",em:"🗡️",nm:"X공격",ds:"전투 중 공격 1단계 ↑",use:"stage",stat:"atk",where:"battle"},
   {key:"xdef",em:"🛡️",nm:"X방어",ds:"전투 중 방어 1단계 ↑",use:"stage",stat:"def",where:"battle"},
@@ -4049,6 +4117,19 @@ function applyItemEffect(it){ const m=activeMon();
     if(typeof closeOverlay==="function")closeOverlay("bagOverlay"); startFishing(); return false; }
   if(it.use==="heal"){ recalc(m); if(m.hp<=0){flashHint("쓰러진 정령엔 부활약을 써야 해");return false;} if(m.hp>=m.maxHp){flashHint(m.name+"은(는) 이미 가득 찼다");return false;}
     G.items[it.key]--; m.hp=Math.min(m.maxHp,m.hp+it.amt); Audio.sfx("heal"); flashHint(m.name+"의 HP 회복!"); return true; }
+  if(it.use==="pp"){ if(!m){flashHint("정령이 없다");return false;}
+    const mvs=(m.moves||[]).filter(k=>MOVES[k]);
+    if(!mvs.length){flashHint("회복할 기술이 없다");return false;}
+    if(it.all){ const lack=mvs.some(k=>(m.pp[k]||0)<MOVES[k].pp);
+      if(!lack){flashHint(dispName(m)+"의 PP는 이미 가득 찼다");return false;}
+      G.items[it.key]--; mvs.forEach(k=>{ m.pp[k]=MOVES[k].pp; }); Audio.sfx("heal");
+      flashHint(`🫙 ${dispName(m)}의 모든 기술 PP가 회복됐다!`); return true; }
+    // 가장 많이 닳은 기술 하나 (동률이면 앞 순서)
+    let best=null,worst=0;
+    for(const k of mvs){ const lack=MOVES[k].pp-(m.pp[k]||0); if(lack>worst){ worst=lack; best=k; } }
+    if(!best){flashHint(dispName(m)+"의 PP는 이미 가득 찼다");return false;}
+    G.items[it.key]--; m.pp[best]=Math.min(MOVES[best].pp,(m.pp[best]||0)+it.amt); Audio.sfx("heal");
+    flashHint(`💠 ${MOVES[best].name}의 PP가 회복됐다! (${m.pp[best]}/${MOVES[best].pp})`); return true; }
   if(it.use==="cure"){ if(!m.status){flashHint(m.name+"은(는) 멀쩡하다");return false;} G.items[it.key]--; m.status=null; Audio.sfx("heal"); flashHint(m.name+"의 상태이상 회복!"); return true; }
   if(it.use==="revive"){ const f=firstFainted(); if(!f){flashHint("쓰러진 정령이 없다");return false;} G.items[it.key]--; recalc(f); f.hp=Math.floor(f.maxHp/2); f.status=null; Audio.sfx("levelup"); flashHint(f.name+"이(가) 되살아났다!"); return true; }
   if(it.use==="stage"){ if(!G.inBattle)return false; if((m.stages[it.stat]||0)>=6){flashHint("더 오르지 않는다");return false;} G.items[it.key]--; applyStage(m,it.stat,1,"me"); return true; }
@@ -4078,6 +4159,8 @@ const SHOP=[
   {key:"potion",em:"🧪",nm:"회복약",ds:"HP +50",price:150},
   {key:"hyperpotion",em:"💉",nm:"고급 회복약",ds:"HP +130",price:420},
   {key:"antidote",em:"🧴",nm:"해독제",ds:"상태이상 회복",price:140},
+  {key:"ether",em:"💠",nm:"기력의 물방울",ds:"기술 PP +10",price:320},
+  {key:"elixir",em:"🫙",nm:"만능 물방울",ds:"전 기술 PP 완전 회복",price:1200},
   {key:"revive",em:"⭐",nm:"부활약",ds:"절반 회복 부활",price:700},
   {key:"repel",em:"🧴",nm:"퇴치 스프레이",ds:"60걸음 조우 차단",price:200},
   {key:"candy",em:"🍬",nm:"정령 사탕",ds:"선두 Lv +1",price:900},
@@ -4091,6 +4174,7 @@ const SHOP=[
   {key:"oranberry",em:"🫐",nm:"오랭열매",ds:"지닌물건 · 위기 시 25% 회복",price:300,held:true},
   {key:"cureberry",em:"🍇",nm:"정화열매",ds:"지닌물건 · 상태이상 자동 회복",price:300,held:true},
   {key:"leftovers",em:"🍖",nm:"먹다남은음식",ds:"지닌물건 · 매 턴 조금씩 회복",price:800,held:true},
+  {key:"scopelens",em:"🔍",nm:"초점렌즈",ds:"지닌물건 · 급소에 맞히기 쉬워진다",price:900,held:true},
   {key:"powerband",em:"💪",nm:"힘의 띠",ds:"지닌물건 · 기술 위력 ↑",price:1200,held:true},
   {key:"tm_crush",em:"💿",nm:"기술머신: 분쇄",ds:"어떤 정령이든 분쇄를 배운다",price:1500},
   {key:"tm_recover",em:"💿",nm:"기술머신: 회복",ds:"어떤 정령이든 회복을 배운다",price:1800},
@@ -4336,7 +4420,7 @@ function serialize(){ return {v:4, pe:G.playerEmoji, ps:G.styleIdx||0,
   party:G.party.map(serMon),
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
-  active:G.active, caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
+  active:G.active, hof:G.hallOfFame||[], caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
   pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, lakeDone:!!G.lakeDone, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, dexMaster:!!G.dexMaster, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
@@ -4346,6 +4430,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.items=Object.assign({ball:0,greatball:0,potion:0,revive:0,antidote:0,hyperpotion:0,repel:0,candy:0,xatk:0,xdef:0,xspd:0},o.items||{});
   s.money=o.money!=null?o.money:600; s.pos=o.pos||{x:STARTPOS.x,y:STARTPOS.y}; s.repel=o.repel||0;
   s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.lakeDone=!!o.lakeDone; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.dexMaster=!!o.dexMaster; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
+  s.hallOfFame=Array.isArray(o.hof)?o.hof:[];
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
   if(!s.party.length)return false;
@@ -4421,7 +4506,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, findHint, ENC_POOLS, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
