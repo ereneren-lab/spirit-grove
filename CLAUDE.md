@@ -191,6 +191,17 @@ verify 내용:
 - `+`는 전 맵에서 미사용이던 문자다. `walkable` 제외목록 · 오버월드 `_tile` 렌더 · 미니맵 색까지 세 곳에 등록돼 있다.
 - 회귀 `scripts/center_test.js`(배치·비보행·접근성·카운터 소프트락·HP/상태/PP 회복·세이브).
 
+### 전투 연출 (`SIGFX` / 타입 폴백)
+- **`TYPE_PARTICLE` 누락 = 화면에 "undefined"**: 타입 확장(얼음·독·땅) 때 `TYPE_COLOR`는 채웠는데 `TYPE_PARTICLE`을 안 채워서, `moveFx` 폴백과 `fxBurst`가 `fxGlyph(undefined)`를 호출 → `textContent=undefined`가 문자열 "undefined"로 변환돼 **전투 화면에 그 글자가 날아다녔다**(피해 기술 11종). → 10타입 전부 채움. **타입 추가 시 `TYPE_COLOR`/`TYPE_PARTICLE`/`TYPE_KO`/`TYPE_CLASS`/CSS를 한 세트로 볼 것.**
+- 얼음·독·땅은 폴백(이모지 1발)에서 전용 연출로 승격: 얼음=파편 다발+서리 필터, 독=거품 상승+색조 틀기, 땅=발밑에서 솟구침+충격.
+- `SIGFX` 10 → 16종 (눈보라·냉동빔·지진·땅파기·오물폭탄·독찌르기 추가).
+- 회귀 `scripts/battlefx_daynight_test.js`가 **실제 전투를 돌려 MutationObserver로 "undefined" 글리프를 잡는다**.
+
+### 낮/밤 생태
+`NIGHT_MONS`/`DAY_MONS`가 5종뿐이라 낮/밤 사이클이 사실상 무의미했다 → 밤 11종 · 낮 9종으로 확대.
+- **도감 설명문(`FLAVOR`)의 생태와 반드시 일치시킬 것.** "밤에만 활동한다"고 써놓고 낮에 나오면 도감이 거짓말이 된다. 회귀 테스트가 밤 종의 설명에 밤/달/야행/어둠/별 중 하나가, 낮 종에 낮/햇/태양/볕/아침/양지 중 하나가 있는지 강제한다.
+- ⚠️ 늘릴 땐 **낮·밤 각 티어 풀이 마르지 않는지** 확인(`pickWild`가 티어로 먼저 거르므로 한쪽에 몰리면 고갈). 테스트가 티어별 6종 이상을 강제한다.
+
 ### 트레이너 교체 AI (`foeMaybeSwitch`)
 적 트레이너가 상성 불리를 읽고 벤치에서 바꾼다. `doMove` 첫 줄에서 호출 — **교체가 상대의 턴을 소모**하므로 내 기술은 새로 나온 정령에게 들어간다(본가와 동일).
 - 팀이 `[id,lv]` 배열이라 예전엔 교체가 불가능했다. → `G.trainer.mons[]` 인스턴스 캐시(`trainerMon(i)`)로 HP·PP가 남는다. `G.trainer.fainted`(Set)로 기절 관리, `trainerNextAlive()`가 다음 정령을 고른다(예전 `idx++` 순차 아님). **팀 도트 UI도 `fainted` 기준**.

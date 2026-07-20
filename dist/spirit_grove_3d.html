@@ -2231,10 +2231,13 @@ const ENC_POOLS={
   lava:["pebblet","lavakit","burrowmouse","pebblet","lavakit","boulderin","magmadon","crystalgon"],
   cave:["hedgemoss","racoonmon","sparkmouse","voltbeetle","swampfrog"],
 };
-const NIGHT_MONS=new Set(["lunarmoth","thunderowl","swampfrog"]);
+// 시간대 한정 출현. 도감 설명문(FLAVOR)의 생태와 일치시킨다 —
+// "밤에만 활동한다"고 써놓고 낮에 나오면 도감이 거짓말이 된다.
+// ⚠️ 늘릴 땐 낮/밤 각 티어 풀이 비지 않는지 확인할 것(pickWild가 티어로 먼저 거른다).
+const NIGHT_MONS=new Set(["lunarmoth", "thunderowl", "swampfrog", "emberwolf", "tigerflame", "vinesnake", "emberlix", "moonytide", "pyrewolf", "glowfly", "arcmoth"]);
 const SEA_MONS=new Set(["nipling","crablord","gullian","palmore","jellure","emberlix"]);
 const NO_WILD=new Set(["skydrake","tidalore","megalith"]);
-const DAY_MONS=new Set(["sprigfawn","stormhawk"]);
+const DAY_MONS=new Set(["sprigfawn", "stormhawk", "cindercat", "leafdrake", "palmore", "seedbean", "mossback", "sproutcat", "glimmertide"]);
 function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
   const deep=depth>=0.82;
   const t3p=deep?0.30:0.10, t2p=deep?0.66:0.36, g3=deep?4:12, g2=deep?3:7;
@@ -2994,7 +2997,9 @@ function particles(side,emoji,n){ if(CONFIG.reduceMotion)return; const field=$("
     p.style.setProperty("--dx",rand(-50,50)+"px"); p.style.setProperty("--dy",rand(-50,30)+"px"); field.appendChild(p); setTimeout(()=>p.remove(),800); } }
 
 /* ===================== SKILL FX ===================== */
-const TYPE_PARTICLE={fire:"🔥",water:"💧",grass:"🍃",elec:"⚡",normal:"💢",flying:"🪶",rock:"🪨"};
+// ⚠️ 타입 추가 시 여기도 반드시 채울 것. 비면 fxGlyph가 textContent=undefined를 받아
+// 전투 화면에 문자열 "undefined"가 날아간다(얼음·독·땅에서 실제로 그랬다).
+const TYPE_PARTICLE={fire:"🔥",water:"💧",grass:"🍃",elec:"⚡",normal:"💢",flying:"🪶",rock:"🪨",ice:"❄️",poison:"🫧",ground:"🪨"};
 const fxT=ms=>Math.max(50,Math.round(ms*clamp((typeof SKIP!=="undefined"&&SKIP)?0.35:CONFIG.textSpeed,0.35,1.2)));
 function fxCenter(side){ const sp=spriteEl(side), fr=$("battleField").getBoundingClientRect(), r=sp.getBoundingClientRect();
   return {x:r.left-fr.left+r.width/2, y:r.top-fr.top+r.height/2}; }
@@ -3018,6 +3023,43 @@ function fxSlash(side){ const c=fxCenter(side); const s=document.createElement("
 function _fly(g,from,to,col,dur,sc){ const e=fxGlyph(g,from,col,"fx-proj"); e.animate([{left:from.x+"px",top:from.y+"px",transform:"translate(-50%,-50%) scale(.5)",opacity:.35},{left:to.x+"px",top:to.y+"px",transform:"translate(-50%,-50%) scale("+(sc||1)+")",opacity:1}],{duration:fxT(dur),easing:"ease-in",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); return e; }
 function _pop(g,at,col,dx,dy,dur){ const e=fxGlyph(g,at,col,"fx-particle"); e.animate([{transform:"translate(-50%,-50%) translate(0,0) scale(.4)",opacity:1},{transform:"translate(-50%,-50%) translate("+(dx||0)+"px,"+(dy||-40)+"px) scale(1.2)",opacity:0}],{duration:fxT(dur||rand(520,780)),easing:"ease-out",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); return e; }
 const SIGFX={
+  // 눈보라: 화면을 가로지르는 횡풍 + 서리
+  blizzard: async(s,d)=>{ const c=fxCenter(d); screenShake(false);
+    for(let i=0;i<14;i++){ const y=c.y+rand(-52,52); const f=fxGlyph("❄️",{x:c.x-150,y},TYPE_COLOR.ice,"fx-proj"); f.style.fontSize="20px";
+      f.animate([{left:(c.x-150)+"px",opacity:0},{left:(c.x+40)+"px",opacity:1},{left:(c.x+150)+"px",opacity:0}],{duration:fxT(460),easing:"linear"}).finished.then(()=>f.remove()).catch(()=>f.remove()); await wait(fxT(26)); }
+    const tg=spriteEl(d); tg.style.filter=`drop-shadow(0 0 16px ${TYPE_COLOR.ice}) brightness(1.35) saturate(.5)`; setTimeout(()=>{tg.style.filter="";},fxT(700));
+    fxBurst(d,"ice",3); impactFlash(); await wait(fxT(140)); },
+  // 냉동빔: 곧게 뻗는 광선 → 얼어붙음
+  icebeam: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    const beam=document.createElement("div"); beam.className="fx-glyph"; beam.style.cssText=`left:${from.x}px;top:${from.y}px;width:4px;height:5px;background:${TYPE_COLOR.ice};box-shadow:0 0 14px ${TYPE_COLOR.ice};border-radius:3px;transform-origin:left center`;
+    const dx=to.x-from.x, dy=to.y-from.y, len=Math.hypot(dx,dy); beam.style.transform=`translate(0,-50%) rotate(${Math.atan2(dy,dx)}rad)`;
+    $("battleField").appendChild(beam);
+    await beam.animate([{width:"4px",opacity:.5},{width:len+"px",opacity:1}],{duration:fxT(200),easing:"ease-out",fill:"forwards"}).finished.catch(()=>{});
+    await wait(fxT(110)); beam.remove();
+    for(let i=0;i<6;i++)_pop("❄️",{x:to.x+rand(-26,26),y:to.y+rand(-22,14)},TYPE_COLOR.ice,rand(-24,24),rand(-40,-6),rand(420,620));
+    const tg=spriteEl(d); tg.style.filter=`drop-shadow(0 0 14px ${TYPE_COLOR.ice}) brightness(1.3) saturate(.5)`; setTimeout(()=>{tg.style.filter="";},fxT(640));
+    fxBurst(d,"ice",3); impactFlash(); screenShake(false); await wait(fxT(90)); },
+  // 지진: 화면 전체가 흔들리고 발밑에서 균열
+  quake: async(s,d)=>{ screenShake(true); const c=fxCenter(d);
+    for(let i=0;i<7;i++){ const gx=c.x+rand(-46,46); _pop("💥",{x:gx,y:c.y+rand(14,40)},TYPE_COLOR.ground,rand(-10,10),rand(-46,-14),rand(380,560)); await wait(fxT(34)); }
+    fxBurst(d,"ground",3); impactFlash(); await wait(fxT(90)); screenShake(true); await wait(fxT(140)); },
+  // 땅파기: 사라졌다가 발밑에서 솟구침
+  dig: async(s,d)=>{ const aS=spriteEl(s); aS.animate([{opacity:1,transform:"translateY(0)"},{opacity:0,transform:"translateY(26px)"}],{duration:fxT(240),fill:"forwards"});
+    const c0=fxCenter(s); for(let i=0;i<5;i++)_pop("🪨",{x:c0.x+rand(-18,18),y:c0.y+24},TYPE_COLOR.ground,rand(-26,26),rand(-34,-8),rand(320,480));
+    await wait(fxT(380));
+    const c=fxCenter(d); for(let i=0;i<5;i++)_pop("💥",{x:c.x+rand(-26,26),y:c.y+rand(10,32)},TYPE_COLOR.ground,rand(-16,16),rand(-52,-18),rand(360,520));
+    aS.animate([{opacity:0,transform:"translateY(26px)"},{opacity:1,transform:"translateY(0)"}],{duration:fxT(200),fill:"forwards"});
+    fxBurst(d,"ground",3); impactFlash(); screenShake(true); await wait(fxT(120)); },
+  // 오물폭탄: 큰 덩어리가 포물선으로 날아가 터짐
+  sludge: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const g=_fly("🫧",from,to,TYPE_COLOR.poison,fxT(330),2.0); g.style.fontSize="38px";
+    await wait(fxT(300));
+    for(let i=0;i<9;i++){ const a=i/9*6.28; _pop("🫧",to,TYPE_COLOR.poison,Math.cos(a)*46,Math.sin(a)*46,rand(460,660)); }
+    const tg=spriteEl(d); tg.style.filter=`drop-shadow(0 0 13px ${TYPE_COLOR.poison}) hue-rotate(-22deg)`; setTimeout(()=>{tg.style.filter="";},fxT(660));
+    fxBurst(d,"poison",3); impactFlash(); screenShake(false); await wait(fxT(110)); },
+  // 독찌르기: 빠르게 찌르고 보라 잔상
+  poisonjab: async(s,d)=>{ const aS=spriteEl(s); aS.classList.add("lunge"); await wait(fxT(150)); aS.classList.remove("lunge");
+    fxSlash(d); const c=fxCenter(d); for(let i=0;i<5;i++)_pop("🫧",{x:c.x+rand(-20,20),y:c.y+rand(-16,16)},TYPE_COLOR.poison,rand(-30,30),rand(-40,-4),rand(380,540));
+    fxBurst(d,"poison",2); await wait(fxT(80)); },
   tsunami: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const w=_fly("🌊",from,to,TYPE_COLOR.water,380,1.8); w.style.fontSize="46px"; await wait(fxT(300)); for(let i=0;i<6;i++)_pop("💧",{x:to.x+rand(-34,34),y:to.y+rand(-24,10)},TYPE_COLOR.water,rand(-30,30),rand(-50,-8),rand(420,640)); fxBurst(d,"water",3); impactFlash(); screenShake(true); await wait(fxT(120)); },
   hydro: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); for(let i=0;i<3;i++){ const j=_fly("💧",from,to,TYPE_COLOR.water,150,1.5); j.style.fontSize="30px"; await wait(fxT(70)); } fxBurst(d,"water",3); impactFlash(); screenShake(false); await wait(fxT(80)); },
   bloom: async(s,d)=>{ const c=fxCenter(d); for(let i=0;i<10;i++){ const a=i/10*6.28; _pop("🌸",c,TYPE_COLOR.grass,Math.cos(a)*48,Math.sin(a)*48,rand(520,760)); } fxBurst(d,"grass",3); await wait(fxT(180)); screenShake(false); },
@@ -3042,7 +3084,19 @@ async function moveFx(move,side,dSide,mv){ const type=move.type; const pw=move.p
   else if(type==="grass"){ const c=fxCenter(dSide); for(let i=0;i<6;i++){ const ang=i/6*6.28; const g=fxGlyph("🍃",{x:c.x+Math.cos(ang)*30,y:c.y+Math.sin(ang)*30},TYPE_COLOR.grass,"fx-particle"); g.animate([{transform:"rotate(0) scale(.5)",opacity:1},{transform:"rotate(360deg) scale(1.1)",opacity:0}],{duration:fxT(420),easing:"ease-out"}).finished.then(()=>g.remove()).catch(()=>g.remove()); } await wait(fxT(220)); fxBurst(dSide,type,inten); }
   else if(type==="rock"){ const c=fxCenter(dSide); for(let i=0;i<3;i++){ const rx=c.x+rand(-24,24); const rk=fxGlyph("🪨",{x:rx,y:c.y-72},TYPE_COLOR.rock,"fx-proj"); rk.animate([{top:(c.y-72)+"px",opacity:.3},{top:c.y+"px",opacity:1}],{duration:fxT(160),easing:"ease-in",fill:"forwards"}).finished.then(()=>rk.remove()).catch(()=>rk.remove()); await wait(fxT(60)); } fxBurst(dSide,type,inten); if(inten>=2)screenShake(false); }
   else if(type==="flying"){ for(let i=0;i<3;i++){ fxSlash(dSide); await wait(fxT(80)); } fxBurst(dSide,type,inten); }
-  else { const from=fxCenter(side),to=fxCenter(dSide); await fxProjectile(from,to,TYPE_PARTICLE[type],TYPE_COLOR[type]); fxBurst(dSide,type,inten); }
+  else if(type==="ice"){ const from=fxCenter(side),to=fxCenter(dSide);
+    for(let i=0;i<4;i++){ const sh=_fly("❄️",{x:from.x+rand(-16,16),y:from.y+rand(-16,16)},{x:to.x+rand(-22,22),y:to.y+rand(-18,18)},TYPE_COLOR.ice,fxT(190),1.2); sh.style.fontSize="24px"; await wait(fxT(45)); }
+    const tg=spriteEl(dSide); tg.style.filter=`drop-shadow(0 0 12px ${TYPE_COLOR.ice}) brightness(1.25) saturate(.65)`; setTimeout(()=>{tg.style.filter="";},fxT(560));
+    fxBurst(dSide,type,inten); if(inten>=2)screenShake(false); }
+  else if(type==="poison"){ const c=fxCenter(dSide);
+    for(let i=0;i<8;i++){ _pop("🫧",{x:c.x+rand(-30,30),y:c.y+rand(-4,26)},TYPE_COLOR.poison,rand(-14,14),rand(-58,-26),rand(460,700)); await wait(fxT(28)); }
+    const tg=spriteEl(dSide); tg.style.filter=`drop-shadow(0 0 11px ${TYPE_COLOR.poison}) hue-rotate(-18deg)`; setTimeout(()=>{tg.style.filter="";},fxT(600));
+    fxBurst(dSide,type,inten); }
+  else if(type==="ground"){ const c=fxCenter(dSide);
+    for(let i=0;i<4;i++){ const gx=c.x+rand(-30,30); const rk=fxGlyph("🪨",{x:gx,y:c.y+40},TYPE_COLOR.ground,"fx-proj");
+      rk.animate([{top:(c.y+40)+"px",opacity:.25},{top:(c.y-30)+"px",opacity:1},{top:(c.y+6)+"px",opacity:0}],{duration:fxT(420),easing:"ease-out"}).finished.then(()=>rk.remove()).catch(()=>rk.remove()); await wait(fxT(52)); }
+    fxBurst(dSide,type,inten); impactFlash(); screenShake(inten>=3); }
+  else { const from=fxCenter(side),to=fxCenter(dSide); await fxProjectile(from,to,TYPE_PARTICLE[type]||"💥",TYPE_COLOR[type]); fxBurst(dSide,type,inten); }
   if(inten>=3)screenShake(false); }
 function fxStatusAura(side,status){ if(CONFIG.reduceMotion)return; const c=fxCenter(side); const map={psn:{g:"🫧",col:"#b07fd1"},brn:{g:"🔥",col:"#f0795d"},par:{g:"⚡",col:"#f0cf5d"},slp:{g:"💤",col:"#9fb4d8"},frz:{g:"❄️",col:"#6fc4e0"}}[status]; if(!map)return;
   const sp=spriteEl(side); sp.style.filter=`drop-shadow(0 0 9px ${map.col})`; setTimeout(()=>{sp.style.filter="";},720);
@@ -3818,12 +3872,12 @@ const FLAVOR={
   sharkfin:{cat:"이빨상어",h:1.1,w:48,t:"지느러미만 내놓고 수면을 가른다. 한번 물면 놓지 않는다."},
   tidewhale:{cat:"큰물고래",h:2.4,w:180,t:"몸으로 물결을 일으킨다. 온순하지만 화나면 거대한 파도를 만든다."},
   otterwave:{cat:"물놀이수달",h:0.6,w:11,t:"조개를 돌로 깨 먹는다. 장난기가 많아 늘 물장구를 친다."},
-  swampfrog:{cat:"늪개구리",h:0.5,w:10,t:"진흙 속에 몸을 묻고 잎사귀로 위장한다."},
+  swampfrog:{cat:"늪개구리",h:0.5,w:10,t:"진흙 속에 몸을 묻고 잎사귀로 위장한다. 밤이 되면 울음소리로 짝을 부른다."},
   leafdrake:{cat:"새싹도마뱀",h:0.4,w:6,t:"등의 새싹이 햇빛을 모은다. 양지에서 꾸벅꾸벅 존다."},
   leafwyrm:{cat:"덩굴룡",h:1.2,w:34,t:"몸을 휘감아 나무를 타고 오른다. 잎으로 호흡한다."},
   grovespirit:{cat:"숲정령",h:1.8,w:95,t:"오래된 나무에 깃든다. 곁에 있으면 풀이 유난히 빨리 자란다."},
   vinesnake:{cat:"덩굴뱀",h:1.4,w:18,t:"덩굴처럼 가지에 매달려 먹이를 노린다. 독을 품었다."},
-  sprigfawn:{cat:"새순사슴",h:0.8,w:22,t:"뿔에 어린 새싹이 돋는다. 봄이 오면 무리 지어 이동한다."},
+  sprigfawn:{cat:"새순사슴",h:0.8,w:22,t:"뿔에 어린 새싹이 돋는다. 햇볕이 좋은 낮에 무리 지어 풀밭을 거닌다."},
   sparkmouse:{cat:"전기쥐",h:0.3,w:5,t:"볼주머니에 정전기를 모은다. 놀라면 찌릿 방전한다."},
   voltrat:{cat:"방전쥐",h:0.5,w:12,t:"꼬리를 비벼 불꽃을 튀긴다. 무리가 모이면 폭풍 같은 전류가 흐른다."},
   voltbeetle:{cat:"전기풍뎅이",h:0.3,w:3,t:"딱지날개를 비벼 스파크를 낸다. 빛에 모여드는 습성이 있다."},
@@ -3831,7 +3885,7 @@ const FLAVOR={
   bunnyhop:{cat:"깡총토끼",h:0.4,w:4,t:"긴 귀로 멀리서 나는 소리를 듣는다. 위험을 느끼면 지그재그로 도망친다."},
   harelord:{cat:"들판토끼",h:0.8,w:14,t:"긴 다리로 들판을 가로지른다. 뒷발차기가 매섭다."},
   racoonmon:{cat:"너구리",h:0.6,w:13,t:"반짝이는 것을 모은다. 호기심이 많아 둥지가 잡동사니로 가득하다."},
-  stormhawk:{cat:"회오리매",h:1.0,w:24,t:"상승기류를 타고 높이 난다. 급강하로 먹이를 낚아챈다."},
+  stormhawk:{cat:"회오리매",h:1.0,w:24,t:"상승기류를 타고 높이 난다. 한낮의 뜨거운 기류를 골라 급강하로 먹이를 낚아챈다."},
   lunarmoth:{cat:"달나방",h:0.7,w:8,t:"달빛에 인분이 은은히 빛난다. 밤에만 활동한다."},
   dawnguard:{cat:"여명수호",h:1.9,w:70,t:"동틀 녘 빛과 함께 나타난다 전해진다. 그림자를 몰아내는 존재."},
   hedgemoss:{cat:"이끼고슴도치",h:0.4,w:16,t:"등의 돌가시에 이끼가 자란다. 둥글게 말아 몸을 지킨다."},
@@ -3851,7 +3905,7 @@ const FLAVOR={
   frostpup:{cat:"눈송이견",h:0.4,w:8,t:"숨을 내쉴 때마다 하얀 서리가 맺힌다. 눈밭을 뒹구는 것을 가장 좋아한다."},
   glacibear:{cat:"얼음거수",h:2.3,w:400,t:"얼음이 엉겨붙은 털가죽이 바위처럼 단단하다. 겨울 내내 빙하 위를 어슬렁거린다."},
   dewdrop:{cat:"샘물정령",h:0.3,w:2,t:"이른 아침 풀잎 끝에서 태어난다고 전해진다. 햇살이 강해지면 그늘로 숨어든다."},
-  glimmertide:{cat:"물빛정령",h:1.9,w:70,t:"몸을 따라 잔물결 같은 빛무늬가 끊임없이 흐른다. 잔잔한 수면 위를 미끄러지듯 난다."},
+  glimmertide:{cat:"물빛정령",h:1.9,w:70,t:"몸을 따라 잔물결 같은 빛무늬가 흐른다. 햇빛이 반짝이는 낮 수면 위를 미끄러지듯 난다."},
   moonytide:{cat:"달빛물결",h:1.8,w:66,t:"달이 차오르면 몸에서 은빛 물결이 인다. 밤바다에서 홀로 조용히 헤엄친다."},
   puddlet:{cat:"웅덩이",h:0.3,w:3,t:"몸을 불렸다 줄였다 하며 웅덩이에 숨는다. 비 오는 날이면 신이 나 통통 튄다."},
   riverine:{cat:"강물정령",h:1.0,w:28,t:"몸이 흐르는 시냇물처럼 끊임없이 일렁인다. 물길을 따라 상류로 거슬러 오른다."},
@@ -4361,6 +4415,7 @@ window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVi
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.FLAVOR=FLAVOR;
+Object.assign(window.SG,{TYPE_PARTICLE,SIGFX,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
