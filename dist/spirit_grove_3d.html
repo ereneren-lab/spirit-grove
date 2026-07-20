@@ -1450,6 +1450,9 @@ TRAINERS["1"].gym=true; TRAINERS["1"].badge="초원의 조각";
 TRAINERS["2"].gym=true; TRAINERS["2"].badge="숲의 조각";
 TRAINERS["3"].gym=true; TRAINERS["3"].badge="호수의 조각";
 TRAINERS["4"].gym=true; TRAINERS["4"].badge="고원의 조각";
+TRAINERS.r={key:"r",name:"동굴 탐사가 석민",em:"⛏️",team:[["sparkmouse",22],["voltbeetle",24],["crystalgon",25]],reward:{greatball:3,hyperpotion:2,revive:1},money:2200,intro:"동굴 탐사가 석민: 이 안쪽은 위험해. 실력을 보여봐!",outro:"동굴 탐사가 석민: 좋아, 통과해도 되겠군."};
+TRAINERS.u={key:"u",name:"용암 광부 태산",em:"🔥",team:[["lavakit",26],["magmahound",28],["magmadon",30]],reward:{hyperpotion:3,ether:2,firestone:1},money:2900,intro:"용암 광부 태산: 이 열기 속에서 버틸 수 있겠나?",outro:"용암 광부 태산: 대단하군! 이 돌은 자네가 가져가게."};
+TRAINERS.v={key:"v",name:"늪지 약초꾼 소하",em:"🌿",team:[["swampfrog",24],["jellure",25],["vinesnake",27]],reward:{antidote:3,elixir:1,cureberry:2},money:2300,intro:"늪지 약초꾼 소하: 안개 속은 위험해요. 지나가려면 저를 이기셔야 해요.",outro:"늪지 약초꾼 소하: 조심해서 가세요. 독에는 이걸 쓰시고요."};
 TRAINERS["7"]={key:"7",name:"초원 견습생 하늘",em:"🌾",team:[["sprigfawn",6],["bunnyhop",7]],reward:{potion:2,ball:2},money:250,intro:"견습생 하늘: 관장님께 가려면 날 먼저 이겨야 해!",outro:"우와… 관장님도 조심하셔야겠네."};
 TRAINERS["8"]={key:"8",name:"숲 견습생 이든",em:"🍃",team:[["leafdrake",12],["sprigfawn",13]],reward:{potion:3,greatball:1},money:500,intro:"견습생 이든: 숲의 정령은 끈질기다고!",outro:"관장님께 가 봐. 넌 자격이 있어."};
 TRAINERS["9"]={key:"9",name:"호수 견습생 파랑",em:"💧",team:[["otterwave",18],["frostfish",19]],reward:{greatball:2,hyperpotion:1},money:900,intro:"견습생 파랑: 물살을 가를 수 있겠어?",outro:"미르 관장님은 나보다 훨씬 강해. 각오해!"};
@@ -1485,6 +1488,26 @@ function npcAmbient(npc){
   return pool;
 }
 const QUESTS=[
+  { id:"q_scout", giver:"t22", title:"흩어진 보급품", desc:"필드에 놓인 도구 6개 회수",
+    check:()=>((G.found&&G.found.length)||0)>=6, prog:()=>`${Math.min((G.found&&G.found.length)||0,6)}/6개`,
+    reward:{greatball:4,elixir:1},
+    offer:["호수 낚시꾼 도윤: 지난 폭풍에 보급품이 사방으로 흩어졌어.","호수 낚시꾼 도윤: 길에 떨어진 걸 <b>6개</b>만 주워다 주면 사례하지. 눈에 잘 띌 거야."],
+    active:["호수 낚시꾼 도윤: 땅에 떨어진 물건은 그냥 밟고 지나가면 주워져. 잘 둘러봐."],
+    done:["호수 낚시꾼 도윤: 오, 벌써 이만큼이나! 자네 눈썰미가 좋구먼.","호수 낚시꾼 도윤: 약속한 사례일세."] },
+  { id:"q_bond", giver:"trade1", title:"마음이 닿는 거리", desc:"친밀도 150 이상인 정령 만들기",
+    check:()=>(G.party||[]).some(m=>m&&!m.isEgg&&(m.friendship||0)>=150),
+    prog:()=>{ const b=Math.max(0,...(G.party||[]).map(m=>(m&&m.friendship)||0)); return `최고 친밀도 ${b}/150`; },
+    reward:{candy:2,leftovers:1},
+    offer:["교환하는 소녀 하늘: 정령이랑 진짜 친해지면 눈빛이 달라져. 알고 있었어?","교환하는 소녀 하늘: <b>친밀도 150</b>인 아이를 데려와 봐. 회관 마사지사한테 가면 빨라!"],
+    active:["교환하는 소녀 하늘: 같이 싸우고, 쉬게 해주고, 마사지도 받고… 그러다 보면 어느새 친해져 있어."],
+    done:["교환하는 소녀 하늘: 우와… 이 아이, 너를 정말 좋아하는구나.","교환하는 소녀 하늘: 이건 그 마음에 대한 선물이야!"] },
+  { id:"q_night", giver:"altar_watcher", title:"밤에만 우는 것", desc:"밤에만 나오는 정령 포획",
+    check:()=>!!(G.questFlags&&G.questFlags.nightCaught),
+    prog:()=>(G.questFlags&&G.questFlags.nightCaught)?"완료!":"야행성 정령 미포획",
+    reward:{hyperpotion:3,scopelens:1},
+    offer:["제단 감시인: 인장이 흐려지고부터 밤이 길어졌지.","제단 감시인: 밤에만 모습을 드러내는 정령이 있네. 한 마리 잡아와 보게 — 어둠이 무엇을 부르는지 알고 싶으이."],
+    active:["제단 감시인: 해가 진 뒤에 풀숲을 뒤져보게. 낮에 보이던 것들과는 다른 아이들이 나올 걸세."],
+    done:["제단 감시인: …과연. 이 아이는 어둠을 두려워하지 않는군.","제단 감시인: 자네도 그렇게 되기를. 이건 내 몫의 감사일세."] },
   { id:"q_dex", giver:"mina", title:"정령 도감 채우기", desc:"정령 8종 이상 도감 등록",
     check:()=>((G.caught&&G.caught.size)||0)>=8, prog:()=>`${Math.min((G.caught&&G.caught.size)||0,8)}/8종`,
     reward:{candy:1,greatball:5},
@@ -1582,10 +1605,10 @@ const INTERIORS={
   altar:{ id:"altar", W:9, H:9, startX:4, startY:7, exitX:4, exitY:8, name:"군주의 제단",
     str:["#########","#########","####A####","####6####","####.####","####5####","####.####","####.####","####.####"] },
   snowfield:{ id:"snowfield", W:17,H:13, startX:8,startY:11, exitX:8,exitY:12, name:"설원 지대", str:["#################","#T.ggg.T.ggg.T..#","#.gg#gggggg#gg..#","#gg.ggT..Tggg.gg#","#.ggg&g.N.gQggg.#","#Tg.gggggggggg.T#","#.gg#gHg.Kg#gg..#","#gggTgg..ggTggg.#","#.gggggggggggg.g#","#Tg.gg#gg#ggg.gT#","#.gggggggggggg..#","#T.ggg.T.ggg.T..#","########.########"] },
-  marsh:{ id:"marsh", W:17,H:13, startX:8,startY:11, exitX:8,exitY:12, name:"안개 늪지", str:["#################","#T.ggg.g.ggg.gT.#","#.gg~~gggg~~gg..#","#gg.ggT.N.Tggg.g#","#.ggg~gg.gg~ggg.#","#T.gggggggggggg.T#","#.gg~gggg.gg~gg.#","#gggTgg.T.gg.Tgg#","#.gg~~gggggg~~g.#","#Tg.gg~gg~gg.gT.#","#.gggg.gg.gggg..#","#T.ggg.g.ggg.gT.#","########.########"] },
-  lavacave:{ id:"lavacave", W:9,H:9, startX:4,startY:7, exitX:4,exitY:8, name:"용암 동굴", str:["#########","#...C...#","#.#.#.#.#","#.#...#.#","#...#...#","#.#.#.#.#","#.#...#.#","#.......#","####.####"] },
+  marsh:{ id:"marsh", W:17,H:13, startX:8,startY:11, exitX:8,exitY:12, name:"안개 늪지", str:["#################","#T.ggg.g.ggg.gT.#","#.gg~~gggg~~gg.v#","#gg.ggT.N.Tggg.g#","#.ggg~gg.gg~ggg.#","#T.gggggggggggg.T#","#.gg~gggg.gg~gg.#","#gggTgg.T.gg.Tgg#","#.gg~~gggggg~~g.#","#Tg.gg~gg~gg.gT.#","#.gggg.gg.gggg..#","#T.ggg.g.ggg.gT.#","########.########"] },
+  lavacave:{ id:"lavacave", W:9,H:9, startX:4,startY:7, exitX:4,exitY:8, name:"용암 동굴", str:["#########","#...C...#","#.#.#.#.#","#.#...#.#","#...#..u#","#.#.#.#.#","#.#...#.#","#.......#","####.####"] },
   cave:{ id:"cave", W:13, H:16, startX:6, startY:14, exitX:6, exitY:15, name:"수정 동굴",
-    str:["#############","#.........C.#","#.#.#.#.#.#.#","#..#..o..#..#","#.###.#.###.#","#....~~~....#","#.#.#.#.#.#.#","#C...#.#....#","#.#.#.#.#.#.#","#.........C.#","#.###.#.###.#","#..#..o..#..#","#.#.#.#.#.#.#","#.C.........#","#...........#","######.######"] },
+    str:["#############","#.........C.#","#.#.#.#.#.#.#","#..#..o..#.r#","#.###.#.###.#","#....~~~....#","#.#.#.#.#.#.#","#C...#.#....#","#.#.#.#.#.#.#","#.........C.#","#.###.#.###.#","#..#..o..#..#","#.#.#.#.#.#.#","#.C.........#","#...........#","######.######"] },
   gym1:{ id:"gym1", W:9,H:11, startX:4,startY:9, exitX:4,exitY:10, name:"초원 체육관",
     str:["#########","#...1...#","#.......#","#.w...w.#","####a####","#.......#","#.w...w.#","####7####","#.......#","#.......#","####.####"] },
   gym2:{ id:"gym2", W:9,H:13, startX:4,startY:11, exitX:4,exitY:12, name:"숲 체육관",
@@ -1642,7 +1665,9 @@ function _exitInterior(){ if(!_owBackup)return;
   if(!G.inBattle)Audio.startMusic(regionMusic(region(G.pos.y)));
   if(typeof updateGoal==="function")updateGoal();
 }
-const GUARD_TILES="789abcdef0ijklq";
+// 실내 트레이너 타일. 벽처럼 막고 있다가 이기면 통과(walkable이 defeated로 열림).
+// r=수정 동굴, u=용암 동굴, v=안개 늪지 — 체육관 밖 실내엔 트레이너가 하나도 없었다.
+const GUARD_TILES="789abcdef0ijklqruv";
 // 인테리어 바닥/벽 색 테마. wt는 벽 상단 밴드(생략 시 기본 갈색).
 const GYM_THEME={ gym1:{fl:"#bcd0a0",wl:"#7a9a5a"}, gym2:{fl:"#9ab88a",wl:"#4f7a4a"}, gym3:{fl:"#a6c8cc",wl:"#4a8a8a"}, gym4:{fl:"#c8bfa0",wl:"#8a7a5a"}, league:{fl:"#39344f",wl:"#6a5a8a"},
   center:{fl:"#eef1f4",wl:"#d4514c",wt:"#b83f3c",gr:"rgba(150,170,190,.42)"},
@@ -4304,7 +4329,7 @@ async function tryCatch(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너
     ballEl.animate([{transform:"translate(-50%,-50%) scale(1)"},{transform:"translate(-50%,-50%) scale(1.25)"},{transform:"translate(-50%,-50%) scale(1)"}],{duration:fxT(360)});
     fxCaptureFlash(foeC); particles("foe","✨",14); for(let k=0;k<8;k++){ const a=k/8*6.28,e=fxGlyph("⭐",{x:foeC.x,y:foeC.y},"#ffe08a","fx-particle"); e.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:`translate(-50%,-50%) translate(${Math.cos(a)*44}px,${Math.sin(a)*44}px) scale(1)`,opacity:0}],{duration:fxT(620),easing:"ease-out",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); } foeSp.classList.add("faint"); await wait(fxT(560)); ballEl.remove();
     const _dexNew=!G.caught.has(foe.id);   // 포획 전 도감 신규 여부
-    G.caught.add(foe.id); G.questFlags=G.questFlags||{}; if(sp.type==="water")G.questFlags.waterCaught=true; if(G.indoor==="cave")G.questFlags.caveCatch=true; const cap=foe;   // 잡은 정령 = 그 야생 정령 그대로. 예전엔 makeMon로 새로 만들어 샤이니·개성(IV)·성격·성별·기술이 전부 사라졌다.
+    G.caught.add(foe.id); G.questFlags=G.questFlags||{}; if(sp.type==="water")G.questFlags.waterCaught=true; if(typeof NIGHT_MONS!=="undefined"&&NIGHT_MONS.has(foe.id))G.questFlags.nightCaught=true; if(G.indoor==="cave")G.questFlags.caveCatch=true; const cap=foe;   // 잡은 정령 = 그 야생 정령 그대로. 예전엔 makeMon로 새로 만들어 샤이니·개성(IV)·성격·성별·기술이 전부 사라졌다.
     cap.hp=Math.max(1,foe.hp); cap.stages=newStages(); cap._confuse=0; cap._seeded=false; cap._flinch=false; cap._acted=false; cap.wild=false;
     if(_dexNew){ await mw(560); Audio.sfx("buy"); setMsg(`📖 <b>${foe.name}</b>의 데이터를 도감에 새로 등록했다!`); }
     if(G.party.length<6){ G.party.push(cap); await mw(700); setMsg("파티에 합류했다!"); }
@@ -4984,7 +5009,7 @@ window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVi
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.FLAVOR=FLAVOR;
-Object.assign(window.SG,{TYPE_PARTICLE,SIGFX,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
+Object.assign(window.SG,{TYPE_PARTICLE,SIGFX,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
