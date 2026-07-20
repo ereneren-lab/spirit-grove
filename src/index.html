@@ -294,6 +294,8 @@
   .dex-stat .box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px;text-align:center}
   .dex-stat .num{font-size:22px;font-weight:800;color:var(--mint)} .dex-stat .lbl{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.5px}
   .dex-detail{display:flex;flex-direction:column;gap:12px}
+  .crybtn{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);color:inherit;border-radius:7px;padding:1px 6px;font-size:12px;cursor:pointer;vertical-align:middle;line-height:1.4}
+  .crybtn:hover{background:rgba(255,255,255,.18)} .crybtn:active{transform:scale(.92)}
   .dd-head{display:flex;align-items:center;gap:14px}
   .dd-head .em{font-size:54px} .dd-head .nm{font-size:20px;font-weight:800} .dd-head .meta{font-size:11px;color:var(--muted);margin-top:4px}
   .statbar{display:flex;align-items:center;gap:8px;font-size:11px}
@@ -1099,7 +1101,23 @@ const DEX=[
 ];
 const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);
-const FIND_HINT={1:"숲 · 초원",2:"깊은 숲",3:"숲 정상"};
+const FIND_HINT={1:"숲 · 초원",2:"깊은 숲",3:"숲 정상"};   // 오버월드(잔디) 조우의 티어별 깊이 힌트
+const HABITAT_KO={snow:"설원 지대",marsh:"안개 늪지",isle:"여명의 섬",coast:"노을 해안",surf:"수면 위",fishRare:"낚시(대물)",fish:"낚시",lava:"용암 동굴",cave:"수정 동굴"};
+// 도감 "출현" 문구를 실제 조우 풀에서 파생한다. 예전엔 FIND_HINT[tier] 하나만 써서
+// 해안 전용 종도 "숲 · 초원"이라 떴다(거짓 정보).
+function findHint(sp){
+  if(!sp)return "?";
+  const spots=[];
+  if(typeof ENC_POOLS!=="undefined"){ for(const k in ENC_POOLS){ if(ENC_POOLS[k].indexOf(sp.id)>=0){ const ko=HABITAT_KO[k]; if(ko&&spots.indexOf(ko)<0)spots.push(ko); } } }
+  // 오버월드 잔디: 바다 전용/야생 미출현 종은 제외 (pickWild와 동일 규칙)
+  const seaOnly=(typeof SEA_MONS!=="undefined")&&SEA_MONS.has(sp.id);
+  const noWild=(typeof NO_WILD!=="undefined")&&NO_WILD.has(sp.id);
+  if(!seaOnly && !noWild && !sp.legend && !sp.secret) spots.unshift(FIND_HINT[sp.tier]||"숲");
+  if(!spots.length) return sp.legend?"전설 · 특별한 장소":"진화 · 특별한 방법";
+  // 시간대 한정이면 덧붙인다
+  let t=""; if(typeof NIGHT_MONS!=="undefined"&&NIGHT_MONS.has(sp.id))t=" 🌙밤";
+  else if(typeof DAY_MONS!=="undefined"&&DAY_MONS.has(sp.id))t=" ☀️낮";
+  return spots.join(" · ")+t; }
 
 const PRE_EVO={}; DEX.forEach(d=>{ if(d.evolveTo)PRE_EVO[d.evolveTo]=d.id; });
 function baseForm(id){ let cur=id,g=0; while(PRE_EVO[cur]&&g++<6)cur=PRE_EVO[cur]; return cur; }
@@ -1524,7 +1542,9 @@ function _exitInterior(){ if(!_owBackup)return;
   if(typeof updateGoal==="function")updateGoal();
 }
 const GUARD_TILES="789abcdef0ijklq";
-const GYM_THEME={ gym1:{fl:"#bcd0a0",wl:"#7a9a5a"}, gym2:{fl:"#9ab88a",wl:"#4f7a4a"}, gym3:{fl:"#a6c8cc",wl:"#4a8a8a"}, gym4:{fl:"#c8bfa0",wl:"#8a7a5a"}, league:{fl:"#39344f",wl:"#6a5a8a"} };
+// 인테리어 바닥/벽 색 테마. wt는 벽 상단 밴드(생략 시 기본 갈색).
+const GYM_THEME={ gym1:{fl:"#bcd0a0",wl:"#7a9a5a"}, gym2:{fl:"#9ab88a",wl:"#4f7a4a"}, gym3:{fl:"#a6c8cc",wl:"#4a8a8a"}, gym4:{fl:"#c8bfa0",wl:"#8a7a5a"}, league:{fl:"#39344f",wl:"#6a5a8a"},
+  center:{fl:"#eef1f4",wl:"#d4514c",wt:"#b83f3c",gr:"rgba(150,170,190,.42)"} };
 const isTrainerTile=t=>t==="1"||t==="2"||t==="3"||t==="4"||t==="5"||t==="6"||t==="X"||(t!==""&&GUARD_TILES.indexOf(t)>=0);
 function walkable(x,y){ if(x<0||y<0||x>=W||y>=H)return false; const t=tileAt(x,y); if(t==="~"&&typeof G!=="undefined"&&G&&G.surfing&&!G.indoor)return true; if(typeof NPC_AT!=="undefined" && !G.indoor && NPC_AT[x+","+y] && npcAvailable(NPC_AT[x+","+y]))return false; if((t==="5"||t==="6"||(t!==""&&"1234".indexOf(t)>=0)||(t!==""&&GUARD_TILES.indexOf(t)>=0))&&G.indoor)return G.defeated.has(t); return t!=="#"&&t!=="~"&&t!=="H"&&t!=="F"&&t!=="P"&&t!=="N"&&t!=="C"&&t!=="o"&&t!=="D"&&t!=="G"&&t!=="W"&&t!=="Y"&&t!=="Z"&&t!=="@"&&t!=="K"&&t!=="L"&&t!=="U"&&t!=="x"&&t!=="%"&&t!=="V"&&t!=="M"&&t!=="&"&&t!=="Q"&&t!=="J"&&t!=="+"; }
 // region bands (bottom->top): 0 town,1 meadow,2 forest,3 deep,4 lake,5 highland,6 arena
@@ -1650,8 +1670,8 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       return;
     }
     if(typeof G!=="undefined" && G.indoor){
-      const _th=(typeof GYM_THEME!=="undefined"&&GYM_THEME[G.indoor])?GYM_THEME[G.indoor]:null; const _flC=_th?_th.fl:"#c8a878"; const _wlC=_th?_th.wl:"#5c4636";
-      if(t==="#"){ ctx.fillStyle=_wlC; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="#6e5644"; ctx.fillRect(sx,sy,tb,ts*0.28); ctx.fillStyle="rgba(255,235,200,.08)"; ctx.fillRect(sx,sy,tb,ts*0.06); ctx.strokeStyle="rgba(30,20,12,.45)"; ctx.lineWidth=1; ctx.strokeRect(sx+0.5,sy+0.5,ts,ts); }
+      const _th=(typeof GYM_THEME!=="undefined"&&GYM_THEME[G.indoor])?GYM_THEME[G.indoor]:null; const _flC=_th?_th.fl:"#c8a878"; const _wlC=_th?_th.wl:"#5c4636"; const _wtC=(_th&&_th.wt)?_th.wt:"#6e5644"; const _grC=(_th&&_th.gr)?_th.gr:"rgba(150,108,66,.35)";
+      if(t==="#"){ ctx.fillStyle=_wlC; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle=_wtC; ctx.fillRect(sx,sy,tb,ts*0.28); ctx.fillStyle="rgba(255,235,200,.08)"; ctx.fillRect(sx,sy,tb,ts*0.06); ctx.strokeStyle="rgba(30,20,12,.45)"; ctx.lineWidth=1; ctx.strokeRect(sx+0.5,sy+0.5,ts,ts); }
       else if(t==="I"){ ctx.fillStyle="#c2e6f2"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="rgba(255,255,255,.4)"; ctx.fillRect(sx,sy,tb,ts*0.15); ctx.strokeStyle="rgba(130,185,215,.55)"; ctx.lineWidth=1; ctx.strokeRect(sx+0.5,sy+0.5,ts,ts); ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.beginPath(); ctx.moveTo(sx+ts*0.15,sy+ts*0.68); ctx.lineTo(sx+ts*0.42,sy+ts*0.5); ctx.stroke(); }   // 얼음 바닥(미끄럼)
       else if(t==="S"){ ctx.fillStyle="#caa878"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="#8a6240"; ctx.fillRect(sx+ts*0.08,sy+ts*0.38,ts*0.84,ts*0.5); ctx.fillStyle="#a37c52"; ctx.fillRect(sx+ts*0.05,sy+ts*0.3,ts*0.9,ts*0.1); ctx.strokeStyle="rgba(40,26,14,.5)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.08,sy+ts*0.38,ts*0.84,ts*0.5); ctx.fillStyle="#f0d048"; ctx.fillRect(sx+ts*0.3,sy+ts*0.44,ts*0.4,ts*0.06); }
       else if(t==="A"){ ctx.fillStyle="#3a3054"; ctx.fillRect(sx,sy,tb,tb); const cx=sx+ts*0.5, fl=Math.sin((now||0)*3)*0.5+0.5;
@@ -1660,7 +1680,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         ctx.strokeStyle="rgba(20,14,30,.5)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.28,sy+ts*0.55,ts*0.44,ts*0.3);
         ctx.fillStyle="rgba(200,180,255,"+(0.5+fl*0.5)+")"; ctx.beginPath(); ctx.arc(cx,sy+ts*0.32,ts*0.1,0,6.29); ctx.fill();
         ctx.fillStyle="#e8e0ff"; ctx.beginPath(); ctx.arc(cx,sy+ts*0.32,ts*0.05,0,6.29); ctx.fill(); }
-      else if(t==="N"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx,sy,tb,tb); const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5; ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.42,u*0.32,u*0.1,0,0,6.29); ctx.fill(); ctx.fillStyle="#5a7db0"; ctx.fillRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45); ctx.fillStyle="#e8c39a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.22,u*0.24,0,6.29); ctx.fill(); ctx.fillStyle="#4a3728"; ctx.beginPath(); ctx.arc(cx,cy-u*0.3,u*0.26,Math.PI,0); ctx.fill(); ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.12,cy-u*0.22,u*0.05,u*0.06); ctx.fillRect(cx+u*0.07,cy-u*0.22,u*0.05,u*0.06); ctx.strokeStyle="rgba(30,20,12,.35)"; ctx.lineWidth=Math.max(1,ts*0.015); ctx.strokeRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45); }
+      else if(t==="N"){ ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5; const _nurse=G.indoor==="center"; ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.42,u*0.32,u*0.1,0,0,6.29); ctx.fill(); ctx.fillStyle=_nurse?"#f2f2f4":"#5a7db0"; ctx.fillRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45); ctx.fillStyle="#e8c39a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.22,u*0.24,0,6.29); ctx.fill(); ctx.fillStyle=_nurse?"#f08fb0":"#4a3728"; ctx.beginPath(); ctx.arc(cx,cy-u*0.3,u*0.26,Math.PI,0); ctx.fill(); if(_nurse){ ctx.fillStyle="#fff"; ctx.fillRect(cx-u*0.2,cy-u*0.46,u*0.4,u*0.14); ctx.fillStyle="#e0403c"; ctx.fillRect(cx-u*0.03,cy-u*0.44,u*0.06,u*0.1); ctx.fillRect(cx-u*0.08,cy-u*0.42,u*0.16,u*0.045); } ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.12,cy-u*0.22,u*0.05,u*0.06); ctx.fillRect(cx+u*0.07,cy-u*0.22,u*0.05,u*0.06); ctx.strokeStyle="rgba(30,20,12,.35)"; ctx.lineWidth=Math.max(1,ts*0.015); ctx.strokeRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45); }
       else if(t==="B"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="#8a6240"; ctx.fillRect(sx+ts*0.14,sy+ts*0.2,ts*0.72,ts*0.68); ctx.fillStyle="#e8e2d8"; ctx.fillRect(sx+ts*0.18,sy+ts*0.24,ts*0.64,ts*0.4); ctx.fillStyle="#d86a6a"; ctx.fillRect(sx+ts*0.18,sy+ts*0.5,ts*0.64,ts*0.34); ctx.fillStyle="#f0eee8"; ctx.fillRect(sx+ts*0.22,sy+ts*0.27,ts*0.34,ts*0.16); ctx.strokeStyle="rgba(40,26,14,.4)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.14,sy+ts*0.2,ts*0.72,ts*0.68); }
       else if(t==="5"||t==="6"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx,sy,tb,tb);
         if(typeof G==="undefined"||!G.defeated||!G.defeated.has(t)){ const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5; const armor=t==="5"?"#aab4c4":"#6a5a84";
@@ -1690,7 +1710,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
           ctx.fillStyle="#e8c39a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.22,u*0.2,0,6.29); ctx.fill();
           ctx.fillStyle="#3a2a1a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.3,u*0.24,Math.PI,0); ctx.fill();
           ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.09,cy-u*0.22,u*0.04,u*0.05); ctx.fillRect(cx+u*0.05,cy-u*0.22,u*0.04,u*0.05); } }
-      else { ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); ctx.strokeStyle="rgba(150,108,66,.35)"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(sx,sy+Math.round(ts*0.5)+0.5); ctx.lineTo(sx+ts,sy+Math.round(ts*0.5)+0.5); ctx.stroke(); if((h>>3)&1){ ctx.beginPath(); ctx.moveTo(sx+Math.round(ts*0.5)+0.5,sy); ctx.lineTo(sx+Math.round(ts*0.5)+0.5,sy+ts*0.5); ctx.stroke(); } else { ctx.beginPath(); ctx.moveTo(sx+Math.round(ts*0.5)+0.5,sy+ts*0.5); ctx.lineTo(sx+Math.round(ts*0.5)+0.5,sy+ts); ctx.stroke(); } }
+      else { ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); ctx.strokeStyle=_grC; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(sx,sy+Math.round(ts*0.5)+0.5); ctx.lineTo(sx+ts,sy+Math.round(ts*0.5)+0.5); ctx.stroke(); if((h>>3)&1){ ctx.beginPath(); ctx.moveTo(sx+Math.round(ts*0.5)+0.5,sy); ctx.lineTo(sx+Math.round(ts*0.5)+0.5,sy+ts*0.5); ctx.stroke(); } else { ctx.beginPath(); ctx.moveTo(sx+Math.round(ts*0.5)+0.5,sy+ts*0.5); ctx.lineTo(sx+Math.round(ts*0.5)+0.5,sy+ts); ctx.stroke(); } }
       return;
     }
     if(t==="~"){ ctx.fillStyle="#3a86c8"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="rgba(255,255,255,.10)"; ctx.fillRect(sx,sy,ts,ts*0.5);
@@ -2198,6 +2218,19 @@ $("confirmStarter").addEventListener("click",()=>{ if(!pickedStarter)return;
   saveGame(); Field=Map2D; playStory(STORY_INTRO,()=>startInHouse()); });
 
 /* ===================== ENCOUNTER / TRAINER START ===================== */
+// 특수 지역 조우 풀. 도감의 "출현" 표기(findHint)가 여기서 파생되므로
+// 풀을 고치면 서식지 정보도 자동으로 따라온다 — 하드코딩하면 또 어긋난다.
+const ENC_POOLS={
+  snow:["iceling","frostpup","frostfish","dustbunny","frostwyrm","glacibear","drakeling","mossback","snowl","cryogon"],
+  marsh:["swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"],
+  isle:["stormhawk","tigerflame","magmahound","krakentide","tidewhale","harelord","emberdrake","grovespirit","palmore","emberlix","crablord"],
+  coast:["shellow","otterwave","frostfish","tidewhale","racoonmon","bunnyhop","stormhawk","nipling","gullian","jellure"],
+  surf:["shellow","otterwave","frostfish","swampfrog","tidewhale","nipling","jellure","gullian"],
+  fishRare:["tidewhale","krakentide","riverdrake","sharkfin","crablord"],
+  fish:["shellow","frostfish","otterwave","swampfrog","jellure","nipling"],
+  lava:["pebblet","lavakit","burrowmouse","pebblet","lavakit","boulderin","magmadon","crystalgon"],
+  cave:["hedgemoss","racoonmon","sparkmouse","voltbeetle","swampfrog"],
+};
 const NIGHT_MONS=new Set(["lunarmoth","thunderowl","swampfrog"]);
 const SEA_MONS=new Set(["nipling","crablord","gullian","palmore","jellure","emberlix"]);
 const NO_WILD=new Set(["skydrake","tidalore","megalith"]);
@@ -2269,23 +2302,23 @@ function startLakeLegendary(){ const lvl=clamp(52+DIFF[CONFIG.difficulty].lvl,48
 function startLegendary(){ const lvl=clamp(56+DIFF[CONFIG.difficulty].lvl,50,66); G.foe=makeMon("dawnwyrm",lvl); G.foe.hp=G.foe.maxHp; G.trainer=null; G.seen.add("dawnwyrm"); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ setMsg("신전이 진동한다… <b>여명룡</b>이 모습을 드러냈다!"); Audio.startMusic("boss"); }); updateDexPill(); }
 const SNOW_LORE={name:"설원 주민",text:"이 눈밭엔 추위를 견디는 정령만 산다네. 저 오두막에서 쉬어가게 — 바깥은 얼어붙을 만큼 춥거든."};
 const MARSH_LORE={name:"늪지 팻말",text:"🪧 안개 늪지 — 독과 흙, 물의 정령이 뒤엉켜 사는 습지다. 발밑이 질척이니 조심하고, 안개 너머 낯선 정령들을 만나보게."};
-function startSnowEncounter(){ const pool=["iceling","frostpup","frostfish","dustbunny","frostwyrm","glacibear","drakeling","mossback","snowl","cryogon"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,10,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}눈보라 속에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
-function startMarshEncounter(){ const pool=["swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,8,56); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}안개 속에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
-function startIsleEncounter(){ const pool=["stormhawk","tigerflame","magmahound","krakentide","tidewhale","harelord","emberdrake","grovespirit","palmore","emberlix","crablord"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(1,4)+DIFF[CONFIG.difficulty].lvl,6,60); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}섬에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
-function startCoastEncounter(){ const pool=["shellow","otterwave","frostfish","tidewhale","racoonmon","bunnyhop","stormhawk","nipling","gullian","jellure"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,3,55); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}해안에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startSnowEncounter(){ const pool=ENC_POOLS.snow.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,10,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}눈보라 속에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startMarshEncounter(){ const pool=ENC_POOLS.marsh.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,8,56); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}안개 속에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startIsleEncounter(){ const pool=ENC_POOLS.isle.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(1,4)+DIFF[CONFIG.difficulty].lvl,6,60); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}섬에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startCoastEncounter(){ const pool=ENC_POOLS.coast.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,3,55); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}해안에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 function cutObstacle(x,y){ if(G.indoor)return; MAP_STR[y]=MAP_STR[y].slice(0,x)+"g"+MAP_STR[y].slice(x+1); Audio.sfx("blip"); flashHint("🌿 덤불을 베어 길을 열었다!"); if(typeof mmReveal==="function")mmReveal(x,y); }
 function pushBoulder(x,y,dir){ if(G.indoor)return; const dv={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[dir]; if(!dv)return; const bx=x+dv[0],by=y+dv[1];
   if(bx>=0&&by>=0&&bx<W&&by<H&&tileAt(bx,by)==="g"){ MAP_STR[y]=MAP_STR[y].slice(0,x)+"g"+MAP_STR[y].slice(x+1); MAP_STR[by]=MAP_STR[by].slice(0,bx)+"o"+MAP_STR[by].slice(bx+1); Audio.sfx("blip"); flashHint("💪 바위를 밀어냈다!"); }
   else { flashHint("바위가 꿈쩍도 하지 않는다."); } }
-function startSurfEncounter(){ const pool=["shellow","otterwave","frostfish","swampfrog","tidewhale","nipling","jellure","gullian"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,4,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}물살을 가르자 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startSurfEncounter(){ const pool=ENC_POOLS.surf.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,4,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}물살을 가르자 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 async function startFishing(){ if(G.busy||G.inBattle)return; G.busy=true; if(typeof stopPath==="function")stopPath();
   flashHint("🎣 낚싯대를 던졌다…"); await mw(1100);
   if(Math.random()<0.68){ flashHint("❗ 입질이 온다!"); await mw(750); G.busy=false; startFishEncounter(); }
   else { flashHint("아무것도 잡히지 않았다…"); await mw(600); G.busy=false; }
 }
-function startFishEncounter(){ const pool=(Math.random()<0.25&&["tidewhale","krakentide","riverdrake","sharkfin","crablord"].filter(id=>byId(id)).length)?["tidewhale","krakentide","riverdrake","sharkfin","crablord"].filter(id=>byId(id)):["shellow","frostfish","otterwave","swampfrog","jellure","nipling"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,4,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}낚싯줄에 <b>${G.foe.name}</b>이(가) 걸렸다!`); Audio.startMusic("battle"); }); updateDexPill(); }
-function startLavaEncounter(){ const pool=["pebblet","lavakit","burrowmouse","pebblet","lavakit","boulderin","magmadon","crystalgon"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,8,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}용암 사이에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
-function startCaveEncounter(){ const pool=["hedgemoss","racoonmon","sparkmouse","voltbeetle","swampfrog"].filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,3,55); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}동굴 깊은 곳에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startFishEncounter(){ const _fr=ENC_POOLS.fishRare.filter(id=>byId(id)); const pool=(Math.random()<0.25&&_fr.length)?_fr:ENC_POOLS.fish.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,4,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}낚싯줄에 <b>${G.foe.name}</b>이(가) 걸렸다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startLavaEncounter(){ const pool=ENC_POOLS.lava.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,8,58); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}용암 사이에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startCaveEncounter(){ const pool=ENC_POOLS.cave.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,3,55); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}동굴 깊은 곳에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 function startShadowBoss(){ const lvl=clamp(50+DIFF[CONFIG.difficulty].lvl,46,64); G.foe=makeMon("shadowlord",lvl); G.foe.hp=G.foe.maxHp;
   G.trainer=null; G.seen.add("shadowlord"); G.inBattle=true; G.busy=false; Audio.sfx("boss");
   transitionToBattle(()=>{ setMsg("⚫ 인장의 틈에서 <b>흑요마</b>가 모습을 드러냈다! 쓰러뜨리거나… 포획하라."); Audio.startMusic("boss"); }); updateDexPill(); }
@@ -2294,8 +2327,8 @@ function startDawnBoss(){ const lvl=clamp(53+DIFF[CONFIG.difficulty].lvl,49,64);
   transitionToBattle(()=>{ setMsg("🕊️ 그림자가 걷히자, 빛 속에서 <b>오로르</b>가 내려왔다!"); Audio.startMusic("boss"); }); updateDexPill(); }
 function startTrainer(key){ const tr=TRAINERS[key];
   const scale=(G.defeated.has(key)?ri(6,10):0)+DIFF[CONFIG.difficulty].lvl;
-  G.trainer={key,name:tr.name,em:tr.em,team:tr.team.map(t=>[t[0],clamp(t[1]+scale,2,60)]),idx:0,reward:tr.reward,money:tr.money,boss:!!tr.boss,rematch:G.defeated.has(key)};
-  const first=G.trainer.team[0]; G.foe=makeMon(first[0],first[1]); G.seen.add(first[0]);
+  G.trainer={key,name:tr.name,em:tr.em,team:tr.team.map(t=>[t[0],clamp(t[1]+scale,2,60)]),idx:0,reward:tr.reward,money:tr.money,boss:!!tr.boss,rematch:G.defeated.has(key),mons:[],fainted:new Set(),switches:0};
+  G.foe=trainerMon(0); G.seen.add(G.foe.id);
   G.busy=false; Audio.sfx(tr.boss?"boss":"encounter");
   showDialog({name:tr.name,text:stripNamePrefix(tr.name,tr.intro)}, ()=>{ G.inBattle=true; transitionToBattle(()=>{ setMsg(`<b>${tr.name}</b> 와(과)의 전투 시작!`); Audio.startMusic(tr.boss?"boss":"battle"); }); }); }
 function maybeRematch(t){ const tr=TRAINERS[t];
@@ -2441,7 +2474,7 @@ function setupBattleUI(foeOnly){ { const sh=$("skipHint"); if(sh)sh.textContent=
   $("foeSprite").classList.remove("faint"); $("meSprite").classList.remove("faint");
   const dots=$("foeDots");
   if(G.trainer){ dots.style.display="flex"; dots.innerHTML="";
-    G.trainer.team.forEach((_,i)=>{ const d=document.createElement("i"); if(i<G.trainer.idx)d.classList.add("dead"); dots.appendChild(d); });
+    G.trainer.team.forEach((_,i)=>{ const d=document.createElement("i"); if(G.trainer.fainted&&G.trainer.fainted.has(i))d.classList.add("dead"); dots.appendChild(d); });
   } else dots.style.display="none";
   logAbilities(); applyIntimidate(activeMon(),G.foe); applyIntimidate(G.foe,activeMon()); renderStages();
   sendOutAnim("foe"); if(!foeOnly) sendOutAnim("me");
@@ -3197,11 +3230,18 @@ function dbGrantXp(m,amt){ m.xp=(m.xp||0)+amt; let guard=0;
 }
 
 async function doMove(mvKey){ if(G.busy)return; G.busy=true; setMenuEnabled(false); showMain();
-  const me=activeMon(),foe=G.foe; const foeKey=foeKeyResolved(); const meFirst=pickFirst(mvKey,foeKey);
+  // 트레이너가 상성 불리를 읽고 먼저 교체할 수 있다. 교체하면 그게 상대의 턴이라
+  // 내 기술은 새로 나온 정령에게 들어간다(본가와 동일).
+  const _swapped=await foeMaybeSwitch();
+  const me=activeMon(),foe=G.foe;
+  if(_swapped){ if(foe.hp>0 && me.hp>0){ if(await canAct(me,"me")){ me._acted=true; await performMove(me,foe,mvKey,"me"); } } }
+  else{
+  const foeKey=foeKeyResolved(); const meFirst=pickFirst(mvKey,foeKey);
   const seq=meFirst?[["me",mvKey,me,foe],["foe",foeKey,foe,me]]:[["foe",foeKey,foe,me],["me",mvKey,me,foe]];
   me._acted=false; foe._acted=false;
   for(const [side,key,att,def] of seq){ if(att.hp<=0||def.hp<=0)continue;
     if(!(await canAct(att,side))){ att._acted=true; continue; } att._acted=true; await performMove(att,def,key,side); if(def.hp<=0)break; }
+  }
   if(G.screens){ ["me","foe"].forEach(sd=>{ ["reflect","light"].forEach(k=>{ if(G.screens[sd]&&G.screens[sd][k]>0){ G.screens[sd][k]--; } }); }); }
   if(G.weatherTurns>0){ G.weatherTurns--; if(G.weatherTurns<=0){ G.weather=null; if(typeof applyWeather==="function")applyWeather(); setMsg("날씨가 원래대로 돌아왔다."); } }
   if(foe.hp>0)await endTurnStatus(foe,"foe"); if(foe.hp>0)await endTurnItems(foe,"foe");
@@ -3209,6 +3249,46 @@ async function doMove(mvKey){ if(G.busy)return; G.busy=true; setMenuEnabled(fals
   if(foe.hp<=0){ await winBattle(); return; }
   if(me.hp<=0){ await faintMine(); return; }
   G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); Coach.afterTurn(); }
+
+/* ===== 트레이너 교체 AI (본가 트레이너처럼 상성 불리하면 뺀다) ===== */
+// 팀 엔트리를 인스턴스로. 교체해도 HP·랭크·PP가 남아야 하므로 한 번 만들면 캐시한다.
+function trainerMon(i){ const t=G.trainer; if(!t||!t.team[i])return null;
+  t.mons=t.mons||[]; if(!t.mons[i]){ const e=t.team[i]; t.mons[i]=makeMon(e[0],e[1]); }
+  return t.mons[i]; }
+// 아직 안 쓰러진 다음 정령(현재 것 제외). 없으면 -1.
+function trainerNextAlive(){ const t=G.trainer; if(!t)return -1;
+  for(let i=0;i<t.team.length;i++){ if(i===t.idx||t.fainted.has(i))continue; const m=t.mons&&t.mons[i]; if(m&&m.hp<=0)continue; return i; }
+  return -1; }
+// att의 기술 중 def에게 가장 잘 먹히는 상성 배율
+function bestEffAgainst(att,def){ let best=0;
+  for(const mv of (att.moves||[])){ const m=MOVES[mv]; if(!m||m.power<=0)continue;
+    let e=EFF[m.type][def.type]; if(def.type2&&def.type2!==def.type)e*=EFF[m.type][def.type2];
+    if(e>best)best=e; }
+  return best||1; }
+// 매치업 점수: 내가 때리는 배율 - 맞는 배율. 높을수록 유리.
+function matchupScore(mine,vs){ return bestEffAgainst(mine,vs)-bestEffAgainst(vs,mine); }
+// 턴 시작에 호출. 교체했으면 true(= 상대는 이번 턴 공격 안 함).
+async function foeMaybeSwitch(){
+  const t=G.trainer; if(!t||!G.foe||G.foe.hp<=0)return false;
+  if(t.switches>=2)return false;                     // 한 전투에 최대 2회 — 무한 교체 방지
+  const me=activeMon(); if(!me||me.hp<=0)return false;
+  const cur=matchupScore(G.foe,me);
+  if(cur>-0.5)return false;                          // 크게 불리할 때만(2배 이상 얻어맞는 상황)
+  let bestI=-1,bestS=cur;
+  for(let i=0;i<t.team.length;i++){ if(i===t.idx||t.fainted.has(i))continue;
+    const m=trainerMon(i); if(!m||m.hp<=0)continue;
+    const sc=matchupScore(m,me); if(sc>bestS+0.5){ bestS=sc; bestI=i; } }
+  if(bestI<0)return false;
+  if(Math.random()<0.25)return false;                // 항상 완벽하진 않게 — 읽히면 재미없다
+  t.switches++;
+  const outMon=G.foe; resetStages(outMon); outMon._confuse=0; outMon._seeded=false; outMon._flinch=false;
+  setMsg(`${t.name}이(가) <b>${dispName(outMon)}</b>을(를) 되돌렸다!`); Audio.sfx("blip"); await mw(700);
+  t.idx=bestI; G.foe=trainerMon(bestI); G.seen.add(G.foe.id);
+  $("foeSprite").classList.remove("faint");
+  setupBattleUI(true); sendOutAnim("foe");
+  setMsg(`${t.name}이(가) <b>${G.foe.name}</b>을(를) 내보냈다!`); await mw(820);
+  applyIntimidate(G.foe,me); renderStages(); await applyHazards(G.foe,"foe");
+  return true; }
 
 async function foeFreeTurn(){ const me=activeMon(),foe=G.foe; if(foe.hp<=0)return;
   const k=foeKeyResolved(); if(await canAct(foe,"foe")) await performMove(foe,me,k,"foe");
@@ -3392,9 +3472,10 @@ async function winBattle(){ $("foeSprite").classList.add("faint"); Audio.sfx("fa
   if(!G.trainer){ const c=ri(8,18)+Math.floor(G.foe.level*1.5); G.money+=c; updateMoney(); }
   if(!G.trainer && G.foe && G.foe.id==="dawnwyrm"){ G.legendDone=true; setMsg("여명룡이 그대를 인정하고 하늘로 솟아올랐다… 두 인장의 힘이 공명한다!"); await mw(1400); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="shadowlord"){ G.shadowDone=true; setMsg("흑요마가 빛 속으로 흩어졌다… 숲에 평온이 돌아온다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="aqualord"){ G.lakeDone=true; setMsg("수룡왕이 호수 깊은 곳으로 잠겨들었다… 물의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="glaciarch"){ G.snowDone=true; setMsg("빙하제가 눈보라 속으로 사라졌다… 얼음의 축복이 그대와 함께한다."); await mw(1300); saveGame(); }
   if(!G.trainer && G.foe && G.foe.id==="dawnguard"){ G.dawnDone=true; setMsg("오로르가 하늘로 날아올라 숲을 축복했다."); await mw(1300); saveGame(); }
-  if(G.trainer){ G.trainer.idx++;
-    if(G.trainer.idx<G.trainer.team.length){ const nx=G.trainer.team[G.trainer.idx];
-      G.foe=makeMon(nx[0],nx[1]); G.seen.add(nx[0]); $("foeSprite").classList.remove("faint");
+  if(G.trainer){ G.trainer.fainted.add(G.trainer.idx);
+    const _nextI=trainerNextAlive();
+    if(_nextI>=0){ G.trainer.idx=_nextI;
+      G.foe=trainerMon(_nextI); G.seen.add(G.foe.id); $("foeSprite").classList.remove("faint");
       setupBattleUI(true); setMsg(`${G.trainer.name}이(가) <b>${G.foe.name}</b>을(를) 내보냈다!`); await mw(900); await applyHazards(G.foe,"foe"); if(G.foe.hp<=0){ await winBattle(); return; }
       G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); return; }
     else { await trainerDefeated(); return; } }
@@ -3670,6 +3751,60 @@ const FLAVOR={
   dawnguard:{cat:"여명수호",h:1.9,w:70,t:"동틀 녘 빛과 함께 나타난다 전해진다. 그림자를 몰아내는 존재."},
   hedgemoss:{cat:"이끼고슴도치",h:0.4,w:16,t:"등의 돌가시에 이끼가 자란다. 둥글게 말아 몸을 지킨다."},
   shadowlord:{cat:"그림자군주",h:2.6,w:120,t:"인장의 틈에서 새어 나온 어둠이 형상을 얻었다. 빛을 삼키며 균형을 무너뜨린다."},
+  nipling:{cat:"모래집게",h:0.4,w:9,t:"단단한 껍데기와 한 쌍의 집게로 파도를 견딘다. 겁이 나면 모래 속에 파묻힌다."},
+  crablord:{cat:"거대집게",h:1.5,w:130,t:"바위도 부수는 집게발로 해변을 지배한다. 영역에 들어온 상대에겐 물러서지 않는다."},
+  gullian:{cat:"바닷새",h:0.8,w:9,t:"바닷바람을 읽어 날개를 거의 젓지 않고 활공한다. 배를 따라다니며 먹이를 얻는다."},
+  palmore:{cat:"열매나무",h:1.6,w:60,t:"머리의 큰 잎으로 햇볕을 모아 열매를 맺는다. 해변에 자리를 잡으면 좀처럼 옮기지 않는다."},
+  jellure:{cat:"독해파리",h:0.5,w:6,t:"투명한 갓 아래로 독침 촉수를 늘어뜨린다. 조류에 몸을 맡긴 채 하염없이 떠다닌다."},
+  emberlix:{cat:"화염도마뱀",h:0.9,w:24,t:"등의 돌기에서 열기가 아지랑이처럼 피어오른다. 달궈진 바위 위에서 몸을 덥힌다."},
+  seedbean:{cat:"떡잎정령",h:0.3,w:4,t:"머리의 떡잎이 아침 이슬을 받아 마신다. 좋은 흙을 찾아 아장아장 돌아다닌다."},
+  titanoak:{cat:"큰나무",h:4.5,w:520,t:"수백 년 자란 몸통에 작은 생물들이 깃들어 산다. 좀처럼 움직이지 않고 숲을 지켜본다."},
+  emberfly:{cat:"불티벌레",h:0.3,w:1,t:"날갯짓할 때마다 작은 불티가 흩날린다. 따뜻한 모닥불 주변에 무리 지어 모여든다."},
+  pyrmoth:{cat:"화염날개",h:1.5,w:42,t:"거대한 날개를 펄럭이면 뜨거운 바람이 인다. 화산 분화구 위를 유유히 맴돈다."},
+  voltsnake:{cat:"전류뱀",h:0.6,w:5,t:"비늘을 스치며 기어갈 때 전류가 튄다. 폭풍이 치는 날이면 유난히 활발해진다."},
+  thundwyrm:{cat:"천둥용",h:3.2,w:150,t:"몸을 감은 전류가 먹구름을 끌어모은다. 하늘을 가르며 번개와 함께 나타난다."},
+  frostpup:{cat:"눈송이견",h:0.4,w:8,t:"숨을 내쉴 때마다 하얀 서리가 맺힌다. 눈밭을 뒹구는 것을 가장 좋아한다."},
+  glacibear:{cat:"얼음거수",h:2.3,w:400,t:"얼음이 엉겨붙은 털가죽이 바위처럼 단단하다. 겨울 내내 빙하 위를 어슬렁거린다."},
+  dewdrop:{cat:"샘물정령",h:0.3,w:2,t:"이른 아침 풀잎 끝에서 태어난다고 전해진다. 햇살이 강해지면 그늘로 숨어든다."},
+  glimmertide:{cat:"물빛정령",h:1.9,w:70,t:"몸을 따라 잔물결 같은 빛무늬가 끊임없이 흐른다. 잔잔한 수면 위를 미끄러지듯 난다."},
+  moonytide:{cat:"달빛물결",h:1.8,w:66,t:"달이 차오르면 몸에서 은빛 물결이 인다. 밤바다에서 홀로 조용히 헤엄친다."},
+  puddlet:{cat:"웅덩이",h:0.3,w:3,t:"몸을 불렸다 줄였다 하며 웅덩이에 숨는다. 비 오는 날이면 신이 나 통통 튄다."},
+  riverine:{cat:"강물정령",h:1.0,w:28,t:"몸이 흐르는 시냇물처럼 끊임없이 일렁인다. 물길을 따라 상류로 거슬러 오른다."},
+  tidalore:{cat:"해일고래",h:4.0,w:620,t:"숨을 한 번 내쉬면 해안까지 물결이 밀려온다. 깊은 바다를 홀로 떠도는 것을 즐긴다."},
+  cindercub:{cat:"잿불짐승",h:0.4,w:9,t:"목덜미 털 사이로 작은 불씨가 반짝인다. 겁이 많아 자주 모닥불 옆에 웅크린다."},
+  pyrewolf:{cat:"큰불늑대",h:1.6,w:110,t:"달릴 때마다 갈기의 불꽃이 길게 나부낀다. 무리를 이끌고 밤의 숲을 달린다."},
+  petalwing:{cat:"꽃잎나비",h:0.3,w:1,t:"날개가 꽃잎을 닮아 꽃밭에 앉으면 찾기 어렵다. 꿀을 찾아 하루 종일 떠다닌다."},
+  blossomhawk:{cat:"꽃보라매",h:1.4,w:38,t:"활짝 편 날개에서 꽃가루가 흩날린다. 꽃이 만발한 언덕 위를 높이 선회한다."},
+  lumbeast:{cat:"황소정령",h:1.7,w:320,t:"묵직한 걸음으로 밭을 갈 만큼 힘이 세다. 좀처럼 화내지 않고 사람을 잘 따른다."},
+  snowl:{cat:"눈부엉이",h:0.8,w:14,t:"하얀 깃털이 눈보라 속에서 몸을 감춰 준다. 소리 없이 날아 먹이를 덮친다."},
+  cryogon:{cat:"결빙고래",h:4.2,w:700,t:"지나간 자리의 바닷물이 얇게 얼어붙는다. 유빙 사이를 천천히 헤엄쳐 다닌다."},
+  iceling:{cat:"얼음조각",h:0.4,w:12,t:"몸이 맑은 얼음이라 속이 비쳐 보인다. 따뜻한 곳을 피해 그늘에만 머문다."},
+  frostwyrm:{cat:"서리용",h:3.4,w:280,t:"숨결이 닿은 것은 순식간에 서리로 뒤덮인다. 눈보라 속에서 홀로 잠들어 있다."},
+  drakeling:{cat:"꼬마용",h:0.5,w:7,t:"아직 날지 못해 작은 날개를 파닥이며 뛴다. 높은 곳에 오르기를 아주 좋아한다."},
+  wyverna:{cat:"날개용",h:1.6,w:75,t:"드디어 날개가 자라 절벽 사이를 활강한다. 자존심이 강해 쉽게 물러서지 않는다."},
+  skydrake:{cat:"하늘용",h:3.6,w:310,t:"구름보다 높은 곳을 제 영역으로 삼는다. 좀처럼 지상에 내려오지 않는다."},
+  mossback:{cat:"이끼거북",h:0.4,w:14,t:"등딱지 위에 두툼한 이끼가 자란다. 볕 좋은 바위에 올라 오래 낮잠을 잔다."},
+  terrapin:{cat:"바위거북",h:2.6,w:800,t:"등에 작은 언덕과 나무가 자리를 잡았다. 한 걸음 내딛는 데 한나절이 걸린다."},
+  sandwhirl:{cat:"모래바람",h:1.1,w:26,t:"날개로 모래바람을 일으켜 시야를 가린다. 메마른 바위산 절벽에 둥지를 튼다."},
+  sproutcat:{cat:"잎사귀묘",h:0.3,w:4,t:"귀 사이로 여린 새싹이 돋아 있다. 볕이 드는 자리를 찾아 몸을 말고 잔다."},
+  bloomlynx:{cat:"개화맹수",h:1.3,w:75,t:"몸의 꽃무늬가 계절마다 활짝 피어난다. 소리 없이 풀숲을 헤치며 사냥한다."},
+  zapfinch:{cat:"전기참새",h:0.3,w:2,t:"깃털 끝에 모인 정전기가 탁탁 소리를 낸다. 전깃줄에 무리 지어 나란히 앉는다."},
+  voltfalcon:{cat:"번개매",h:1.3,w:32,t:"급강하할 때 온몸에서 방전이 일어난다. 폭풍 구름을 뚫고 사냥에 나선다."},
+  dustbunny:{cat:"먼지뭉치",h:0.3,w:3,t:"굴을 파느라 늘 온몸이 흙먼지투성이다. 놀라면 뒷발로 땅을 탕탕 두드린다."},
+  thumplord:{cat:"진동거수",h:3.0,w:900,t:"발을 구르면 땅이 흔들려 멀리까지 울린다. 그렇게 무리에게 위험을 알린다."},
+  glowfly:{cat:"불빛벌레",h:0.2,w:1,t:"꽁무니에 모은 전기로 노란빛을 깜빡인다. 여름밤 물가에 무리 지어 모인다."},
+  arcmoth:{cat:"방전나방",h:1.2,w:20,t:"날개 무늬 사이로 푸른 전류가 흐른다. 번개가 치는 밤에 가장 활발해진다."},
+  pebblet:{cat:"작은바위",h:0.3,w:15,t:"길가에 굴러다니는 돌인 척 가만히 있는다. 마음에 든 사람을 졸졸 따라간다."},
+  boulderin:{cat:"돌덩이",h:1.2,w:200,t:"땅속 깊이 묻힌 광물을 먹으며 몸집을 키운다. 굴러다니다 바위 틈에 몸을 숨긴다."},
+  megalith:{cat:"거석정령",h:3.2,w:1200,t:"오랜 세월 비바람을 맞아 몸에 이끼가 앉았다. 한번 자리 잡으면 며칠씩 미동도 없다."},
+  lavakit:{cat:"용암돌",h:0.4,w:12,t:"몸의 갈라진 틈으로 붉은 용암이 비친다. 식으면 굳어버려 늘 따뜻한 곳을 찾는다."},
+  magmadon:{cat:"화산룡",h:3.0,w:450,t:"등의 균열에서 마그마가 끓어오른다. 화산 깊은 곳에 굴을 파고 그 안에 산다."},
+  burrowmouse:{cat:"땅굴쥐",h:0.3,w:4,t:"앞발로 순식간에 땅굴을 파고 들어간다. 굴 안에 씨앗을 잔뜩 모아 둔다."},
+  burrowlord:{cat:"굴착거수",h:2.2,w:300,t:"단단한 앞발로 바위까지 뚫고 굴을 넓힌다. 산 아래 거대한 굴을 다스린다."},
+  crystalgon:{cat:"수정용",h:2.8,w:340,t:"몸을 덮은 결정이 전기를 머금고 빛난다. 동굴 가장 깊은 곳에서 홀로 지낸다."},
+  glaciarch:{cat:"극빙군주",h:5.0,w:800,t:"울음소리 한 번에 바다가 얼어붙었다 전해진다. 오랜 빙하 아래에서 잠들어 있다."},
+  aqualord:{cat:"대양군주",h:5.4,w:980,t:"몸을 뒤척이면 해류의 방향이 바뀐다고 한다. 바다의 균형을 지키는 오랜 존재."},
+  dawnwyrm:{cat:"새벽용",h:6.0,w:900,t:"첫 햇살을 타고 하늘 끝에서 내려온다 전해진다. 그 날갯짓이 새 시대를 연다고 한다."},
 };
 function ddAbility(sp){ return sp.ability||ABILITY_OVERRIDE[sp.id]||DEFAULT_ABILITY[sp.type]||"guts"; }
 function openDetail(id){ const sp=byId(id); Audio.sfx("blip"); $("ddTitle").textContent=sp.name;
@@ -3682,10 +3817,10 @@ function openDetail(id){ const sp=byId(id); Audio.sfx("blip"); $("ddTitle").text
   let pre=DEX.find(d=>d.evolveTo===sp.id); const back=[]; let b2=pre; while(b2){ back.unshift(b2); const p2=DEX.find(d=>d.evolveTo===b2.id); b2=p2; }
   chain=back.concat(chain);
   const evoLine=chain.length>1?`<div class="evo-line">${chain.map((c,i)=>`${i>0?'<span>→</span>':''}<span class="node ${c.id===sp.id?'cur':''}">${c.em} ${c.name}${c.evolveLv&&DEX.find(d=>d.evolveTo===c.evolveTo)?'':''}</span>`).join("")}</div>`:`<div style="color:var(--muted);font-size:12px">진화하지 않는다</div>`;
-  const findReg=FIND_HINT[sp.tier]||"숲";
+  const findReg=findHint(sp);
   const fv=FLAVOR[sp.id];
   $("dexDetailBody").innerHTML=`<div class="dex-detail">
-    <div class="dd-head"><div class="em">${creatureVisual(sp.id,sp.type)}</div><div><div class="nm">${sp.name}</div>
+    <div class="dd-head"><div class="em">${creatureVisual(sp.id,sp.type)}</div><div><div class="nm">${sp.name} <button class="crybtn" onclick="SG.Audio.cry('${sp.id}','${sp.type}')" title="울음소리" aria-label="울음소리 듣기">🔊</button></div>
       <div class="meta"><span class="type-tag ${TYPE_CLASS[sp.type]}" style="font-size:9px">${tkLabel(sp.type)}</span> · ${fv?fv.cat:(sp.tier===3?"희귀":sp.tier===2?"중급":"흔함")} · 출현: ${findReg}</div>
       ${fv?`<div class="meta" style="margin-top:3px;color:var(--muted)">키 ${fv.h.toFixed(1)}m · 무게 ${fv.w}kg</div>`:""}</div></div>
     ${fv?`<div class="dd-flavor" style="font-size:12.5px;line-height:1.6;color:var(--ink,#e8e2d4);background:rgba(255,255,255,.05);border-left:3px solid ${TYPE_COLOR[sp.type]};padding:8px 11px;border-radius:6px">${fv.t}</div>`:""}
@@ -4140,12 +4275,13 @@ artLoadAll().then(()=>{ _artRefresh(); });
 window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVisual=creatureVisual; window.SG.ART=ART;
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
+window.SG.FLAVOR=FLAVOR;
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, INTERIORS, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, findHint, ENC_POOLS, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)

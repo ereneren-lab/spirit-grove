@@ -84,6 +84,8 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   node scripts/marsh_test.js "$F" || exit 1
   node scripts/stage_rank_test.js "$F" || exit 1
   node scripts/center_test.js "$F" || exit 1
+  node scripts/foe_switch_test.js "$F" || exit 1
+  node scripts/dex_flavor_test.js "$F" || exit 1
 else
   echo "⏭️  오디오 테스트 건너뜀 (npm install playwright 하면 실행됨)"
 fi
