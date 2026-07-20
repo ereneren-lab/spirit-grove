@@ -1003,7 +1003,7 @@ const MOVES={
   struggle:{name:"발버둥",type:"normal",power:40,acc:100,pp:Infinity,pri:0,recoil:0.25},
 };
 // 기술 효과를 사람이 읽을 수 있는 한 줄로. 배우기/잊기/재습득 UI에서 "어떤 기술인지" 보여준다.
-const _MV_STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦"};
+const _MV_STATUS_KO={psn:"독",brn:"화상",par:"마비",slp:"잠듦",frz:"냉동"};   // ⚠️ 상태 추가 시 STATUS_KO/STATUS_CLS와 한 세트로 채울 것(frz를 빠뜨려 기술 설명에 "frz"가 그대로 떴다)
 function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; const e=mo.eff||{};
   if(mo.power>0)p.push("위력 "+mo.power);
   if(mo.heal)p.push("HP "+Math.round(mo.heal*100)+"% 회복");
@@ -1422,12 +1422,16 @@ function groundItemAt(x,y){ const g=GROUND_AT[(G.indoor||"")+"|"+x+","+y]; if(!g
   return (G.found||[]).includes(g.k)?null:g; }
 const HIDDEN=[
   {k:"h1",x:1,y:47,item:"potion",qty:1},{k:"h2",x:1,y:41,item:"ball",qty:3},{k:"h3",x:2,y:34,item:"greatball",qty:2},
-  {k:"h4",x:1,y:27,item:"hyperpotion",qty:1},{k:"h5",x:4,y:20,item:"revive",qty:1},{k:"h6",x:2,y:12,item:"candy",qty:1},{k:"h7",x:2,y:10,item:"hyperpotion",qty:2},
+  {k:"h4",x:1,y:27,item:"hyperpotion",qty:1},{k:"h5",x:4,y:20,item:"revive",qty:1},{k:"h6",x:2,y:12,item:"candy",qty:1},{k:"h7",x:3,y:10,item:"hyperpotion",qty:2},
   {k:"surf_shore",x:21,y:24,item:"candy",qty:2},{k:"cut_forest",x:17,y:20,item:"greatball",qty:3},{k:"cut_lake",x:10,y:24,item:"hyperpotion",qty:2},{k:"str_rock",x:17,y:13,item:"revive",qty:2},
   {k:"stone_fire",x:16,y:15,item:"firestone",qty:1},{k:"stone_thunder",x:18,y:17,item:"thunderstone",qty:1},
   {k:"stone_water",x:20,y:23,item:"waterstone",qty:1},{k:"stone_leaf",x:9,y:37,item:"leafstone",qty:1},
 ];
-const HIDDEN_AT={}; HIDDEN.forEach(h=>{ HIDDEN_AT[h.x+","+h.y]=h; });
+// ⚠️ GROUND_ITEMS와 똑같이 실내 스코프로 키를 잡는다(`in` 없으면 오버월드 전용).
+//    예전엔 좌표만 키로 써서, 늪지(W:17) 안 (2,10)을 밟으면 오버월드 숨은 도구가 딸려 나왔다.
+const HIDDEN_AT={}; HIDDEN.forEach(h=>{ HIDDEN_AT[(h.in||"")+"|"+h.x+","+h.y]=h; });
+// groundItemAt과 대칭 — 스코프 규칙을 한 곳에만 둔다.
+function hiddenAt(x,y){ return HIDDEN_AT[(G.indoor||"")+"|"+x+","+y]||null; }
 function sightTrainer(){ if(typeof NPCS==="undefined")return null;
   for(const n of NPCS){ if(!n.battleKey||!n.dir||!npcAvailable(n))continue;
     const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[n.dir]; if(!d)continue; const range=n.range||2;
@@ -1569,7 +1573,7 @@ const STARTPOS={x:8,y:48};
 let G=null;
 function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box:[],active:0,caught:new Set(),seen:new Set(),
   items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},lastHeal:null,repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
-  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
+  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
 function activeMon(){return G.party[G.active];}
 function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
 function updateDexPill(){$("dexPill").textContent=`도감 ${G.caught.size} / ${DEX.length}${G.dexMaster?" 🏆":""}`;}
@@ -2117,7 +2121,7 @@ function onArrived(){
   if(_gi){ G.found=G.found||[]; G.found.push(_gi.k);
     G.items[_gi.item]=(G.items[_gi.item]||0)+(_gi.qty||1); Audio.sfx("buy");
     flashHint(`🎁 ${ITEM_KO[_gi.item]||_gi.item} ×${_gi.qty||1} 을(를) 주웠다!`); saveGame(); }
-  const _hid=HIDDEN_AT[G.pos.x+","+G.pos.y];
+  const _hid=hiddenAt(G.pos.x,G.pos.y);
   if(_hid && !(G.found||[]).includes(_hid.k)){ G.found=G.found||[]; G.found.push(_hid.k); const it=_hid.item,q=_hid.qty||1; G.items[it]=(G.items[it]||0)+q; Audio.sfx("buy"); flashHint(`💎 숨겨진 ${ITEM_KO[it]||it} ×${q} 발견!`); saveGame(); }
   if(typeof dayStep==="function")dayStep();
   const _see=sightTrainer();
@@ -3613,10 +3617,17 @@ function fxCaptureFlash(c){ if(CONFIG.reduceMotion)return; const fl=document.cre
   ring.animate([{transform:"translate(-50%,-50%) scale(1.6)",opacity:.9},{transform:"translate(-50%,-50%) scale(.4)",opacity:0}],{duration:fxT(360),easing:"ease-in"}).finished.then(()=>ring.remove()).catch(()=>ring.remove()); }
 
 /* ===================== STATUS / STAGES ===================== */
+// 타입 면역(본가): 불=화상, 얼음=냉동, 독=중독, 전기=마비. 잠듦은 타입 면역이 없다.
+// ⚠️ 상태 부여는 전부 applyStatus를 지나가므로(기술·특성·잔류효과) 여기 한 곳만 막으면 된다.
+const STATUS_TYPE_IMMUNE={brn:"fire",frz:"ice",psn:"poison",par:"elec"};
 function applyStatus(mon,st,side){ if(mon.status){ return; }
   // 특성 면역: 불면(잠듦)·면역(독)·수의베일(화상)
   const _imm={insomnia:"slp",immunity:"psn",waterveil:"brn"}[mon.ability];
-  if(_imm && _imm===st){ setMsg(`<b>${dispName(mon)}</b>은(는) <b>${ABILITY_KO[mon.ability]||mon.ability}</b> 덕분에 아무렇지 않다!`); return; } mon.status=st; if(st==="slp")mon._slp=ri(1,3); Audio.sfx("status"); fxStatusAura(side,st);
+  if(_imm && _imm===st){ setMsg(`<b>${dispName(mon)}</b>은(는) <b>${ABILITY_KO[mon.ability]||mon.ability}</b> 덕분에 아무렇지 않다!`); return; }
+  const _tImm=STATUS_TYPE_IMMUNE[st];
+  if(_tImm && (mon.type===_tImm || mon.type2===_tImm)){
+    setMsg(`<b>${dispName(mon)}</b>은(는) <b>${TYPE_KO[_tImm]}</b> 타입이라 아무렇지 않다!`); return; }
+  mon.status=st; if(st==="slp")mon._slp=ri(1,3); Audio.sfx("status"); fxStatusAura(side,st);
   const w={psn:"중독되었다!",brn:"화상을 입었다!",par:"마비되었다!",slp:"잠들어버렸다!",frz:"꽁꽁 얼어붙었다!"}[st];
   setMsg(`<b>${mon.name}</b>은(는) ${w}`); renderStages(); }
 function applyStage(mon,stat,delta,side){ if(!mon.stages)mon.stages=newStages(); const old=mon.stages[stat]||0; const nv=clamp(old+delta,-6,6);
@@ -3684,7 +3695,15 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
   const r=lastR;
   if(r.eff>1)particles(dSide,"💥",4);
   if(move.drain && total>0){ const heal=Math.max(1,Math.floor(total*move.drain)); att.hp=Math.min(att.maxHp,att.hp+heal); renderCombatants(); particles(side,"💚",4); }
-  if(move.recoil){ const rc=Math.max(1,Math.floor(att.maxHp*move.recoil)); att.hp=Math.max(0,att.hp-rc); renderCombatants(); }
+  // 반동은 본가처럼 "입힌 피해" 기준. 예전엔 자기 최대 HP 기준이라, 상성으로 반감돼 1 데미지를 줘도
+  // 항상 최대 HP의 25%가 깎였다(반동기 3종이 쓰면 손해인 기술이 돼 있었다).
+  // 발버둥만 예외로 최대 HP 1/4 — 본가 5세대 이후와 동일. 피해가 0이면 반동도 없다.
+  let _recoiled=false;
+  if(move.recoil && (total>0 || mvKey==="struggle")){
+    const _rbase = (mvKey==="struggle") ? att.maxHp : total;
+    const rc=Math.max(1,Math.floor(_rbase*move.recoil)); const _rb=att.hp;
+    att.hp=Math.max(0,att.hp-rc); _recoiled=true; renderCombatants();
+    if(Audio.hpTick)Audio.hpTick(_rb/att.maxHp*100, att.hp/att.maxHp*100); }
   await mw(340);
   if(move.multi&&hits>1)setMsg(`${hits}번 맞았다!`);
   else if(r.crit)setMsg("급소에 맞았다! 🎯"); else if(r.eff>1)setMsg("효과가 굉장했다! 💥"); else if(r.eff<1)setMsg("효과가 별로인 듯하다…");
@@ -3699,7 +3718,7 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
     await mw(240); setMsg(`<b>${dispName(att)}</b>은(는) <b>까칠한피부</b>에 상처를 입었다!`); Audio.sfx("hit"); await mw(420); }
   if(def.hp>0 && move.eff && move.eff.status && Math.random()<(move.eff.chance||0)) applyStatus(def,move.eff.status,dSide);
   if(def.hp>0 && move.eff && move.eff.flinch && !def._acted && Math.random()<move.eff.flinch) def._flinch=true;
-  if(move.recoil)setMsg(`<b>${att.name}</b>도 반동 피해를 입었다!`);
+  if(_recoiled)setMsg(`<b>${att.name}</b>도 반동 피해를 입었다!`);
   await mw(500); }
 
 function foeKeyResolved(){ let k=foeChooseMove(G.foe,activeMon()); if((G.foe.pp[k]||0)<=0 && k!=="struggle"){ k=noPP(G.foe)?"struggle":k; } return k; }
@@ -4965,7 +4984,7 @@ function serialize(){ return {v:4, pe:G.playerEmoji, ps:G.styleIdx||0,
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, lakeDone:!!G.lakeDone, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, dexMaster:!!G.dexMaster, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0} }; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, lakeDone:!!G.lakeDone, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, dexMaster:!!G.dexMaster, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
   recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; if(p.nick)m.nick=p.nick; return m; }
@@ -4973,7 +4992,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.playerEmoji=o.pe||"🧑‍🔬"; s.styleIdx=o.ps||0; s.active=o.active||0;
   s.items=Object.assign({ball:0,greatball:0,potion:0,revive:0,antidote:0,hyperpotion:0,repel:0,candy:0,xatk:0,xdef:0,xspd:0},o.items||{});
   s.money=o.money!=null?o.money:600; s.pos=o.pos||{x:STARTPOS.x,y:STARTPOS.y}; s.lastHeal=o.lh||null; s.repel=o.repel||0;   // 구세이브는 null → blackout이 STARTPOS로 폴백
-  s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.lakeDone=!!o.lakeDone; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.dexMaster=!!o.dexMaster; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
+  s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.lavaSeen=!!o.lavaSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.lakeDone=!!o.lakeDone; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.dexMaster=!!o.dexMaster; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
   s.hallOfFame=Array.isArray(o.hof)?o.hof:[]; s.trades=o.trades||{};
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
@@ -5058,7 +5077,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, blackout, markHeal, STARTPOS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
