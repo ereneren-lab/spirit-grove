@@ -118,6 +118,14 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 교환소 (후반 돈 소비처)
+도감 완성 보상 3만 코인 등 후반 경제가 밸 데가 없었다 → **교환상인 로엔**(리그 앞 20,9, `exchange:true` NPC)이 코인으로 희귀 물건을 내준다.
+- `PREMIUM` 재고: **타입 부적 10종**(`TYPES` 파생, #1에서 정의만 하고 상점엔 안 넣었던 것 → 여기서만 획득) + 진화의 돌 3종 + **반짝임의 부적**(이로치, unique 1회).
+- UI는 상점 오버레이(`shopOverlay`)를 재사용하되 `openExchange`→`renderExchange`가 **탭 없는 플랫 리스트**를 직접 그린다(renderShop 안 건드림). 타이틀은 `shopHeadTitle`로 상점/교환소 전환.
+- **반짝임의 부적** `G.shinyCharm`: 샤이니 확률 배율 = `SHINY_RATE × (dexMaster?3:1) × (shinyCharm?2:1)`. 완성 전 플레이어용 프리미엄(완성자는 ×6). 세이브 키 추가(serialize/deserialize/freshState).
+- talkNPC가 `npc.exchange`→`openExchange`로 분기(daycare/moveExpert/trade와 같은 패턴). 도달성 회귀가 NPC를 확인(40→41, 비차단).
+- ⚠️ 회귀 `scripts/exchange_test.js`: 샤이니 확률은 `Math.random`을 두 임계값(1/64·1/32) 사이로 고정해 **결정적**으로 부적 유무에 따라 뒤집히는지 검증(몬테카를로 회피).
+
 ### 오버월드 날씨 — 필드 날씨 = 전투 날씨(통합)
 전투 날씨(`setWeather`/`applyWeather`/`WEATHERS`)는 원래 있었지만 **전투마다 RNG로 굴려** 오버월드엔 안 보이고 필드와 무관했다 → **오버월드에 보이는 날씨와 전투 날씨를 하나로 통합**.
 - **`owWeather()`가 단일 출처**: `REGION_WEATHER`(지역별 특징 날씨) + 느린 실시간 시계(`dayCycle`과 같은 방식 — **저장 상태 없음·결정적**, 지역별 위상차로 어긋나 지역마다 따로 논다). 실내면 `clear`.
