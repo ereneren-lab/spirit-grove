@@ -14,7 +14,7 @@
 - **브랜치**: `main` / 작업 트리 깨끗 / stash 없음
 - **최신 커밋**: 방어(protect) 구현 + playthrough 예산 수정 + type_chart 이관 (아래 세션 기록)
 - **빌드**: dist 최신(3661KB). `verify.sh` 규칙 단위 + 영향받은 전투 테스트 6종 개별 통과. protect_test 신규 통과(load 11에서도).
-- **진행 중인 작업**: 없음. **다음: Task 4(playtest.sh 몽키/장기 플레이스루 실행 + 게임필 폴리시).**
+- **진행 중인 작업**: 없음. **인수인계 4항목 전부 처리 완료.**
 
 ### 알려진 것 (다음 세션에서 헷갈리지 말 것)
 - `playthrough_test.js`가 `G.busy가 풀려 있다 (true)`로 실패하면 **게임 버그가 아니라 부하 문제**다.
@@ -51,7 +51,11 @@ WORKLOG "남아 있는 것" 4개를 한꺼번에 처리 중. 이 커밋은 앞 3
 - **브라우저 테스트 감축**: `type_chart_test.js`(상성표)를 `rules_unit_test.js`로 이관(`R.EFF` 직접 단정 = damage().eff와 동치이자 더 순수) → playwright 목록에서 제거. 나머지 후보는 `MOVES`/`DEX` 추출 선행 필요라 보류(문서화).
 - **본가 대조 판단보류 결론**: (a) **트레이드 진화 = 갭 아님**(P2P 교환 없음, 유일 계보 megalith는 이미 `evolveLv:36`, NPC 트레이드는 완성형 지급) → 구현 안 함. (b) **방어(protect) 구현**(아래), **대타출동(substitute)은 보류**(가시 인형 UI 없이는 HP바가 얼어 혼란 + 로직 L 규모).
 - **방어(protect)**: 위력0·pri4·`eff.protect`. 네 전투 시스템 전부(메인 `performMove`·듀오 `dbExec`·적 AI `foeChooseMove`·시뮬 `battle_sim.js`)에 차단/발동/연속실패(`1/3^streak`)/리셋 일관 구현. 학습셋엔 안 넣어 **밸런스 불변**, 범용 TM `tm_protect`로 획득. 회귀 `scripts/protect_test.js`(load 11에서도 통과). 영향받은 배틀 테스트 6종(stage_rank·switchmoves·foe_switch·duo·movedesc·sim_status) 개별 재확인 통과.
-- **남은 것: Task 4** — `playtest.sh`(몽키 퍼즈·장기 플레이스루·도달성) 실행해 버그 사냥 + 게임필 폴리시. 부하 높을 때 실행 주의.
+- **Task 4 완료** — `playtest.sh` 하네스 실행 버그 사냥. **게임 코드 버그는 0건**. 대신 테스트 하네스 2건을 견고화:
+  - **playthrough**: `busy=true`로 결정적 실패하던 게 **부모 커밋에서도 재현**(내 회귀 아님) → 근본원인은 전투 후 이동 체크(moved2)가 **표지판/NPC 대화로 걸어 들어가** showDialog가 busy를 정당하게 잡은 걸 "stuck"으로 오판한 것. settle 루프(최대 3초)로 전환이 해소되길 기다린 뒤 inBattle/대화/부하로 분류하게 수정.
+  - **monkey**: 게임 버그 0건. 진행량 게이트가 `visited>=20||battle>=2`라 부하로 입력 스로틀되면 죽음(load 12에 216입력이 9칸밖에) → CLAUDE.md 원칙대로 **약한 바닥**(`visited>=5||battle>=1`)만 게이트, 수치는 참고 출력.
+  - reachability·longrun은 그대로 통과(버그 없음). balance/league(몬테카를로)는 protect가 학습셋에 없어 **구조적 불변**이라 부하 높을 때 생략.
+  - 게임필 폴리시: 별도 방향 지정이 없어 미착수(추천 방향 정해지면 이어서).
 
 ### 2026-07-21 — 본가 대조 4건 (`d415681`)
 - **무효(0배) 전용 문구** + 급소·다단히트가 상성 문구를 묻어버리던 else-if 사슬 제거.

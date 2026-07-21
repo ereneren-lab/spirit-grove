@@ -150,9 +150,10 @@ const { chromium } = require("playwright"); const path=require("path"); const os
   while(Date.now()<busyDeadline){ const bz=await p.evaluate(()=>window.SG.G().busy); if(!bz)break; await p.waitForTimeout(250); }
   await p.waitForTimeout(600);
   const after=await p.evaluate(()=>{ const G=window.SG.G();
-    return { inBattle:G.inBattle, caught:G.caught.size, seen:G.seen.size,
+    return { inBattle:G.inBattle, busy:G.busy, caught:G.caught.size, seen:G.seen.size,
              lv:G.party[0]&&G.party[0].level, xp:G.party[0]&&G.party[0].xp,
              view:([...document.querySelectorAll(".view")].find(x=>x.classList.contains("active"))||{}).id }; });
+  console.log(`     [진단] 전투 종료 직후 busy=${after.busy} inBattle=${after.inBattle}`);
   ok(turns>0, `실제 버튼으로 ${turns}턴 전투`);
   ok(!after.inBattle && after.view==="map", `전투가 정상 종료되고 맵으로 복귀 (${after.view})`);
   ok(after.seen>=1, `도감 목격 기록 ${after.seen}종`);
@@ -167,17 +168,34 @@ const { chromium } = require("playwright"); const path=require("path"); const os
     if(now.x!==pre.x||now.y!==pre.y){ moved2=true; break; }
   }
   ok(moved2, "전투 후에도 이동이 계속 된다 (입력 잠금 잔존 없음)");
-  const busyStuck=await p.evaluate(()=>window.SG.G().busy);
-  // ⚠️ busy가 45초 실측 예산을 넘겨도 안 풀렸을 때, 그게 게임 회귀인지 환경 부하인지 가른다.
-  //    부하가 낮은데 stuck이면 진짜 버그(하드 실패). 부하가 높으면(코어당 load>2) 애니가
-  //    느려진 것일 뿐이라 오탐 → 경고로 강등한다(전투 후 이동은 이미 위에서 통과 확인).
+  // ⚠️ moved2가 풀숲을 걸어 '새 야생 조우'나 '트레이너 스팟'으로 진입하면 그 전환 애니(와이프 ~340ms)
+  //    동안 busy=true·inBattle=false인 **일시 상태**가 된다(영구 stuck 아님). 단발로 찍으면 오탐이라
+  //    최대 3초 정착시켜 전환이 해소되길 기다린다: busy가 풀리거나(idle) inBattle이 켜지면(전투 진입) 정상.
+  let endState=null;
+  { const dl=Date.now()+3000;
+    while(Date.now()<dl){ endState=await p.evaluate(()=>({ busy:window.SG.G().busy, inBattle:window.SG.G().inBattle,
+        dlg:document.getElementById("dialogBox").classList.contains("show"),
+        story:!!document.querySelector("#storyOverlay.active") }));
+      if(!endState.busy || endState.inBattle || endState.dlg || endState.story) break;
+      await p.waitForTimeout(200); } }
+  const busyStuck=endState.busy;
+  // ⚠️ busy가 45초 실측 예산을 넘겨도 안 풀렸을 때 세 가지를 가른다:
+  //   1) 전투 후 이동 체크가 풀숲으로 걸어 들어가 '새 야생 전투'가 걸렸다 → inBattle=true.
+  //      이건 정상(busy가 당연히 켜진다). 이 테스트는 첫 전투만 검증하므로 통과 처리.
+  //   2) 밖(inBattle=false)인데 busy가 stuck + 시스템 부하 높음(코어당 load>2) → 승리 연출/
+  //      경험치 애니가 느려진 환경 오탐 → 경고만(게임 버그 아님).
+  //   3) 밖인데 stuck + 부하 낮음 → 진짜 회귀 의심(하드 실패).
   const load1=os.loadavg()[0], cores=os.cpus().length||1, perCore=load1/cores;
   if(!busyStuck){
     ok(true, `G.busy가 풀려 있다 (false)`);
+  } else if(endState.inBattle){
+    ok(true, `이동 중 새 야생 전투로 진입(inBattle=true) — busy는 정상`);
+  } else if(endState.dlg||endState.story){
+    ok(true, `이동 중 표지판/NPC 대화 진입 — busy는 정상(대화가 잡고 있음)`);
   } else if(perCore>2){
-    console.log(`  ⚠️ G.busy가 아직 true — 시스템 부하 높음(load ${load1.toFixed(1)}/${cores}코어=${perCore.toFixed(1)}), 게임 버그가 아닌 환경 오탐으로 판단(경고만).`);
+    console.log(`  ⚠️ G.busy가 아직 true(밖) — 시스템 부하 높음(load ${load1.toFixed(1)}/${cores}코어=${perCore.toFixed(1)}), 환경 오탐으로 판단(경고만).`);
   } else {
-    ok(false, `G.busy가 풀려 있다 (${busyStuck}) — 부하 낮음(${perCore.toFixed(1)}/코어)인데 안 풀림 = 진짜 회귀 의심`);
+    ok(false, `G.busy가 풀려 있다 (${busyStuck}, 밖) — 부하 낮음(${perCore.toFixed(1)}/코어)인데 안 풀림 = 진짜 회귀 의심`);
   }
 
   ok(errs.length===0, "플레이 전체에서 런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
