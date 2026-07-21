@@ -118,6 +118,13 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 배틀 기술 확장 (자폭·헤롱헤롱·묶기)
+- **자폭**(`eff.selfKO`): 큰 피해 후 사용자도 기절. `performMove` 데미지기 후처리에서 `att.hp=0`(상대 생사 무관). doMove의 사후 판정이 faint 처리.
+- **헤롱헤롱**(`eff.attract`): 이성(M↔F)에게만 `_attract` 볼라타일. `canAct`에서 50% 못 움직임. 동성·무성(N)은 무효. `_confuse`처럼 STATUSES가 아닌 볼라타일.
+- **묶기**(`eff.trap`): 데미지 + `_trapped=ri(4,5)`. `endTurnStatus` 잔뎀(maxHp/8, 매턴 감소) + **도주(`tryRun`)·자발적 교체(`openSwitch`) 봉쇄**(강제 교체는 통과).
+- ⚠️ `_attract`/`_trapped`는 휘발성 → `_confuse`와 같은 **리셋 지점 6곳** + `battle_sim.js`(canAct·applyMove·residual·onSwitchOut) 파리티. `battle_sim`에 selfKO·attract(성별)·trap 잔뎀 모델링.
+- **획득은 범용 TM**(tm_selfdestruct/attract/bind) — 학습셋에 안 넣어 트레이너·야생이 안 배운다 → **밸런스 불변**. 회귀 `scripts/battlemoves_test.js`(흐름+시뮬 파리티). ⚠️ 묶기 acc 90이라 테스트는 `MOVES.bind.acc=100` 고정(빗나가면 속박 안 걸림).
+
 ### 스탯 아이템 (영양제·민트·병뚜껑) — 백엔드 이미 있음
 EV/성격/IV 시스템(`m.evs`·`m.nature`·`m.ivs`)은 다 있고 적용·저장·요약 표시까지 되는데 **손댈 아이템만 없었다** → 추가.
 - **영양제**(`use:"ev"`, stat/amt): 단백질(공)·철분(방)·칼슘(특공)·아연(특방)·카르본(속)·맥스업(체). +10 EV, 한 스탯 252·총합 510 상한. 상점(need:2).

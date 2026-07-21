@@ -61,6 +61,7 @@ window.__SIM = (function(){
         return false;
       }
     }
+    if(m._attract && Math.random() < 0.5) return false;          // 헤롱헤롱: 50% 못 움직임
     return true;
   }
 
@@ -89,11 +90,13 @@ window.__SIM = (function(){
         dmg = Math.min(dmg, d.hp); d.hp = Math.max(0, d.hp - dmg); dealt += dmg;
       }
       if(a.held==="lifeorb" && dealt>0) a.hp = Math.max(0, a.hp - Math.max(1, Math.floor(a.maxHp/10)));   // 생명의구슬 반동
+      if(mv.eff && mv.eff.selfKO) a.hp = 0;                       // 자폭: 피해 후 자신도 기절(상대 생사 무관)
       if(d.hp <= 0) return;
       const e = mv.eff;
       if(e && e.status && Math.random() < (e.chance||0)) trySetStatus(d, e.status, e.badly);
       if(e && e.flinch && Math.random() < e.flinch) d._flinch = 1;
       if(e && e.confuse && Math.random() < (e.chance||1)) d._confuse = 1 + Math.floor(Math.random()*4);
+      if(e && e.trap && !(d._trapped>0)) d._trapped = 4 + Math.floor(Math.random()*2);   // 묶기: 4~5턴
       return;
     }
 
@@ -102,6 +105,7 @@ window.__SIM = (function(){
     if(mv.heal){ a.hp = Math.min(a.maxHp, a.hp + Math.floor(a.maxHp * mv.heal)); return; }
     if(e.status){ if(Math.random() < (e.chance||1)) trySetStatus(d, e.status, e.badly); return; }
     if(e.confuse){ d._confuse = 1 + Math.floor(Math.random()*4); return; }
+    if(e.attract){ if(d.gender && a.gender && d.gender!=="N" && a.gender!=="N" && d.gender!==a.gender) d._attract = true; return; }   // 헤롱헤롱: 이성만
     if(e.seed){ d._seeded = true; return; }
     if(e.stat){
       const t = e.target === "self" ? a : d;
@@ -128,13 +132,14 @@ window.__SIM = (function(){
       m.hp = Math.max(0, m.hp - d);
       foe.hp = Math.min(foe.maxHp, foe.hp + d);
     }
+    if(m._trapped > 0 && m.hp > 0){ m.hp = Math.max(0, m.hp - Math.max(1, Math.floor(m.maxHp / 8))); m._trapped--; }   // 조이기 잔뎀
   }
 
   // 교체하면 랭크·혼란·씨앗은 사라지고 맹독 카운터는 1로 리셋(본가 규칙, 게임과 동일).
   function onSwitchOut(m){
     if(!m) return;
     m.stages = S.newStages(); m._confuse = 0; m._seeded = false; m._flinch = 0;
-    m._protect = false; m._protectStreak = 0; m._choiceLock = null;
+    m._protect = false; m._protectStreak = 0; m._choiceLock = null; m._attract = false; m._trapped = 0;
     if(m._tox) m._tox = 1;
   }
 
