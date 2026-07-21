@@ -65,6 +65,8 @@ const { chromium } = require("playwright"); const path=require("path");
     G.questFlags={waterCaught:true,caveCatch:true,nightCaught:true};
     G.found=["a","b","c","d","e","f"];
     G.party[0].friendship=200;
+    ["7","8","9","0","a","b","c","d","e","f"].forEach(k=>G.defeated.add(k));   // q_gauntlet: 견습 전원 격파
+    G.berries={};
     Q.forEach(x=>{ after[x.id]=!!x.check(); });
     return { before, after, progOk };
   });

@@ -118,6 +118,13 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 콘텐츠 팩 (감사 후속 4종 + 재생 자원)
+- **HM 힌트 NPC**(`woodsman` 나무꾼, 첫 자르기 덤불 9,24): 자르기·괴력·파도타기가 뱃지로 조용히 주어지던 걸 설명.
+- **코스트/신전 도구**: 통로였던 해안·텅 빈 신전에 `GROUND_ITEMS`(in:coast/shrine) + `HIDDEN`(in:coast) 추가. ⚠️ 인테리어 바닥볼은 예전 렌더 가드(`!G.indoor`)로 **안 보였다** → `groundItemAt`이 이미 G.indoor로 스코프하므로 가드 제거해 **실내 볼도 보이게**(눌러-받기와 일관, 동굴/늪지 아이템도 이제 보인다).
+- **건틀릿 퀘스트**(`q_gauntlet`, giver=scholar): 네 체육관 견습 트레이너 10명(`7,8,9,0,a,b,c,d,e,f` — 리더 1~4 제외) 전원 격파. `G.defeated`로 check.
+- **열매나무**(`BERRY_TREES`, 재생 자원 — 유일한 파밍 루프): 좌표 오버레이(GROUND_ITEMS식, 오버월드 전용). `berryAt`/`berryRipe`/`harvestBerry`. 수확 시 `G.berries[k]=G.playSec` 기록 → `sec`초 뒤 다시 익음. 열매(오랭/정화/먹다남은음식)는 **heldStock**으로. `_berryTree` 렌더(익으면 빨간 열매). 세이브 키 `berries`. `interact()`가 볼 다음에 열매나무 확인.
+- ⚠️ 회귀 `content_pack_test.js`. **테스트 위생**: `harvestBerry`/`pickupGroundItem`이 `showDialog`를 띄우는데 `_dlgQueue`는 모듈 전역이라 evaluate 간 지속 → 다음 블록 `interact()`가 `dialogActive()` 가드로 막힌다. 블록 시작에 `advanceDialog`로 정리할 것.
+
 ### 이벤트 배선 감사 (2026-07) — talkNPC 분기 순서
 전수 감사 결과 배선은 대체로 매우 견고(모든 NPC battleKey·trade키·타일 트리거·가드·전설·보스·엔딩 연결됨, 죽은 트리거/고아 트레이너 0). **유일한 실버그**: `q_bond` 퀘스트(제공자 `trade1`=교환하는 소녀)가 도달 불가였다 — `talkNPC`에서 `npc.trade` 분기가 퀘스트 분기보다 먼저 `return`해서 q_bond가 영영 안 떴다.
 - ⚠️ **퀘스트 분기를 서비스(trade/exchange/…) 분기보다 앞에 둔다** — trade1처럼 서비스+퀘스트를 겸하는 NPC는 퀘스트가 먼저 떠야 한다. `questForGiver`는 `done`이면 null이라 완료 후엔 자연히 서비스로 넘어간다(퀘스트 먼저 → 완료 → 교환). 회귀 `indoor_quest_test`에 q_bond 제공 검증 추가(트레이드에 가려지면 실패).

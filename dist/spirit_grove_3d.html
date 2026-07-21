@@ -1476,6 +1476,7 @@ const NPCS=[
   {id:"daycare",x:13,y:47,em:"🏡",name:"육아방 관리인",daycare:true,spr:{outfit:"#8a6a4a",accent:"#c0a070",skin:"#e3b07e",hair:"#5a4a3a",hat:"none",boots:"#5a4636"},lines:["육아방 관리인: 정령을 맡겨보시겠어요?"]},
   {id:"movexpert",x:9,y:47,em:"📖",name:"기술 전문가",moveExpert:true,spr:{outfit:"#5a5a8a",accent:"#a0a0d0",skin:"#e3b07e",hair:"#3a3a5a",hat:"none",boots:"#3a3a5a"},lines:["기술 전문가: 잊은 기술을 되살리거나, 필요 없는 기술을 지워드립니다."]},
   {id:"broker",x:20,y:9,em:"💱",name:"교환상인 로엔",exchange:true,spr:{outfit:"#b8862c",accent:"#f0d85a",skin:"#e3b07e",hair:"#3a2c22",hat:"none",boots:"#5a4632"},lines:["교환상인 로엔: 코인으로 희귀한 물건을 바꿔주지. 챔피언쯤 되면 쓸 데가 필요할 테니 말이야."]},
+  {id:"woodsman",x:9,y:24,em:"🪓",name:"나무꾼 바우",spr:{outfit:"#7a5a3a",accent:"#a0784a",skin:"#e3b07e",hair:"#3a2c22",hat:"cap",hatc:"#5a4028",boots:"#4a3420"},chat:["나무꾼 바우: 앞을 막은 작은 나무 보이지? 체육관 인장을 얻으면 '자르기'로 벨 수 있게 돼.","나무꾼 바우: 큰 바위는 '괴력'으로 밀고, 넓은 물은 '파도타기'로 건너지. 다 인장의 힘이라네.","나무꾼 바우: 길이 막혔다고 포기 말게. 인장을 모을수록 새 길이 열리는 법이야."]},
 ];
 const NPC_AT={}; NPCS.forEach(n=>{ NPC_AT[n.x+","+n.y]=n; });
 function npcAvailable(n){ if(!n)return false; if(n.battleKey&&G.defeated.has(n.battleKey)){ if(n.dir&&G.rematchWanted&&G.rematchWanted.has(n.battleKey))return true; return false; } if(n.requires&&!G.defeated.has(n.requires))return false; return true; }
@@ -1536,6 +1537,8 @@ GROUND_ITEMS.push(
   {k:"gi_snow2",in:"snowfield",x:2,y:1,item:"hyperpotion",qty:3},
   {k:"gi_shrine1",in:"shrine",x:4,y:2,item:"candy",qty:1},
   {k:"gi_shrine2",in:"shrine",x:12,y:2,item:"elixir",qty:1},
+  {k:"gi_coast1",in:"coast",x:13,y:9,item:"hyperpotion",qty:2},
+  {k:"gi_coast2",in:"coast",x:2,y:5,item:"greatball",qty:3},
 );
 const GROUND_AT={}; GROUND_ITEMS.forEach(g=>{ GROUND_AT[(g.in||"")+"|"+g.x+","+g.y]=g; });
 function groundItemAt(x,y){ const g=GROUND_AT[(G.indoor||"")+"|"+x+","+y]; if(!g)return null;
@@ -1546,12 +1549,31 @@ const HIDDEN=[
   {k:"surf_shore",x:21,y:24,item:"candy",qty:2},{k:"cut_forest",x:17,y:20,item:"greatball",qty:3},{k:"cut_lake",x:10,y:24,item:"hyperpotion",qty:2},{k:"str_rock",x:17,y:13,item:"revive",qty:2},
   {k:"stone_fire",x:16,y:15,item:"firestone",qty:1},{k:"stone_thunder",x:18,y:17,item:"thunderstone",qty:1},
   {k:"stone_water",x:20,y:23,item:"waterstone",qty:1},{k:"stone_leaf",x:9,y:37,item:"leafstone",qty:1},
+  {k:"hid_coast1",in:"coast",x:14,y:7,item:"revive",qty:1},
 ];
 // ⚠️ GROUND_ITEMS와 똑같이 실내 스코프로 키를 잡는다(`in` 없으면 오버월드 전용).
 //    예전엔 좌표만 키로 써서, 늪지(W:17) 안 (2,10)을 밟으면 오버월드 숨은 도구가 딸려 나왔다.
 const HIDDEN_AT={}; HIDDEN.forEach(h=>{ HIDDEN_AT[(h.in||"")+"|"+h.x+","+h.y]=h; });
 // groundItemAt과 대칭 — 스코프 규칙을 한 곳에만 둔다.
 function hiddenAt(x,y){ return HIDDEN_AT[(G.indoor||"")+"|"+x+","+y]||null; }
+// ===== 열매나무 (유일한 재생 자원) =====
+// 수확하면 그 순간의 G.playSec를 G.berries에 기록 → sec초 뒤 다시 익는다(포켓몬 열매나무).
+// 열매는 지닌물건(오랭/정화/먹다남은음식)이라 heldStock으로 들어간다. 오버월드 전용(좌표 오버레이).
+const BERRY_TREES=[
+  {k:"bt_grass",x:2,y:44,item:"oranberry",sec:120},
+  {k:"bt_forest",x:2,y:30,item:"cureberry",sec:150},
+  {k:"bt_lake",x:3,y:25,item:"oranberry",sec:120},
+  {k:"bt_plateau",x:2,y:14,item:"leftovers",sec:300},
+];
+const BERRY_AT={}; BERRY_TREES.forEach(b=>{ BERRY_AT[b.x+","+b.y]=b; });
+function berryAt(x,y){ if(typeof G!=="undefined"&&G&&G.indoor)return null; return BERRY_AT[x+","+y]||null; }
+function berryRipe(bt){ if(!bt)return false; const h=(typeof G!=="undefined"&&G&&G.berries)?G.berries[bt.k]:null; if(h==null)return true; return ((G.playSec||0)-h)>=bt.sec; }
+function harvestBerry(bt){ if(!bt||!berryRipe(bt))return false;
+  G.berries=G.berries||{}; G.berries[bt.k]=G.playSec||0;
+  G.heldStock=G.heldStock||{}; G.heldStock[bt.item]=(G.heldStock[bt.item]||0)+1;
+  Audio.sfx&&Audio.sfx("win");
+  showDialog({name:"", text:`🫐 <b>${(HELD_ITEMS[bt.item]&&HELD_ITEMS[bt.item].ko)||bt.item}</b>을(를) 하나 땄다!`});
+  saveGame(); return true; }
 function sightTrainer(){ if(typeof NPCS==="undefined")return null;
   for(const n of NPCS){ if(!n.battleKey||!n.dir||!npcAvailable(n))continue;
     const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[n.dir]; if(!d)continue; const range=n.range||2;
@@ -1616,7 +1638,7 @@ const QUESTS=[
     check:()=>((G.found&&G.found.length)||0)>=6, prog:()=>`${Math.min((G.found&&G.found.length)||0,6)}/6개`,
     reward:{greatball:4,elixir:1},
     offer:["호수 낚시꾼 도윤: 지난 폭풍에 보급품이 사방으로 흩어졌어.","호수 낚시꾼 도윤: 길에 떨어진 걸 <b>6개</b>만 주워다 주면 사례하지. 눈에 잘 띌 거야."],
-    active:["호수 낚시꾼 도윤: 땅에 떨어진 물건은 그냥 밟고 지나가면 주워져. 잘 둘러봐."],
+    active:["호수 낚시꾼 도윤: 땅에 떨어진 물건은 다가가서 <b>Ⓐ</b>로 주우면 돼. 볼 표시가 눈에 잘 띌 거야."],
     done:["호수 낚시꾼 도윤: 오, 벌써 이만큼이나! 자네 눈썰미가 좋구먼.","호수 낚시꾼 도윤: 약속한 사례일세."] },
   { id:"q_bond", giver:"trade1", title:"마음이 닿는 거리", desc:"친밀도 150 이상인 정령 만들기",
     check:()=>(G.party||[]).some(m=>m&&!m.isEgg&&(m.friendship||0)>=150),
@@ -1649,7 +1671,14 @@ const QUESTS=[
     reward:{candy:1,hyperpotion:2},
     offer:["순례자: 고원 어딘가에 <b>수정 동굴</b>이 있다는 소문을 들었소.","순례자: 그 안의 정령을 한 마리 잡아 살아 돌아온다면, 그대의 용기를 기리겠소."],
     active:["순례자: 동굴 입구는 고원의 바위 지대에 있다 하오. 부디 조심히."],
-    done:["순례자: 동굴의 정령을! 그대는 진정 용감하구려.","순례자: 이 물약과 사탕을 받으시오. 여정에 도움이 될 것이오."] }
+    done:["순례자: 동굴의 정령을! 그대는 진정 용감하구려.","순례자: 이 물약과 사탕을 받으시오. 여정에 도움이 될 것이오."] },
+  { id:"q_gauntlet", giver:"scholar", title:"관장 견습 격파", desc:"네 체육관의 견습 트레이너 전원(10명) 격파",
+    check:()=>["7","8","9","0","a","b","c","d","e","f"].every(k=>G.defeated&&G.defeated.has(k)),
+    prog:()=>`${["7","8","9","0","a","b","c","d","e","f"].filter(k=>G.defeated&&G.defeated.has(k)).length}/10명`,
+    reward:{hyperpotion:5,candy:2,revive:2},
+    offer:["떠돌이 학자: 체육관엔 관장 말고도 견습 트레이너들이 숨어 있지. 대부분 그냥 지나치더군.","떠돌이 학자: 네 체육관의 견습들을 <b>전원</b> 꺾어보게. 자네의 실력을 기록에 남기겠네."],
+    active:["떠돌이 학자: 아직 못 꺾은 견습이 남아 있군. 체육관 안을 구석구석 살펴보게."],
+    done:["떠돌이 학자: 전원 격파라니 — 자네 이름을 정령사 명부 맨 윗줄에 올렸네.","떠돌이 학자: 이건 내 감사의 표시일세."] }
 ];
 function questForGiver(id){ let offer=null; for(const q of QUESTS){ if(q.giver!==id)continue; const st=G.quests&&G.quests[q.id]; if(st==="active")return q; if(!st&&!offer)offer=q; } return offer; }
 function grantReward(r){ if(!G.items)G.items={}; for(const k in r){ G.items[k]=(G.items[k]||0)+r[k]; } }
@@ -1697,7 +1726,7 @@ const STARTPOS={x:8,y:48};
 let G=null;
 function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box:[],active:0,caught:new Set(),seen:new Set(),
   items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},lastHeal:null,repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
-  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
+  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,berries:{},heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
 function activeMon(){return G.party[G.active];}
 function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
 function updateDexPill(){$("dexPill").textContent=`도감 ${G.caught.size} / ${DEX.length}${G.dexMaster?" 🏆":""}`;}
@@ -1868,7 +1897,8 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     const pcx=ox+px*ts+ts/2, pcy=oy+py*ts+ts/2; // 플레이어 실제 화면 중심
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const sx=ox+x*ts,sy=oy+y*ts; if(sx<-ts||sy<-ts||sx>cw||sy>ch)continue; this._tile(ctx,tileAt(x,y),sx,sy,ts,x,y,now);
       // 바닥에 놓인 도구(아직 안 주운 것만) — 타일 위에 얹어 그린다
-      if(!G.indoor && typeof groundItemAt==="function"){ const gi=groundItemAt(x,y); if(gi)this._itemBall(ctx,sx,sy,ts,now,x,y); } }
+      if(typeof groundItemAt==="function"){ const gi=groundItemAt(x,y); if(gi)this._itemBall(ctx,sx,sy,ts,now,x,y); }   // 실내 볼도 보이게(groundItemAt이 G.indoor로 스코프) — 눌러-받기와 일관
+      if(typeof berryAt==="function"){ const bt=berryAt(x,y); if(bt)this._berryTree(ctx,sx,sy,ts,now,berryRipe(bt)); } }
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const sx=ox+x*ts,sy=oy+y*ts; if(sx<-ts||sy<-ts||sx>cw||sy>ch)continue;
       const t=tileAt(x,y); let emoji=null, spec=null, sdir="down";
       if(isTrainerTile(t)&&!G.defeated.has(t)){ if(TRAINERS[t]&&TRAINERS[t].spr)spec=TRAINERS[t].spr; else emoji=(TRAINERS[t]&&TRAINERS[t].em)||null; }
@@ -1925,6 +1955,17 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     const tw=(Math.sin((now||0)*3.4 + x*1.1)*0.5+0.5);
     ctx.globalAlpha=0.35+tw*0.5; ctx.fillStyle="#fff6c0";
     ctx.beginPath(); ctx.arc(cx+r*0.75,cy-r*0.8,ts*0.045,0,6.29); ctx.fill(); ctx.globalAlpha=1; },
+  // 열매나무: 덤불 + (익었으면) 빨간 열매들. 안 익었으면 잎만.
+  _berryTree(ctx,sx,sy,ts,now,ripe){ const cx=sx+ts*0.5, by=sy+ts*0.80;
+    ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(cx,by,ts*0.28,ts*0.09,0,0,6.29); ctx.fill();
+    ctx.fillStyle="#6a4a2c"; ctx.fillRect(cx-ts*0.03,by-ts*0.28,ts*0.06,ts*0.24);   // 줄기
+    ctx.fillStyle="#3f6a3a"; ctx.beginPath(); ctx.ellipse(cx,by-ts*0.40,ts*0.30,ts*0.24,0,0,6.29); ctx.fill();
+    ctx.fillStyle="#4f8248"; ctx.beginPath(); ctx.ellipse(cx-ts*0.06,by-ts*0.46,ts*0.20,ts*0.16,0,0,6.29); ctx.fill();
+    if(ripe){ const bob=Math.sin((now||0)*2.4)*ts*0.015;
+      for(const d of [[-0.15,-0.05],[0.13,-0.10],[0.03,0.05],[-0.04,-0.16],[0.15,0.04]]){
+        const bx=cx+d[0]*ts, byy=by-ts*0.40+d[1]*ts+bob;
+        ctx.fillStyle="#e0556a"; ctx.beginPath(); ctx.arc(bx,byy,ts*0.055,0,6.29); ctx.fill();
+        ctx.fillStyle="rgba(255,255,255,.55)"; ctx.beginPath(); ctx.arc(bx-ts*0.018,byy-ts*0.018,ts*0.018,0,6.29); ctx.fill(); } } },
   _tile(ctx,t,sx,sy,ts,x,y,now){ const h=((x*73856093)^(y*19349663))>>>0; const rnd=n=>((h>>(n*3))&7)/7; const ol="rgba(20,42,24,.4)"; sx=Math.round(sx); sy=Math.round(sy); const tb=Math.ceil(ts)+1;
     if(typeof G!=="undefined" && (G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh")){
       const sv=((h>>3)&3), _isle=G.indoor==="isle", _shr=G.indoor==="shrine", _snow=G.indoor==="snowfield", _marsh=G.indoor==="marsh"; ctx.fillStyle=_snow?`rgb(${232-sv*3},${238-sv*3},${248-sv*3})`:_shr?`rgb(${210-sv*3},${216-sv*3},${236-sv*3})`:_marsh?`rgb(${104-sv*4},${120-sv*4},${86-sv*4})`:_isle?`rgb(${96-sv*4},${170-sv*5},${94-sv*4})`:`rgb(${226-sv*5},${206-sv*5},${158-sv*5})`; ctx.fillRect(sx,sy,tb,tb);
@@ -2418,6 +2459,9 @@ function interact(){ if(typeof G==="undefined"||!G||G.busy||G.inBattle||dialogAc
   // 도구 볼: 서 있는 칸이나 마주 본 칸의 볼을 A로 줍는다(포켓몬식).
   const _gi=(typeof groundItemAt==="function")&&(groundItemAt(G.pos.x,G.pos.y)||groundItemAt(fx,fy));
   if(_gi){ stopPath(); pickupGroundItem(_gi); return; }
+  // 열매나무: 익었으면 수확, 아니면 대기 안내(포켓몬 열매나무).
+  const _bt=(typeof berryAt==="function")&&(berryAt(G.pos.x,G.pos.y)||berryAt(fx,fy));
+  if(_bt){ stopPath(); if(berryRipe(_bt))harvestBerry(_bt); else flashHint("🌿 아직 열매가 익지 않았다"); return; }
   if(!walkable(fx,fy)){ stopPath(); move(d); } }
 // 포켓몬식 도구 줍기 — 발견 대사(타이핑) + 팡파르. 자동 흡입 대신 A로 받아 손맛을 준다.
 function pickupGroundItem(gi){ if(!gi)return; G.found=G.found||[]; if(G.found.includes(gi.k))return;
@@ -5263,7 +5307,7 @@ function serialize(){ return {v:4, pe:G.playerEmoji, ps:G.styleIdx||0,
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, lakeDone:!!G.lakeDone, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0} }; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, lakeDone:!!G.lakeDone, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp,tox:m._tox||0}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
   recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; m._tox=p.tox||0; if(p.nick)m.nick=p.nick; return m; }
@@ -5271,7 +5315,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.playerEmoji=o.pe||"🧑‍🔬"; s.styleIdx=o.ps||0; s.active=o.active||0;
   s.items=Object.assign({ball:0,greatball:0,potion:0,revive:0,antidote:0,hyperpotion:0,repel:0,candy:0,xatk:0,xdef:0,xspd:0},o.items||{});
   s.money=o.money!=null?o.money:600; s.pos=o.pos||{x:STARTPOS.x,y:STARTPOS.y}; s.lastHeal=o.lh||null; s.repel=o.repel||0;   // 구세이브는 null → blackout이 STARTPOS로 폴백
-  s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.lavaSeen=!!o.lavaSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.lakeDone=!!o.lakeDone; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.dexMaster=!!o.dexMaster; s.shinyCharm=!!o.shinyCharm; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
+  s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.lavaSeen=!!o.lavaSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.lakeDone=!!o.lakeDone; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.dexMaster=!!o.dexMaster; s.shinyCharm=!!o.shinyCharm; s.berries=o.berries||{}; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
   s.hallOfFame=Array.isArray(o.hof)?o.hof:[]; s.trades=o.trades||{};
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
@@ -5367,7 +5411,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, pickupGroundItem, interact};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, pickupGroundItem, interact, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
