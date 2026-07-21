@@ -3746,6 +3746,22 @@ const SIGFX={
   quake: async(s,d)=>{ screenShake(true); const c=fxCenter(d);
     for(let i=0;i<7;i++){ const gx=c.x+rand(-46,46); _pop("💥",{x:gx,y:c.y+rand(14,40)},TYPE_COLOR.ground,rand(-10,10),rand(-46,-14),rand(380,560)); await wait(fxT(34)); }
     fxBurst(d,"ground",3); impactFlash(); await wait(fxT(90)); screenShake(true); await wait(fxT(140)); },
+  // 자폭: 사방으로 폭발 + 강한 흔들림
+  selfdestruct: async(s,d)=>{ const c=fxCenter(d), c0=fxCenter(s); screenShake(true);
+    for(const cc of [c0,c]){ for(let i=0;i<8;i++){ const a=i/8*6.28; _pop("💥",{x:cc.x,y:cc.y},"#f0a850",Math.cos(a)*40,Math.sin(a)*40,rand(340,520)); } }
+    const fl=fxGlyph("💥",c0,"#ffd27a","fx-proj"); fl.style.fontSize="26px"; fl.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:"translate(-50%,-50%) scale(3.4)",opacity:0}],{duration:fxT(360),easing:"ease-out",fill:"forwards"}).finished.then(()=>fl.remove()).catch(()=>fl.remove());
+    fxBurst(d,"fire",3); impactFlash(); await wait(fxT(120)); screenShake(true); await wait(fxT(160)); },
+  // 날기: 위로 사라졌다가 급강하 타격
+  fly: async(s,d)=>{ const aS=spriteEl(s), to=fxCenter(d);
+    aS.animate([{transform:"translateY(0)",opacity:1},{transform:"translateY(-40px)",opacity:.2}],{duration:fxT(200),fill:"forwards"}); await wait(fxT(210));
+    _fly("🪶",{x:to.x,y:to.y-70},to,TYPE_COLOR.flying,180,1.4); aS.animate([{opacity:.2},{opacity:1}],{duration:fxT(160),fill:"forwards"});
+    fxSlash(d); fxBurst(d,"flying",3); impactFlash(); screenShake(true); await wait(fxT(120)); },
+  // 솔라빔: 빛줄기가 날아가 작렬
+  solarbeam: async(s,d)=>{ const from=fxCenter(s), to=fxCenter(d); const beam=fxGlyph("☀️",from,"#f0e07a","fx-proj"); beam.style.fontSize="22px";
+    beam.animate([{left:from.x+"px",top:from.y+"px",transform:"translate(-50%,-50%) scale(1)"},{left:to.x+"px",top:to.y+"px",transform:"translate(-50%,-50%) scale(1.6)"}],{duration:fxT(240),easing:"ease-in",fill:"forwards"}).finished.then(()=>beam.remove()).catch(()=>beam.remove());
+    await wait(fxT(240)); for(let i=0;i<7;i++){ const a=i/7*6.28; _pop("✦",to,"#eef0a0",Math.cos(a)*36,Math.sin(a)*36,rand(340,520)); } fxBurst(d,"grass",3); impactFlash(); screenShake(true); await wait(fxT(120)); },
+  // 조이기: 소용돌이가 상대를 감아 조인다
+  bind: async(s,d)=>{ const c=fxCenter(d); for(let i=0;i<3;i++){ const r=fxGlyph("🌀",{x:c.x,y:c.y},"#c7bca6","fx-particle"); r.animate([{transform:"translate(-50%,-50%) scale(1.6) rotate(0deg)",opacity:.9},{transform:"translate(-50%,-50%) scale(.7) rotate(200deg)",opacity:0}],{duration:fxT(420),delay:i*80}).finished.then(()=>r.remove()).catch(()=>r.remove()); } fxBurst(d,"normal",2); screenShake(false); await wait(fxT(320)); },
   // 땅파기: 사라졌다가 발밑에서 솟구침
   dig: async(s,d)=>{ const aS=spriteEl(s); aS.animate([{opacity:1,transform:"translateY(0)"},{opacity:0,transform:"translateY(26px)"}],{duration:fxT(240),fill:"forwards"});
     const c0=fxCenter(s); for(let i=0;i<5;i++)_pop("🪨",{x:c0.x+rand(-18,18),y:c0.y+24},TYPE_COLOR.ground,rand(-26,26),rand(-34,-8),rand(320,480));
