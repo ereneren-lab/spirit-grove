@@ -1,4 +1,4 @@
-// 신규 지역 '뇌명 봉우리(skyridge)' 회귀: 인테리어·조우풀·진입·가드·서식지·저장.
+// 신규 지역 회귀: 뇌명 봉우리(skyridge) + 고대 유적(ruins) — 인테리어·조우풀·진입·가드·서식지·저장.
 const { chromium } = require("playwright"); const path=require("path");
 (async()=>{ const b=await chromium.launch();
   const p=await b.newPage({viewport:{width:430,height:760}});
@@ -43,7 +43,29 @@ const { chromium } = require("playwright"); const path=require("path");
     return { okd, round:!!S.G().skySeen }; });
   ok(save.okd && save.round, "skySeen 세이브/로드 보존");
 
+  /* ===== 고대 유적(ruins) — 봉우리와 병렬 검증 ===== */
+  const ru=await p.evaluate(()=>{ const S=window.SG, F=S.flow; S.setG(S.freshState()); const G=S.G();
+    const I=F.INTERIORS.ruins; const pool=(F.ENC_POOLS.ruins||[]);
+    G.party=[S.makeMon("boulderin",30)]; G.pos={x:8,y:9}; G.indoor="ruins"; G.busy=false;
+    const ps=new Set(pool); F.startRuinsEncounter();
+    F.enterMap(true); let oPos=null,oWalk=null;
+    for(let y=0;y<50&&!oPos;y++)for(let x=0;x<25;x++){ if(F.tileAt(x,y)==="z"){ oPos=x+","+y; oWalk=F.walkable(x,y); break; } }
+    return { interior:!!(I&&I.id==="ruins"&&I.str.length===I.H), poolN:pool.length, allExist:pool.every(id=>S.byId(id)),
+             habitat:(F.HABITAT_KO||{}).ruins, findHint:F.findHint(S.byId("thumplord")).indexOf("고대 유적")>=0,
+             guard:!!(S.TRAINERS.h&&S.TRAINERS.h.team&&S.flow.GUARD_TILES.indexOf("h")>=0),
+             encInPool:S.G().foe&&ps.has(S.G().foe.id), foe:S.G().foe&&S.G().foe.id, oPos, oWalk }; });
+  ok(ru.interior && ru.poolN>=6 && ru.allExist, `유적 인테리어+조우풀 ${ru.poolN}종 실존`);
+  ok(ru.habitat==="고대 유적" && ru.findHint, "유적 HABITAT_KO + findHint 반영");
+  ok(ru.guard, "유적 수호자(TRAINERS.h) + GUARD_TILES 등록");
+  ok(ru.oPos && ru.oWalk===false, `유적 진입 타일 z 존재·비보행 (${ru.oPos})`);
+  ok(ru.encInPool, `startRuinsEncounter가 유적 풀에서 조우 (${ru.foe})`);
+
+  const rs=await p.evaluate(()=>{ const S=window.SG, F=S.flow; S.setG(S.freshState()); const G=S.G();
+    G.party=[S.makeMon("boulderin",30)]; G.ruinsSeen=true;
+    const okd=F.deserialize(JSON.parse(JSON.stringify(F.serialize()))); return { okd, round:!!S.G().ruinsSeen }; });
+  ok(rs.okd && rs.round, "ruinsSeen 세이브/로드 보존");
+
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
-  console.log(process.exitCode?"\n❌ 실패":"\n🎉 뇌명 봉우리 통과");
+  console.log(process.exitCode?"\n❌ 실패":"\n🎉 신규 지역(봉우리·유적) 통과");
   await b.close(); process.exit(process.exitCode||0);
 })();
