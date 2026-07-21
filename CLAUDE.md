@@ -118,6 +118,18 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 이벤트 배선 감사 (2026-07) — talkNPC 분기 순서
+전수 감사 결과 배선은 대체로 매우 견고(모든 NPC battleKey·trade키·타일 트리거·가드·전설·보스·엔딩 연결됨, 죽은 트리거/고아 트레이너 0). **유일한 실버그**: `q_bond` 퀘스트(제공자 `trade1`=교환하는 소녀)가 도달 불가였다 — `talkNPC`에서 `npc.trade` 분기가 퀘스트 분기보다 먼저 `return`해서 q_bond가 영영 안 떴다.
+- ⚠️ **퀘스트 분기를 서비스(trade/exchange/…) 분기보다 앞에 둔다** — trade1처럼 서비스+퀘스트를 겸하는 NPC는 퀘스트가 먼저 떠야 한다. `questForGiver`는 `done`이면 null이라 완료 후엔 자연히 서비스로 넘어간다(퀘스트 먼저 → 완료 → 교환). 회귀 `indoor_quest_test`에 q_bond 제공 검증 추가(트레이드에 가려지면 실패).
+- 감사가 짚은 콘텐츠 갭 중 **신전(shrine)** 이 가장 비어 `GROUND_ITEMS`에 `in:"shrine"` 2개(사탕·엘릭서) 추가. 남은 옵션(코스트 콘텐츠·체육관 견습생 건틀릿 퀘스트·HM 힌트 NPC·열매나무 재생 루프)은 유저 선택 대기.
+
+### 도구 줍기 — 포켓몬식 눌러-받기
+예전엔 볼 위로 걸어가면 `onArrived`가 **자동 흡입**하고 `flashHint` 토스트만 떠 밋밋했다 → **A로 줍는다**(손맛).
+- `onArrived`는 이제 볼 칸에 서면 안내(`Ⓐ 눌러서 도구를 줍는다`)만. `interact()`가 **서 있는 칸 또는 마주 본 칸**의 볼을 확인해 `pickupGroundItem`으로 줍는다.
+- `pickupGroundItem`: `G.found` 기록 + 지급 + `Audio.sfx("win")` 팡파르 + **발견 대사**(`showDialog` — 타이핑 + ▼커서, A로 진행) + `updateGoal`(도구 회수 퀘스트) + `saveGame`.
+- **HIDDEN(숨겨진 도구)은 자동 유지** — 눈에 안 보이는 서프라이즈라 걸으면 발견(`onArrived`). 눌러-받기는 눈에 보이는 `GROUND_ITEMS`만.
+- ⚠️ 봇(longrun/playthrough/monkey)은 도구 줍기에 의존하지 않아 영향 없음. `region_content_test`만 자동 흡입 검증이라 **A(interact) 누르기로 갱신**(볼 위 서기만으론 안 줍고, A로 지급·중복방지 확인). `pickupGroundItem`/`interact`를 `SG.flow`에 노출.
+
 ### 탈출로프 (던전 빠른 탈출)
 동굴·늪지·용암굴이 막다른 길이라 걸어 나와야 했다 → `escaperope`(`use:"escape"`)로 입구 밖 오버월드로 즉시 탈출.
 - `ESCAPABLE={cave,lavacave,marsh,snowfield}`만 허용 — 배로 가는 isle/shrine이나 짧은 센터/상점은 제외(`exitInterior`의 `_owBackup`이 안전한 막다른 던전만).

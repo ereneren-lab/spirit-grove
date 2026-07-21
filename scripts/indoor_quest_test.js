@@ -87,6 +87,20 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(Object.values(qflow.before).every(v=>v===false), "새 게임에선 전부 미완료");
   ok(Object.values(qflow.after).every(v=>v===true), `조건을 채우면 전부 완료 판정 (${Object.entries(qflow.after).filter(([,v])=>!v).map(([k])=>k)})`);
   ok(Object.values(qflow.progOk).every(Boolean), "모든 퀘스트가 진행도 문자열을 낸다");
+  /* ===== q_bond: trade+quest 겸직 NPC에서 퀘스트가 trade에 가려지지 않는가 (감사가 잡은 버그) =====
+     trade1은 trade:"tr_forest"와 q_bond 제공자를 겸한다. talkNPC에서 trade 분기가 먼저 return하면
+     q_bond가 영영 안 떴다 → 퀘스트 분기를 trade보다 앞에 둬 수정. */
+  const bond=await p.evaluate(()=>{
+    const S=window.SG, F=S.flow; S.setG(S.freshState()); S.CONFIG.reduceMotion=true;
+    const G=S.G(); G.party=[S.makeMon("foxfire",30)]; F.enterMap(true);
+    const npc=F.NPCS.find(n=>n.id==="trade1"); G.pos={x:npc.x,y:npc.y+1};
+    F.talkNPC(npc);   // 퀘스트가 먼저 떠야 한다(트레이드에 가려지면 X)
+    for(let i=0;i<12 && F.dialogActive();i++)F.advanceDialog();   // 대사 진행 = 수락 → cb가 active로
+    return { hasTrade:!!npc.trade, active:(S.G().quests&&S.G().quests.q_bond)||null };
+  });
+  ok(bond.hasTrade, "trade1은 trade와 q_bond를 겸한다(회귀 조건)");
+  ok(bond.active==="active", `q_bond가 trade에 가려지지 않고 제공된다 (${bond.active})`);
+
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 실내 트레이너/퀘스트 통과");
   await b.close(); process.exit(process.exitCode||0);

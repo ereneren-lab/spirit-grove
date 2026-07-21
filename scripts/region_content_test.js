@@ -33,47 +33,25 @@ const { chromium } = require("playwright"); const path=require("path");
              inScopes:[...new Set(indoor.map(g=>g.in))], leftIndoor:S.G().indoor };
   }, band);
 
-  const pickup=await p.evaluate(()=>{
-    const S=window.SG, F=S.flow; S.setG(S.freshState()); S.CONFIG.reduceMotion=true;
-    const G=S.G(); G.party=[S.makeMon("foxfire",10)]; F.enterMap(true);
-    const g=S.GROUND_ITEMS[0];
-    const before=G.items[g.item]||0;
-    const visibleBefore=!!F.groundItemAt(g.x,g.y);
-    // 그 칸으로 이동 → onArrived가 줍는다
-    G.pos={x:g.x,y:g.y}; F.walkTo(g.x,g.y);
-    // walkTo가 같은 칸이면 즉시라 onArrived를 직접 태운다
-    if((G.items[g.item]||0)===before){ G.pos={x:g.x,y:g.y}; F.enterMap(false); }
-    return { before, g, visibleBefore };
-  });
-
-  // 실제 걸어가서 줍기 (한 칸 옆에서 이동)
+  // 포켓몬식 눌러-받기: 볼 위에 서면 자동으로 안 줍고, A(interact)로 받아야 한다.
   const walkPick=await p.evaluate(async()=>{
     const S=window.SG, F=S.flow; S.setG(S.freshState()); S.CONFIG.reduceMotion=true;
-    const G=S.G(); G.party=[S.makeMon("foxfire",10)];
-    F.enterMap(true);
-    // ⚠️ 실외 아이템만, 그리고 "보행 가능한 이웃 칸"이 실제로 있는 것을 골라야 한다.
-    //    무턱대고 y+1에 세우면 지도 경계(벽) 위에 서서 이동이 시작조차 안 된다.
-    let g=null, from=null;
-    for(const cand of S.GROUND_ITEMS){
-      if(cand.in||!F.walkable(cand.x,cand.y))continue;
-      const nb=[[0,1],[0,-1],[1,0],[-1,0]].map(d=>({x:cand.x+d[0],y:cand.y+d[1]}))
-                .find(q=>F.walkable(q.x,q.y));
-      if(nb){ g=cand; from=nb; break; }
-    }
-    // ⚠️ 앞 블록에서 시작된 이동(walkTo)이 아직 살아 있으면 새 상태의 위치를 멋대로 옮긴다.
-    //    좌표를 세팅하기 전에 반드시 경로를 끊고 한 박자 쉰다.
-    F.stopPath(); await new Promise(r=>setTimeout(r,250));
-    G.pos={x:from.x,y:from.y};
+    const G=S.G(); G.party=[S.makeMon("foxfire",10)]; F.enterMap(true);
+    const g=S.GROUND_ITEMS.find(c=>!c.in && F.walkable(c.x,c.y));
+    const visibleBefore=!!F.groundItemAt(g.x,g.y);
+    F.stopPath(); await new Promise(r=>setTimeout(r,200));
+    G.pos={x:g.x,y:g.y};
     const before=G.items[g.item]||0;
-    F.walkTo(g.x,g.y);
-    for(let i=0;i<40 && (S.G().items[g.item]||0)===before;i++) await new Promise(r=>setTimeout(r,80));
+    // 볼 위에 서서 A → 발견 대사 + 지급
+    if(S.Field){ S.Field.dir="down"; S.Field.arrived=true; }
+    F.interact();
     const after=S.G().items[g.item]||0;
     const gone=!F.groundItemAt(g.x,g.y);
     const found=(S.G().found||[]).includes(g.k);
-    // 두 번 줍히지 않는다
-    S.G().pos={x:g.x,y:g.y};
+    // 두 번째 A → 이미 주웠고 발견 대사가 떠 있어 안 늘어난다
+    F.interact();
     const again=S.G().items[g.item]||0;
-    return { item:g.item, qty:g.qty, before, after, gone, found, again };
+    return { item:g.item, qty:g.qty||1, before, after, gone, found, again, visibleBefore };
   });
 
   /* ===== 정령 회관 ===== */
@@ -167,11 +145,11 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(ground.unreachable.length===0, `전부 보행 가능한 칸 위 (불가 ${ground.unreachable.length}${ground.unreachable.length?": "+ground.unreachable:""})`);
   ok(ground.dup.length===0, `좌표 중복 없음 (${ground.dup.length})`);
   ok(ground.kinds>=8, `도구 종류 ${ground.kinds}가지`);
-  ok(pickup.visibleBefore, "줍기 전에는 필드에 보인다");
-  ok(walkPick.after===walkPick.before+walkPick.qty, `걸어가면 줍는다 (${walkPick.item} ${walkPick.before}→${walkPick.after})`);
+  ok(walkPick.visibleBefore, "줍기 전에는 필드에 보인다");
+  ok(walkPick.after===walkPick.before+walkPick.qty, `A로 줍는다 (${walkPick.item} ${walkPick.before}→${walkPick.after})`);
   ok(walkPick.gone, "주운 뒤에는 필드에서 사라진다");
   ok(walkPick.found, "G.found에 기록되어 세이브에 남는다");
-  ok(walkPick.again===walkPick.after, "같은 자리를 다시 밟아도 중복으로 안 준다");
+  ok(walkPick.again===walkPick.after, "다시 A를 눌러도 중복으로 안 준다");
   ok(hall.name==="정령 회관" && hall.W<=11, `INTERIORS.hall 정의 (${hall.W}×${hall.H}) — 폭 11 이하라야 화면에 다 들어온다`);
   ok(hall.n>=3, `오버월드에 회관 ${hall.n}곳`);
   ok(hall.blocked && hall.reachable, "회관 입구는 비보행 + 접근 가능");
