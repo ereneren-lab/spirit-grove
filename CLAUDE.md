@@ -118,6 +118,16 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 오버월드 날씨 — 필드 날씨 = 전투 날씨(통합)
+전투 날씨(`setWeather`/`applyWeather`/`WEATHERS`)는 원래 있었지만 **전투마다 RNG로 굴려** 오버월드엔 안 보이고 필드와 무관했다 → **오버월드에 보이는 날씨와 전투 날씨를 하나로 통합**.
+- **`owWeather()`가 단일 출처**: `REGION_WEATHER`(지역별 특징 날씨) + 느린 실시간 시계(`dayCycle`과 같은 방식 — **저장 상태 없음·결정적**, 지역별 위상차로 어긋나 지역마다 따로 논다). 실내면 `clear`.
+- `setWeather()`가 이제 `OW_BATTLE_WEATHER[owWeather()]`로 전투 날씨를 정한다(눈→hail, 안개→없음) → **필드에서 본 날씨가 그대로 전투로**. 예전 RNG 제거. 실내(체육관 등)는 clear라 날씨 없음(부수 개선).
+- 필드 렌더: `drawWeatherFx`(절차적·결정적 파티클 — 비 빗줄기·눈송이·안개 밴드·햇살 글로우, reduceMotion이면 틴트만). 날씨 이모지는 **우상단 낮/밤 페이즈 이모지 아래**(좌상단은 목표 트래커가 덮는다).
+- `pickWild` 조우 편향: 비→물/얼음, 눈→얼음, 쨍쨍→불/풀, 안개→독(같은 출처 `owWeather`). "가볼 이유·지역 재방문" 동기.
+- `endBattle`에서 `G.weather` 정리(필드/다음 전투 누수 방지).
+- **밸런스 불변**: `battle_sim.js`엔 `G`가 없어 날씨를 안 본다(문서화된 생략) → balance/league 측정 그대로.
+- ⚠️ 날씨는 실시간 기반이라 테스트는 `setOwWeather(w)` 강제 훅으로 결정적 검증. 회귀 `scripts/weather_test.js`(지역 정확성·전투 이관·조우 편향 통계·연출 렌더).
+
 ### 지닌 물건 확장 (전투 깊이) — 데이터 필드 단일 출처
 지닌 물건이 방어형 5종뿐이라 이 게임의 강점(전투 깊이)을 못 살렸다 → 공격/전략형 추가. **전투 효과는 `HELD_ITEMS`(rules/tables.js)의 데이터 필드로 표현**하고 `damage()`/`effSpd()`가 그 한 곳에서 읽는다(하드코딩 금지 — 예전 powerband `abil*=1.1`도 `dmg:1.1` 필드로 이전).
 - 데이터 필드: `dmg`(위력 배율) · `boost`(이 타입 기술 +20%) · `spdx`(속도 배율) · `recoil`(공격 시 최대HP 반동) · `lock`(구애=첫 기술 고정) · `sash`(풀피 치명타 1HP 생존 1회).

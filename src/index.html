@@ -1699,7 +1699,8 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         ctx.save(); if(!_back&&(this.dir||"down")==="right"){ ctx.translate(hx,0); ctx.scale(-1,1); ctx.translate(-hx,0); }   // 주인공 아트 기본이 좌향 — 오른쪽 이동 시 뒤집어 진행방향을 본다
         ctx.drawImage(_hi, hx-S/2, gy-S-_hb, S, S); ctx.restore(); }
       else { this._walker(ctx, pcx, pcy, ts, this.dir||"down", moving, now); } }
-    if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; } },
+    if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; }
+    if(typeof owWeather==="function"){ const _wx=owWeather(); if(_wx!=="clear" && typeof drawWeatherFx==="function")drawWeatherFx(ctx,cw,ch,ts,_wx); } },
   // 필드 아이템 볼: 살짝 떠오르는 애니 + 반짝임(눈에 띄어야 "가볼 이유"가 된다)
   _itemBall(ctx,sx,sy,ts,now,x,y){
     const bob=Math.sin((now||0)*2.2 + (x*0.7+y*1.3))*ts*0.05;
@@ -2456,6 +2457,10 @@ function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
   const _tf=pool.filter(d=> _dark ? !DAY_MONS.has(d.id) : !NIGHT_MONS.has(d.id)); if(_tf.length)pool=_tf;
   if(_dark){ const noct=pool.filter(d=>NIGHT_MONS.has(d.id)); if(noct.length&&Math.random()<0.55)return noct[ri(0,noct.length-1)]; }
   else { const diur=pool.filter(d=>DAY_MONS.has(d.id)); if(diur.length&&Math.random()<0.45)return diur[ri(0,diur.length-1)]; }
+  // 날씨 조우 편향 — 그 날씨에 어울리는 타입이 더 자주 나온다(가볼 이유·변화). 필드 날씨와 같은 출처.
+  const _wx=(typeof owWeather==="function")?owWeather():"clear";
+  if(_wx!=="clear"){ const pref={rain:["water","ice"],snow:["ice"],sun:["fire","grass"],fog:["poison"]}[_wx]||[];
+    const wp=pool.filter(d=>pref.includes(d.type)||pref.includes(d.type2)); if(wp.length&&Math.random()<0.5)return wp[ri(0,wp.length-1)]; }
   return pool[ri(0,pool.length-1)]; }
 // 지역별 의도 레벨(index=region). 야생 레벨의 하한이자 XP 끌개의 앵커로 함께 쓰인다.
 // 덜 싸운 플레이어는 야생 하한이 끌어올리고, 과하게 그라인딩한 플레이어는 앵커 위에서
@@ -2663,11 +2668,40 @@ const REGION_BATTLE_BG=[
   "radial-gradient(520px 300px at 74% 8%, rgba(255,236,190,.26), transparent 62%), linear-gradient(180deg,#cfe0ea 0%,#c8c6a4 48%,#8e8a5c 100%)",    /*5 고원*/
   "radial-gradient(500px 300px at 70% 12%, rgba(190,150,240,.30), transparent 60%), linear-gradient(180deg,#3a2f56 0%,#4a3f6a 46%,#241f38 100%)"    /*6 군주의 제단*/
 ];
-function setWeather(){ if(!G)return; const r=region(G.pos.y); const roll=Math.random(); let w=null;
-  if(r===4){ w=roll<0.55?"rain":(roll<0.70?"sun":null); }
-  else if(r===5){ w=roll<0.50?"sun":(roll<0.62?"rain":null); }
-  else if(r<=3){ if(roll<0.16)w=Math.random()<0.5?"sun":"rain"; }
-  G.weather=w; G.weatherTurns=0; }
+// ===== 오버월드 날씨 =====
+// 지역별 특징 날씨가 느린 시계(dayCycle과 같은 실시간 방식 — 저장 상태 없음, 결정적)로 왔다 갔다 한다.
+// setWeather()가 이걸 그대로 전투로 옮기고, 필드 렌더가 이걸 그린다 → "필드에서 본 날씨 = 전투 날씨".
+// 예전 setWeather는 전투마다 RNG로 날씨를 굴려 (1)오버월드에 안 보이고 (2)필드와 무관했다.
+const REGION_WEATHER=["clear","sun","fog","fog","rain","snow","clear"];   // index=region(y): 마을·초원·숲·깊은숲·수정호수·고원·제단
+const OW_WEATHER_KO={sun:"쨍쨍",rain:"비",snow:"눈",fog:"안개"};
+const OW_WEATHER_EM={sun:"☀️",rain:"🌧️",snow:"🌨️",fog:"🌫️"};
+const OW_BATTLE_WEATHER={sun:"sun",rain:"rain",snow:"hail"};   // fog은 전투 날씨 없음(연출·조우 편향만)
+let _wxForce=null;   // 테스트용 강제 날씨(평소 null → 영향 없음). setOwWeather(w)로 설정.
+function setOwWeather(w){ _wxForce=w; }
+function owWeather(){ if(_wxForce!==null)return _wxForce;
+  if(typeof G==="undefined"||!G||G.indoor||!G.pos)return "clear";
+  const r=region(G.pos.y); const base=REGION_WEATHER[r]||"clear"; if(base==="clear")return "clear";
+  const t=(((Date.now()-_dayStart)/240000)+r*0.37)%1;   // 4분 주기, 지역별 위상차로 어긋나게 → 지역마다 날씨가 따로 논다
+  return t<0.58?base:"clear"; }
+function setWeather(){ if(!G)return; G.weather=OW_BATTLE_WEATHER[owWeather()]||null; G.weatherTurns=0; }
+// 오버월드 날씨 연출 — 절차적(시간+인덱스로 위치 계산, 상태 없음). reduceMotion이면 틴트만.
+function drawWeatherFx(ctx,cw,ch,ts,wx){ const now=Date.now(), rm=CONFIG.reduceMotion; ctx.save();
+  if(wx==="rain"){ ctx.fillStyle="rgba(70,95,140,0.13)"; ctx.fillRect(0,0,cw,ch);
+    if(!rm){ ctx.strokeStyle="rgba(185,208,242,0.5)"; ctx.lineWidth=Math.max(1,cw/430);
+      for(let i=0;i<46;i++){ const x=((i*97.3)+(now*0.18))%cw, y=((now*0.75+i*130)%(ch+40))-20;
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-6,y+16); ctx.stroke(); } } }
+  else if(wx==="snow"){ ctx.fillStyle="rgba(205,222,240,0.11)"; ctx.fillRect(0,0,cw,ch);
+    if(!rm){ ctx.fillStyle="rgba(255,255,255,0.9)";
+      for(let i=0;i<54;i++){ const x=((i*71.7)%cw)+Math.sin(now/900+i)*12, y=((now*0.13+i*83)%(ch+20))-10, r=1+(i%3)*0.6;
+        ctx.beginPath(); ctx.arc(x,y,r,0,6.283); ctx.fill(); } } }
+  else if(wx==="fog"){ for(let b=0;b<3;b++){ const y=(b/3)*ch+(rm?0:Math.sin(now/2600+b)*ch*0.05);
+      ctx.fillStyle="rgba(206,209,217,"+(0.12+b*0.03).toFixed(2)+")"; ctx.fillRect(0,y,cw,ch/3+22); } }
+  else if(wx==="sun"){ ctx.fillStyle="rgba(255,214,130,0.08)"; ctx.fillRect(0,0,cw,ch);
+    const g=ctx.createRadialGradient(cw*0.72,ch*0.04,0,cw*0.72,ch*0.04,cw*0.55);
+    g.addColorStop(0,"rgba(255,240,180,0.22)"); g.addColorStop(1,"rgba(255,240,180,0)"); ctx.fillStyle=g; ctx.fillRect(0,0,cw,ch); }
+  // 날씨 이모지는 우상단 낮/밤 페이즈 이모지 '아래'에 — 좌상단은 목표 트래커 박스가 덮는다.
+  const em=OW_WEATHER_EM[wx]; if(em){ ctx.globalAlpha=0.92; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(em, cw-6, 6+Math.floor(ts*0.58)); ctx.globalAlpha=1; }
+  ctx.restore(); }
 function applyWeather(){ const fld=$("battleField"); if(!fld)return;
   let ov=document.getElementById("weatherTint");
   if(!ov){ ov=document.createElement("div"); ov.id="weatherTint"; ov.style.cssText="position:absolute;inset:0;pointer-events:none;z-index:1;opacity:0;transition:opacity .45s"; fld.appendChild(ov); }
@@ -4188,7 +4222,7 @@ function showEnding(){ const body=$("endingBody"); const _t=$("endingTitle"); if
   body.querySelector("#endingClose").addEventListener("click",()=>{Audio.sfx("blip");closeOverlay("endingOverlay");});
   Audio.sfx("win"); openOverlay("endingOverlay"); }
 
-function endBattle(){ Coach.finish(); if(Audio.lowHp)Audio.lowHp(false); G.inBattle=false; G.busy=false; G.foe=null; G.trainer=null; heldDir=null; stopPath(); closeOverlay("switchOverlay");
+function endBattle(){ Coach.finish(); if(Audio.lowHp)Audio.lowHp(false); G.inBattle=false; G.busy=false; G.foe=null; G.trainer=null; G.weather=null; G.weatherTurns=0; heldDir=null; stopPath(); closeOverlay("switchOverlay");
   G.party.forEach(m=>{ m.stages=newStages(); }); // reset volatile stages, keep status
   show("map"); Field.start(); Audio.startMusic(fieldMusic()); updateGoal(); saveGame(); }
 
@@ -4996,7 +5030,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
