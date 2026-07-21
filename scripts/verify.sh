@@ -95,7 +95,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw party_lead_test.js
   pw duo_hit_test.js
   pw catch_identity_test.js
-  pw type_chart_test.js
+  # type_chart_test.js 는 순수 상성표라 rules_unit_test.js(브라우저 불필요)로 이관됨 → 여기선 제거.
   pw newtypes_test.js
   pw legendary_test.js
   pw gym_ice_test.js
@@ -117,6 +117,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw bugfix_round3_test.js
   pw palette_source_test.js
   pw bugfix_round4_test.js
+  pw protect_test.js
 else
   echo "⏭️  오디오 테스트 건너뜀 (npm install playwright 하면 실행됨)"
 fi

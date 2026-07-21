@@ -68,7 +68,17 @@ window.__SIM = (function(){
     const mv = S.MOVES[k];
     if(!mv) return;
     if(a.pp[k] != null) a.pp[k] = Math.max(0, a.pp[k]-1);
+    if(k !== "protect") a._protectStreak = 0;                    // 방어 아닌 기술 → 연속 카운터 리셋
     if(mv.acc < 100 && Math.random()*100 > mv.acc) return;      // 빗나감 — 부가효과도 없다
+
+    // 방어(protect): 이 턴 상대를 노리는 기술은 막힌다. 자기/필드 대상은 통과.
+    if(mv.eff && mv.eff.protect){
+      const s = a._protectStreak || 0;
+      if(Math.random() < 1/Math.pow(3, s)){ a._protect = true; a._protectStreak = s+1; }
+      else a._protectStreak = 0;
+      return;
+    }
+    if(d._protect && (mv.power > 0 || (mv.eff && (mv.eff.status || mv.eff.seed || mv.eff.confuse)))) return;
 
     if(mv.power > 0){
       const hits = mv.multi ? F.multiHits(mv.multi) : 1;
@@ -118,6 +128,7 @@ window.__SIM = (function(){
   function onSwitchOut(m){
     if(!m) return;
     m.stages = S.newStages(); m._confuse = 0; m._seeded = false; m._flinch = 0;
+    m._protect = false; m._protectStreak = 0;
     if(m._tox) m._tox = 1;
   }
 
@@ -154,11 +165,12 @@ window.__SIM = (function(){
         if(!canAct(a)) continue;
         applyMove(a, d, k);
       }
+      me._protect = false; fo._protect = false;                 // 방어는 이번 턴만
       residual(me, fo); residual(fo, me);
     }
     return { win: alive(mine) && !alive(foes), potionsUsed: used };
   }
 
-  return { battle, pickMove, trySetStatus, canAct, residual, onSwitchOut };
+  return { battle, pickMove, trySetStatus, canAct, residual, onSwitchOut, applyMove };
 })();
 `;

@@ -60,6 +60,12 @@ console.log("\n[타입 상성표]");
   ok(missing.length===0, `EFF ${tk.length}×${tk.length} 완전 (${missing.slice(0,3).join(",")||"누락 없음"})`);
   ok(R.EFF.fire.grass===2 && R.EFF.water.fire===2 && R.EFF.grass.water===2, "불>풀>물>불 상성 성립");
   ok(R.EFF.elec.ground===0, "전기→땅 무효(0)");
+  // 신규 3타입(얼음·독·땅) 주요 상성 — 예전엔 type_chart_test.js(브라우저)가 봤다.
+  //   그 테스트는 단일타입 방어자에 damage().eff를 썼는데, eff는 EFF의 곱이므로 EFF 직접 단정이 동치이자 더 순수하다.
+  ok(R.EFF.ice.grass===2 && R.EFF.ice.fire===0.5 && R.EFF.ice.flying===2, "얼음: 풀2·불0.5·비행2");
+  ok(R.EFF.ground.elec===2 && R.EFF.ground.flying===0 && R.EFF.ground.poison===2, "땅: 전기2·비행무효·독2");
+  ok(R.EFF.poison.grass===2 && R.EFF.poison.ground===0.5, "독: 풀2·땅0.5");
+  ok(R.EFF.fire.ice===2 && R.EFF.rock.ice===2, "얼음은 불·바위에 2배로 맞는다");
 }
 
 console.log("\n[파생 테이블]");
