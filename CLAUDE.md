@@ -121,6 +121,13 @@ verify 내용:
 ### 신규 지역 — 고대 유적(ruins)
 normal·rock·ground의 "고대/석 계열"(lumbeast·wyverna·thumplord·terrapin 등)이 흩어져 있어 → **고대 유적** 신설(봉우리와 같은 템플릿). 진입 `z`(14,27, region 3 깊은 숲) · 가드 `h`(유적 수호자, GUARD_TILES 추가) · 조우 10종 · 렌더 더스티 스톤 틴트 · fieldMusic="cave" · 로어 `N` · 바닥도구 3 · 저장 `ruinsSeen`. 봉우리에서 정립한 19-포인트 배선을 재사용 — **템플릿이 검증됐다**(늪지→봉우리→유적). 회귀는 `skyridge_test.js`가 두 지역을 병렬로 커버. dex_flavor는 HABITAT_KO를 읽게 고쳐놔서 새 지역 자동 반영.
 
+### 신규 지역 미니보스 (봉우리·유적)
+두 신규 지역에 클라이맥스 겸 **진화전용(NO_WILD) 종의 대체 획득 경로**를 깔았다. 봉우리 정상(`@` 7,1)=천공룡(skydrake), 유적 중앙(`@` 7,6)=거암왕(megalith). 둘 다 원래 야생 미출현(wyverna→Lv42 / boulderin→Lv36 진화로만) → 보스전으로 **잡을 수 있는** 유일한 길.
+- **아트 0장** — 이미 있는 종을 재활용. **비전설**이라 전설 -0.38 포획 페널티 없이 정상 포획률(대체 경로답게).
+- 렌더는 **황금 제단 `@` 재활용**(shrine의 여명룡 타일과 같은 글자, `G.indoor`로 스코프 분기). ⚠️ 얼음 제단 `&`는 유적에 안 어울려서 안 씀 — 둘 다 `@`. 3개 인테리어(shrine/skyridge/ruins)가 같은 `@`를 쓰되 핸들러가 `G.indoor`로 갈린다.
+- 배선: `startSkyBoss`/`startRuinsBoss`(startSnowLegendary 템플릿, boss 음악) · move() 스코프 타일 핸들러 2건 · done-flag `skyBossDone`/`ruinsBossDone`을 **winBattle(격파)·tryCatch(포획) 양쪽 + freshState/serialize/deserialize**에 배선(빙하제 `snowDone` 패턴 그대로). 재방문 시 "이미 떠났다" 대사.
+- reachability는 인테리어 특수타일 목록(`"NpnsBKHLZY@&AQ"`)에 `@`가 이미 있어 새 `@` 두 개가 자동 커버(19곳 내부 도달 확인). 회귀 `skyridge_test.js`에 보스 조우·done-flag 왕복·NO_WILD 단정 추가.
+
 ### 신규 지역 — 뇌명 봉우리(skyridge)
 전기/비행이 전용 서식지가 없어(모든 flyer가 2차타입으로 흩어짐, 전기-새/뱀 라인 8종이 어느 특수풀에도 없음) → **폭풍 봉우리** 신설. 늪지 템플릿을 그대로 따랐다:
 - 진입 오버월드 타일 **`O`**(17,1, region 6 — 세계의 지붕). ⚠️ 배치는 반드시 **게임 실제 `walkable`로 BFS 도달 가능한 칸**이어야 한다 — 처음 (9,4)/(13,1)은 벽에 갇힌 고립 포켓이라 미도달이었다(수동 python BFS 근사로는 못 잡음, 실제 walkable로 확인).

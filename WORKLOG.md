@@ -52,6 +52,13 @@
 
 ## 세션 기록 (최신이 위)
 
+### 2026-07-21 — 신규 지역 미니보스 (봉우리·유적 클라이맥스)
+"계속 파" 지역 심화의 마무리. 두 신규 지역에 캡스톤 보스를 얹어 **진화전용(NO_WILD) 종의 대체 획득 경로**를 열었다:
+- 봉우리 정상(`@` 7,1)=천공룡(skydrake, ~Lv46) · 유적 중앙(`@` 7,6)=거암왕(megalith, ~Lv44). 둘 다 원래 진화로만 얻던 종 → 보스전으로 잡을 수 있는 유일한 길.
+- **아트 0장**(기존 종 재활용) · **비전설**이라 정상 포획률 · 렌더는 shrine의 황금 제단 `@` 재활용(`G.indoor` 스코프 분기, 3 인테리어 공용).
+- `startSkyBoss`/`startRuinsBoss`(startSnowLegendary 템플릿) · 스코프 타일 핸들러 2건 · done-flag `skyBossDone`/`ruinsBossDone`을 winBattle·tryCatch + freshState/serialize/deserialize에 배선(빙하제 패턴). 재방문 대사.
+- 검증: 빌드·JS문법·rules·skyridge_test(보스 조우/done-flag 왕복/NO_WILD)·reachability(인테리어 19곳 @ 자동 커버)·dex_flavor·region_content·blackout·smoke·스크린샷(유적 황금 제단 렌더 확인) 통과. 전체 verify는 구간 분할 진행 중.
+
 ### 2026-07-21 — 포켓몬 패리티 대확장 (조사 기반, 고가치 전부)
 서브에이전트로 패리티 갭을 전수 조사한 뒤 값어치순으로 구현. 각 커밋마다 회귀 테스트 신규 + 시뮬 파리티(해당 시) + 영향 테스트 재확인:
 - 포획 루프(`5155c87`): 상태이상 배율(잠듦/냉동↑) · 볼 7종 · 크리티컬 캡처.

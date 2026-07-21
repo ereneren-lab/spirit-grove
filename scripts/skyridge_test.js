@@ -65,6 +65,25 @@ const { chromium } = require("playwright"); const path=require("path");
     const okd=F.deserialize(JSON.parse(JSON.stringify(F.serialize()))); return { okd, round:!!S.G().ruinsSeen }; });
   ok(rs.okd && rs.round, "ruinsSeen 세이브/로드 보존");
 
+  /* ===== 미니보스 — 진화전용(NO_WILD) 종의 대체 획득 경로 ===== */
+  const boss=await p.evaluate(()=>{ const S=window.SG, F=S.flow; S.setG(S.freshState()); const G=S.G();
+    G.party=[S.makeMon("voltrat",44)]; G.busy=false;
+    // 보스 타일 @가 각 인테리어 str에 있고, 스코프 조우 함수가 해당 종을 낸다
+    const skyStr=F.INTERIORS.skyridge.str.join(""), ruStr=F.INTERIORS.ruins.str.join("");
+    const skyHasAt=skyStr.indexOf("@")>=0, ruHasAt=ruStr.indexOf("@")>=0;
+    G.indoor="skyridge"; F.startSkyBoss(); const skyFoe=S.G().foe&&S.G().foe.id;
+    // done-flag 세이브 왕복
+    S.setG(S.freshState()); const G2=S.G(); G2.party=[S.makeMon("voltrat",44)]; G2.skyBossDone=true; G2.ruinsBossDone=true;
+    const okd=F.deserialize(JSON.parse(JSON.stringify(F.serialize())));
+    const savedSky=!!S.G().skyBossDone, savedRu=!!S.G().ruinsBossDone;
+    S.setG(S.freshState()); const G3=S.G(); G3.party=[S.makeMon("voltrat",44)]; G3.busy=false; G3.indoor="ruins"; F.startRuinsBoss(); const ruFoe=S.G().foe&&S.G().foe.id;
+    return { skyHasAt, ruHasAt, skyFoe, ruFoe, okd, savedSky, savedRu,
+             skyNoWild:F.findHint(S.byId("skydrake")).indexOf("숲")<0, megaExists:!!S.byId("megalith") }; });
+  ok(boss.skyHasAt && boss.skyFoe==="skydrake", `봉우리 보스 @ 타일 + 천공룡 조우 (${boss.skyFoe})`);
+  ok(boss.ruHasAt && boss.ruFoe==="megalith", `유적 보스 @ 타일 + 거암왕 조우 (${boss.ruFoe})`);
+  ok(boss.okd && boss.savedSky && boss.savedRu, "skyBossDone/ruinsBossDone 세이브/로드 보존");
+  ok(boss.skyNoWild && boss.megaExists, "보스 종은 진화전용(야생 미출현) — 보스가 유일 야생 획득 경로");
+
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 신규 지역(봉우리·유적) 통과");
   await b.close(); process.exit(process.exitCode||0);
