@@ -1085,6 +1085,8 @@ const MOVES={
   selfdestruct:{name:"자폭",type:"normal",power:120,acc:100,pp:5,pri:0,eff:{selfKO:true}},   // 큰 피해 후 자신도 기절
   attract:{name:"헤롱헤롱",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{attract:true}},     // 이성이면 50% 확률로 못 움직임
   bind:{name:"조이기",type:"normal",power:28,acc:90,pp:20,pri:0,eff:{trap:true}},             // 4~5턴 묶어 잔뎀 + 도주·교체 봉쇄
+  fly:{name:"날기",type:"flying",power:75,acc:95,pp:10,pri:0,eff:{charge:true,invuln:true,chargeMsg:"은(는) 하늘 높이 날아올랐다!"}},   // 1턴 충전(반무적) → 2턴째 공격
+  solarbeam:{name:"솔라빔",type:"grass",power:100,acc:100,pp:10,pri:0,eff:{charge:true,chargeMsg:"은(는) 빛을 모으고 있다!"}},            // 1턴 충전 → 강력한 한 방
   focusenergy:{name:"기합충전",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{crit:2,target:"self"}},
   slash:{name:"가르기",type:"normal",power:58,acc:100,pp:20,pri:0,highCrit:true},
   crosschop:{name:"크로스촙",type:"rock",power:72,acc:85,pp:10,pri:0,highCrit:true},
@@ -1115,6 +1117,7 @@ function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; c
   if(e.attract)p.push("이성이면 헤롱헤롱(50% 못 움직임)");
   if(e.trap)p.push("4~5턴 속박(잔뎀+도주·교체 봉쇄)");
   if(e.selfKO)p.push("큰 피해 · 자신도 기절");
+  if(e.charge)p.push(e.invuln?"1턴 충전(반무적)":"1턴 충전 후 강타");
   if(mo.highCrit)p.push("급소율 높음");
   if(e.weather)p.push(({sun:"날씨 쨍쨍",rain:"날씨 비",sand:"날씨 모래바람"}[e.weather]||"날씨 변화"));
   if(e.hazard)p.push(e.hazard==="rock"?"바위 설치":"압정 설치");
@@ -1369,6 +1372,7 @@ function noPP(m){ return m.moves.every(mv=>(m.pp[mv]||0)<=0); }
 function foeChooseMove(foe,target){
   if(!foe||!foe.moves)return "struggle"; const st=foe.stages||newStages(); const tgt=target||{status:null,hp:1,maxHp:1,type:"normal"};
   const usable=foe.moves.filter(mv=>(foe.pp[mv]||0)>0); if(!usable.length)return "struggle";
+  if(foe._charging) return foe._charging;   // 2턴기 충전 중이면 재부상 공격을 계속
   if(foe._choiceLock && (foe.pp[foe._choiceLock]||0)>0) return foe._choiceLock;   // 구애 고정
   // 방어: 직전에 방어하지 않았을 때만 가끔(연속 실패 규칙과 맞물려 스팸 방지).
   const protectMoves=usable.filter(mv=>MOVES[mv].eff&&MOVES[mv].eff.protect);
@@ -2827,7 +2831,7 @@ function maybeRematch(t){ const tr=TRAINERS[t];
 function firstAliveIdx(){ if(!G||!G.party)return 0; for(let i=0;i<G.party.length;i++){ if(G.party[i]&&G.party[i].hp>0)return i; } return 0; }
 function transitionToBattle(after){ heldDir=null; stopPath(); if(G)G.active=firstAliveIdx();   // 포켓몬식: 전투 선두 = 파티 첫 생존 정령(슬롯0). 재정렬로 순서 바꾸면 나오는 정령도 바뀜.
   G.runTries=0; G.battleTurn=0;   // 퀵볼: 첫 턴(공격 전) 판정용
-  G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; if(G.party)G.party.forEach(m=>{ if(m){ m._confuse=0; m._seeded=false; m._flinch=false; m._acted=false; m._protect=false; m._protectStreak=0; m._choiceLock=null; m._attract=false; m._trapped=0; } }); if(G.foe){ G.foe._confuse=0; G.foe._seeded=false; G.foe._flinch=false; G.foe._acted=false; G.foe._protect=false; G.foe._protectStreak=0; G.foe._choiceLock=null; G.foe._attract=false; G.foe._trapped=0; } const wrap=$("canvasWrap"); wrap.classList.add("zoom");
+  G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; if(G.party)G.party.forEach(m=>{ if(m){ m._confuse=0; m._seeded=false; m._flinch=false; m._acted=false; m._protect=false; m._protectStreak=0; m._choiceLock=null; m._attract=false; m._trapped=0; m._charging=null; m._invuln=false; } }); if(G.foe){ G.foe._confuse=0; G.foe._seeded=false; G.foe._flinch=false; G.foe._acted=false; G.foe._protect=false; G.foe._protectStreak=0; G.foe._choiceLock=null; G.foe._attract=false; G.foe._trapped=0; G.foe._charging=null; G.foe._invuln=false; } const wrap=$("canvasWrap"); wrap.classList.add("zoom");
   const fl=$("flash"); fl.classList.remove("go"); void fl.offsetWidth; fl.classList.add("go");
   const covered=playBattleWipe();   // 블라인드 바가 화면을 덮는 시점(ms)을 돌려줌
   const seq=!(typeof G!=="undefined" && G && G.trainer);   // 야생·보스 = 순차 인트로, 트레이너 = 즉시(별도 등장 대사 있음)
@@ -3461,9 +3465,9 @@ function showMoves(){ mainMenu.style.display="none"; moveMenu.style.display="gri
   if(noPP(me)){ const b=document.createElement("button"); b.className="mbtn move-btn";
     b.innerHTML=`<div class="top"><span>발버둥</span><span class="pp">PP —</span></div><span class="mp">노말 · 반동</span>`;
     b.addEventListener("click",()=>{Audio.sfx("blip");doMove("struggle");}); moveMenu.appendChild(b); battleFocus(0); return; }
-  // 구애 아이템(구애머리띠/스카프): 고정된 기술만 쓸 수 있다(PP가 남아 있는 한).
-  const _locked=(me._choiceLock && (me.pp[me._choiceLock]||0)>0)?me._choiceLock:null;
-  me.moves.forEach(mv=>{ const mo=MOVES[mv]; const pp=me.pp[mv]||0; const b=document.createElement("button"); b.className="mbtn move-btn"; b.disabled=pp<=0||(_locked&&mv!==_locked);
+  // 2턴기 충전 중이면 그 기술만(PP 무관, 이미 냈다). 아니면 구애 고정.
+  const _locked=me._charging?me._charging:((me._choiceLock && (me.pp[me._choiceLock]||0)>0)?me._choiceLock:null);
+  me.moves.forEach(mv=>{ const mo=MOVES[mv]; const pp=me.pp[mv]||0; const b=document.createElement("button"); b.className="mbtn move-btn"; b.disabled=(mv===me._charging)?false:(pp<=0||(_locked&&mv!==_locked));
     let eff=""; if(mo.power>0 && G.foe){ let e=EFF[mo.type][G.foe.type]; if(G.foe.type2&&G.foe.type2!==G.foe.type)e*=EFF[mo.type][G.foe.type2];
       if(e>=4)eff=`<span class="eff-tag eff-good">효과 매우 굉장</span>`; else if(e>1)eff=`<span class="eff-tag eff-good">효과 굉장</span>`; else if(e>0&&e<=0.25)eff=`<span class="eff-tag eff-bad">효과 매우 별로</span>`; else if(e<1)eff=`<span class="eff-tag eff-bad">효과 별로</span>`; }
     const desc=`${TYPE_KO[mo.type]} · ${moveDesc(mv)||"변화"}`;
@@ -3900,10 +3904,16 @@ async function endTurnStatus(mon,side){ if(mon.hp<=0)return;
     setMsg(`<b>${dispName(mon)}</b>은(는) ${_bad?"맹독":(mon.status==="psn"?"독":"화상")} 피해를 입었다!`); Audio.sfx("weakhit"); await mw(620); } }
 
 /* ===================== CORE TURN ===================== */
-async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
-  if(mvKey!=="struggle" && att.pp[mvKey]!=null) att.pp[mvKey]=Math.max(0,att.pp[mvKey]-1);
+async function performMove(att,def,mvKey,side){ let move=MOVES[mvKey]; let _resurf=false;
+  // 2턴기: 충전 중이면 이번 턴에 충전된 기술을 실행(2턴째, 재부상 — PP는 1턴째에 이미 냈다)
+  if(att._charging){ mvKey=att._charging; move=MOVES[mvKey]; att._charging=null; att._invuln=false; _resurf=true; }
+  if(!_resurf && mvKey!=="struggle" && att.pp[mvKey]!=null) att.pp[mvKey]=Math.max(0,att.pp[mvKey]-1);
   if(mvKey!=="protect") att._protectStreak=0;   // 방어가 아닌 기술을 쓰면 연속 카운터 리셋(다음 방어는 다시 성공)
-  if(!att._choiceLock && mvKey!=="struggle"){ const _ci=HELD_ITEMS[att.held]; if(_ci&&_ci.lock)att._choiceLock=mvKey; }   // 구애 아이템: 처음 쓴 기술로 고정
+  if(!att._choiceLock && mvKey!=="struggle" && !_resurf){ const _ci=HELD_ITEMS[att.held]; if(_ci&&_ci.lock)att._choiceLock=mvKey; }   // 구애 아이템: 처음 쓴 기술로 고정
+  // 2턴기 1턴째: 충전만 하고 피해 없음(날기=반무적). 다음 턴에 재부상하며 공격.
+  if(!_resurf && move.eff && move.eff.charge){
+    att._charging=mvKey; if(move.eff.invuln)att._invuln=true;
+    Audio.sfx&&Audio.sfx("blip"); setMsg(`<b>${dispName(att)}</b>${move.eff.chargeMsg||"은(는) 힘을 모으고 있다!"}`); await mw(680); return; }
   setMsg(`<b>${dispName(att)}</b>의 ${move.name}!`); const aS=spriteEl(side); const _melee=move.power>0&&(move.type==="normal"||move.type==="flying"); if(!_melee)aS.style.setProperty("--castc",TYPE_COLOR[move.type]||"#fff"); const _wc=_melee?"lunge":"cast"; aS.classList.add(_wc); await wait(fxT(_melee?220:200)); aS.classList.remove(_wc);
   // 명중률 = 기술 명중 × 자신 명중랭크 ÷ 상대 회피랭크 (본가 공식)
   const _accS=(att.stages&&att.stages.acc)||0, _evaS=(def.stages&&def.stages.eva)||0;
@@ -3914,6 +3924,7 @@ async function performMove(att,def,mvKey,side){ const move=MOVES[mvKey];
   const _dSideP=side==="me"?"foe":"me";
   const _targetsFoe = move.power>0 || (move.eff && (move.eff.status||move.eff.seed||move.eff.confuse||move.eff.phase||(move.eff.stat&&move.eff.target!=="self")));
   if(def._protect && _targetsFoe){ setMsg(`<b>${dispName(def)}</b>은(는) 방어로 공격을 막아냈다!`); Audio.sfx("blip"); if(typeof fxScreenWall==="function"&&!CONFIG.reduceMotion)fxScreenWall(_dSideP,"#9fd8b0"); await mw(620); return; }
+  if(def._invuln && move.power>0){ setMsg(`<b>${dispName(att)}</b>의 공격은 닿지 않았다!`); Audio.sfx("miss"); await mw(600); return; }   // 2턴기 반무적(날기 중)
   if(move.power===0 && move.heal){ await moveFx(move,side,side,mvKey);
     const bf=att.hp; att.hp=Math.min(att.maxHp, att.hp+Math.floor(att.maxHp*move.heal)); renderCombatants();
     Audio.sfx("heal"); particles(side,"💚",6);
@@ -4241,7 +4252,7 @@ async function doPhaseOut(att,def,side){
   if(!G.trainer){ setMsg(`<b>${dispName(def)}</b>은(는) 놀라 달아났다!`); Audio.sfx("escape"); await mw(800); _phaseEnded=true; return; }
   const t=G.trainer; const nxt=trainerNextAlive();
   if(nxt<0){ setMsg("하지만 바꿀 정령이 없었다!"); await mw(700); return; }
-  resetStages(def); def._confuse=0; def._seeded=false; def._flinch=false; def._protect=false; def._protectStreak=0; def._choiceLock=null; def._attract=false; def._trapped=0;
+  resetStages(def); def._confuse=0; def._seeded=false; def._flinch=false; def._protect=false; def._protectStreak=0; def._choiceLock=null; def._attract=false; def._trapped=0; def._charging=null; def._invuln=false;
   setMsg(`<b>${dispName(def)}</b>이(가) 억지로 끌려나갔다!`); Audio.sfx("blip"); await mw(700);
   t.idx=nxt; G.foe=trainerMon(nxt); G.seen.add(G.foe.id);
   $("foeSprite").classList.remove("faint");
@@ -4281,7 +4292,7 @@ async function foeMaybeSwitch(){
   if(bestI<0)return false;
   if(Math.random()<0.25)return false;                // 항상 완벽하진 않게 — 읽히면 재미없다
   t.switches++;
-  const outMon=G.foe; resetStages(outMon); outMon._confuse=0; outMon._seeded=false; outMon._flinch=false; outMon._protect=false; outMon._protectStreak=0; outMon._choiceLock=null; outMon._attract=false; outMon._trapped=0;
+  const outMon=G.foe; resetStages(outMon); outMon._confuse=0; outMon._seeded=false; outMon._flinch=false; outMon._protect=false; outMon._protectStreak=0; outMon._choiceLock=null; outMon._attract=false; outMon._trapped=0; outMon._charging=null; outMon._invuln=false;
   setMsg(`${t.name}이(가) <b>${dispName(outMon)}</b>을(를) 되돌렸다!`); Audio.sfx("blip"); await mw(700);
   t.idx=bestI; G.foe=trainerMon(bestI); G.seen.add(G.foe.id);
   $("foeSprite").classList.remove("faint");
@@ -4704,7 +4715,7 @@ async function tryCatch(ballKey){ if(G.busy)return; if(G.trainer){ setMsg("트�
     fxCaptureFlash(foeC); particles("foe","✨",14); for(let k=0;k<8;k++){ const a=k/8*6.28,e=fxGlyph("⭐",{x:foeC.x,y:foeC.y},"#ffe08a","fx-particle"); e.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:`translate(-50%,-50%) translate(${Math.cos(a)*44}px,${Math.sin(a)*44}px) scale(1)`,opacity:0}],{duration:fxT(620),easing:"ease-out",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); } foeSp.classList.add("faint"); await wait(fxT(560)); ballEl.remove();
     const _dexNew=!G.caught.has(foe.id);   // 포획 전 도감 신규 여부
     G.caught.add(foe.id); G.questFlags=G.questFlags||{}; if(sp.type==="water")G.questFlags.waterCaught=true; if(typeof NIGHT_MONS!=="undefined"&&NIGHT_MONS.has(foe.id))G.questFlags.nightCaught=true; if(G.indoor==="cave")G.questFlags.caveCatch=true; const cap=foe;   // 잡은 정령 = 그 야생 정령 그대로. 예전엔 makeMon로 새로 만들어 샤이니·개성(IV)·성격·성별·기술이 전부 사라졌다.
-    cap.hp=Math.max(1,foe.hp); cap.stages=newStages(); cap._confuse=0; cap._seeded=false; cap._flinch=false; cap._acted=false; cap._protect=false; cap._protectStreak=0; cap._choiceLock=null; cap._attract=false; cap._trapped=0; cap.wild=false;
+    cap.hp=Math.max(1,foe.hp); cap.stages=newStages(); cap._confuse=0; cap._seeded=false; cap._flinch=false; cap._acted=false; cap._protect=false; cap._protectStreak=0; cap._choiceLock=null; cap._attract=false; cap._trapped=0; cap._charging=null; cap._invuln=false; cap.wild=false;
     if(ball==="healball"){ recalc(cap); cap.hp=cap.maxHp; cap.status=null; cap._slp=0; cap._tox=0; }   // 힐볼: 포획과 동시에 완전 회복
     if(_dexNew){ await mw(560); Audio.sfx("buy"); setMsg(`📖 <b>${foe.name}</b>의 데이터를 도감에 새로 등록했다!`); }
     if(G.party.length<6){ G.party.push(cap); await mw(700); setMsg("파티에 합류했다!"); }
@@ -4742,7 +4753,7 @@ function renderSwitch(){ const body=$("switchBody"); body.innerHTML="";
     card.querySelector(".pick").addEventListener("click",()=>chooseSwitch(i)); body.appendChild(card); }); }
 async function chooseSwitch(i){ if(i===G.active||!G.party[i]||G.party[i].hp<=0)return; if(G.party[i].isEgg){ flashHint("알은 전투에 낼 수 없다!"); return; } Audio.sfx("blip");
   // 물러나는 정령은 랭크·혼란·씨앗이 사라진다(본가 규칙). 뒤로 뺐다 내보내며 부스트 유지하는 익스플로잇 차단.
-  const _out=G.party[G.active]; if(_out&&_out.hp>0){ resetStages(_out); _out._confuse=0; _out._seeded=false; _out._flinch=false; _out._protect=false; _out._protectStreak=0; _out._choiceLock=null; _out._attract=false; _out._trapped=0;
+  const _out=G.party[G.active]; if(_out&&_out.hp>0){ resetStages(_out); _out._confuse=0; _out._seeded=false; _out._flinch=false; _out._protect=false; _out._protectStreak=0; _out._choiceLock=null; _out._attract=false; _out._trapped=0; _out._charging=null; _out._invuln=false;
     if(_out._tox)_out._tox=1;   // 맹독은 유지되지만 누적 카운터는 1로 리셋(본가 규칙)
     if(_out.ability==="naturalcure" && _out.status){ _out.status=null; _out._tox=0; flashHint(`${dispName(_out)}의 상태이상이 나았다! (자연회복)`); } }
   const _bc=_batonCarry;   // 배턴터치면 랭크·급소랭크·씨앗을 새 정령이 이어받는다
@@ -4978,6 +4989,8 @@ const BAG_ITEMS=[
   {key:"tm_selfdestruct",em:"💿",nm:"기술머신: 자폭",ds:"큰 피해 후 자신도 기절",use:"tm",move:"selfdestruct",universal:true,where:"map"},
   {key:"tm_attract",em:"💿",nm:"기술머신: 헤롱헤롱",ds:"이성을 헤롱헤롱하게 만든다",use:"tm",move:"attract",universal:true,where:"map"},
   {key:"tm_bind",em:"💿",nm:"기술머신: 조이기",ds:"상대를 4~5턴 속박한다",use:"tm",move:"bind",universal:true,where:"map"},
+  {key:"tm_fly",em:"💿",nm:"기술머신: 날기",ds:"1턴 날아오른 뒤 강타(반무적)",use:"tm",move:"fly",universal:true,where:"map"},
+  {key:"tm_solarbeam",em:"💿",nm:"기술머신: 솔라빔",ds:"1턴 충전 후 강력한 풀 기술",use:"tm",move:"solarbeam",universal:true,where:"map"},
   {key:"tm_leechseed",em:"💿",nm:"기술머신: 씨뿌리기",ds:"매 턴 상대 체력을 흡수",use:"tm",move:"leechseed",universal:true,where:"map"},
   {key:"tm_confuse",em:"💿",nm:"기술머신: 혼란파",ds:"상대를 혼란에 빠뜨린다",use:"tm",move:"confuse",universal:true,where:"map"},
   {key:"tm_stealthrock",em:"💿",nm:"기술머신: 스텔스록",ds:"상대가 교체할 때마다 바위 피해",use:"tm",move:"stealthrock",universal:true,where:"map"},
@@ -5124,6 +5137,8 @@ const SHOP=[
   {key:"tm_attract",em:"💿",nm:"기술머신: 헤롱헤롱",ds:"이성을 헤롱헤롱하게",price:1200,need:2},
   {key:"tm_bind",em:"💿",nm:"기술머신: 조이기",ds:"4~5턴 속박",price:1200,need:2},
   {key:"tm_selfdestruct",em:"💿",nm:"기술머신: 자폭",ds:"큰 피해 후 자신도 기절",price:1400,need:3},
+  {key:"tm_fly",em:"💿",nm:"기술머신: 날기",ds:"1턴 충전(반무적) 후 강타",price:1600,need:2},
+  {key:"tm_solarbeam",em:"💿",nm:"기술머신: 솔라빔",ds:"1턴 충전 후 강력한 풀 기술",price:1600,need:3},
   {key:"tm_leechseed",em:"💿",nm:"기술머신: 씨뿌리기",ds:"매 턴 체력 흡수",price:1500,need:3},
   {key:"tm_stealthrock",em:"💿",nm:"기술머신: 스텔스록",ds:"교체 시 바위 피해",price:1700,need:3},
   {key:"tm_spikes",em:"💿",nm:"기술머신: 압정뿌리기",ds:"교체 시 압정 피해",price:1600,need:3},

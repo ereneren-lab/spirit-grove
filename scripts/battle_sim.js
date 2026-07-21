@@ -66,12 +66,15 @@ window.__SIM = (function(){
   }
 
   function applyMove(a, d, k){
-    const mv = S.MOVES[k];
+    let mv = S.MOVES[k];
     if(!mv) return;
-    if(a.pp[k] != null) a.pp[k] = Math.max(0, a.pp[k]-1);
+    let _resurf = false;
+    if(a._charging){ k = a._charging; mv = S.MOVES[k]; a._charging = null; a._invuln = false; _resurf = true; }   // 2턴기 재부상
+    if(!_resurf && a.pp[k] != null) a.pp[k] = Math.max(0, a.pp[k]-1);
     if(k !== "protect") a._protectStreak = 0;                    // 방어 아닌 기술 → 연속 카운터 리셋
-    if(!a._choiceLock && k!=="struggle" && (a.held==="choiceband"||a.held==="choicescarf")) a._choiceLock=k;   // 구애 고정
+    if(!a._choiceLock && k!=="struggle" && !_resurf && (a.held==="choiceband"||a.held==="choicescarf")) a._choiceLock=k;   // 구애 고정
     if(mv.acc < 100 && Math.random()*100 > mv.acc) return;      // 빗나감 — 부가효과도 없다
+    if(!_resurf && mv.eff && mv.eff.charge){ a._charging = k; if(mv.eff.invuln) a._invuln = true; return; }   // 2턴기 1턴째 충전
 
     // 방어(protect): 이 턴 상대를 노리는 기술은 막힌다. 자기/필드 대상은 통과.
     if(mv.eff && mv.eff.protect){
@@ -81,6 +84,7 @@ window.__SIM = (function(){
       return;
     }
     if(d._protect && (mv.power > 0 || (mv.eff && (mv.eff.status || mv.eff.seed || mv.eff.confuse)))) return;
+    if(d._invuln && mv.power > 0) return;                        // 상대가 날기 중(반무적) → 빗나감
 
     if(mv.power > 0){
       const hits = mv.multi ? F.multiHits(mv.multi) : 1; let dealt=0;
@@ -139,7 +143,7 @@ window.__SIM = (function(){
   function onSwitchOut(m){
     if(!m) return;
     m.stages = S.newStages(); m._confuse = 0; m._seeded = false; m._flinch = 0;
-    m._protect = false; m._protectStreak = 0; m._choiceLock = null; m._attract = false; m._trapped = 0;
+    m._protect = false; m._protectStreak = 0; m._choiceLock = null; m._attract = false; m._trapped = 0; m._charging = null; m._invuln = false;
     if(m._tox) m._tox = 1;
   }
 

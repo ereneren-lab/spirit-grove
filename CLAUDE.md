@@ -118,6 +118,13 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 2턴기 (날기·솔라빔)
+충전 개념이 없던 것을 추가. `eff.charge`(+선택 `eff.invuln`) 2턴 기술.
+- **날기**(`charge+invuln`): 1턴째 하늘로(반무적 — 상대 공격 안 닿음), 2턴째 재부상 강타. **솔라빔**(`charge`만): 1턴 충전 후 강력한 풀 기술(무적 아님).
+- `performMove`: `att._charging`이 있으면 그 기술을 실행(2턴째 재부상, `_resurf`로 PP 재차감·구애잠금 스킵). 없고 `eff.charge`면 1턴째 충전(PP 차감·`_charging`/`_invuln` 세팅·피해 없이 return). 무적 가드는 방어 가드 옆(`def._invuln && power>0` → 빗나감).
+- `showMoves`: 충전 중이면 그 기술만(PP 무관 — 이미 냈다). `foeChooseMove`: `foe._charging`이면 그 기술을 계속.
+- ⚠️ `_charging`/`_invuln`은 휘발성 → 리셋 지점 6곳 + `battle_sim`(재부상·충전·무적 미스) 파리티. 획득은 범용 TM(밸런스 불변). 회귀 `scripts/twoturn_test.js`.
+
 ### 낚싯대 등급 (구·좋은·초)
 예전엔 `G.hasRod` 하나로 대물(fishRare) 확률이 25% 고정이었다 → `G.rodTier`(1/2/3)로 등급제.
 - 대물 확률 `[0,0.10,0.30,0.55][tier]`, 상위 등급일수록 낚이는 레벨도 +2씩. `startFishEncounter`에서 파생.
