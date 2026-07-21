@@ -198,6 +198,13 @@
   .catchball.ball{background:radial-gradient(circle at 34% 26%,#eafff8 3%,#8fe6c8 24%,#3ab492 54%,#1a6650 100%)}
   .catchball.great{background:radial-gradient(circle at 34% 26%,#f3e8ff 3%,#c69bef 22%,#8248cf 52%,#431d7a 100%)}
   .catchball.great::after{background:radial-gradient(circle,#ffe9a8 40%,#f0b83a 100%);box-shadow:0 0 6px rgba(255,210,90,.95),0 0 0 2px rgba(60,40,10,.35)}
+  .catchball.ultra{background:radial-gradient(circle at 34% 26%,#fff6d6 3%,#ffd45e 22%,#e0951f 54%,#7a4e08 100%)}
+  .catchball.dusk{background:radial-gradient(circle at 34% 26%,#3a4256 3%,#2a2f42 26%,#14100f 60%,#050505 100%)}
+  .catchball.dusk::after{background:radial-gradient(circle,#5ad07a 40%,#2a8a4a 100%);box-shadow:0 0 6px rgba(90,208,122,.9)}
+  .catchball.net{background:radial-gradient(circle at 34% 26%,#dff3ff 3%,#7fc8e6 24%,#2a7fb0 54%,#0f4468 100%)}
+  .catchball.quick{background:radial-gradient(circle at 34% 26%,#eaf3ff 3%,#7fb4f0 22%,#2f6fd0 54%,#123a7a 100%)}
+  .catchball.quick::after{background:radial-gradient(circle,#ffe9a8 40%,#f0c83a 100%);box-shadow:0 0 6px rgba(255,220,90,.9)}
+  .catchball.heal{background:radial-gradient(circle at 34% 26%,#ffe8f2 3%,#f7a8cf 24%,#e0629a 54%,#8a2a5a 100%)}
   .fx-glyph{position:absolute;font-size:28px;z-index:7;pointer-events:none;transform:translate(-50%,-50%);will-change:transform,left,top,opacity}
   .fx-proj{font-size:32px}
   .fx-particle{position:absolute;font-size:18px;z-index:7;pointer-events:none;transform:translate(-50%,-50%);will-change:transform,opacity}
@@ -2810,7 +2817,7 @@ function maybeRematch(t){ const tr=TRAINERS[t];
   if(confirm(`${tr.name}에게 재대결을 신청할까?\n(레벨이 오르고 보상은 절반)`)) startTrainer(t); }
 function firstAliveIdx(){ if(!G||!G.party)return 0; for(let i=0;i<G.party.length;i++){ if(G.party[i]&&G.party[i].hp>0)return i; } return 0; }
 function transitionToBattle(after){ heldDir=null; stopPath(); if(G)G.active=firstAliveIdx();   // 포켓몬식: 전투 선두 = 파티 첫 생존 정령(슬롯0). 재정렬로 순서 바꾸면 나오는 정령도 바뀜.
-  G.runTries=0;
+  G.runTries=0; G.battleTurn=0;   // 퀵볼: 첫 턴(공격 전) 판정용
   G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; if(G.party)G.party.forEach(m=>{ if(m){ m._confuse=0; m._seeded=false; m._flinch=false; m._acted=false; m._protect=false; m._protectStreak=0; m._choiceLock=null; } }); if(G.foe){ G.foe._confuse=0; G.foe._seeded=false; G.foe._flinch=false; G.foe._acted=false; G.foe._protect=false; G.foe._protectStreak=0; G.foe._choiceLock=null; } const wrap=$("canvasWrap"); wrap.classList.add("zoom");
   const fl=$("flash"); fl.classList.remove("go"); void fl.offsetWidth; fl.classList.add("go");
   const covered=playBattleWipe();   // 블라인드 바가 화면을 덮는 시점(ms)을 돌려줌
@@ -4173,7 +4180,7 @@ function dbGrantXp(m,amt){ m.xp=(m.xp||0)+amt; let guard=0;
   while(m.xp>=m.level*30 && m.level<60 && guard++<20){ m.xp-=m.level*30; m.level++; recalc(m); }
 }
 
-async function doMove(mvKey){ if(G.busy)return; G.busy=true; setMenuEnabled(false); showMain();
+async function doMove(mvKey){ if(G.busy)return; G.busy=true; G.battleTurn=(G.battleTurn||0)+1; setMenuEnabled(false); showMain();
   // 트레이너가 상성 불리를 읽고 먼저 교체할 수 있다. 교체하면 그게 상대의 턴이라
   // 내 기술은 새로 나온 정령에게 들어간다(본가와 동일).
   const _swapped=await foeMaybeSwitch();
@@ -4593,7 +4600,7 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
     healParty(true); G.trainer=null; endBattle(); blackout(); } }
 
 /* ===================== CATCH / RUN ===================== */
-const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프"};
+const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",ultraball:"울트라볼",duskball:"다크볼",netball:"네트볼",quickball:"퀵볼",healball:"힐볼",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프"};
 const DEX_REWARDS=[
   {n:5,money:300,items:{greatball:3}},{n:10,money:600,items:{hyperpotion:2,repel:1},held:{leftovers:1}},
   {n:15,money:1200,items:{candy:1,revive:1},held:{oranberry:1}},{n:20,money:2000,items:{candy:1,hyperpotion:3},held:{cureberry:1}},
@@ -4622,19 +4629,41 @@ function askNickname(mon){ return new Promise(res=>{
   const onKey=e=>{ if(e.key==="Enter"){ e.preventDefault(); onOk(); } };
   ok.addEventListener("click",onOk); skip.addEventListener("click",onSkip); inp.addEventListener("keydown",onKey);
 }); }
-async function tryCatch(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너의 정령은 포획할 수 없다!"); return; }
-  let ball="ball",bonus=0; if(G.items.ball<=0&&G.items.greatball>0){ball="greatball";bonus=0.22;}
-  if(G.items.ball<=0&&G.items.greatball<=0){ setMsg("포획구가 없다! 상점에서 사자."); return; }
-  if(ball==="ball"&&G.items.ball<=0){ball="greatball";bonus=0.22;}
+// 볼 종류 — 표기·CSS 클래스·상황별 보너스. 본가처럼 상황에 맞는 볼이 훨씬 잘 잡는다.
+const BALLS={
+  ball:{ko:"정령구",cls:"ball"},
+  greatball:{ko:"고급 정령구",cls:"great"},
+  ultraball:{ko:"울트라볼",cls:"ultra"},
+  duskball:{ko:"다크볼",cls:"dusk"},
+  netball:{ko:"네트볼",cls:"net"},
+  quickball:{ko:"퀵볼",cls:"quick"},
+  healball:{ko:"힐볼",cls:"heal"},
+};
+function ballBonus(ball,foe){ switch(ball){
+  case "greatball": return 0.22;
+  case "ultraball": return 0.35;
+  case "duskball": { const ph=(typeof dayPhase==="function")?dayPhase():"day"; return (ph==="night"||ph==="dusk")?0.30:0.03; }   // 다크볼: 밤/황혼에 강함
+  case "netball": return (foe.type==="water"||foe.type==="ice"||foe.type2==="water"||foe.type2==="ice")?0.30:0;   // 네트볼: 물/얼음
+  case "quickball": return ((G.battleTurn||0)===0)?0.42:0;   // 퀵볼: 전투 첫 턴
+  case "healball": return 0.05;
+  default: return 0; } }
+// 상태이상 포획 배율(본가): 잠듦·냉동이 가장 크고, 마비·독·화상이 그다음.
+function statusCatchBonus(st){ return (st==="slp"||st==="frz")?0.25:(st?0.14:0); }
+// 인자 없으면 기본 정령구(없으면 고급). 배틀 가방에서 특정 볼을 던지면 그 볼 종류로 들어온다.
+async function tryCatch(ballKey){ if(G.busy)return; if(G.trainer){ setMsg("트레이너의 정령은 포획할 수 없다!"); return; }
+  let ball=ballKey;
+  if(!ball){ ball=(G.items.ball>0)?"ball":(G.items.greatball>0)?"greatball":null; }
+  if(!ball || (G.items[ball]||0)<=0){ setMsg("포획구가 없다! 상점에서 사자."); return; }
   G.busy=true; setMenuEnabled(false); G.items[ball]--;
   const foe=G.foe,sp=byId(foe.id); const hpR=foe.hp/foe.maxHp;
   const lvPen=clamp(foe.level*0.006,0,0.24), tierPen=sp.tier===2?0.10:sp.tier===3?0.18:0;
-  const statusBonus=foe.status?0.12:0;
+  const statusBonus=statusCatchBonus(foe.status);
+  const bonus=ballBonus(ball,foe);
   const legendPen=sp.legend?0.38:0;   // 전설은 전설답게 — 빈사+상태이상으로 만들어도 쉽게 안 잡힌다
   const chance=clamp((1-hpR)*0.55+0.10+bonus+statusBonus+DIFF[CONFIG.difficulty].catch-lvPen-tierPen-legendPen,0.02,0.92);
-  setMsg(`${ITEM_KO[ball]}를 던졌다!`); Audio.sfx("throw");
+  setMsg(`${(BALLS[ball]&&BALLS[ball].ko)||ITEM_KO[ball]||"볼"}를 던졌다!`); Audio.sfx("throw");
   const field=$("battleField"); const fr=field.getBoundingClientRect(); const foeC=fxCenter("foe"); const foeSp=$("foeSprite");
-  const ballEl=document.createElement("div"); ballEl.className="catchball "+(ball==="ball"?"ball":"great");   // CSS 구(球): 정령구=민트, 고급=보라+금 (예전 🟣 이모지 대체)
+  const ballEl=document.createElement("div"); ballEl.className="catchball "+((BALLS[ball]&&BALLS[ball].cls)||"ball");   // CSS 구(球) — 볼마다 색
   const startX=fr.width*0.18, startY=fr.height*0.78; ballEl.style.left=startX+"px"; ballEl.style.top=startY+"px"; field.appendChild(ballEl);
   // arc throw
   await ballEl.animate([{left:startX+"px",top:startY+"px",transform:"translate(-50%,-50%) rotate(0deg)"},
@@ -4648,7 +4677,9 @@ async function tryCatch(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너
   ballEl.animate([{top:foeC.y+"px"},{top:(foeC.y+34)+"px"}],{duration:fxT(220),easing:"ease-in",fill:"forwards"}); await wait(fxT(240));
   // 포켓몬식 흔들림: 결과를 먼저 정하고, 실패해도 가까울수록 늦게 터진다
   const caught=Math.random()<chance;
-  const wobbles=caught?3:(chance<0.22?1:chance<0.5?2:3);
+  const critCap=caught && Math.random()<0.16;   // 크리티컬 캡처(본가): 흔들림 1번에 바로 잡힌다
+  const wobbles=caught?(critCap?1:3):(chance<0.22?1:chance<0.5?2:3);
+  if(critCap){ Audio.sfx("blip"); setMsg("✨ 크리티컬 캡처!"); await wait(fxT(300)); }
   for(let i=0;i<wobbles;i++){ ballEl.animate([{transform:"translate(-50%,-50%) rotate(0deg)"},{transform:"translate(-50%,-50%) rotate(-24deg)"},{transform:"translate(-50%,-50%) rotate(24deg)"},{transform:"translate(-50%,-50%) rotate(0deg)"}],{duration:fxT(520),easing:"ease-in-out"});
     Audio.sfx("blip"); setMsg("…흔들…".repeat(i+1)); await wait(fxT(560)); }
   if(caught){ await wait(fxT(240)); ballEl.animate([{transform:"translate(-50%,-50%) scale(1.15)"},{transform:"translate(-50%,-50%) scale(0.9)"},{transform:"translate(-50%,-50%) scale(1)"}],{duration:fxT(180)}); if(typeof impactFlash==="function")impactFlash(); Audio.sfx("catch"); Audio.startMusic("victory",true); await wait(fxT(220)); setMsg(`✨ <b>${foe.name}</b>을(를) 포획했다!`);   /* 포켓몬식: 포획 성공 = 승리 팡파르(전투 음악 교체). endBattle이 필드 음악 복귀 */
@@ -4657,6 +4688,7 @@ async function tryCatch(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너
     const _dexNew=!G.caught.has(foe.id);   // 포획 전 도감 신규 여부
     G.caught.add(foe.id); G.questFlags=G.questFlags||{}; if(sp.type==="water")G.questFlags.waterCaught=true; if(typeof NIGHT_MONS!=="undefined"&&NIGHT_MONS.has(foe.id))G.questFlags.nightCaught=true; if(G.indoor==="cave")G.questFlags.caveCatch=true; const cap=foe;   // 잡은 정령 = 그 야생 정령 그대로. 예전엔 makeMon로 새로 만들어 샤이니·개성(IV)·성격·성별·기술이 전부 사라졌다.
     cap.hp=Math.max(1,foe.hp); cap.stages=newStages(); cap._confuse=0; cap._seeded=false; cap._flinch=false; cap._acted=false; cap._protect=false; cap._protectStreak=0; cap._choiceLock=null; cap.wild=false;
+    if(ball==="healball"){ recalc(cap); cap.hp=cap.maxHp; cap.status=null; cap._slp=0; cap._tox=0; }   // 힐볼: 포획과 동시에 완전 회복
     if(_dexNew){ await mw(560); Audio.sfx("buy"); setMsg(`📖 <b>${foe.name}</b>의 데이터를 도감에 새로 등록했다!`); }
     if(G.party.length<6){ G.party.push(cap); await mw(700); setMsg("파티에 합류했다!"); }
     else { G.box.push(cap); await mw(700); setMsg("📦 보관함으로 보내졌다."); }
@@ -4990,6 +5022,7 @@ function applyItemEffect(it){ const m=activeMon();
   return false; }
 function useItem(it){ if((G.items[it.key]||0)<=0)return; if(applyItemEffect(it)){ renderBag(); if(G.inBattle)renderCombatants(); saveGame(); } }
 async function battleUseItem(it){ if(G.busy)return; if((G.items[it.key]||0)<=0)return;
+  if(typeof bagPocket==="function" && bagPocket(it)==="ball"){ closeOverlay("bagOverlay"); tryCatch(it.key); return; }   // 볼은 tryCatch가 소모·턴을 처리
   if(!applyItemEffect(it))return; renderCombatants(); closeOverlay("bagOverlay");
   G.busy=true; setMenuEnabled(false); setMsg(`${ITEM_KO[it.key]||"아이템"}을(를) 사용했다!`); await mw(720);
   await foeFreeTurn();
@@ -5000,6 +5033,11 @@ async function battleUseItem(it){ if(G.busy)return; if((G.items[it.key]||0)<=0)r
 const SHOP=[
   {key:"ball",em:"🔮",nm:"정령구",ds:"기본 포획구",price:120},
   {key:"greatball",em:"🟣",nm:"고급 정령구",ds:"포획 확률 ↑",price:350},
+  {key:"netball",em:"🥅",nm:"네트볼",ds:"물·얼음 정령이 잘 잡힌다",price:400,need:1},
+  {key:"duskball",em:"🌑",nm:"다크볼",ds:"밤·황혼에 잘 잡힌다",price:400,need:1},
+  {key:"quickball",em:"⚡",nm:"퀵볼",ds:"전투 첫 턴에 잘 잡힌다",price:450,need:1},
+  {key:"healball",em:"💚",nm:"힐볼",ds:"포획과 동시에 완전 회복",price:500,need:2},
+  {key:"ultraball",em:"🟡",nm:"울트라볼",ds:"포획 확률 크게 ↑",price:700,need:2},
   {key:"potion",em:"🧪",nm:"회복약",ds:"HP +50",price:150},
   {key:"hyperpotion",em:"💉",nm:"고급 회복약",ds:"HP +130",price:420,need:1},
   {key:"antidote",em:"🧴",nm:"해독제",ds:"상태이상 회복",price:140},
@@ -5411,7 +5449,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, pickupGroundItem, interact, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, pickupGroundItem, interact, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
