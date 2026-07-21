@@ -118,6 +118,13 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 신규 지역 — 뇌명 봉우리(skyridge)
+전기/비행이 전용 서식지가 없어(모든 flyer가 2차타입으로 흩어짐, 전기-새/뱀 라인 8종이 어느 특수풀에도 없음) → **폭풍 봉우리** 신설. 늪지 템플릿을 그대로 따랐다:
+- 진입 오버월드 타일 **`O`**(17,1, region 6 — 세계의 지붕). ⚠️ 배치는 반드시 **게임 실제 `walkable`로 BFS 도달 가능한 칸**이어야 한다 — 처음 (9,4)/(13,1)은 벽에 갇힌 고립 포켓이라 미도달이었다(수동 python BFS 근사로는 못 잡음, 실제 walkable로 확인).
+- `INTERIORS.skyridge`(15×13) · `ENC_POOLS.skyridge`(zapfinch·voltfalcon·thundwyrm·voltsnake·voltrat·sandwhirl·stormhawk·blossomhawk) · `startSkyEncounter`(레벨 28~58) · onArrived 0.14 · 가드 트레이너 **`y`**(폭풍지기, GUARD_TILES에 추가 — i/j/k/l/q는 리그가 씀) · 로어 `N`(SKYRIDGE_LORE) · 바닥 도구 3(천둥돌·고급물약·기력) · `HABITAT_KO.skyridge` · 렌더 폭풍 블루그레이 틴트 · fieldMusic="highland" · ESCAPABLE · 저장 `skySeen`.
+- ⚠️ **배선 누락 함정 2건**(이번에 밟음): (1) `reachability_test`가 진입 문자를 두 곳에 하드코딩 — `all` 목록과 `note` 도달 루프 **둘 다** 추가해야 한다(하나만 하면 분모엔 있고 도달로는 절대 안 잡혀 영구 미도달). (2) `dex_flavor_test`가 `HABITAT_KO` 사본을 하드코딩했었다 → 실제 `HABITAT_KO`를 읽도록 고쳐 병렬 테이블 제거(새 풀 추가 시 안 깨짐).
+- 회귀 `scripts/skyridge_test.js` + reachability(인테리어 18곳)·dex_flavor·region_content 커버.
+
 ### 기술 제어 (앵콜·도발·방해)
 상대 행동을 제약하는 층. `performMove`가 `att._lastMove=mvKey`로 마지막 기술을 기록.
 - **앵콜**(`eff.encore`): 상대를 `_lastMove`로 3턴 고정(`_encore={move,turns}`). **도발**(`eff.taunt`): 3턴간 변화기(power0) 봉쇄(`_taunt`). **방해**(`eff.disable`): 상대 `_lastMove`를 4턴 봉인(`_disable={move,turns}`).

@@ -46,7 +46,7 @@ const { chromium } = require("playwright"); const path=require("path");
     // 5) 풀에 있는 모든 종의 힌트가 그 지역을 포함하는지 (전수)
     const bad=[];
     for(const k in F.ENC_POOLS){ for(const id of F.ENC_POOLS[k]){ const sp=byId(id); if(!sp)continue;
-      const ko={snow:"설원 지대",marsh:"안개 늪지",isle:"여명의 섬",coast:"노을 해안",surf:"수면 위",fishRare:"낚시(대물)",fish:"낚시",lava:"용암 동굴",cave:"수정 동굴"}[k];
+      const ko=(F.HABITAT_KO||{})[k];   // ⚠️ 하드코딩 사본(병렬 테이블) 대신 실제 HABITAT_KO를 읽는다 — 새 풀 추가 시 안 깨진다
       if(F.findHint(sp).indexOf(ko)<0)bad.push(id+"@"+k); } }
     out.badHints=bad;
     // 6) 울음 버튼
