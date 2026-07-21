@@ -4600,7 +4600,7 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
     healParty(true); G.trainer=null; endBattle(); blackout(); } }
 
 /* ===================== CATCH / RUN ===================== */
-const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",ultraball:"울트라볼",duskball:"다크볼",netball:"네트볼",quickball:"퀵볼",healball:"힐볼",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프"};
+const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",ultraball:"울트라볼",duskball:"다크볼",netball:"네트볼",quickball:"퀵볼",healball:"힐볼",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프",protein:"단백질",iron:"철분",calcium:"칼슘",zinc:"아연",carbos:"카르본",hpup:"맥스업",mint_adamant:"고집 민트",mint_bold:"대담 민트",mint_timid:"겁쟁이 민트",mint_brave:"용감 민트",mint_relaxed:"무사 민트",bottlecap:"황금 병뚜껑"};
 const DEX_REWARDS=[
   {n:5,money:300,items:{greatball:3}},{n:10,money:600,items:{hyperpotion:2,repel:1},held:{leftovers:1}},
   {n:15,money:1200,items:{candy:1,revive:1},held:{oranberry:1}},{n:20,money:2000,items:{candy:1,hyperpotion:3},held:{cureberry:1}},
@@ -4927,6 +4927,18 @@ const BAG_ITEMS=[
   {key:"xspd",em:"👟",nm:"X속도",ds:"전투 중 속도 1단계 ↑",use:"stage",stat:"spd",where:"battle"},
   {key:"repel",em:"🧴",nm:"퇴치 스프레이",ds:"60걸음 동안 약한 정령 차단",use:"repel",where:"map"},
   {key:"escaperope",em:"🪢",nm:"탈출로프",ds:"동굴·던전에서 입구 밖으로 즉시 빠져나온다",use:"escape",where:"map"},
+  {key:"protein",em:"💊",nm:"단백질",ds:"선두 정령 공격 노력치 +10",use:"ev",stat:"atk",amt:10,where:"map"},
+  {key:"iron",em:"💊",nm:"철분",ds:"선두 정령 방어 노력치 +10",use:"ev",stat:"def",amt:10,where:"map"},
+  {key:"calcium",em:"💊",nm:"칼슘",ds:"선두 정령 특공 노력치 +10",use:"ev",stat:"spa",amt:10,where:"map"},
+  {key:"zinc",em:"💊",nm:"아연",ds:"선두 정령 특방 노력치 +10",use:"ev",stat:"spDef",amt:10,where:"map"},
+  {key:"carbos",em:"💊",nm:"카르본",ds:"선두 정령 속도 노력치 +10",use:"ev",stat:"spd",amt:10,where:"map"},
+  {key:"hpup",em:"💊",nm:"맥스업",ds:"선두 정령 체력 노력치 +10",use:"ev",stat:"hp",amt:10,where:"map"},
+  {key:"mint_adamant",em:"🌿",nm:"고집 민트",ds:"선두 정령을 고집있는 성격(공↑방↓)으로",use:"mint",nature:"adamant",where:"map"},
+  {key:"mint_bold",em:"🌿",nm:"대담 민트",ds:"선두 정령을 대담한 성격(방↑공↓)으로",use:"mint",nature:"bold",where:"map"},
+  {key:"mint_timid",em:"🌿",nm:"겁쟁이 민트",ds:"선두 정령을 겁쟁이 성격(속↑공↓)으로",use:"mint",nature:"timid",where:"map"},
+  {key:"mint_brave",em:"🌿",nm:"용감 민트",ds:"선두 정령을 용감한 성격(공↑속↓)으로",use:"mint",nature:"brave",where:"map"},
+  {key:"mint_relaxed",em:"🌿",nm:"무사 민트",ds:"선두 정령을 무사태평 성격(방↑속↓)으로",use:"mint",nature:"relaxed",where:"map"},
+  {key:"bottlecap",em:"🔩",nm:"황금 병뚜껑",ds:"선두 정령의 개체값을 모두 최고로",use:"bottlecap",where:"map"},
   {key:"candy",em:"🍬",nm:"정령 사탕",ds:"선두 정령 Lv +1",use:"candy",where:"map"},
   {key:"firestone",em:"🔥",nm:"불꽃돌",ds:"특정 정령을 진화시킨다",use:"evostone",where:"map"},
   {key:"waterstone",em:"💧",nm:"물돌",ds:"특정 정령을 진화시킨다",use:"evostone",where:"map"},
@@ -5010,6 +5022,21 @@ function applyItemEffect(it){ const m=activeMon();
     flashHint("🪢 탈출로프! 던전 밖으로 빠져나왔다"); exitInterior();
     setTimeout(()=>{ if(!G.indoor)saveGame(); }, 520);   // ⚠️ warpFade 지연 스왑이라 스왑 완료 후 저장(indoor=null 확인)
     return false; }   // 장면(warpFade)이 처리 — useItem의 조기 저장/중복 렌더 방지(evostone과 같은 패턴)
+  // 스탯 아이템 — 선두 정령(activeMon) 대상(캔디·진화의돌과 같은 규칙). 백엔드(evs/nature/ivs)는 이미 있다.
+  if(it.use==="ev"){ if(!m){flashHint("정령이 없다");return false;} m.evs=m.evs||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0};
+    let tot=0; for(const k in m.evs)tot+=m.evs[k]||0; const cur=m.evs[it.stat]||0;
+    const add=Math.min(it.amt||10, 252-cur, 510-tot);
+    if(add<=0){ flashHint(`${dispName(m)}의 ${STAT_KO[it.stat]||it.stat} 노력치는 더 오르지 않는다`); return false; }
+    G.items[it.key]--; m.evs[it.stat]=cur+add; recalc(m); Audio.sfx("heal");
+    flashHint(`💊 ${dispName(m)}의 ${STAT_KO[it.stat]||it.stat} 노력치 +${add}!`); return true; }
+  if(it.use==="mint"){ if(!m){flashHint("정령이 없다");return false;}
+    if(m.nature===it.nature){ flashHint(`${dispName(m)}은(는) 이미 그 성격이다`); return false; }
+    G.items[it.key]--; m.nature=it.nature; recalc(m); m.hp=Math.min(m.hp,m.maxHp); Audio.sfx("heal");
+    flashHint(`🌿 ${dispName(m)}의 성격이 <b>${(NATURE_BY_K[it.nature]&&NATURE_BY_K[it.nature].ko)||it.nature}</b>(으)로 바뀌었다!`); return true; }
+  if(it.use==="bottlecap"){ if(!m){flashHint("정령이 없다");return false;} m.ivs=m.ivs||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0};
+    if(["hp","atk","def","spa","spDef","spd"].every(k=>(m.ivs[k]||0)>=31)){ flashHint(`${dispName(m)}의 개체값은 이미 최고다`); return false; }
+    G.items[it.key]--; ["hp","atk","def","spa","spDef","spd"].forEach(k=>m.ivs[k]=31); recalc(m); m.hp=Math.min(m.hp,m.maxHp); Audio.sfx("levelup");
+    flashHint(`✨ ${dispName(m)}의 개체값이 모두 최고가 되었다!`); return true; }
   if(it.use==="candy"){ if(m.level>=60){flashHint(m.name+"은(는) 이미 최고 레벨");return false;} G.items[it.key]--; m.level++; recalc(m); m.hp=m.maxHp; Audio.sfx("levelup"); flashHint(`🍬 ${dispName(m)}이(가) Lv ${m.level}(으)로!`);
     if(typeof evolveCheck==="function")evolveCheck(m,false);   // 레벨 진화 조건 충족 시 진화 장면(포켓몬 레어캔디처럼)
     return true; }
@@ -5079,6 +5106,12 @@ const SHOP=[
   {key:"tm_skyrush",em:"💿",nm:"기술머신: 스카이러시",ds:"비행 타입 전용",price:1400,need:2},
   {key:"tm_bloom",em:"💿",nm:"기술머신: 개화",ds:"풀 타입 전용",price:1400,need:2},
   {key:"escaperope",em:"🪢",nm:"탈출로프",ds:"던전 밖으로 즉시 탈출",price:550,need:1},
+  {key:"protein",em:"💊",nm:"단백질",ds:"공격 노력치 +10",price:900,need:2},
+  {key:"iron",em:"💊",nm:"철분",ds:"방어 노력치 +10",price:900,need:2},
+  {key:"calcium",em:"💊",nm:"칼슘",ds:"특공 노력치 +10",price:900,need:2},
+  {key:"zinc",em:"💊",nm:"아연",ds:"특방 노력치 +10",price:900,need:2},
+  {key:"carbos",em:"💊",nm:"카르본",ds:"속도 노력치 +10",price:900,need:2},
+  {key:"hpup",em:"💊",nm:"맥스업",ds:"체력 노력치 +10",price:900,need:2},
   {key:"rod",em:"🎣",nm:"낚싯대",ds:"물가에서 물의 정령을 낚는다",price:500},
 ];
 function openShop(){ Audio.sfx("blip"); { const t=$("shopHeadTitle"); if(t)t.textContent="🏪 정령 상점"; } renderShop(); updateMoney(); openOverlay("shopOverlay"); }
@@ -5090,6 +5123,12 @@ const PREMIUM=[
   {key:"thunderstone",em:"⚡",nm:"천둥의 돌",ds:"특정 정령을 진화시킨다",price:2500},
   {key:"waterstone",em:"💧",nm:"물의 돌",ds:"특정 정령을 진화시킨다",price:2500},
   {key:"firestone",em:"🔥",nm:"불의 돌",ds:"특정 정령을 진화시킨다",price:2500},
+  {key:"mint_adamant",em:"🌿",nm:"고집 민트",ds:"선두 정령 성격을 고집있는(공↑방↓)으로",price:4000,held:false},
+  {key:"mint_bold",em:"🌿",nm:"대담 민트",ds:"선두 정령 성격을 대담한(방↑공↓)으로",price:4000,held:false},
+  {key:"mint_timid",em:"🌿",nm:"겁쟁이 민트",ds:"선두 정령 성격을 겁쟁이(속↑공↓)으로",price:4000,held:false},
+  {key:"mint_brave",em:"🌿",nm:"용감 민트",ds:"선두 정령 성격을 용감한(공↑속↓)으로",price:4000,held:false},
+  {key:"mint_relaxed",em:"🌿",nm:"무사 민트",ds:"선두 정령 성격을 무사태평(방↑속↓)으로",price:4000,held:false},
+  {key:"bottlecap",em:"🔩",nm:"황금 병뚜껑",ds:"선두 정령의 개체값을 모두 최고로",price:9000,held:false},
   {key:"shinycharm",em:"✨",nm:"반짝임의 부적",ds:"샤이니(이로치) 정령 출현 확률 ↑ (1회 구매)",price:12000,unique:true},
 ];
 function openExchange(){ Audio.sfx("blip"); { const t=$("shopHeadTitle"); if(t)t.textContent="💱 교환소"; } renderExchange(); updateMoney(); openOverlay("shopOverlay"); }
