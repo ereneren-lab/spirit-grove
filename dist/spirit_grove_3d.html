@@ -1793,6 +1793,8 @@ function _exitInterior(){ if(!_owBackup)return;
 // reenter 목록은 "오버월드 타일에서 바로 들어가는 인테리어"만 — 배로만 가는 isle 등을 넣으면
 // 나갈 때 _owBackup이 엉뚱한 곳을 가리켜 꼬인다. 그런 곳은 indoor:null로 기록해 문 앞에서 눈뜬다.
 const REVIVE_REENTER={center:1,house:1,snowfield:1};
+// 탈출로프가 통하는 '막다른 던전'만 — 배로 가는 isle/shrine이나 짧은 상점/센터는 제외(exitInterior의 _owBackup이 안전한 곳).
+const ESCAPABLE={cave:1,lavacave:1,marsh:1,snowfield:1};
 function markHeal(){
   const ow=_owBackup?_owBackup.pos:G.pos, id=G.indoor||null;
   G.lastHeal={x:ow.x,y:ow.y,indoor:(id&&REVIVE_REENTER[id])?id:null};
@@ -4534,7 +4536,7 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
     healParty(true); G.trainer=null; endBattle(); blackout(); } }
 
 /* ===================== CATCH / RUN ===================== */
-const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌"};
+const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프"};
 const DEX_REWARDS=[
   {n:5,money:300,items:{greatball:3}},{n:10,money:600,items:{hyperpotion:2,repel:1},held:{leftovers:1}},
   {n:15,money:1200,items:{candy:1,revive:1},held:{oranberry:1}},{n:20,money:2000,items:{candy:1,hyperpotion:3},held:{cureberry:1}},
@@ -4835,6 +4837,7 @@ const BAG_ITEMS=[
   {key:"xdef",em:"🛡️",nm:"X방어",ds:"전투 중 방어 1단계 ↑",use:"stage",stat:"def",where:"battle"},
   {key:"xspd",em:"👟",nm:"X속도",ds:"전투 중 속도 1단계 ↑",use:"stage",stat:"spd",where:"battle"},
   {key:"repel",em:"🧴",nm:"퇴치 스프레이",ds:"60걸음 동안 약한 정령 차단",use:"repel",where:"map"},
+  {key:"escaperope",em:"🪢",nm:"탈출로프",ds:"동굴·던전에서 입구 밖으로 즉시 빠져나온다",use:"escape",where:"map"},
   {key:"candy",em:"🍬",nm:"정령 사탕",ds:"선두 정령 Lv +1",use:"candy",where:"map"},
   {key:"firestone",em:"🔥",nm:"불꽃돌",ds:"특정 정령을 진화시킨다",use:"evostone",where:"map"},
   {key:"waterstone",em:"💧",nm:"물돌",ds:"특정 정령을 진화시킨다",use:"evostone",where:"map"},
@@ -4912,6 +4915,12 @@ function applyItemEffect(it){ const m=activeMon();
   if(it.use==="revive"){ const f=firstFainted(); if(!f){flashHint("쓰러진 정령이 없다");return false;} G.items[it.key]--; recalc(f); f.hp=Math.floor(f.maxHp/2); f.status=null; Audio.sfx("levelup"); flashHint(f.name+"이(가) 되살아났다!"); return true; }
   if(it.use==="stage"){ if(!G.inBattle)return false; if((m.stages[it.stat]||0)>=6){flashHint("더 오르지 않는다");return false;} G.items[it.key]--; applyStage(m,it.stat,1,"me"); return true; }
   if(it.use==="repel"){ G.items[it.key]--; G.repel=60; Audio.sfx("blip"); flashHint("🧴 퇴치 스프레이! 60걸음 동안 약한 정령이 피해간다"); return true; }
+  if(it.use==="escape"){ if(G.inBattle||G.busy){ flashHint("지금은 쓸 수 없다"); return false; }
+    if(!G.indoor || !_owBackup || !ESCAPABLE[G.indoor]){ flashHint("여기선 탈출로프를 쓸 수 없다"); return false; }
+    G.items[it.key]--; Audio.sfx("blip"); if(typeof closeOverlay==="function")closeOverlay("bagOverlay");
+    flashHint("🪢 탈출로프! 던전 밖으로 빠져나왔다"); exitInterior();
+    setTimeout(()=>{ if(!G.indoor)saveGame(); }, 520);   // ⚠️ warpFade 지연 스왑이라 스왑 완료 후 저장(indoor=null 확인)
+    return false; }   // 장면(warpFade)이 처리 — useItem의 조기 저장/중복 렌더 방지(evostone과 같은 패턴)
   if(it.use==="candy"){ if(m.level>=60){flashHint(m.name+"은(는) 이미 최고 레벨");return false;} G.items[it.key]--; m.level++; recalc(m); m.hp=m.maxHp; Audio.sfx("levelup"); flashHint(`🍬 ${dispName(m)}이(가) Lv ${m.level}(으)로!`);
     if(typeof evolveCheck==="function")evolveCheck(m,false);   // 레벨 진화 조건 충족 시 진화 장면(포켓몬 레어캔디처럼)
     return true; }
@@ -4974,6 +4983,7 @@ const SHOP=[
   {key:"tm_twinbolt",em:"💿",nm:"기술머신: 트윈볼트",ds:"전기 타입 전용",price:1400,need:2},
   {key:"tm_skyrush",em:"💿",nm:"기술머신: 스카이러시",ds:"비행 타입 전용",price:1400,need:2},
   {key:"tm_bloom",em:"💿",nm:"기술머신: 개화",ds:"풀 타입 전용",price:1400,need:2},
+  {key:"escaperope",em:"🪢",nm:"탈출로프",ds:"던전 밖으로 즉시 탈출",price:550,need:1},
   {key:"rod",em:"🎣",nm:"낚싯대",ds:"물가에서 물의 정령을 낚는다",price:500},
 ];
 function openShop(){ Audio.sfx("blip"); { const t=$("shopHeadTitle"); if(t)t.textContent="🏪 정령 상점"; } renderShop(); updateMoney(); openOverlay("shopOverlay"); }

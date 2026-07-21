@@ -118,6 +118,12 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 탈출로프 (던전 빠른 탈출)
+동굴·늪지·용암굴이 막다른 길이라 걸어 나와야 했다 → `escaperope`(`use:"escape"`)로 입구 밖 오버월드로 즉시 탈출.
+- `ESCAPABLE={cave,lavacave,marsh,snowfield}`만 허용 — 배로 가는 isle/shrine이나 짧은 센터/상점은 제외(`exitInterior`의 `_owBackup`이 안전한 막다른 던전만).
+- ⚠️ `exitInterior`는 **warpFade 지연 스왑(150ms)**이고 `_exitInterior`는 저장을 안 한다 → 스왑 완료 후 `setTimeout(()=>{ if(!G.indoor)saveGame(); },520)`로 저장(indoor=null 확인). `applyItemEffect`는 `false`를 반환해 `useItem`의 조기 저장/중복 렌더를 막는다(evostone과 같은 패턴).
+- 전투 중·오버월드·비던전 인테리어에선 거절(소모 안 됨). 상점 need:1. 회귀 `scripts/escape_test.js`.
+
 ### 교환소 (후반 돈 소비처)
 도감 완성 보상 3만 코인 등 후반 경제가 밸 데가 없었다 → **교환상인 로엔**(리그 앞 20,9, `exchange:true` NPC)이 코인으로 희귀 물건을 내준다.
 - `PREMIUM` 재고: **타입 부적 10종**(`TYPES` 파생, #1에서 정의만 하고 상점엔 안 넣었던 것 → 여기서만 획득) + 진화의 돌 3종 + **반짝임의 부적**(이로치, unique 1회).
