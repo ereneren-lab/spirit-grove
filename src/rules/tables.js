@@ -41,13 +41,23 @@ const NATURE_BY_K={}; NATURES.forEach(n=>NATURE_BY_K[n.k]=n);
 const STAT_KO={atk:"공격",def:"방어",spd:"속도",spa:"특수공격",spDef:"특수방어",acc:"명중률",eva:"회피율"};
 function natureLabel(k){ const n=NATURE_BY_K[k]; if(!n)return ""; if(!n.up)return n.ko+" (보정 없음)"; return `${n.ko} (${STAT_KO[n.up]}↑ ${STAT_KO[n.down]}↓)`; }
 const SHINY_RATE=1/64;
+// 지닌 물건. 전투 효과는 **데이터 필드**로 표현해 damage()/effSpd()가 단일 출처(HELD_ITEMS)에서 읽는다:
+//   dmg=기술 위력 배율 · boost=이 타입 기술 +20% · spdx=속도 배율 · recoil=공격 시 최대HP 반동 비율 ·
+//   lock=구애(첫 기술로 고정) · sash=풀피에서 치명타를 1HP로 버팀(1회). em/ko/desc는 표시용.
 const HELD_ITEMS={
   leftovers:{ko:"먹다남은음식",em:"🍖",desc:"매 턴 HP를 조금씩 회복"},
   oranberry:{ko:"오랭열매",em:"🫐",desc:"HP 절반 이하가 되면 25% 회복(1회)"},
   cureberry:{ko:"정화열매",em:"🍇",desc:"상태이상이 되면 회복(1회)"},
-  powerband:{ko:"힘의띠",em:"💪",desc:"기술 위력이 약간 오른다"},
+  powerband:{ko:"힘의띠",em:"💪",desc:"기술 위력이 약간 오른다(×1.1)",dmg:1.1},
   scopelens:{ko:"초점렌즈",em:"🔍",desc:"급소에 맞히기 쉬워진다(급소 랭크 +1)"},
+  lifeorb:{ko:"생명의구슬",em:"💎",desc:"기술 위력 ×1.3 · 대신 공격할 때마다 최대HP 1/10 반동",dmg:1.3,recoil:0.1},
+  focussash:{ko:"기합의띠",em:"🎽",desc:"풀피일 때 쓰러질 공격을 1HP로 버틴다(1회)",sash:true},
+  choiceband:{ko:"구애머리띠",em:"🎗️",desc:"기술 위력 ×1.3 · 대신 처음 쓴 기술만 계속 쓴다",dmg:1.3,lock:true},
+  choicescarf:{ko:"구애스카프",em:"🧣",desc:"속도 ×1.5 · 대신 처음 쓴 기술만 계속 쓴다",spdx:1.5,lock:true},
 };
+// 타입별 강화 부적 — TYPES에서 파생(단일 출처). 해당 타입 기술 위력 +20%.
+// ⚠️ 손으로 10개 나열하지 않는다 — 그러면 타입 추가 시 또 하나의 병렬 테이블을 빠뜨린다.
+TYPE_LIST.forEach(t=>{ HELD_ITEMS["charm_"+t]={ko:TYPE_KO[t]+"부적",em:TYPE_ICON[t]||"🔮",desc:TYPE_KO[t]+" 타입 기술 위력 +20%",boost:t}; });
 // 종별 특성 지정. 없으면 DEFAULT_ABILITY[type] → "guts" 폴백이라
 // 지정을 안 하면 같은 타입 정령이 죄다 같은 특성이 된다. 라인마다 흩뿌릴 것.
 const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate",emberfly:"flamebody",pyrmoth:"flamebody",cindercat:"flamebody",lavakit:"flamebody",boulderin:"roughskin",crablord:"roughskin",hedgemoss:"roughskin",otterwave:"swiftswim",sharkfin:"swiftswim",frostfish:"swiftswim",nipling:"swiftswim",seedbean:"chlorophyll",sproutcat:"chlorophyll",palmore:"chlorophyll",leafwyrm:"chlorophyll",thunderowl:"insomnia",lunarmoth:"insomnia",swampfrog:"immunity",burrowmouse:"immunity",tidalore:"waterveil",shellow:"waterveil",stormhawk:"sniper",sandwhirl:"sniper",sprigfawn:"naturalcure",bunnyhop:"naturalcure",dewdrop:"naturalcure",tigerflame:"hugepower",magmadon:"hugepower"};

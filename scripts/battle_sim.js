@@ -69,6 +69,7 @@ window.__SIM = (function(){
     if(!mv) return;
     if(a.pp[k] != null) a.pp[k] = Math.max(0, a.pp[k]-1);
     if(k !== "protect") a._protectStreak = 0;                    // 방어 아닌 기술 → 연속 카운터 리셋
+    if(!a._choiceLock && k!=="struggle" && (a.held==="choiceband"||a.held==="choicescarf")) a._choiceLock=k;   // 구애 고정
     if(mv.acc < 100 && Math.random()*100 > mv.acc) return;      // 빗나감 — 부가효과도 없다
 
     // 방어(protect): 이 턴 상대를 노리는 기술은 막힌다. 자기/필드 대상은 통과.
@@ -81,8 +82,13 @@ window.__SIM = (function(){
     if(d._protect && (mv.power > 0 || (mv.eff && (mv.eff.status || mv.eff.seed || mv.eff.confuse)))) return;
 
     if(mv.power > 0){
-      const hits = mv.multi ? F.multiHits(mv.multi) : 1;
-      for(let h=0; h<hits && d.hp>0; h++) d.hp = Math.max(0, d.hp - S.damage(a, d, mv).dmg);
+      const hits = mv.multi ? F.multiHits(mv.multi) : 1; let dealt=0;
+      for(let h=0; h<hits && d.hp>0; h++){
+        let dmg = S.damage(a, d, mv).dmg;
+        if(d.held==="focussash" && d.hp===d.maxHp && dmg>=d.hp){ dmg=d.hp-1; d.held=null; }   // 기합의띠
+        dmg = Math.min(dmg, d.hp); d.hp = Math.max(0, d.hp - dmg); dealt += dmg;
+      }
+      if(a.held==="lifeorb" && dealt>0) a.hp = Math.max(0, a.hp - Math.max(1, Math.floor(a.maxHp/10)));   // 생명의구슬 반동
       if(d.hp <= 0) return;
       const e = mv.eff;
       if(e && e.status && Math.random() < (e.chance||0)) trySetStatus(d, e.status, e.badly);
@@ -128,7 +134,7 @@ window.__SIM = (function(){
   function onSwitchOut(m){
     if(!m) return;
     m.stages = S.newStages(); m._confuse = 0; m._seeded = false; m._flinch = 0;
-    m._protect = false; m._protectStreak = 0;
+    m._protect = false; m._protectStreak = 0; m._choiceLock = null;
     if(m._tox) m._tox = 1;
   }
 

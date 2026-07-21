@@ -118,6 +118,15 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 지닌 물건 확장 (전투 깊이) — 데이터 필드 단일 출처
+지닌 물건이 방어형 5종뿐이라 이 게임의 강점(전투 깊이)을 못 살렸다 → 공격/전략형 추가. **전투 효과는 `HELD_ITEMS`(rules/tables.js)의 데이터 필드로 표현**하고 `damage()`/`effSpd()`가 그 한 곳에서 읽는다(하드코딩 금지 — 예전 powerband `abil*=1.1`도 `dmg:1.1` 필드로 이전).
+- 데이터 필드: `dmg`(위력 배율) · `boost`(이 타입 기술 +20%) · `spdx`(속도 배율) · `recoil`(공격 시 최대HP 반동) · `lock`(구애=첫 기술 고정) · `sash`(풀피 치명타 1HP 생존 1회).
+- 신규: **생명의구슬**(dmg1.3+recoil0.1) · **기합의띠**(sash) · **구애머리띠**(dmg1.3+lock) · **구애스카프**(spdx1.5+lock).
+- **타입 부적 10종은 `TYPES`에서 파생**(`charm_<type>`, boost=type) — 손으로 나열하면 타입 추가 시 또 병렬 테이블을 빠뜨린다. 상점엔 안 넣고 **#3 교환소 재고**로 예약(코인 소비처).
+- ⚠️ **네 곳에 배선**(방어와 같은 원칙): `damage()`/`effSpd()`(rules, 배율) · `performMove`(생명구슬 반동·기합의띠 생존·구애 잠금 set) · `showMoves`(구애 시 다른 기술 비활성) · `foeChooseMove`(적도 구애 준수) · `battle_sim.js`(반동·sash·잠금 파리티). `_choiceLock`은 휘발성 → `_protect`와 같은 리셋 지점 6곳에서 해제.
+- **밸런스 불변**: 강한 아이템을 `WILD_HELD`/학습셋에 안 넣어 트레이너·야생이 안 든다 → balance/league 측정 그대로. 플레이어만 강해진다.
+- ⚠️ `HELD_ITEMS`를 `window.SG`에 노출(테스트용). 회귀 `scripts/rules_unit_test.js`(배율·파생) + `scripts/helditems_test.js`(생존·잠금 메뉴·반동 흐름 + 시뮬 파리티).
+
 ### 전투 페이스 (`BATTLE_PACE`) — "너무 빠르고 정신없다" 대응
 전투 기본 속도가 빨라 메시지가 뭐가 일어났는지 못 읽고 넘어간다는 피드백 → **메시지 대기(`mw`)만** 전투 중일 때 `BATTLE_PACE`(현재 1.35)배 늘렸다. **히트 애니(`fxT`/`wait`)는 안 건드린다** — "쫀득한 타격 → 텍스트가 잠깐 머묾 → 다음" 리듬이 목표(애니까지 늘리면 쫀득함이 죽고 늘어진다).
 - ⚠️ **전투 중일 때만** 적용(`mw`가 `G.inBattle`로 분기) — 오버월드 `mw`(트레이너 발견·낚시·NPC 걸음)는 원래 타이밍 유지.

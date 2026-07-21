@@ -117,6 +117,29 @@ console.log("\n[데미지 공식]");
   ok(R.damage(mk(), mk(), {type:"normal",power:1}).dmg>=1, "데미지는 최소 1");
 }
 
+console.log("\n[지닌 물건 — 전투 배율]");
+{
+  const avg=(a,d,mv,n=400)=>{ let s=0; for(let i=0;i<n;i++)s+=R.damage(a,d,mv).dmg; return s/n; };
+  const base=avg(mk({type:"fire"}), mk({type:"normal"}), {type:"fire",power:80});
+  // 생명의구슬 ×1.3
+  const orb=avg(mk({type:"fire",held:"lifeorb"}), mk({type:"normal"}), {type:"fire",power:80});
+  ok(near(orb/base,1.3,0.08), `생명의구슬 위력 ×1.3 (${(orb/base).toFixed(2)})`);
+  // 힘의띠 ×1.1 (데이터 필드로 이전됨 — 예전엔 하드코딩)
+  const pb=avg(mk({type:"fire",held:"powerband"}), mk({type:"normal"}), {type:"fire",power:80});
+  ok(near(pb/base,1.1,0.08), `힘의띠 위력 ×1.1 (${(pb/base).toFixed(2)})`);
+  // 타입 부적 +20% — 같은 타입 기술만
+  const chm=avg(mk({type:"fire",held:"charm_fire"}), mk({type:"normal"}), {type:"fire",power:80});
+  ok(near(chm/base,1.2,0.08), `불부적: 불 기술 +20% (${(chm/base).toFixed(2)})`);
+  const chmOff=avg(mk({type:"fire",held:"charm_water"}), mk({type:"normal"}), {type:"fire",power:80});
+  ok(near(chmOff/base,1.0,0.08), `물부적은 불 기술엔 안 붙는다 (${(chmOff/base).toFixed(2)})`);
+  // 구애스카프 속도 ×1.5
+  ok(R.effSpd(mk({held:"choicescarf"}))===150 && R.effSpd(mk())===100, "구애스카프 속도 ×1.5");
+  // 타입 부적은 TYPES 파생 — 전 타입 존재
+  const tk=Object.keys(R.TYPES);
+  ok(tk.every(t=>R.HELD_ITEMS["charm_"+t] && R.HELD_ITEMS["charm_"+t].boost===t), `타입 부적 ${tk.length}종이 TYPES에서 파생`);
+  ok(["lifeorb","focussash","choiceband","choicescarf"].every(k=>R.HELD_ITEMS[k]), "신규 지닌물건 4종 정의");
+}
+
 console.log("\n[혼란 자해]");
 {
   // ⚠️ maxHp를 넉넉히 줘야 30% 상한이 먼저 걸려 공/방 영향이 가려지지 않는다.

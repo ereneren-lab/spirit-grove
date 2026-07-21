@@ -17,6 +17,7 @@ function multiHits(mr){ const [lo,hi]=mr;
   return ri(lo,hi); }
 function effSpd(m){ let w=1;
   if(typeof G!=="undefined"&&G&&G.weather){ if(m.ability==="swiftswim"&&G.weather==="rain")w=2; else if(m.ability==="chlorophyll"&&G.weather==="sun")w=2; }
+  const _hi=m.held&&HELD_ITEMS[m.held]; if(_hi&&_hi.spdx)w*=_hi.spdx;   // 구애스카프
   return m.spd*stageMul(m.stages.spd)*(m.status==="par"?0.5:1)*w; }
 // 혼란 자해: 본가는 "위력 40 무타입 물리 기술을 자신에게" 맞는 것과 같다.
 // 예전엔 maxHp의 고정 9%라, 방어가 높은 정령이 혼란에 강하다는 성질이 통째로 사라져 있었다.
@@ -46,7 +47,8 @@ function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&d
   if(att.hp/att.maxHp<=1/3 && ((att.ability==="blaze"&&move.type==="fire")||(att.ability==="torrent"&&move.type==="water")||(att.ability==="overgrow"&&move.type==="grass"))) abil*=1.5;
   if(att.ability==="guts" && att.status) abil*=1.5;
   if(def.ability==="thickfat" && move.type==="fire") abil*=0.5;
-  if(att.held==="powerband") abil*=1.1;
+  const _hi=att.held&&HELD_ITEMS[att.held];   // 지닌 물건 위력 배율(단일 출처 HELD_ITEMS): powerband/lifeorb/구애/타입부적
+  if(_hi){ if(_hi.dmg)abil*=_hi.dmg; if(_hi.boost===move.type)abil*=1.2; }
   if(att.ability==="hugepower" && !isSpec) abil*=1.5;   // 순수한힘: 물리만
   const lvf=2*att.level/5+2; const stab=(move.type===att.type||(att.type2&&move.type===att.type2))?1.5:1;
   let wMul=1; if(typeof G!=="undefined"&&G&&G.weather){ if(G.weather==="sun"){ if(move.type==="fire")wMul=1.3; else if(move.type==="water")wMul=0.7; } else if(G.weather==="rain"){ if(move.type==="water")wMul=1.3; else if(move.type==="fire")wMul=0.7; } else if(G.weather==="sand"){ if(move.type==="rock")wMul=1.2; } else if(G.weather==="hail"){ if(move.type==="ice")wMul=1.2; } }
