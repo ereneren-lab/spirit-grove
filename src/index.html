@@ -628,8 +628,8 @@
       <div class="ov-body"><div class="set-row">
         <div class="set-item"><label>난이도</label><div class="note">적 레벨 · 전투 데미지 · 포획 난도에 영향</div>
           <div class="seg" id="segDiff"><button data-v="easy">쉬움</button><button data-v="normal" class="on">보통</button><button data-v="hard">어려움</button></div></div>
-        <div class="set-item"><label>텍스트 속도</label>
-          <div class="seg" id="segSpeed"><button data-v="0.6">빠름</button><button data-v="1" class="on">보통</button><button data-v="1.6">느림</button></div></div>
+        <div class="set-item"><label>전투 속도</label><div class="note">전투 메시지가 넘어가는 속도. 급할 땐 자동 모드에서 화면을 누르고 있으면 빨리감기.</div>
+          <div class="seg" id="segSpeed"><button data-v="0.6">빠름</button><button data-v="1" class="on">보통</button><button data-v="1.6">느긋</button></div></div>
         <div class="set-item"><label>볼륨 <span id="volVal">70</span></label><input type="range" id="volRange" min="0" max="100" value="70"></div>
         <div class="set-item"><label>전투 텍스트</label><div class="note">자동=시간 지나면 넘어감(누르면 빨리감기) · 수동=탭할 때마다 진행</div>
           <div class="seg" id="segBattleText"><button data-v="auto" class="on">자동</button><button data-v="tap">수동</button></div></div>
@@ -725,12 +725,18 @@ const SAVE_KEY="spiritGroveSave_v4";
 const DIFF={easy:{lvl:-3,dmg:0.6,catch:0.18,nm:"쉬움"},normal:{lvl:0,dmg:0.8,catch:0.05,nm:"보통"},hard:{lvl:2,dmg:1.12,catch:-0.06,nm:"어려움"}};
 const CONFIG={difficulty:"normal",textSpeed:1,volume:0.7,reduceMotion:false,follower:"all",battleText:"auto",gridMove:false};
 let SKIP=false;
+// 전투 메시지 beats를 기본적으로 더 오래 머물게 하는 배율. "전투가 너무 빠르고 정신없다"는 피드백 →
+// 히트 애니(fxT/wait)는 쫀득하게 두고 **메시지 대기(mw)만** 늘려 "쫀득한 타격 → 텍스트가 잠깐 머묾 → 다음"
+// 리듬을 만든다. 급한 플레이어는 '누르는 동안 빨리감기'(SKIP)로 스킵 가능하므로 기본을 넉넉히 차분하게 둔다.
+// ⚠️ 전투 중일 때만 적용 — 오버월드 mw(트레이너 발견·낚시·NPC 걸음)는 원래 타이밍 유지.
+const BATTLE_PACE=1.35;
 function wait(ms){ if(SKIP)return delay(28); return delay(ms*CONFIG.textSpeed); }
 // 메시지 표시 대기. 수동 모드(battleText==="tap")에선 탭/키 입력을 기다린다(포켓몬식 진행).
-// 자동 모드에선 wait와 동일. SKIP(빨리감기 홀드) 중엔 즉시 통과.
+// 자동 모드에선 wait와 동일하되 전투 중엔 BATTLE_PACE만큼 더 머문다. SKIP(빨리감기 홀드) 중엔 즉시 통과.
 function mw(ms){ if(SKIP)return delay(28);
-  if(CONFIG.battleText==="tap" && typeof G!=="undefined" && G && G.inBattle)return tapGate(ms);
-  return delay(ms*CONFIG.textSpeed); }
+  const inB=typeof G!=="undefined" && G && G.inBattle;
+  if(CONFIG.battleText==="tap" && inB)return tapGate(ms);
+  return delay(ms*CONFIG.textSpeed*(inB?BATTLE_PACE:1)); }
 function tapGate(fallbackMs){
   return new Promise(res=>{ let done=false;
     const finish=()=>{ if(done)return; done=true; cleanup(); showAdvanceCue(false); res(); };

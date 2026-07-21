@@ -118,6 +118,13 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 전투 페이스 (`BATTLE_PACE`) — "너무 빠르고 정신없다" 대응
+전투 기본 속도가 빨라 메시지가 뭐가 일어났는지 못 읽고 넘어간다는 피드백 → **메시지 대기(`mw`)만** 전투 중일 때 `BATTLE_PACE`(현재 1.35)배 늘렸다. **히트 애니(`fxT`/`wait`)는 안 건드린다** — "쫀득한 타격 → 텍스트가 잠깐 머묾 → 다음" 리듬이 목표(애니까지 늘리면 쫀득함이 죽고 늘어진다).
+- ⚠️ **전투 중일 때만** 적용(`mw`가 `G.inBattle`로 분기) — 오버월드 `mw`(트레이너 발견·낚시·NPC 걸음)는 원래 타이밍 유지.
+- `CONFIG.textSpeed`(설정 "전투 속도" 빠름0.6/보통1/느긋1.6)와 곱해진다 → 유저가 상대적으로 더 빠르게/느리게 조절 가능. 급하면 자동 모드에서 화면 홀드로 빨리감기(`SKIP` → `delay(28)`).
+- **페이스 조정은 `BATTLE_PACE` 한 값만 만지면 된다**(단일 노브). 저장 호환 영향 없음(textSpeed 안 건드림).
+- 전투 타이밍 테스트(protect·coach·exp·stage_rank·switchmoves·battle_nav·victory_music·lowhp·playthrough)는 busy 폴링/실측 예산이라 mw 35% 증가에도 통과 확인.
+
 ## 순수 규칙 계층 (`src/rules/`) — 브라우저 없는 단위 테스트
 테스트 64개 중 56개가 Chromium을 띄우고 있었는데, 상당수는 **브라우저가 필요해서가 아니라 코드가 HTML 안에 갇혀 있어서**였다. 순수 로직을 떼어내 node에서 바로 돌린다.
 
