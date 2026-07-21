@@ -966,6 +966,9 @@ const MOVES={
   bind:{name:"조이기",type:"normal",power:28,acc:90,pp:20,pri:0,eff:{trap:true}},             // 4~5턴 묶어 잔뎀 + 도주·교체 봉쇄
   fly:{name:"날기",type:"flying",power:75,acc:95,pp:10,pri:0,eff:{charge:true,invuln:true,chargeMsg:"은(는) 하늘 높이 날아올랐다!"}},   // 1턴 충전(반무적) → 2턴째 공격
   solarbeam:{name:"솔라빔",type:"grass",power:100,acc:100,pp:10,pri:0,eff:{charge:true,chargeMsg:"은(는) 빛을 모으고 있다!"}},            // 1턴 충전 → 강력한 한 방
+  encore:{name:"앵콜",type:"normal",power:0,acc:100,pp:5,pri:0,eff:{encore:true}},    // 상대를 마지막 기술로 3턴 고정
+  taunt:{name:"도발",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{taunt:true}},     // 상대가 3턴간 변화기를 못 쓴다
+  disable:{name:"방해",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{disable:true}}, // 상대의 마지막 기술을 4턴 봉쇄
   focusenergy:{name:"기합충전",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{crit:2,target:"self"}},
   slash:{name:"가르기",type:"normal",power:58,acc:100,pp:20,pri:0,highCrit:true},
   crosschop:{name:"크로스촙",type:"rock",power:72,acc:85,pp:10,pri:0,highCrit:true},
@@ -997,6 +1000,9 @@ function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; c
   if(e.trap)p.push("4~5턴 속박(잔뎀+도주·교체 봉쇄)");
   if(e.selfKO)p.push("큰 피해 · 자신도 기절");
   if(e.charge)p.push(e.invuln?"1턴 충전(반무적)":"1턴 충전 후 강타");
+  if(e.encore)p.push("상대를 마지막 기술로 3턴 고정");
+  if(e.taunt)p.push("상대 변화기 3턴 봉쇄");
+  if(e.disable)p.push("상대 마지막 기술 봉인");
   if(mo.highCrit)p.push("급소율 높음");
   if(e.weather)p.push(({sun:"날씨 쨍쨍",rain:"날씨 비",sand:"날씨 모래바람"}[e.weather]||"날씨 변화"));
   if(e.hazard)p.push(e.hazard==="rock"?"바위 설치":"압정 설치");
@@ -1171,9 +1177,11 @@ function recalc(m,sp,full){ sp=sp||byId(m.id);
 function noPP(m){ return m.moves.every(mv=>(m.pp[mv]||0)<=0); }
 function foeChooseMove(foe,target){
   if(!foe||!foe.moves)return "struggle"; const st=foe.stages||newStages(); const tgt=target||{status:null,hp:1,maxHp:1,type:"normal"};
-  const usable=foe.moves.filter(mv=>(foe.pp[mv]||0)>0); if(!usable.length)return "struggle";
+  let usable=foe.moves.filter(mv=>(foe.pp[mv]||0)>0); if(!usable.length)return "struggle";
   if(foe._charging) return foe._charging;   // 2턴기 충전 중이면 재부상 공격을 계속
+  if(foe._encore && foe._encore.turns>0 && (foe.pp[foe._encore.move]||0)>0) return foe._encore.move;   // 앵콜: 마지막 기술 강제
   if(foe._choiceLock && (foe.pp[foe._choiceLock]||0)>0) return foe._choiceLock;   // 구애 고정
+  { const _f=usable.filter(mv=>!(foe._taunt>0&&MOVES[mv].power===0) && !(foe._disable&&foe._disable.turns>0&&mv===foe._disable.move)); if(_f.length)usable=_f; }   // 도발·방해로 못 쓰는 기술 제외
   // 방어: 직전에 방어하지 않았을 때만 가끔(연속 실패 규칙과 맞물려 스팸 방지).
   const protectMoves=usable.filter(mv=>MOVES[mv].eff&&MOVES[mv].eff.protect);
   if(protectMoves.length && !foe._protect && (foe._protectStreak||0)===0 && Math.random()<0.22) return protectMoves[0];
@@ -2631,7 +2639,7 @@ function maybeRematch(t){ const tr=TRAINERS[t];
 function firstAliveIdx(){ if(!G||!G.party)return 0; for(let i=0;i<G.party.length;i++){ if(G.party[i]&&G.party[i].hp>0)return i; } return 0; }
 function transitionToBattle(after){ heldDir=null; stopPath(); if(G)G.active=firstAliveIdx();   // 포켓몬식: 전투 선두 = 파티 첫 생존 정령(슬롯0). 재정렬로 순서 바꾸면 나오는 정령도 바뀜.
   G.runTries=0; G.battleTurn=0;   // 퀵볼: 첫 턴(공격 전) 판정용
-  G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; if(G.party)G.party.forEach(m=>{ if(m){ m._confuse=0; m._seeded=false; m._flinch=false; m._acted=false; m._protect=false; m._protectStreak=0; m._choiceLock=null; m._attract=false; m._trapped=0; m._charging=null; m._invuln=false; } }); if(G.foe){ G.foe._confuse=0; G.foe._seeded=false; G.foe._flinch=false; G.foe._acted=false; G.foe._protect=false; G.foe._protectStreak=0; G.foe._choiceLock=null; G.foe._attract=false; G.foe._trapped=0; G.foe._charging=null; G.foe._invuln=false; } const wrap=$("canvasWrap"); wrap.classList.add("zoom");
+  G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; if(G.party)G.party.forEach(m=>{ if(m){ m._confuse=0; m._seeded=false; m._flinch=false; m._acted=false; m._protect=false; m._protectStreak=0; m._choiceLock=null; m._attract=false; m._trapped=0; m._charging=null; m._invuln=false; m._encore=null; m._taunt=0; m._disable=null; } }); if(G.foe){ G.foe._confuse=0; G.foe._seeded=false; G.foe._flinch=false; G.foe._acted=false; G.foe._protect=false; G.foe._protectStreak=0; G.foe._choiceLock=null; G.foe._attract=false; G.foe._trapped=0; G.foe._charging=null; G.foe._invuln=false; G.foe._encore=null; G.foe._taunt=0; G.foe._disable=null; } const wrap=$("canvasWrap"); wrap.classList.add("zoom");
   const fl=$("flash"); fl.classList.remove("go"); void fl.offsetWidth; fl.classList.add("go");
   const covered=playBattleWipe();   // 블라인드 바가 화면을 덮는 시점(ms)을 돌려줌
   const seq=!(typeof G!=="undefined" && G && G.trainer);   // 야생·보스 = 순차 인트로, 트레이너 = 즉시(별도 등장 대사 있음)
@@ -3180,9 +3188,11 @@ function showMoves(){ mainMenu.style.display="none"; moveMenu.style.display="gri
   if(noPP(me)){ const b=document.createElement("button"); b.className="mbtn move-btn";
     b.innerHTML=`<div class="top"><span>발버둥</span><span class="pp">PP —</span></div><span class="mp">노말 · 반동</span>`;
     b.addEventListener("click",()=>{Audio.sfx("blip");doMove("struggle");}); moveMenu.appendChild(b); battleFocus(0); return; }
-  // 2턴기 충전 중이면 그 기술만(PP 무관, 이미 냈다). 아니면 구애 고정.
-  const _locked=me._charging?me._charging:((me._choiceLock && (me.pp[me._choiceLock]||0)>0)?me._choiceLock:null);
-  me.moves.forEach(mv=>{ const mo=MOVES[mv]; const pp=me.pp[mv]||0; const b=document.createElement("button"); b.className="mbtn move-btn"; b.disabled=(mv===me._charging)?false:(pp<=0||(_locked&&mv!==_locked));
+  // 잠금 우선순위: 2턴기 충전 > 앵콜 > 구애. + 도발(변화기 봉쇄)·방해(그 기술 봉인).
+  const _enc=(me._encore && me._encore.turns>0 && (me.pp[me._encore.move]||0)>0)?me._encore.move:null;
+  const _locked=me._charging?me._charging:(_enc||((me._choiceLock && (me.pp[me._choiceLock]||0)>0)?me._choiceLock:null));
+  me.moves.forEach(mv=>{ const mo=MOVES[mv]; const pp=me.pp[mv]||0; const b=document.createElement("button"); b.className="mbtn move-btn";
+    b.disabled=(mv===me._charging)?false:(pp<=0||(_locked&&mv!==_locked)||(me._taunt>0&&mo.power===0)||(me._disable&&me._disable.turns>0&&mv===me._disable.move));
     let eff=""; if(mo.power>0 && G.foe){ let e=EFF[mo.type][G.foe.type]; if(G.foe.type2&&G.foe.type2!==G.foe.type)e*=EFF[mo.type][G.foe.type2];
       if(e>=4)eff=`<span class="eff-tag eff-good">효과 매우 굉장</span>`; else if(e>1)eff=`<span class="eff-tag eff-good">효과 굉장</span>`; else if(e>0&&e<=0.25)eff=`<span class="eff-tag eff-bad">효과 매우 별로</span>`; else if(e<1)eff=`<span class="eff-tag eff-bad">효과 별로</span>`; }
     const desc=`${TYPE_KO[mo.type]} · ${moveDesc(mv)||"변화"}`;
@@ -3625,6 +3635,7 @@ async function performMove(att,def,mvKey,side){ let move=MOVES[mvKey]; let _resu
   if(!_resurf && mvKey!=="struggle" && att.pp[mvKey]!=null) att.pp[mvKey]=Math.max(0,att.pp[mvKey]-1);
   if(mvKey!=="protect") att._protectStreak=0;   // 방어가 아닌 기술을 쓰면 연속 카운터 리셋(다음 방어는 다시 성공)
   if(!att._choiceLock && mvKey!=="struggle" && !_resurf){ const _ci=HELD_ITEMS[att.held]; if(_ci&&_ci.lock)att._choiceLock=mvKey; }   // 구애 아이템: 처음 쓴 기술로 고정
+  if(mvKey!=="struggle")att._lastMove=mvKey;   // 앵콜·방해용: 마지막으로 쓴 기술 기록
   // 2턴기 1턴째: 충전만 하고 피해 없음(날기=반무적). 다음 턴에 재부상하며 공격.
   if(!_resurf && move.eff && move.eff.charge){
     att._charging=mvKey; if(move.eff.invuln)att._invuln=true;
@@ -3664,6 +3675,9 @@ async function performMove(att,def,mvKey,side){ let move=MOVES[mvKey]; let _resu
       if(!def.gender||def.gender==="N"||!att.gender||att.gender==="N"||def.gender===att.gender){ setMsg("효과가 없는 것 같다…"); }
       else if(def._attract){ setMsg("이미 헤롱헤롱 상태다."); }
       else { def._attract=true; Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>은(는) 헤롱헤롱해졌다! 💕`); } }
+    else if(move.eff.encore){ if(def._lastMove && MOVES[def._lastMove] && (def.pp[def._lastMove]||0)>0 && !(def._encore&&def._encore.turns>0)){ def._encore={move:def._lastMove,turns:3}; Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>은(는) 앵콜에 걸려 같은 기술만 쓰게 됐다!`); } else { setMsg("효과가 없었다…"); } }
+    else if(move.eff.taunt){ if(def._taunt>0){ setMsg("이미 도발 상태다."); } else { def._taunt=3; Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>은(는) 도발당해 변화기를 못 쓴다!`); } }
+    else if(move.eff.disable){ if(def._lastMove && MOVES[def._lastMove] && !(def._disable&&def._disable.turns>0)){ def._disable={move:def._lastMove,turns:4}; Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>의 <b>${MOVES[def._lastMove].name}</b>이(가) 봉인됐다!`); } else { setMsg("효과가 없었다…"); } }
     else if(move.eff.weather){ G.weather=move.eff.weather; G.weatherTurns=5; if(typeof applyWeather==="function")applyWeather(); Audio.sfx("blip"); setMsg({sun:"☀️ 햇살이 강해졌다!",rain:"🌧️ 비가 내리기 시작했다!",sand:"🌪️ 모래바람이 휘몰아친다!",hail:"🌨️ 싸라기눈이 흩날린다!"}[move.eff.weather]||"날씨가 변했다!"); }
     else if(move.eff.hazard){ if(!G.hazards)G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; const hz=(side==="me")?G.hazards.foe:G.hazards.me; Audio.sfx("blip"); if(move.eff.hazard==="rock"){ if(hz.rock){ setMsg("이미 바위가 떠 있다."); } else { hz.rock=true; setMsg("상대 발밑에 날카로운 바위가 떠올랐다!"); } } else { if(hz.spikes>=3){ setMsg("더는 압정을 뿌릴 수 없다."); } else { hz.spikes++; setMsg("상대 발밑에 압정을 흩뿌렸다!"); } } }
     await mw(540); return; }
@@ -3936,7 +3950,11 @@ async function doMove(mvKey){ if(G.busy)return; G.busy=true; G.battleTurn=(G.bat
   for(const [side,key,att,def] of seq){ if(att.hp<=0||def.hp<=0)continue;
     if(!(await canAct(att,side))){ att._acted=true; continue; } att._acted=true; await performMove(att,def,key,side); if(def.hp<=0)break; }
   }
-  { const _mA=activeMon(); if(_mA)_mA._protect=false; if(G.foe)G.foe._protect=false; }   // 방어는 이번 턴만 유효
+  { const _mA=activeMon(); if(_mA)_mA._protect=false; if(G.foe)G.foe._protect=false;   // 방어는 이번 턴만
+    [_mA,G.foe].forEach(_c=>{ if(!_c)return;   // 앵콜·도발·방해 카운터 감소(0이면 해제)
+      if(_c._encore&&_c._encore.turns>0){ _c._encore.turns--; if(_c._encore.turns<=0){ setMsg(`<b>${dispName(_c)}</b>의 앵콜이 풀렸다.`); _c._encore=null; } }
+      if(_c._taunt>0){ _c._taunt--; }
+      if(_c._disable&&_c._disable.turns>0){ _c._disable.turns--; if(_c._disable.turns<=0)_c._disable=null; } }); }
   if(_phaseEnded){ _phaseEnded=false; endBattle(); return; }
   if(G.screens){ ["me","foe"].forEach(sd=>{ ["reflect","light"].forEach(k=>{ if(G.screens[sd]&&G.screens[sd][k]>0){ G.screens[sd][k]--; } }); }); }
   if(G.weatherTurns>0){ G.weatherTurns--; if(G.weatherTurns<=0){ G.weather=null; if(typeof applyWeather==="function")applyWeather(); setMsg("날씨가 원래대로 돌아왔다."); } }
@@ -3967,7 +3985,7 @@ async function doPhaseOut(att,def,side){
   if(!G.trainer){ setMsg(`<b>${dispName(def)}</b>은(는) 놀라 달아났다!`); Audio.sfx("escape"); await mw(800); _phaseEnded=true; return; }
   const t=G.trainer; const nxt=trainerNextAlive();
   if(nxt<0){ setMsg("하지만 바꿀 정령이 없었다!"); await mw(700); return; }
-  resetStages(def); def._confuse=0; def._seeded=false; def._flinch=false; def._protect=false; def._protectStreak=0; def._choiceLock=null; def._attract=false; def._trapped=0; def._charging=null; def._invuln=false;
+  resetStages(def); def._confuse=0; def._seeded=false; def._flinch=false; def._protect=false; def._protectStreak=0; def._choiceLock=null; def._attract=false; def._trapped=0; def._charging=null; def._invuln=false; def._encore=null; def._taunt=0; def._disable=null;
   setMsg(`<b>${dispName(def)}</b>이(가) 억지로 끌려나갔다!`); Audio.sfx("blip"); await mw(700);
   t.idx=nxt; G.foe=trainerMon(nxt); G.seen.add(G.foe.id);
   $("foeSprite").classList.remove("faint");
@@ -4007,7 +4025,7 @@ async function foeMaybeSwitch(){
   if(bestI<0)return false;
   if(Math.random()<0.25)return false;                // 항상 완벽하진 않게 — 읽히면 재미없다
   t.switches++;
-  const outMon=G.foe; resetStages(outMon); outMon._confuse=0; outMon._seeded=false; outMon._flinch=false; outMon._protect=false; outMon._protectStreak=0; outMon._choiceLock=null; outMon._attract=false; outMon._trapped=0; outMon._charging=null; outMon._invuln=false;
+  const outMon=G.foe; resetStages(outMon); outMon._confuse=0; outMon._seeded=false; outMon._flinch=false; outMon._protect=false; outMon._protectStreak=0; outMon._choiceLock=null; outMon._attract=false; outMon._trapped=0; outMon._charging=null; outMon._invuln=false; outMon._encore=null; outMon._taunt=0; outMon._disable=null;
   setMsg(`${t.name}이(가) <b>${dispName(outMon)}</b>을(를) 되돌렸다!`); Audio.sfx("blip"); await mw(700);
   t.idx=bestI; G.foe=trainerMon(bestI); G.seen.add(G.foe.id);
   $("foeSprite").classList.remove("faint");
@@ -4430,7 +4448,7 @@ async function tryCatch(ballKey){ if(G.busy)return; if(G.trainer){ setMsg("트�
     fxCaptureFlash(foeC); particles("foe","✨",14); for(let k=0;k<8;k++){ const a=k/8*6.28,e=fxGlyph("⭐",{x:foeC.x,y:foeC.y},"#ffe08a","fx-particle"); e.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:`translate(-50%,-50%) translate(${Math.cos(a)*44}px,${Math.sin(a)*44}px) scale(1)`,opacity:0}],{duration:fxT(620),easing:"ease-out",fill:"forwards"}).finished.then(()=>e.remove()).catch(()=>e.remove()); } foeSp.classList.add("faint"); await wait(fxT(560)); ballEl.remove();
     const _dexNew=!G.caught.has(foe.id);   // 포획 전 도감 신규 여부
     G.caught.add(foe.id); G.questFlags=G.questFlags||{}; if(sp.type==="water")G.questFlags.waterCaught=true; if(typeof NIGHT_MONS!=="undefined"&&NIGHT_MONS.has(foe.id))G.questFlags.nightCaught=true; if(G.indoor==="cave")G.questFlags.caveCatch=true; const cap=foe;   // 잡은 정령 = 그 야생 정령 그대로. 예전엔 makeMon로 새로 만들어 샤이니·개성(IV)·성격·성별·기술이 전부 사라졌다.
-    cap.hp=Math.max(1,foe.hp); cap.stages=newStages(); cap._confuse=0; cap._seeded=false; cap._flinch=false; cap._acted=false; cap._protect=false; cap._protectStreak=0; cap._choiceLock=null; cap._attract=false; cap._trapped=0; cap._charging=null; cap._invuln=false; cap.wild=false;
+    cap.hp=Math.max(1,foe.hp); cap.stages=newStages(); cap._confuse=0; cap._seeded=false; cap._flinch=false; cap._acted=false; cap._protect=false; cap._protectStreak=0; cap._choiceLock=null; cap._attract=false; cap._trapped=0; cap._charging=null; cap._invuln=false; cap._encore=null; cap._taunt=0; cap._disable=null; cap.wild=false;
     if(ball==="healball"){ recalc(cap); cap.hp=cap.maxHp; cap.status=null; cap._slp=0; cap._tox=0; }   // 힐볼: 포획과 동시에 완전 회복
     if(_dexNew){ await mw(560); Audio.sfx("buy"); setMsg(`📖 <b>${foe.name}</b>의 데이터를 도감에 새로 등록했다!`); }
     if(G.party.length<6){ G.party.push(cap); await mw(700); setMsg("파티에 합류했다!"); }
@@ -4468,7 +4486,7 @@ function renderSwitch(){ const body=$("switchBody"); body.innerHTML="";
     card.querySelector(".pick").addEventListener("click",()=>chooseSwitch(i)); body.appendChild(card); }); }
 async function chooseSwitch(i){ if(i===G.active||!G.party[i]||G.party[i].hp<=0)return; if(G.party[i].isEgg){ flashHint("알은 전투에 낼 수 없다!"); return; } Audio.sfx("blip");
   // 물러나는 정령은 랭크·혼란·씨앗이 사라진다(본가 규칙). 뒤로 뺐다 내보내며 부스트 유지하는 익스플로잇 차단.
-  const _out=G.party[G.active]; if(_out&&_out.hp>0){ resetStages(_out); _out._confuse=0; _out._seeded=false; _out._flinch=false; _out._protect=false; _out._protectStreak=0; _out._choiceLock=null; _out._attract=false; _out._trapped=0; _out._charging=null; _out._invuln=false;
+  const _out=G.party[G.active]; if(_out&&_out.hp>0){ resetStages(_out); _out._confuse=0; _out._seeded=false; _out._flinch=false; _out._protect=false; _out._protectStreak=0; _out._choiceLock=null; _out._attract=false; _out._trapped=0; _out._charging=null; _out._invuln=false; _out._encore=null; _out._taunt=0; _out._disable=null;
     if(_out._tox)_out._tox=1;   // 맹독은 유지되지만 누적 카운터는 1로 리셋(본가 규칙)
     if(_out.ability==="naturalcure" && _out.status){ _out.status=null; _out._tox=0; flashHint(`${dispName(_out)}의 상태이상이 나았다! (자연회복)`); } }
   const _bc=_batonCarry;   // 배턴터치면 랭크·급소랭크·씨앗을 새 정령이 이어받는다
@@ -4706,6 +4724,9 @@ const BAG_ITEMS=[
   {key:"tm_bind",em:"💿",nm:"기술머신: 조이기",ds:"상대를 4~5턴 속박한다",use:"tm",move:"bind",universal:true,where:"map"},
   {key:"tm_fly",em:"💿",nm:"기술머신: 날기",ds:"1턴 날아오른 뒤 강타(반무적)",use:"tm",move:"fly",universal:true,where:"map"},
   {key:"tm_solarbeam",em:"💿",nm:"기술머신: 솔라빔",ds:"1턴 충전 후 강력한 풀 기술",use:"tm",move:"solarbeam",universal:true,where:"map"},
+  {key:"tm_encore",em:"💿",nm:"기술머신: 앵콜",ds:"상대를 마지막 기술로 3턴 고정",use:"tm",move:"encore",universal:true,where:"map"},
+  {key:"tm_taunt",em:"💿",nm:"기술머신: 도발",ds:"상대의 변화기를 3턴 봉쇄",use:"tm",move:"taunt",universal:true,where:"map"},
+  {key:"tm_disable",em:"💿",nm:"기술머신: 방해",ds:"상대의 마지막 기술을 봉인",use:"tm",move:"disable",universal:true,where:"map"},
   {key:"tm_leechseed",em:"💿",nm:"기술머신: 씨뿌리기",ds:"매 턴 상대 체력을 흡수",use:"tm",move:"leechseed",universal:true,where:"map"},
   {key:"tm_confuse",em:"💿",nm:"기술머신: 혼란파",ds:"상대를 혼란에 빠뜨린다",use:"tm",move:"confuse",universal:true,where:"map"},
   {key:"tm_stealthrock",em:"💿",nm:"기술머신: 스텔스록",ds:"상대가 교체할 때마다 바위 피해",use:"tm",move:"stealthrock",universal:true,where:"map"},
@@ -4854,6 +4875,9 @@ const SHOP=[
   {key:"tm_selfdestruct",em:"💿",nm:"기술머신: 자폭",ds:"큰 피해 후 자신도 기절",price:1400,need:3},
   {key:"tm_fly",em:"💿",nm:"기술머신: 날기",ds:"1턴 충전(반무적) 후 강타",price:1600,need:2},
   {key:"tm_solarbeam",em:"💿",nm:"기술머신: 솔라빔",ds:"1턴 충전 후 강력한 풀 기술",price:1600,need:3},
+  {key:"tm_encore",em:"💿",nm:"기술머신: 앵콜",ds:"상대를 마지막 기술로 3턴 고정",price:1300,need:2},
+  {key:"tm_taunt",em:"💿",nm:"기술머신: 도발",ds:"상대 변화기 3턴 봉쇄",price:1300,need:2},
+  {key:"tm_disable",em:"💿",nm:"기술머신: 방해",ds:"상대 마지막 기술 봉인",price:1200,need:2},
   {key:"tm_leechseed",em:"💿",nm:"기술머신: 씨뿌리기",ds:"매 턴 체력 흡수",price:1500,need:3},
   {key:"tm_stealthrock",em:"💿",nm:"기술머신: 스텔스록",ds:"교체 시 바위 피해",price:1700,need:3},
   {key:"tm_spikes",em:"💿",nm:"기술머신: 압정뿌리기",ds:"교체 시 압정 피해",price:1600,need:3},

@@ -118,6 +118,13 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 기술 제어 (앵콜·도발·방해)
+상대 행동을 제약하는 층. `performMove`가 `att._lastMove=mvKey`로 마지막 기술을 기록.
+- **앵콜**(`eff.encore`): 상대를 `_lastMove`로 3턴 고정(`_encore={move,turns}`). **도발**(`eff.taunt`): 3턴간 변화기(power0) 봉쇄(`_taunt`). **방해**(`eff.disable`): 상대 `_lastMove`를 4턴 봉인(`_disable={move,turns}`).
+- **제어 반영 2곳**: `showMoves`(앵콜=그 기술만·PP무관, 도발=변화기 disabled, 방해=그 기술 disabled) + `foeChooseMove`(앵콜 강제 return, 도발·방해로 못 쓰는 기술 usable에서 제외). 잠금 우선순위 **충전 > 앵콜 > 구애**.
+- 카운터는 `doMove` 턴 끝에 감소(0이면 해제) — ⚠️ **적용 턴에도 1 감소**하니 3턴기는 적용 직후 2로 보인다(테스트 기대치 주의).
+- `_encore`/`_taunt`/`_disable`은 휘발성 → 리셋 지점 6곳. **획득은 범용 TM(플레이어 전용)이라 트레이너·야생이 안 쓴다 → 밸런스·`battle_sim` 무관**(sim 모델링 생략, foeChooseMove 분기는 no-op으로 안전). 회귀 `scripts/movecontrol_test.js`.
+
 ### 2턴기 (날기·솔라빔)
 충전 개념이 없던 것을 추가. `eff.charge`(+선택 `eff.invuln`) 2턴 기술.
 - **날기**(`charge+invuln`): 1턴째 하늘로(반무적 — 상대 공격 안 닿음), 2턴째 재부상 강타. **솔라빔**(`charge`만): 1턴 충전 후 강력한 풀 기술(무적 아님).
