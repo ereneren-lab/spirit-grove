@@ -118,6 +118,13 @@ verify 내용:
 - **이동 방식** `CONFIG.gridMove`: `false`(기본, 탭/키로 바로 이동) / `true`(그리드: 새 방향 첫 입력은 제자리 회전, 홀드하면 걷기 — 포켓몬식). move()에서 `!auto && Field.dir!==dir`일 때 회전 후 130ms 뒤 heldDir이면 이동. 회귀 `scripts/grid_move_test.js`.
 - 저장: `cfg.bt`/`cfg.gm`. 설정 UI 세그먼트.
 
+### 낚싯대 등급 (구·좋은·초)
+예전엔 `G.hasRod` 하나로 대물(fishRare) 확률이 25% 고정이었다 → `G.rodTier`(1/2/3)로 등급제.
+- 대물 확률 `[0,0.10,0.30,0.55][tier]`, 상위 등급일수록 낚이는 레벨도 +2씩. `startFishEncounter`에서 파생.
+- 좋은/초 낚싯대(`use:"rodup"`, tier)로 업그레이드(상점 need:2/3). q_water가 첫 낚싯대와 함께 `rodTier=1` 부여.
+- ⚠️ **구세이브 마이그레이션**: `deserialize`에서 `rodTier`가 없으면 `hasRod?1:0`. 세이브 키 `rodTier`.
+- ⚠️ 인라인 `//` 주석을 **한 줄짜리 함수 중간에 넣지 말 것** — `startFishEncounter`가 원래 한 줄이라 줄 끝 주석이 나머지(`G.foe=...}`)를 통째로 주석처리해 함수 `}`가 사라졌다(빌드 문법오류). 회귀 `scripts/fishing_test.js`(등급·대물확률·마이그레이션).
+
 ### 배틀 기술 확장 (자폭·헤롱헤롱·묶기)
 - **자폭**(`eff.selfKO`): 큰 피해 후 사용자도 기절. `performMove` 데미지기 후처리에서 `att.hp=0`(상대 생사 무관). doMove의 사후 판정이 faint 처리.
 - **헤롱헤롱**(`eff.attract`): 이성(M↔F)에게만 `_attract` 볼라타일. `canAct`에서 50% 못 움직임. 동성·무성(N)은 무효. `_confuse`처럼 STATUSES가 아닌 볼라타일.
