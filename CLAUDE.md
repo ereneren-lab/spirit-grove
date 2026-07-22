@@ -136,6 +136,12 @@ verify 내용:
 ### 신규 지역 — 고대 유적(ruins)
 normal·rock·ground의 "고대/석 계열"(lumbeast·wyverna·thumplord·terrapin 등)이 흩어져 있어 → **고대 유적** 신설(봉우리와 같은 템플릿). 진입 `z`(14,27, region 3 깊은 숲) · 가드 `h`(유적 수호자, GUARD_TILES 추가) · 조우 10종 · 렌더 더스티 스톤 틴트 · fieldMusic="cave" · 로어 `N` · 바닥도구 3 · 저장 `ruinsSeen`. 봉우리에서 정립한 19-포인트 배선을 재사용 — **템플릿이 검증됐다**(늪지→봉우리→유적). 회귀는 `skyridge_test.js`가 두 지역을 병렬로 커버. dex_flavor는 HABITAT_KO를 읽게 고쳐놔서 새 지역 자동 반영.
 
+### 바다 미니보스 (여명의 섬 · 해일군주)
+`NO_WILD` 3종 중 천공룡·거암왕만 보스로 열려 있고 **해일군주(tidalore)만 대체 획득 경로가 없었다** → 여명의 섬 북쪽 곶에 **조수 제단 `@`**(12,1)을 놓아 대칭을 맞췄다. 봉우리·유적 미니보스와 **같은 배선**(`startSeaBoss` · move() 스코프 타일 핸들러 · done-flag `seaBossDone`을 winBattle·tryCatch + freshState/serialize/deserialize 양쪽).
+- 섬은 **낚싯대 + 배**가 있어야 오므로 중후반 게이트가 자연히 걸린다(해안 `W`는 시작 마을 옆이라 거기 두면 초반에 Lv45 보스를 만난다 — 일부러 섬에 뒀다).
+- `@` 렌더는 shrine/skyridge/ruins와 공용(특수 틴트 분기 안) — **4번째 인테리어가 같은 글자를 쓰고 핸들러만 `G.indoor`로 갈린다.**
+- 회귀 `skyridge_test.js`에 조우·done-flag 왕복 + **NO_WILD 3종이 야생 풀에 없음**(보스가 유일 경로라는 전제) 단정.
+
 ### 신규 지역 미니보스 (봉우리·유적)
 두 신규 지역에 클라이맥스 겸 **진화전용(NO_WILD) 종의 대체 획득 경로**를 깔았다. 봉우리 정상(`@` 7,1)=천공룡(skydrake), 유적 중앙(`@` 7,6)=거암왕(megalith). 둘 다 원래 야생 미출현(wyverna→Lv42 / boulderin→Lv36 진화로만) → 보스전으로 **잡을 수 있는** 유일한 길.
 - **아트 0장** — 이미 있는 종을 재활용. **비전설**이라 전설 -0.38 포획 페널티 없이 정상 포획률(대체 경로답게).

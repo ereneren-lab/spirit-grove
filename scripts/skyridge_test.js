@@ -156,7 +156,21 @@ const { chromium } = require("playwright"); const path=require("path");
     const okd=F.deserialize(JSON.parse(JSON.stringify(F.serialize()))); return { okd, round:!!S.G().gardenSeen }; });
   ok(gs.okd && gs.round, "gardenSeen 세이브/로드 보존");
 
+  /* ===== 바다 미니보스(해일군주) — NO_WILD 3종의 대체 획득 경로를 완성 ===== */
+  const sea=await p.evaluate(()=>{ const S=window.SG, F=S.flow; S.setG(S.freshState()); const G=S.G();
+    G.party=[S.makeMon("otterwave",44)]; G.busy=false;
+    const isleHasAt=F.INTERIORS.isle.str.join("").indexOf("@")>=0;
+    G.indoor="isle"; F.startSeaBoss(); const foe=S.G().foe&&S.G().foe.id;
+    // NO_WILD 3종이 이제 전부 보스로 잡을 수 있다(야생 조우 풀엔 여전히 없다)
+    const noWild=[...S.NO_WILD], inAnyPool=noWild.filter(id=>Object.keys(F.ENC_POOLS).some(k=>F.ENC_POOLS[k].indexOf(id)>=0));
+    S.setG(S.freshState()); const G2=S.G(); G2.party=[S.makeMon("otterwave",44)]; G2.seaBossDone=true;
+    const okd=F.deserialize(JSON.parse(JSON.stringify(F.serialize())));
+    return { isleHasAt, foe, noWild, inAnyPool, okd, saved:!!S.G().seaBossDone }; });
+  ok(sea.isleHasAt && sea.foe==="tidalore", `여명의 섬 조수 제단 @ + 해일군주 조우 (${sea.foe})`);
+  ok(sea.okd && sea.saved, "seaBossDone 세이브/로드 보존");
+  ok(sea.inAnyPool.length===0, `NO_WILD 3종은 야생 조우 풀에 없다 (${sea.noWild.join(",")})`);
+
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
-  console.log(process.exitCode?"\n❌ 실패":"\n🎉 신규 지역(봉우리·유적·분화구·화원) 통과");
+  console.log(process.exitCode?"\n❌ 실패":"\n🎉 신규 지역(봉우리·유적·분화구·화원) + 미니보스 통과");
   await b.close(); process.exit(process.exitCode||0);
 })();
