@@ -1735,7 +1735,7 @@ const QUESTS=[
 ];
 function questForGiver(id){ let offer=null; for(const q of QUESTS){ if(q.giver!==id)continue; const st=G.quests&&G.quests[q.id]; if(st==="active")return q; if(!st&&!offer)offer=q; } return offer; }
 function grantReward(r){ if(!G.items)G.items={}; for(const k in r){ G.items[k]=(G.items[k]||0)+r[k]; } }
-function rewardText(r){ return Object.keys(r).map(k=>`${(typeof ITEM_KO!=="undefined"&&ITEM_KO[k])||k} ×${r[k]}`).join(", "); }
+function rewardText(r){ return Object.keys(r).map(k=>`${itemName(k)} ×${r[k]}`).join(", "); }
 function handleQuestTalk(q,npc){ G.quests=G.quests||{}; const st=G.quests[q.id]; let pages,cb;
   if(!st){ _npcTalk[npc.id]=(_npcTalk[npc.id]||0)+1; const intro=(_npcTalk[npc.id]===1&&npc.lines)?npc.lines:[]; pages=intro.concat(q.offer); cb=()=>{ G.quests[q.id]="active"; if(q.id==="q_water"&&!G.hasRod){ G.hasRod=true; G.rodTier=1; toast("🎣 낡은 낚싯대를 얻었다!"); } toast("📜 의뢰 수락: "+q.title); if(typeof saveGame==="function")saveGame(); }; }
   else if(st==="active"&&q.check()){ pages=q.done; cb=()=>{ grantReward(q.reward); G.quests[q.id]="done"; toast("🎁 보상: "+rewardText(q.reward)); if(typeof saveGame==="function")saveGame(); }; }
@@ -2470,7 +2470,7 @@ function onArrived(){
   const _gi=groundItemAt(G.pos.x,G.pos.y);
   if(_gi){ flashHint("Ⓐ 눌러서 도구를 줍는다"); }
   const _hid=hiddenAt(G.pos.x,G.pos.y);
-  if(_hid && !(G.found||[]).includes(_hid.k)){ G.found=G.found||[]; G.found.push(_hid.k); const it=_hid.item,q=_hid.qty||1; G.items[it]=(G.items[it]||0)+q; Audio.sfx("buy"); flashHint(`💎 숨겨진 ${ITEM_KO[it]||it} ×${q} 발견!`); saveGame(); }
+  if(_hid && !(G.found||[]).includes(_hid.k)){ G.found=G.found||[]; G.found.push(_hid.k); const it=_hid.item,q=_hid.qty||1; G.items[it]=(G.items[it]||0)+q; Audio.sfx("buy"); flashHint(`💎 숨겨진 ${itemName(it)} ×${q} 발견!`); saveGame(); }
   if(typeof dayStep==="function")dayStep();
   const _see=sightTrainer();
   if(_see){ stopPath(); spotTrainer(_see); return; }
@@ -2636,7 +2636,7 @@ function interact(){ if(typeof G==="undefined"||!G||G.busy||G.inBattle||dialogAc
 function pickupGroundItem(gi){ if(!gi)return; G.found=G.found||[]; if(G.found.includes(gi.k))return;
   G.found.push(gi.k); G.items[gi.item]=(G.items[gi.item]||0)+(gi.qty||1); Audio.sfx&&Audio.sfx("win");
   if(typeof updateGoal==="function")updateGoal();   // '도구 회수' 퀘스트·트래커 갱신
-  showDialog({name:"", text:`🎁 <b>${ITEM_KO[gi.item]||gi.item}</b>${(gi.qty||1)>1?" ×"+(gi.qty):""}을(를) 주웠다!`});
+  showDialog({name:"", text:`🎁 <b>${itemName(gi.item)}</b>${(gi.qty||1)>1?" ×"+(gi.qty):""}을(를) 주웠다!`});
   saveGame(); }
 function updateRunBtn(){ const b=$("runBtn"); if(b)b.textContent=(G&&G.running)?"👟":"🚶"; }
 function toggleRun(){ G.running=!G.running; if(Field)Field.moveSpeed=G.running?11.4:6.8; updateRunBtn(); flashHint(G.running?"👟 달리기 켜짐":"🚶 걷기 모드"); }
@@ -4702,7 +4702,7 @@ async function trainerDefeated(){ const tr=G.trainer; const firstWin=!G.defeated
   const money=tr.rematch?Math.floor(tr.money*0.5):tr.money; G.money+=money; updateMoney();
   let parts=["💰 "+money];
   if(firstWin){ for(const k in tr.reward){ G.items[k]=(G.items[k]||0)+tr.reward[k];
-    parts.push((ITEM_KO[k]||k)+" ×"+tr.reward[k]); } }
+    parts.push(itemName(k)+" ×"+tr.reward[k]); } }
   setMsg(`보상: ${parts.join(", ")}`); await mw(1100);
   const outro=TRAINERS[tr.key]&&TRAINERS[tr.key].outro;
   if(outro && firstWin){ setMsg(`💬 ${outro}`); await mw(1800); }
@@ -4828,6 +4828,19 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
 
 /* ===================== CATCH / RUN ===================== */
 const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",ultraball:"울트라볼",duskball:"다크볼",netball:"네트볼",quickball:"퀵볼",healball:"힐볼",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프",protein:"단백질",iron:"철분",calcium:"칼슘",zinc:"아연",carbos:"카르본",hpup:"맥스업",mint_adamant:"고집 민트",mint_bold:"대담 민트",mint_timid:"겁쟁이 민트",mint_brave:"용감 민트",mint_relaxed:"무사 민트",bottlecap:"황금 병뚜껑",goodrod:"좋은 낚싯대",superrod:"초 낚싯대"};
+// 아이템 표시명 단일 조회. ⚠️ ITEM_KO만 보면 안 된다 — TM·기력·엘릭서·볼·지닌물건은
+// 각자 다른 테이블(BAG_ITEMS.nm / BALLS.ko / HELD_ITEMS.ko)에 이름이 있어서,
+// 예전엔 바닥에서 기력을 주우면 "ether을(를) 주웠다!"처럼 **키가 그대로 노출**됐다.
+// 이름표를 또 하나의 병렬 테이블로 늘리는 대신, 있는 테이블들을 순서대로 훑는다.
+function itemName(k){
+  if(typeof ITEM_KO!=="undefined"&&ITEM_KO[k])return ITEM_KO[k];
+  if(typeof BALLS!=="undefined"&&BALLS[k]&&BALLS[k].ko)return BALLS[k].ko;
+  if(typeof HELD_ITEMS!=="undefined"&&HELD_ITEMS[k]&&HELD_ITEMS[k].ko)return HELD_ITEMS[k].ko;
+  if(typeof BAG_ITEMS!=="undefined"){ const b=BAG_ITEMS.find(x=>x.key===k); if(b&&b.nm)return b.nm; }
+  if(typeof SHOP!=="undefined"){ const b=SHOP.find(x=>x.key===k); if(b&&b.nm)return b.nm; }
+  if(typeof PREMIUM!=="undefined"){ const b=PREMIUM.find(x=>x.key===k); if(b&&b.nm)return b.nm; }
+  return k;
+}
 const DEX_REWARDS=[
   {n:5,money:300,items:{greatball:3}},{n:10,money:600,items:{hyperpotion:2,repel:1},held:{leftovers:1}},
   {n:15,money:1200,items:{candy:1,revive:1},held:{oranberry:1}},{n:20,money:2000,items:{candy:1,hyperpotion:3},held:{cureberry:1}},
@@ -4842,7 +4855,7 @@ function checkDexRewards(){ if(!G.dexClaimed)G.dexClaimed=[]; if(!G.heldStock)G.
   for(const r of DEX_REWARDS){ if(G.caught.size>=r.n && !G.dexClaimed.includes(r.n)){ G.dexClaimed.push(r.n);
     G.money+=r.money; for(const k in (r.items||{}))G.items[k]=(G.items[k]||0)+r.items[k];
     for(const k in (r.held||{}))G.heldStock[k]=(G.heldStock[k]||0)+r.held[k];
-    const names=[...Object.keys(r.items||{}).map(k=>`${ITEM_KO[k]||k}×${r.items[k]}`),...Object.keys(r.held||{}).map(k=>`${HELD_ITEMS[k].ko}×${r.held[k]}`)].join(", ");
+    const names=[...Object.keys(r.items||{}).map(k=>`${itemName(k)}×${r.items[k]}`),...Object.keys(r.held||{}).map(k=>`${HELD_ITEMS[k].ko}×${r.held[k]}`)].join(", ");
     setTimeout(()=>{ toast(`📖 도감 ${r.n}종 달성! 💰${r.money}${names?" · "+names:""}`); Audio.sfx("levelup"); },400);
   } } }
 function askNickname(mon){ return new Promise(res=>{
@@ -4888,7 +4901,7 @@ async function tryCatch(ballKey){ if(G.busy)return; if(G.trainer){ setMsg("트�
   const bonus=ballBonus(ball,foe);
   const legendPen=sp.legend?0.38:0;   // 전설은 전설답게 — 빈사+상태이상으로 만들어도 쉽게 안 잡힌다
   const chance=clamp((1-hpR)*0.55+0.10+bonus+statusBonus+DIFF[CONFIG.difficulty].catch-lvPen-tierPen-legendPen,0.02,0.92);
-  setMsg(`${(BALLS[ball]&&BALLS[ball].ko)||ITEM_KO[ball]||"볼"}를 던졌다!`); Audio.sfx("throw");
+  setMsg(`${itemName(ball)}를 던졌다!`); Audio.sfx("throw");
   const field=$("battleField"); const fr=field.getBoundingClientRect(); const foeC=fxCenter("foe"); const foeSp=$("foeSprite");
   const ballEl=document.createElement("div"); ballEl.className="catchball "+((BALLS[ball]&&BALLS[ball].cls)||"ball");   // CSS 구(球) — 볼마다 색
   const startX=fr.width*0.18, startY=fr.height*0.78; ballEl.style.left=startX+"px"; ballEl.style.top=startY+"px"; field.appendChild(ballEl);
@@ -5299,7 +5312,7 @@ function useItem(it){ if((G.items[it.key]||0)<=0)return; if(applyItemEffect(it))
 async function battleUseItem(it){ if(G.busy)return; if((G.items[it.key]||0)<=0)return;
   if(typeof bagPocket==="function" && bagPocket(it)==="ball"){ closeOverlay("bagOverlay"); tryCatch(it.key); return; }   // 볼은 tryCatch가 소모·턴을 처리
   if(!applyItemEffect(it))return; renderCombatants(); closeOverlay("bagOverlay");
-  G.busy=true; setMenuEnabled(false); setMsg(`${ITEM_KO[it.key]||"아이템"}을(를) 사용했다!`); await mw(720);
+  G.busy=true; setMenuEnabled(false); setMsg(`${itemName(it.key)}을(를) 사용했다!`); await mw(720);
   await foeFreeTurn();
   if(activeMon().hp<=0){ await faintMine(); return; }
   G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); saveGame(); }
@@ -5344,6 +5357,7 @@ const SHOP=[
   {key:"tm_protect",em:"💿",nm:"기술머신: 방어",ds:"이 턴 상대 공격을 막는다",price:1500,need:2},
   {key:"tm_attract",em:"💿",nm:"기술머신: 헤롱헤롱",ds:"이성을 헤롱헤롱하게",price:1200,need:2},
   {key:"tm_bind",em:"💿",nm:"기술머신: 조이기",ds:"4~5턴 속박",price:1200,need:2},
+  {key:"tm_confuse",em:"💿",nm:"기술머신: 혼란파",ds:"상대를 혼란에 빠뜨린다",price:1200,need:2},
   {key:"tm_screech",em:"💿",nm:"기술머신: 날카로운울음",ds:"상대 방어를 크게 낮춘다",price:900,need:1},
   {key:"tm_spore",em:"💿",nm:"기술머신: 수면가루",ds:"상대를 잠재운다(명중 80)",price:1400,need:2},
   {key:"tm_chill",em:"💿",nm:"기술머신: 한기",ds:"상대 속도를 낮춘다",price:900,need:1},
@@ -5752,7 +5766,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, pickupGroundItem, interact, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, pickupGroundItem, interact, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
