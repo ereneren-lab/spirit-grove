@@ -534,7 +534,7 @@
         <div class="foe-row"><div class="combatant"><div class="hpcard">
           <div class="nmrow"><span class="nm" id="foeName">—</span><span class="lv" id="foeLv">Lv 1</span></div>
           <div class="hpbar"><div class="hpghost" id="foeHpGhost"></div><div class="hpfill" id="foeHp"></div></div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;justify-content:flex-start;align-items:center;gap:4px">
             <span class="type-tag t-normal" id="foeType" style="margin-top:6px;font-size:9px">노말</span>
             <div class="teamdots" id="foeDots" style="display:none"></div>
           </div>
@@ -3160,7 +3160,7 @@ function applyWeather(){ const fld=$("battleField"); if(!fld)return;
   let ov=document.getElementById("weatherTint");
   if(!ov){ ov=document.createElement("div"); ov.id="weatherTint"; ov.style.cssText="position:absolute;inset:0;pointer-events:none;z-index:1;opacity:0;transition:opacity .45s"; fld.appendChild(ov); }
   let badge=document.getElementById("weatherBadge");
-  if(!badge){ badge=document.createElement("div"); badge.id="weatherBadge"; badge.style.cssText="position:absolute;top:8px;left:8px;z-index:6;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;background:rgba(0,0,0,.42);color:#fff;pointer-events:none;display:none"; fld.appendChild(badge); }
+  if(!badge){ badge=document.createElement("div"); badge.id="weatherBadge"; badge.style.cssText="position:absolute;top:30px;right:12px;z-index:6;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;background:rgba(0,0,0,.42);color:#fff;pointer-events:none;display:none"; fld.appendChild(badge); }
   const w=G&&G.weather&&WEATHERS[G.weather];
   if(w){ ov.style.background=w.tint; ov.style.opacity="1"; badge.textContent=w.em+" "+w.ko; badge.style.display="block"; }
   else { ov.style.opacity="0"; badge.style.display="none"; } }
@@ -4529,7 +4529,7 @@ async function sendOutAnim(side){ const sp=spriteEl(side); if(!sp)return; const 
   const fromX=side==="me"?fr.width*0.12:fr.width*0.88, fromY=fr.height*(side==="me"?1.02:-0.02);
   // "가랏! 이름!" 라벨 (내 정령 등장 시)
   if(side==="me" && typeof activeMon==="function"){ const m=activeMon(); if(m){ const lab=document.createElement("div"); lab.className="sendlabel";
-    lab.textContent=`가랏! ${dispName(m)}!`; lab.style.left="14px"; lab.style.top="10px"; field.appendChild(lab);
+    lab.textContent=`가랏! ${dispName(m)}!`; lab.style.left="14px"; lab.style.bottom="92px"; field.appendChild(lab);   // ⚠️ 좌상단(top:10px)은 적 HUD(.foe-row) 자리다 — 겹쳐서 상대 이름/HP를 덮었다. 내 정령이 나오는 좌하단으로.
     lab.animate([{opacity:0,transform:"translateY(6px)"},{opacity:1,transform:"translateY(0)"},{opacity:1},{opacity:0}],{duration:fxT(1100),easing:"ease-out"}).finished.then(()=>lab.remove()).catch(()=>lab.remove()); } }
   // 볼이 포물선으로 날아감
   const ball=document.createElement("div"); ball.className="throwball"; field.appendChild(ball);
@@ -5761,7 +5761,7 @@ window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/
 
 window.SG.FLAVOR=FLAVOR;
 Object.assign(window.SG,{EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
-window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
+window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,sendOutAnim,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
