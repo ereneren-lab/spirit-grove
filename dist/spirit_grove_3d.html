@@ -1982,6 +1982,8 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     this.target={x,y}; this.arrived=false; },
   face(dir){ if(dir)this.dir=dir; if(dir==="left")this.facing=-1; else if(dir==="right")this.facing=1; },
   exclaim(x,y){ this._exc={x,y,born:performance.now()/1000}; },
+  // 풀숲을 밟으면 그 칸이 술렁인다(본가의 기본 손맛). 최근 몇 칸만 들고 있으면 충분하다.
+  rustle(x,y){ if(CONFIG.reduceMotion)return; this._rustles=(this._rustles||[]).filter(r=>performance.now()/1000-r.born<0.5); this._rustles.push({x,y,born:performance.now()/1000}); if(this._rustles.length>6)this._rustles.shift(); },
   removeNpc(k){},
   setDest(x,y){ this.dest={x,y}; }, clearDest(){ this.dest=null; },
   start(){ if(!this.inited)this.init(); if(this.raf)return; const loop=()=>{this.raf=requestAnimationFrame(loop);this.render();}; this.raf=requestAnimationFrame(loop); },
@@ -2046,8 +2048,38 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         ctx.save(); if(!_back&&(this.dir||"down")==="right"){ ctx.translate(hx,0); ctx.scale(-1,1); ctx.translate(-hx,0); }   // 주인공 아트 기본이 좌향 — 오른쪽 이동 시 뒤집어 진행방향을 본다
         ctx.drawImage(_hi, hx-S/2, gy-S-_hb, S, S); ctx.restore(); }
       else { this._walker(ctx, pcx, pcy, ts, this.dir||"down", moving, now); } }
+    this._grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving);
     if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh"||G.indoor==="skyridge"||G.indoor==="ruins"||G.indoor==="crater"||G.indoor==="garden") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; }
     if(typeof owWeather==="function"){ const _wx=owWeather(); if(_wx!=="clear" && typeof drawWeatherFx==="function")drawWeatherFx(ctx,cw,ch,ts,_wx); } },
+  // 풀숲 게임필 3종: (1) 밟은 칸이 술렁임 (2) 풀숲에 서면 하체가 풀에 가림 (3) 달릴 때 발밑 먼지.
+  // ⚠️ Map2D는 객체 리터럴이다 — 메서드를 추가할 땐 앞 메서드 끝의 콤마를 확인할 것.
+  _grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving){ if(CONFIG.reduceMotion)return;
+    // (1) 밟고 지나간 칸의 술렁임 — 잎이 튀고 잦아든다
+    const rs=this._rustles;
+    if(rs&&rs.length){ for(const r of rs){ const age=now-r.born; if(age<0||age>0.5)continue;
+        const k=1-age/0.5, rx=ox+r.x*ts+ts*0.5, ry=oy+r.y*ts+ts*0.62;
+        if(rx<-ts||ry<-ts||rx>ctx.canvas.width+ts||ry>ctx.canvas.height+ts)continue;
+        ctx.save(); ctx.globalAlpha=k*0.85; ctx.fillStyle="#7bd07b";
+        for(let i=0;i<4;i++){ const a=(i/4)*6.29+r.x, d=ts*(0.12+(1-k)*0.26);
+          ctx.beginPath(); ctx.ellipse(rx+Math.cos(a)*d, ry-Math.sin(a)*d*0.6-(1-k)*ts*0.16, ts*0.05, ts*0.025, a, 0, 6.29); ctx.fill(); }
+        ctx.restore(); } }
+    // (3) 달리기 먼지 — 발 뒤로 퍼프가 남는다(러닝이 실제로 빨라 보인다)
+    if(moving && typeof G!=="undefined" && G && G.running){
+      // ⚠️ 뒤 방향은 4방 벡터로 잡는다 — 좌우만 처리하면 위/아래로 달릴 때 먼지가 발밑에 겹쳐 안 보인다.
+      const bv={left:[1,0],right:[-1,0],up:[0,1],down:[0,-1]}[this.dir||"down"]||[0,-1];
+      ctx.save();
+      for(let i=0;i<3;i++){ const ph=(now*3+i*0.33)%1;
+        ctx.globalAlpha=(1-ph)*0.32; ctx.fillStyle="#d8cbb0";
+        ctx.beginPath(); ctx.arc(pcx+bv[0]*ts*(0.16+ph*0.36), pcy+ts*0.30+bv[1]*ts*(0.04+ph*0.26), ts*(0.05+ph*0.08), 0, 6.29); ctx.fill(); }
+      ctx.restore(); }
+    // (2) 풀숲에 서면 하체가 풀에 가린다 — 서 있는 칸이 T일 때만
+    const px=Math.round(this.player.x), py=Math.round(this.player.y);
+    if(typeof tileAt==="function" && tileAt(px,py)==="T"){
+      const gx=ox+px*ts, gy=oy+py*ts;
+      ctx.save(); ctx.strokeStyle="#4e9c52"; ctx.lineWidth=Math.max(1,ts*0.055); ctx.lineCap="round";
+      for(let i=0;i<6;i++){ const bx=gx+ts*(0.12+i*0.15), sw=Math.sin(now*2.6+i)*ts*0.05;
+        ctx.beginPath(); ctx.moveTo(bx,gy+ts*0.98); ctx.quadraticCurveTo(bx,gy+ts*0.72,bx+sw,gy+ts*0.52); ctx.stroke(); }
+      ctx.restore(); } },
   // 필드 아이템 볼: 살짝 떠오르는 애니 + 반짝임(눈에 띄어야 "가볼 이유"가 된다)
   _itemBall(ctx,sx,sy,ts,now,x,y){
     const bob=Math.sin((now||0)*2.2 + (x*0.7+y*1.3))*ts*0.05;
@@ -2385,6 +2417,7 @@ function altarStage(){
 }
 function onArrived(){
   updateGoal();
+  if(Field&&Field.rustle&&tileAt(G.pos.x,G.pos.y)==="T")Field.rustle(G.pos.x,G.pos.y);   // 풀숲을 밟으면 술렁인다
   faceAdjacentNpcs();   // 플레이어가 멈추면 옆 NPC가 즉시 힐끗
   if(_justExited){ _justExited=false; return; }
   if(G.indoor){ const _it=INTERIORS[G.indoor]; const _t=tileAt(G.pos.x,G.pos.y);
