@@ -88,6 +88,7 @@ const { chromium } = require("playwright"); const path=require("path");
         if(t==="O")note("skyridge",si);
         if(t==="z")note("ruins",si);
         if(t==="^")note("crater",si);
+        if(t==="!")note("garden",si);
         if(t==="W")note("coast",si);
         if(t==="P")note("sign:"+x+","+y,si);
       }
@@ -108,7 +109,7 @@ const { chromium } = require("playwright"); const path=require("path");
       if(t==="+")all.push("center:"+x+","+y); if(t==="E")all.push("hall:"+x+","+y);
       if(t==="S")all.push("shop:"+x+","+y);   if(t==="P")all.push("sign:"+x+","+y);
       if(t==="U")all.push("league"); if(t==="X")all.push("altar"); if(t==="D")all.push("cave");
-      if(t==="V")all.push("lavacave"); if(t==="M")all.push("snowfield"); if(t==="J")all.push("marsh"); if(t==="O")all.push("skyridge"); if(t==="z")all.push("ruins"); if(t==="^")all.push("crater"); if(t==="W")all.push("coast"); }
+      if(t==="V")all.push("lavacave"); if(t==="M")all.push("snowfield"); if(t==="J")all.push("marsh"); if(t==="O")all.push("skyridge"); if(t==="z")all.push("ruins"); if(t==="^")all.push("crater"); if(t==="!")all.push("garden"); if(t==="W")all.push("coast"); }
     (S.GROUND_ITEMS||[]).forEach(g=>{ if(!g.in)all.push("item:"+g.k); });
     (S.NPCS||[]).forEach(n=>{ if(n.x!=null)all.push("npc:"+n.id); });
     out.all=[...new Set(all)];
@@ -125,7 +126,7 @@ const { chromium } = require("playwright"); const path=require("path");
       S.setG(S.freshState()); const G=S.G();
       G.party=[S.makeMon("foxfire",30)];
       // 모든 가드를 격파한 상태 = 최대 개방
-      "0123456789abcdefijklqruvyh*XANS".split("").forEach(c=>G.defeated.add(c));
+      "0123456789abcdefijklqruvyh*?XANS".split("").forEach(c=>G.defeated.add(c));
       F.enterInterior(I);
       // ⚠️ enterInterior는 warpFade로 150ms 지연 스왑이다. 덜 기다리면
       //    walkable()이 아직 오버월드를 보고 있어 전부 미도달로 잡힌다.

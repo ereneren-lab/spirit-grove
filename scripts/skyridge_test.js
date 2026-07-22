@@ -1,4 +1,4 @@
-// 신규 지역 회귀: 뇌명 봉우리(skyridge) + 고대 유적(ruins) + 불꽃 분화구(crater) — 인테리어·조우풀·진입·가드·서식지·저장.
+// 신규 지역 회귀: 뇌명 봉우리(skyridge) + 고대 유적(ruins) + 불꽃 분화구(crater) + 달빛 화원(garden) — 인테리어·조우풀·진입·가드·서식지·저장.
 const { chromium } = require("playwright"); const path=require("path");
 (async()=>{ const b=await chromium.launch();
   const p=await b.newPage({viewport:{width:430,height:760}});
@@ -111,7 +111,52 @@ const { chromium } = require("playwright"); const path=require("path");
     const okd=F.deserialize(JSON.parse(JSON.stringify(F.serialize()))); return { okd, round:!!S.G().craterSeen }; });
   ok(cs.okd && cs.round, "craterSeen 세이브/로드 보존");
 
+  /* ===== 달빛 화원(garden) — 낮/밤으로 조우 풀이 갈리는 유일한 지역 ===== */
+  const gd=await p.evaluate(()=>{ const S=window.SG, F=S.flow; S.setG(S.freshState()); const G=S.G();
+    const I=F.INTERIORS.garden; const pool=(F.ENC_POOLS.garden||[]);
+    G.party=[S.makeMon("sproutcat",24)]; G.pos={x:6,y:8}; G.indoor="garden"; G.busy=false;
+    const ps=new Set(pool); F.startGardenEncounter();
+    F.enterMap(true); let oPos=null,oWalk=null;
+    for(let y=0;y<50&&!oPos;y++)for(let x=0;x<25;x++){ if(F.tileAt(x,y)==="!"){ oPos=x+","+y; oWalk=F.walkable(x,y); break; } }
+    const shape=!!(I && I.id==="garden" && I.str.length===I.H && I.str.every(r=>r.length===I.W));
+    return { shape, poolN:pool.length, allExist:pool.every(id=>S.byId(id)),
+             habitat:(F.HABITAT_KO||{}).garden, findHint:F.findHint(S.byId("lunarmoth")).indexOf("달빛 화원")>=0,
+             guard:!!(S.TRAINERS["?"]&&S.TRAINERS["?"].team&&S.flow.GUARD_TILES.indexOf("?")>=0),
+             encInPool:S.G().foe&&ps.has(S.G().foe.id), foe:S.G().foe&&S.G().foe.id, oPos, oWalk,
+             nightN:pool.filter(id=>S.NIGHT_MONS.has(id)).length }; });
+  ok(gd.shape && gd.poolN>=6 && gd.allExist, `화원 인테리어+조우풀 ${gd.poolN}종 실존`);
+  ok(gd.habitat==="달빛 화원" && gd.findHint, "화원 HABITAT_KO + findHint 반영");
+  ok(gd.guard, "달빛 정원지기(TRAINERS['?']) + GUARD_TILES 등록");
+  ok(gd.oPos && gd.oWalk===false, `화원 진입 타일 ! 존재\u00b7비보행 (${gd.oPos})`);
+  ok(gd.encInPool, `startGardenEncounter가 화원 풀에서 조우 (${gd.foe})`);
+
+  // 낮/밤 분기: 밤 전용 종(NIGHT_MONS)은 낮 풀에서 빠지고 밤 풀엔 있어야 한다.
+  // dayPhase는 실시간 기반이라 Date.now를 고정해 결정적으로 검증한다.
+  const dn=await p.evaluate(()=>{ const S=window.SG, F=S.flow; S.setG(S.freshState()); const G=S.G();
+    G.party=[S.makeMon("sproutcat",24)];
+    const all=F.ENC_POOLS.garden.slice(), nightOnly=all.filter(id=>S.NIGHT_MONS.has(id));
+    const orig=Date.now; const probe=[]; let day=null,night=null;
+    for(let f=0; f<1 || (day===null||night===null); f+=1){ if(f>200)break; }
+    // dayCycle 한 주기를 훑어 낮/밤 풀을 각각 잡는다
+    const step=6*60*1000; const t0=orig();
+    for(let i=0;i<24*60;i++){ const t=t0+i*step; Date.now=()=>t;
+      const ph=F.dayPhase?F.dayPhase():null; const pool=F.gardenPool();
+      if(ph==="night"&&night===null)night=pool.slice();
+      if(ph==="day"&&day===null)day=pool.slice();
+      if(day&&night)break; }
+    Date.now=orig;
+    return { all:all.length, nightOnly, day, night }; });
+  ok(dn.night && dn.day, `낮/밤 두 위상 관측 (낮 ${dn.day&&dn.day.length}종 · 밤 ${dn.night&&dn.night.length}종)`);
+  ok(dn.night && dn.nightOnly.every(id=>dn.night.indexOf(id)>=0), `밤 풀에 밤 전용 종 전부 포함 (${dn.nightOnly.join(",")})`);
+  ok(dn.day && dn.nightOnly.every(id=>dn.day.indexOf(id)<0), "낮 풀에선 밤 전용 종이 빠진다 — 도감 설명과 일치");
+  ok(dn.day && dn.day.length>=4, `낮에도 풀이 마르지 않는다 (${dn.day&&dn.day.length}종)`);
+
+  const gs=await p.evaluate(()=>{ const S=window.SG, F=S.flow; S.setG(S.freshState()); const G=S.G();
+    G.party=[S.makeMon("sproutcat",24)]; G.gardenSeen=true;
+    const okd=F.deserialize(JSON.parse(JSON.stringify(F.serialize()))); return { okd, round:!!S.G().gardenSeen }; });
+  ok(gs.okd && gs.round, "gardenSeen 세이브/로드 보존");
+
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
-  console.log(process.exitCode?"\n❌ 실패":"\n🎉 신규 지역(봉우리·유적·분화구) 통과");
+  console.log(process.exitCode?"\n❌ 실패":"\n🎉 신규 지역(봉우리·유적·분화구·화원) 통과");
   await b.close(); process.exit(process.exitCode||0);
 })();
