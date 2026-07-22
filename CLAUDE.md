@@ -74,6 +74,7 @@ verify 내용:
 - **정령 등장 애니 이중 재생**: `setupBattleUI`의 `.enter` CSS 애니 ✕ `sendOutAnim` JS 충돌 → `.enter` 제거(`scripts/sendout_test.js`).
 - **문 진입 즉시 튕김**: 상점/체육관 등 인테리어는 입장 위치(startY)가 출구(exitY) 바로 위라, 위에서 아래키로 들어가면 `heldDir="down"`이 입장 후에도 남아 `onArrived`→`continueMovement`가 다시 아래로 이동→출구 타일→즉시 퇴장(튕김). → `_enterInterior`/`_exitInterior`에서 `heldDir=null; stopPath()` + `_warpLock`(입력잠금, `move()` 첫 줄에서 `performance.now()<_warpLock`이면 return). 회귀 `scripts/door_bounce_test.js`(아래키 홀드 입장 후 indoor 유지 확인, 구코드는 indoor=null로 튕김).
 
+- **오버월드 NPC가 인테리어 안에 그려짐**: NPC 렌더 패스(그리고 미니맵 NPC 마크)에 `G.indoor` 가드가 없어, **모든 실내**(센터·체육관·동굴·신규 지역…)에 오버월드 NPC가 자기 오버월드 좌표 자리에 유령처럼 서 있었다. `walkable`은 이미 `!G.indoor`로 스코프돼 있어 **말도 안 걸리고 통과되는 허깨비**라 오래 안 들켰다. → 두 패스 모두 `!G.indoor` 가드. ⚠️ 회귀(`npc_roam_test`)는 `fillText`와 `Map2D._char`를 **둘 다** 가로채 센다 — 대부분의 NPC는 이모지가 아니라 `spr` 스프라이트라 `fillText`만 세면 대조군이 0이 되어 테스트가 헛돈다. 그리고 `enterInterior`는 warpFade 150ms 지연 스왑이라 **스왑 후에 카운터를 리셋**해야 한다.
 - **잠듦 상태 undefined**: `STATUS_KO`/`STATUS_CLS`에 `slp` 누락(psn/brn/par만) → 잠들면 상태 칩이 `undefined`. `_MV_STATUS_KO`엔 있었음. → `STATUS_KO.slp="잠듦"`, `STATUS_CLS.slp="b-slp"`(+`.b-slp` CSS) 추가.
 - **소수점 레벨**: 특수 조우(파도/낚시/설원/섬/해안/용암/동굴)가 `clamp(avgLevel()+...)`만 하고 floor 안 해 소수점 레벨. → `makeMon`에서 `level=Math.max(1,Math.floor(level))`로 정수화(모든 조우/스탯 커버).
 - 회귀: 위 세 가지 + 파티 재정렬 + 돌 진화는 `scripts/bugfix_batch_test.js`.

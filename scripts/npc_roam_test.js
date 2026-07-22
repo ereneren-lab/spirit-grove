@@ -53,6 +53,25 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(gl.dir==="left", `인접 힐끗: 플레이어(좌) 향해 회전 (dir=${gl.dir})`);
   ok(gl.x===13&&gl.y===48, `인접 시 제자리 유지(안 돌아다님) (${gl.x},${gl.y})`);
 
+  // 실내 누수: NPCS는 오버월드 좌표계다. 실내에서 그리면 인테리어 안에 엉뚱한 사람이 서 있었다(기존 버그).
+  // fillText를 가로채 NPC 이모지가 실제로 그려지는지 세어 렌더 경로를 직접 관측한다.
+  const leak=await p.evaluate(async()=>{ const S=window.SG,F=S.flow, M=S.Field;
+    const ems=new Set(S.NPCS.filter(n=>n.em).map(n=>n.em));
+    const sprs=new Set(S.NPCS.filter(n=>n.spr).map(n=>n.spr));   // 대부분의 NPC는 이모지가 아니라 _char 스프라이트로 그려진다
+    const proto=CanvasRenderingContext2D.prototype; const origFT=proto.fillText, origCH=M._char;
+    let hits=0;
+    proto.fillText=function(t){ if(ems.has(t))hits++; return origFT.apply(this,arguments); };
+    M._char=function(ctx,cx,cy,sz,spec){ if(sprs.has(spec))hits++; return origCH.apply(this,arguments); };
+    const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+    S.setG(S.freshState()); const G=S.G(); G.party=[S.makeMon("emberwolf",20)]; G.pos={x:12,y:48};
+    F.enterMap(true); await sleep(500); const outdoor=hits;
+    // ⚠️ enterInterior는 warpFade로 150ms 지연 스왑 — 그 사이엔 아직 오버월드가 그려진다. 스왑 후에 세야 한다.
+    F.enterInterior(F.INTERIORS.crater); await sleep(500); hits=0; await sleep(600); const indoor=hits;
+    proto.fillText=origFT; M._char=origCH; return {outdoor,indoor};
+  });
+  ok(leak.outdoor>0, `오버월드에선 NPC가 그려진다(대조군 ${leak.outdoor}회)`);
+  ok(leak.indoor===0, `실내에선 오버월드 NPC가 안 그려진다 (${leak.indoor}회)`);
+
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,2).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 NPC 로밍/보간 통과");
   await b.close(); process.exit(process.exitCode||0);

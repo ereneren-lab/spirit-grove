@@ -1784,7 +1784,8 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(spec){ this._char(ctx, sx+ts/2, sy+ts*0.46, ts*0.92, spec, sdir, now); }
       else if(emoji){ ctx.font=Math.floor(ts*0.72)+"px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(emoji,sx+ts/2,sy+ts*0.4); } }
     // NPC 보간 이동 패스 — 논리 타일(n.x/n.y)로 rx/ry가 이징. 로밍 NPC가 타일 사이를 부드럽게 걷는다(툭툭 튐 제거).
-    if(typeof NPCS!=="undefined")for(const n of NPCS){ if(!npcAvailable(n))continue;
+    // ⚠️ NPCS는 오버월드 좌표계다 — 실내에서 그리면 인테리어 안에 엉뚱한 사람이 서 있다(walkable은 이미 !G.indoor로 스코프돼 있어 겹쳐도 통과하는 유령이었다).
+    if(typeof NPCS!=="undefined"&&!(typeof G!=="undefined"&&G&&G.indoor))for(const n of NPCS){ if(!npcAvailable(n))continue;
       if(n.rx===undefined){ n.rx=n.x; n.ry=n.y; }
       const ndx=n.x-n.rx, ndy=n.y-n.ry, ndd=Math.hypot(ndx,ndy); const nmv=ndd>0.008;
       if(nmv){ const nstep=3.2*dt; if(ndd<=nstep){ n.rx=n.x; n.ry=n.y; } else { n.rx+=ndx/ndd*nstep; n.ry+=ndy/ndd*nstep; } }
@@ -5240,7 +5241,7 @@ function drawTopo(){ const c=$("minimapCanvas"),ctx=c.getContext("2d"); const CW
     if(t==="X")mark(x,y,G.defeated.has("X")?"👑":"🧝"); else if(t==="S")mark(x,y,"🏪");
     else if(t==="R"){ const disc=G.campfires&&G.campfires.has(x+","+y); mark(x,y,"🔥",disc?"rgba(232,146,60,.45)":null); }
     else if(isTrainerTile(t)){ if(!G.defeated.has(t))mark(x,y,TRAINERS[t].em); } }
-  if(typeof NPCS!=="undefined") NPCS.forEach(n=>{ if(!npcAvailable(n))return; if(!G.seenTiles.has(n.x+","+n.y))return; mark(n.x,n.y,n.em,null,1.2); });
+  if(typeof NPCS!=="undefined"&&!G.indoor) NPCS.forEach(n=>{ if(!npcAvailable(n))return; if(!G.seenTiles.has(n.x+","+n.y))return; mark(n.x,n.y,n.em,null,1.2); });   // 오버월드 좌표계 — 실내 지도에 찍으면 엉뚱한 자리에 뜬다
   // start flag
   mark(STARTPOS.x,STARTPOS.y,"🚩",null,1.1);
   // player pulse + marker
