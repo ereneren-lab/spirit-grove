@@ -1944,6 +1944,28 @@ function altarStage(){
   if(!G.dawnDone)return "dawn";
   return "quiet";
 }
+// 야생 조우 굴림 — **실내/실외 공용 단일 출처**.
+// ⚠️ 예전엔 이 체인이 onArrived 뒷부분에만 있었는데, 실내 블록이 그보다 앞에서 return해
+//    특수 지역(동굴·늪지·설원·해안·섬·봉우리·유적·분화구·화원…) 조우가 **한 번도 걸리지 않았다**.
+//    조우 함수와 풀은 멀쩡했고 테스트가 그 함수를 직접 불러 통과시켜서 오래 안 들켰다.
+// ⚠️ 오버월드 조우(startEncounter)는 반드시 `!G.indoor`로 막을 것 — 실내에서 부르면
+//    wildFloor()가 인테리어 좌표를 지역으로 읽어(체육관2의 T, 리그의 g) 엉뚱한 고레벨 야생이 나온다.
+function wildRoll(t,depth){
+  let enc=false;
+  let _repelOn=false;
+  if(G.repel>0){
+    const _lead=(typeof activeMon==="function")?activeMon():null;
+    const _est=Math.max(avgLevel(), wildFloor());   // 이 지역 야생의 기준 레벨
+    _repelOn = !_lead || _est < _lead.level;
+    G.repel--; if(G.repel===0)flashHint("퇴치 스프레이 효과가 끝났다");
+  }
+  if(_repelOn){ /* 약한 야생은 피해간다 — 조우 굴림 생략 */ }
+  else if(encCooldown>0){ encCooldown--; }
+  else { if(G.indoor==="cave"){ if(t==="."&&Math.random()<0.11){ enc=true; startCaveEncounter(); } } else if(G.indoor==="lavacave"){ if(t==="."&&Math.random()<0.13){ enc=true; startLavaEncounter(); } } else if(G.indoor==="coast"){ if((t==="T"||t==="g")&&Math.random()<0.12){ enc=true; startCoastEncounter(); } } else if(G.indoor==="isle"||G.indoor==="shrine"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startIsleEncounter(); } } else if(G.indoor==="snowfield"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startSnowEncounter(); } } else if(G.indoor==="marsh"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startMarshEncounter(); } } else if(G.indoor==="skyridge"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startSkyEncounter(); } } else if(G.indoor==="ruins"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startRuinsEncounter(); } } else if(G.indoor==="crater"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startCraterEncounter(); } } else if(G.indoor==="garden"){ if((t==="T"||t==="g")&&Math.random()<(dayPhase()==="night"?0.17:0.11)){ enc=true; startGardenEncounter(); } } else if(G.surfing&&t==="~"){ if(Math.random()<0.12){ enc=true; startSurfEncounter(); } } else if(!G.indoor&&t==="T"&&Math.random()<0.22+depth*0.09){ enc=true; startEncounter(depth); }
+    else if(!G.indoor&&t==="g"&&Math.random()<0.05+depth*0.04){ enc=true; startEncounter(depth); }
+    if(enc)encCooldown=ri(3,6); }
+  return enc;
+}
 function onArrived(){
   updateGoal();
   if(Field&&Field.rustle&&tileAt(G.pos.x,G.pos.y)==="T")Field.rustle(G.pos.x,G.pos.y);   // 풀숲을 밟으면 술렁인다
@@ -1960,7 +1982,9 @@ function onArrived(){
       if(st==="lord"){ startTrainer("X"); return; }        // 숲의 군주 = 메인 클라이맥스 (EPILOGUE 엔딩)
       if(st==="shadow"){ startShadowBoss(); return; }       // 이하 포스트게임
       if(st==="dawn"){ startDawnBoss(); return; }
-      flashHint("제단은 이제 고요하다. 숲이 균형을 되찾았다."); return; } continueMovement(); return; }
+      flashHint("제단은 이제 고요하다. 숲이 균형을 되찾았다."); return; }
+    if(wildRoll(_t,0)){ stopPath(); return; }   // 특수 지역 야생 조우(실내 블록이 여기서 끝나므로 반드시 여기서 굴린다)
+    continueMovement(); return; }
   announceRegion(G.pos.y); if(!G.inBattle)Audio.startMusic(fieldMusic()); const t=tileAt(G.pos.x,G.pos.y);
   if(t==="R"){ stopPath(); if(G.campfires)G.campfires.add(G.pos.x+","+G.pos.y); healParty(true); healFx(); markHeal(); flashHint("모닥불에서 모두 회복했다 🔥"); saveGame(); return; }
   if(t==="S"){ stopPath(); enterInterior(INTERIORS.shop); return; }
@@ -1979,22 +2003,10 @@ function onArrived(){
   if(typeof dayStep==="function")dayStep();
   const _see=sightTrainer();
   if(_see){ stopPath(); spotTrainer(_see); return; }
-  const depth=(H-1-G.pos.y)/(H-1); let enc=false;
+  const depth=(H-1-G.pos.y)/(H-1);
   // 퇴치 스프레이는 본가처럼 **선두보다 약한** 야생만 막는다(도구 설명도 "약한 정령 차단"이다).
   // 예전엔 조우 굴림을 통째로 건너뛰어 60걸음 완전 무적 통로가 됐고, 설명이 거짓말이었다.
-  let _repelOn=false;
-  if(G.repel>0){
-    const _lead=(typeof activeMon==="function")?activeMon():null;
-    const _est=Math.max(avgLevel(), wildFloor());   // 이 지역 야생의 기준 레벨
-    _repelOn = !_lead || _est < _lead.level;
-    G.repel--; if(G.repel===0)flashHint("퇴치 스프레이 효과가 끝났다");
-  }
-  if(_repelOn){ /* 약한 야생은 피해간다 — 조우 굴림 생략 */ }
-  else if(encCooldown>0){ encCooldown--; }
-  else { if(G.indoor==="cave"){ if(t==="."&&Math.random()<0.11){ enc=true; startCaveEncounter(); } } else if(G.indoor==="lavacave"){ if(t==="."&&Math.random()<0.13){ enc=true; startLavaEncounter(); } } else if(G.indoor==="coast"){ if((t==="T"||t==="g")&&Math.random()<0.12){ enc=true; startCoastEncounter(); } } else if(G.indoor==="isle"||G.indoor==="shrine"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startIsleEncounter(); } } else if(G.indoor==="snowfield"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startSnowEncounter(); } } else if(G.indoor==="marsh"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startMarshEncounter(); } } else if(G.indoor==="skyridge"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startSkyEncounter(); } } else if(G.indoor==="ruins"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startRuinsEncounter(); } } else if(G.indoor==="crater"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startCraterEncounter(); } } else if(G.indoor==="garden"){ if((t==="T"||t==="g")&&Math.random()<(dayPhase()==="night"?0.17:0.11)){ enc=true; startGardenEncounter(); } } else if(G.surfing&&t==="~"){ if(Math.random()<0.12){ enc=true; startSurfEncounter(); } } else if(t==="T"&&Math.random()<0.22+depth*0.09){ enc=true; startEncounter(depth); }
-    else if(t==="g"&&Math.random()<0.05+depth*0.04){ enc=true; startEncounter(depth); }
-    if(enc)encCooldown=ri(3,6); }
-  if(enc){ stopPath(); return; }
+  if(wildRoll(t,depth)){ stopPath(); return; }
   continueMovement(); }
 function healParty(clearStatus){ G.party.forEach(m=>{recalc(m);m.hp=m.maxHp;if(clearStatus){m.status=null;} m.friendship=(m.friendship||0)+2; m.moves.forEach(mv=>{m.pp[mv]=MOVES[mv].pp;});}); }
 /* ===== 인게임 교환 (포켓몬의 교환 아저씨) ===== */
