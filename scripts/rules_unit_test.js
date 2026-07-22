@@ -203,6 +203,45 @@ console.log("\n[종 데이터 · 개체 생성]");
   ok(R.byId("__nope__")===undefined, "없는 종은 undefined");
 }
 
+console.log("\n[학습셋 위생 — 죽은 콘텐츠 감지]");
+// 왜 있나: DEX의 learn 배열이 중첩으로 깨져 있었다(`[16,"bite",[28,"nastyplot",[36,"roar"]]]`).
+// makeMon은 `([lv,mv])`로 구조분해하므로 **첫 기술만 배우고 나머지는 영영 안 배워졌다** — 8종 13기술.
+// 눈에 안 띄는 데이터 손상이라, 구조와 "모든 기술이 배울 수 있는가"를 둘 다 강제한다.
+{
+  const bad=[];
+  for(const d of R.DEX){ for(const e of (d.learn||[])){
+    if(!Array.isArray(e)||e.length!==2||typeof e[0]!=="number"||typeof e[1]!=="string")bad.push(d.id+":"+JSON.stringify(e)); } }
+  ok(bad.length===0, `learn 항목은 전부 [레벨,기술] 2원소 (${bad.slice(0,2).join(" ")||"이상 없음"})`);
+
+  const unknown=[];
+  for(const d of R.DEX){ for(const mv of (d.moves||[]))if(!R.MOVES[mv])unknown.push(d.id+":"+mv);
+    for(const [,mv] of (d.learn||[]))if(!R.MOVES[mv])unknown.push(d.id+":"+mv); }
+  ok(unknown.length===0, `학습셋의 기술이 전부 MOVES에 실존 (${unknown.slice(0,2).join(" ")||"이상 없음"})`);
+
+  // 학습셋은 레벨 오름차순이어야 사람이 읽고 고치기 쉽다(정렬이 깨지면 데이터 손상 신호)
+  const unsorted=R.DEX.filter(d=>{ const lv=(d.learn||[]).map(e=>e[0]); return lv.some((v,i)=>i&&v<lv[i-1]); }).map(d=>d.id);
+  ok(unsorted.length===0, `학습셋이 레벨 오름차순 (${unsorted.slice(0,3).join(",")||"이상 없음"})`);
+
+  // 레벨업으로 실제로 기술이 늘어난다(구조가 깨지면 여기서 티가 난다)
+  const grow=R.DEX.filter(d=>(d.learn||[]).length>=2).slice(0,12)
+    .filter(d=>{ const hi=Math.max(...d.learn.map(e=>e[0]));
+      return R.makeMon(d.id,hi).moves.length > R.makeMon(d.id,1).moves.length; });
+  ok(grow.length>=10, `레벨업으로 기술이 실제로 늘어난다 (표본 12종 중 ${grow.length}종)`);
+}
+
+console.log("\n[기술 획득 경로 — 죽은 기술 감지]");
+// ⚠️ 이 한 단정만 순수하지 않다: TM 목록은 아직 index.html의 ITEMS에 있어서 소스 텍스트를 읽는다.
+//    그래도 여기 두는 이유 — 깨진 learn 배열을 처음 드러낸 게 바로 이 "아무도 못 배우는 기술" 목록이었다.
+{
+  const fs=require("fs"), path=require("path");
+  const src=fs.readFileSync(path.join(__dirname,"..","src","index.html"),"utf8");
+  const learnable=new Set();
+  for(const d of R.DEX){ (d.moves||[]).forEach(m=>learnable.add(m)); (d.learn||[]).forEach(e=>learnable.add(e[1])); }
+  const tms=new Set([...src.matchAll(/move:"([a-z]+)"/g)].map(m=>m[1]));
+  const dead=Object.keys(R.MOVES).filter(k=>k!=="struggle"&&!learnable.has(k)&&!tms.has(k));
+  ok(dead.length===0, `모든 기술에 획득 경로가 있다 — 학습셋 ${learnable.size} + TM ${tms.size} (죽은 기술: ${dead.join(",")||"없음"})`);
+}
+
 console.log("\n[순수성]");
 // 규칙 계층이 DOM/브라우저 API를 직접 참조하면 이 환경에서 터진다. 소스에도 흔적이 없어야 한다.
 {
