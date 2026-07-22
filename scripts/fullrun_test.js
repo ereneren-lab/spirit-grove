@@ -18,10 +18,20 @@
 //   4) 기절 후 **강제 교체 오버레이**를 전투 중에 처리 안 해 Enter만 두드리며 갇힘
 //   5) 실내에서 목표 트래커가 숨겨져 **센터 안에 7분간 갇힘** → 출구로 나가는 로직 추가
 //   6) 실패한 회복약 클릭을 성공으로 세어 5분에 169회 반복 → 개수 감소로 성공 판정
+//   7) **강제 교체에서 숨겨진 ✕를 클릭** → 게임이 다시 열어 무한 루프(정지의 진짜 원인이었다).
+//      게임은 정상이다 — forced면 `switchClose`를 display:none으로 감춘다. `.click()`이 숨은 버튼도
+//      동작한다는 게 함정. → `offsetParent!==null`로 **보이는 버튼만** 누른다.
+//   8) 전투 중 가방이 열린 채 남으면 **주머니 탭만 무한 클릭** → 오버레이를 id로 구분해 가방은 닫는다.
+//
+// ── 트레이스 사용법 ──
+//   TRACE=1 node scripts/fullrun_test.js dist/spirit_grove_3d.html 240
+//   매 루프 한 줄(분기·상태·열린 오버레이 id/버튼)을 찍는다. 정지하면 마지막 몇 줄이 곧 원인이다.
+//
 // ⚠️ 남은 것(다음 세션):
-//   · 아직 1~5분 사이에 루프가 멈춘다. 원인 미규명 — `.overlay.active` 처리 분기가 유력하다
-//     (가방 오버레이가 열린 채 남으면 전투 분기의 오버레이 처리와 서로 물릴 수 있다).
-//     디버깅은 매 루프 상태를 파일로 덤프해 정지 직전 3~4스텝을 보는 게 빠르다.
+//   · 이제 하드 정지는 없다(파티 4마리·도감 3까지 진행). 대신 목표 트래커 이동이
+//     **두 칸 사이를 오간다**(예: 8,44 ↔ 9,43). 탭할 때마다 경로가 재계산되고 조우로 끊겨
+//     한두 칸만 가고 마는 것으로 보인다 → 한 번 탭한 뒤 **도착까지 더 끈질기게 기다리거나**,
+//     목표 좌표를 직접 읽어 walkTo로 끝까지 가는 편이 나을 수 있다.
 //   · 상점에서 회복약 보충, 체육관 견습생 처리, 리그 5연전 회복 없이 진행 등 미검증.
 // ⚠️ verify.sh·playtest.sh에 **일부러 등록하지 않았다** — 아직 신뢰할 수 없어 CI에 넣으면 노이즈만 된다.
 //    수동 실행: node scripts/fullrun_test.js dist/spirit_grove_3d.html <초>
@@ -114,6 +124,13 @@ const { chromium } = require("playwright"); const path=require("path");
     return healed;
   };
 
+  const TRACE=!!process.env.TRACE;
+  let iter=0, lastTrace=Date.now();
+  const tr=(branch,st)=>{ if(!TRACE)return; const dt=Date.now()-lastTrace; lastTrace=Date.now();
+    console.log(`   [${String(++iter).padStart(4)}] +${String(dt).padStart(5)}ms ${branch.padEnd(14)} `+
+      `inB=${st.inB?1:0} busy=${st.busy?1:0} main=${st.mainOn?1:0} mv=${st.moveOn?1:0} ov=${st.overlay?1:0} `+
+      `dlg=${st.dlg?1:0} indoor=${st.indoor||"-"} hp=${(st.hp*100).toFixed(0)}% pot=${st.potion} pos=${st.pos.x},${st.pos.y}`+
+      (st.ovId!==undefined&&st.ovId!==null?` OV[${st.ovId}] "${st.ovTxt}" btns=${JSON.stringify(st.ovBtns)}`:"")); };
   while((Date.now()-t0)/1000 < BUDGET){
     const st=await p.evaluate(()=>{ const S=window.SG,G=S.G();
       const main=document.getElementById("mainMenu"), mv=document.getElementById("moveMenu");
@@ -122,6 +139,9 @@ const { chromium } = require("playwright"); const path=require("path");
         dlg:document.getElementById("dialogBox").classList.contains("show"),
         story:!!document.querySelector("#storyOverlay.active"),
         overlay:!!document.querySelector(".overlay.active"),
+        ovId:(document.querySelector(".overlay.active")||{}).id||null,
+        ovTxt:((document.querySelector(".overlay.active")||{}).textContent||"").replace(/\s+/g," ").trim().slice(0,60),
+        ovBtns:[...(document.querySelector(".overlay.active")||{querySelectorAll:()=>[]}).querySelectorAll("button")].map(b=>(b.textContent||"").trim().slice(0,10)+(b.disabled?"[x]":"")).slice(0,8),
         mainOn: main&&getComputedStyle(main).display!=="none",
         moveOn: mv&&getComputedStyle(mv).display!=="none",
         badges:(G.badges||[]).length, lord:!!G.badge, champion:!!G.champion, indoor:G.indoor,
@@ -140,7 +160,7 @@ const { chromium } = require("playwright"); const path=require("path");
     if(st.lord)mark("숲의 군주 격파",st);
     if(st.champion){ mark("👑 챔피언 등극",st); break; }
 
-    if(st.story||st.dlg){ await clearStory(6); continue; }
+    if(st.story||st.dlg){ tr("story/dlg",st); await clearStory(6); continue; }
 
     /* ── 전투 ── */
     if(st.inB){
@@ -149,15 +169,25 @@ const { chromium } = require("playwright"); const path=require("path");
       //    봇이 메뉴를 못 찾아 Enter만 두드리며 영영 갇힌다(실측으로 확인).
       if(st.overlay){
         const picked=await p.evaluate(()=>{ const ov=document.querySelector(".overlay.active"); if(!ov)return false;
-          const btn=[...ov.querySelectorAll("button")].find(x=>!x.disabled&&!/닫기|취소/.test(x.textContent||""));
-          if(btn){ btn.click(); return true; }
-          const card=[...ov.querySelectorAll(".mon-card")].find(c=>!/기절/.test(c.textContent||""));
+          // ⚠️ 오버레이 종류를 구분해야 한다. 예전엔 전부 "아무 버튼이나 누르기"로 처리해서,
+          //    가방이 열린 채로 남으면 **주머니 탭만 무한 클릭**하며 전투가 영영 안 끝났다.
+          if(ov.id==="bagOverlay"){ const x=[...ov.querySelectorAll("button")].find(b=>b.offsetParent!==null&&/✕|×/.test(b.textContent||""));
+            if(x){ x.click(); return true; } return false; }
+          // ⚠️ **숨겨진 버튼을 누르면 안 된다.** 강제 교체(기절 후)에서는 게임이 닫기 ✕를 display:none으로
+          //    감추는데, .click()은 숨겨진 버튼도 동작한다 → 봇이 ✕를 눌러 닫고 게임이 다시 열어
+          //    **무한 루프**에 빠졌다(실측: 이 하네스가 1~5분에 멈추던 진짜 원인).
+          const visible=x=>x.offsetParent!==null && !x.disabled;
+          const btns=[...ov.querySelectorAll("button")].filter(visible);
+          const act=btns.find(x=>/내보내기|배운다|확인|예/.test(x.textContent||""))
+                 || btns.find(x=>!/✕|×|닫기|취소|그만/.test(x.textContent||""));
+          if(act){ act.click(); return true; }
+          const card=[...ov.querySelectorAll(".mon-card")].find(c=>!/기절/.test(c.textContent||"")&&c.offsetParent!==null);
           if(card){ card.click(); return true; } return false; });
-        if(!picked)await p.keyboard.press("Enter");
+        tr("battle:overlay",st); if(!picked)await p.keyboard.press("Enter");
         await p.waitForTimeout(320); continue;
       }
-      if(st.busy){ await p.keyboard.press("Enter"); await p.waitForTimeout(130); continue; }
-      if(st.moveOn){
+      if(st.busy){ tr("battle:busy",st); await p.keyboard.press("Enter"); await p.waitForTimeout(130); continue; }
+      if(st.moveOn){ tr("battle:move",st);
         const idx=await p.evaluate(()=>{ const S=window.SG,G=S.G(); const me=G.party[G.active],foe=G.foe;
           if(!me||!foe)return 0; let best=0,bs=-1;
           me.moves.forEach((k,i)=>{ const mo=S.MOVES[k]; if(!mo||(me.pp[k]||0)<=0)return;
@@ -170,7 +200,7 @@ const { chromium } = require("playwright"); const path=require("path");
           (bs[i]||bs[0]||{click(){}}).click(); }, idx);
         await p.waitForTimeout(230); continue;
       }
-      if(st.mainOn){
+      if(st.mainOn){ tr("battle:main",st);
         // 파티가 모자라면 약해진 야생을 잡는다(게이트는 3~6마리를 전제로 설계돼 있다)
         if(st.wild && st.party<6 && st.balls>0 && st.foeHp<0.55){
           const threw=await p.evaluate(()=>{ const b=[...document.querySelectorAll("#mainMenu .mbtn")].find(x=>/포획/.test(x.textContent||"")); if(b){b.click();return true;} return false; });
@@ -206,26 +236,28 @@ const { chromium } = require("playwright"); const path=require("path");
         await p.evaluate(()=>{ const b=[...document.querySelectorAll("#mainMenu .mbtn")].find(x=>/공격/.test(x.textContent||"")); if(b)b.click(); });
         await p.waitForTimeout(210); continue;
       }
-      await p.keyboard.press("Enter"); await p.waitForTimeout(170); continue;
+      tr("battle:enter",st); await p.keyboard.press("Enter"); await p.waitForTimeout(170); continue;
     }
 
     /* ── 필드 ── */
     if(wasBattle)wasBattle=false;
-    if(st.overlay){ // 진화·기술배우기 등: 확인 버튼이 있으면 누르고 없으면 닫는다
+    if(st.overlay){ tr("field:overlay",st); // 진화·기술배우기 등: 확인 버튼이 있으면 누르고 없으면 닫는다
       const handled=await p.evaluate(()=>{ const ov=document.querySelector(".overlay.active"); if(!ov)return false;
-        const b=[...ov.querySelectorAll("button")].find(x=>/확인|배운다|그만|닫기|예/.test(x.textContent||""));
+        const visible=x=>x.offsetParent!==null && !x.disabled;   // 숨겨진 버튼 클릭 금지(위 주석 참조)
+        const b=[...ov.querySelectorAll("button")].filter(visible)
+          .find(x=>/내보내기|배운다|확인|그만|예|닫기/.test(x.textContent||""));
         if(b){b.click();return true;} return false; });
       if(!handled){ await p.keyboard.press("Escape"); }
       await p.waitForTimeout(220); continue;
     }
-    if(st.alive===0){ stats.faints++; await p.waitForTimeout(700); continue; }
+    if(st.alive===0){ tr("field:wipe",st); stats.faints++; await p.waitForTimeout(700); continue; }
 
     if(lastMoney!=null && st.money<lastMoney-40)stats.faints++;
     lastMoney=st.money;
 
     // 파티가 다치면 센터로 — 회복약이 없으면 진행이 막히므로 봇도 실제 플레이처럼 회복하러 간다
     if((st.hp<0.5 || st.alive<st.party) && st.potion<=1 && !st.indoor && healCooldown<=0){
-      const healed=await healAtCenter();
+      tr("field:heal",st); const healed=await healAtCenter();
       if(healed){ healCooldown=0; continue; }
       healCooldown=12;   // 실패하면 한동안 다시 시도하지 않는다(진행을 막지 않게)
     }
@@ -233,7 +265,7 @@ const { chromium } = require("playwright"); const path=require("path");
 
     // ⚠️ 실내에서는 목표 트래커가 숨겨져 있어 봇이 방향키 폴백으로 제자리를 맴돈다.
     //    (실측: 센터 안에서 7분간 갇혀 간호사에게만 계속 부딪혔다.) 실내면 먼저 출구로 나간다.
-    if(st.indoor){
+    if(st.indoor){ tr("field:exit",st);
       const walked=await p.evaluate(()=>{ const S=window.SG,F=S.flow,G=S.G();
         const I=F.INTERIORS[G.indoor]; if(!I)return false;
         // 출구 타일 바로 위 칸까지 걸어간 뒤 아래로 밟고 나간다
@@ -249,6 +281,7 @@ const { chromium } = require("playwright"); const path=require("path");
       await p.waitForTimeout(300); continue;
     }
 
+    tr("field:goal",st);
     const tapped=await p.evaluate(()=>{ const el=document.getElementById("goalTrack");
       if(el&&el.offsetParent){ el.click(); return true; } return false; });
     if(tapped){ let last=null,still=0;
