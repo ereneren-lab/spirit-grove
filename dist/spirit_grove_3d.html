@@ -992,6 +992,10 @@ const EFF={
   ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1},
 };
 
+// 기술 데이터 + 사람이 읽는 한 줄 설명. **DOM을 쓰지 않는다**(순수 규칙 계층).
+// 브라우저는 build.py가 //@@RULES_MOVES@@ 자리에 인라인하고, node는 rules_env.js가
+// 같은 파일을 같은 순서로 평가한다 — 문자 그대로 같은 코드가 돈다.
+// ⚠️ 최상위 선언은 들여쓰기 없이 쓸 것(rules_env의 선언 추출 정규식이 행 첫 칸을 앵커로 쓴다).
 // eff: {status:'brn',chance} | {stat:'atk',stage:-1,target:'foe'|'self',chance}
 const MOVES={
   tackle:{name:"몸통박치기",type:"normal",power:35,acc:100,pp:30,pri:0},
@@ -1133,6 +1137,12 @@ function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; c
 function moveSummary(mvKey){ const mo=MOVES[mvKey]; if(!mo)return mvKey; const d=moveDesc(mvKey);
   return `${TYPE_KO[mo.type]||""} · ${d||"변화"} · PP ${mo.pp}`; }
 
+// 종 데이터(DEX)와 개체 생성/스탯 계산. **DOM을 쓰지 않는다**(순수 규칙 계층).
+// 브라우저는 build.py가 //@@RULES_DEX@@ 자리에 인라인하고, node는 rules_env.js가 같은 파일을
+// 같은 순서로 평가한다 — 문자 그대로 같은 코드가 돈다.
+// ⚠️ 최상위 선언은 들여쓰기 없이 쓸 것(rules_env의 선언 추출 정규식이 행 첫 칸을 앵커로 쓴다).
+// ⚠️ makeMon은 newStages(battle.js)를 부른다 — 함수 선언이라 한 스코프에서 호이스팅되므로
+//    로드 순서와 무관하다. NATURES/ABILITY_OVERRIDE/DEFAULT_ABILITY/SHINY_RATE는 tables.js에 있다.
 /* ===== DEX (30) ===== */
 const DEX=[
   {id:"foxfire",name:"파라꼬",em:"🦊",type:"fire",tier:1,starter:true,base:{hp:46,atk:10,def:9,spd:13,spa:14,spDef:9},moves:["tackle","ember"],learn:[[7,"growl"],[10,"flare"],[12,"furyswipe"],[14,"agility"]],evolveTo:"emberwolf",evolveLv:16},
@@ -1224,47 +1234,6 @@ const DEX=[
 ];
 const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);
-const FIND_HINT={1:"숲 · 초원",2:"깊은 숲",3:"숲 정상"};   // 오버월드(잔디) 조우의 티어별 깊이 힌트
-const HABITAT_KO={snow:"설원 지대",marsh:"안개 늪지",skyridge:"뇌명 봉우리",ruins:"고대 유적",crater:"불꽃 분화구",garden:"달빛 화원",isle:"여명의 섬",coast:"노을 해안",surf:"수면 위",fishRare:"낚시(대물)",fish:"낚시",lava:"용암 동굴",cave:"수정 동굴"};
-// 도감 "출현" 문구를 실제 조우 풀에서 파생한다. 예전엔 FIND_HINT[tier] 하나만 써서
-// 해안 전용 종도 "숲 · 초원"이라 떴다(거짓 정보).
-function findHint(sp){
-  if(!sp)return "?";
-  const spots=[];
-  if(typeof ENC_POOLS!=="undefined"){ for(const k in ENC_POOLS){ if(ENC_POOLS[k].indexOf(sp.id)>=0){ const ko=HABITAT_KO[k]; if(ko&&spots.indexOf(ko)<0)spots.push(ko); } } }
-  // 오버월드 잔디: 바다 전용/야생 미출현 종은 제외 (pickWild와 동일 규칙)
-  const seaOnly=(typeof SEA_MONS!=="undefined")&&SEA_MONS.has(sp.id);
-  const noWild=(typeof NO_WILD!=="undefined")&&NO_WILD.has(sp.id);
-  if(!seaOnly && !noWild && !sp.legend && !sp.secret) spots.unshift(FIND_HINT[sp.tier]||"숲");
-  if(!spots.length) return sp.legend?"전설 · 특별한 장소":"진화 · 특별한 방법";
-  // 시간대 한정이면 덧붙인다
-  let t=""; if(typeof NIGHT_MONS!=="undefined"&&NIGHT_MONS.has(sp.id))t=" 🌙밤";
-  else if(typeof DAY_MONS!=="undefined"&&DAY_MONS.has(sp.id))t=" ☀️낮";
-  return spots.join(" · ")+t; }
-
-const PRE_EVO={}; DEX.forEach(d=>{ if(d.evolveTo)PRE_EVO[d.evolveTo]=d.id; });
-function baseForm(id){ let cur=id,g=0; while(PRE_EVO[cur]&&g++<6)cur=PRE_EVO[cur]; return cur; }
-function canBreed(a,b){ if(!a||!b||a.isEgg||b.isEgg)return false; if(a.gender==="N"||b.gender==="N")return false; if(a.gender===b.gender)return false;
-  if(baseForm(a.id)===baseForm(b.id))return true;
-  const sa=byId(a.id),sb=byId(b.id); if(!sa||!sb)return false;
-  const ta=[sa.type,sa.type2].filter(Boolean), tb=[sb.type,sb.type2].filter(Boolean);
-  return ta.some(t=>tb.includes(t)); }
-function eggMoves(babyId,a,b){ const baby=byId(babyId); if(!baby)return [];
-  const normal=new Set(baby.moves||[]); (baby.learn||[]).forEach(l=>{ if(l[0]<=5)normal.add(l[1]); });
-  const linePool=new Set(baby.moves||[]); (baby.learn||[]).forEach(l=>linePool.add(l[1]));
-  const babyTypes=[baby.type,baby.type2].filter(Boolean);
-  const parentMoves=[...new Set([...(a.moves||[]),...(b.moves||[])])];
-  const out=[]; parentMoves.forEach(mv=>{ if(!MOVES[mv]||normal.has(mv))return; if(linePool.has(mv)||babyTypes.includes(MOVES[mv].type))out.push(mv); });
-  return out.slice(0,2); }
-function makeEgg(a,b){ const female=(a.gender==="F")?a:(b.gender==="F")?b:a; const babyId=baseForm(female.id);
-  const iv={hp:ri(0,31),atk:ri(0,31),def:ri(0,31),spa:ri(0,31),spDef:ri(0,31),spd:ri(0,31)};
-  const stats=["hp","atk","def","spa","spDef","spd"]; const pick=stats.slice().sort(()=>Math.random()-0.5).slice(0,3);
-  pick.forEach(st=>{ const parent=Math.random()<0.5?a:b; if(parent.ivs&&parent.ivs[st]!=null)iv[st]=parent.ivs[st]; });
-  return { isEgg:true, species:babyId, hatch:ri(20,34), ivInherit:iv, natureInherit:(Math.random()<0.5?a.nature:b.nature), moveInherit:eggMoves(babyId,a,b), id:babyId, name:"알", em:"🥚", level:1, hp:1, maxHp:1, moves:[], pp:{}, stages:newStages() }; }
-function hatchEgg(egg){ const m=makeMon(egg.species,5); if(egg.ivInherit)m.ivs=egg.ivInherit; if(egg.natureInherit)m.nature=egg.natureInherit; if(egg.moveInherit)egg.moveInherit.forEach(mv=>{ if(MOVES[mv])addMove(m,mv); }); m.friendship=70; recalc(m,null,true); m.hp=m.maxHp; return m; }
-function dayStep(){ if(!G.daycare)return; const d=G.daycare;
-  if(d.a&&d.b&&!d.eggReady&&canBreed(d.a,d.b)){ d.steps=(d.steps||0)+1; if(d.steps>=160){ d.eggReady=true; d.steps=0; flashHint("🥚 육아방에 알이 생긴 것 같다!"); saveGame&&saveGame(); } }
-  if(G.party){ for(let i=0;i<G.party.length;i++){ const m=G.party[i]; if(m&&m.isEgg){ m.hatch=(m.hatch||1)-1; if(m.hatch<=0){ const baby=hatchEgg(m); G.party[i]=baby; Audio.sfx&&Audio.sfx("levelup"); if(Audio.cry)Audio.cry(baby.id,baby.type); flashHint(`🐣 알에서 <b>${baby.name}</b>이(가) 태어났다!`); saveGame&&saveGame(); } else if(m.hatch===6){ Audio.sfx&&Audio.sfx("blip"); flashHint("🥚 품 속의 알이 이따금 꿈틀거린다…"); } } } } }
 // 야생 정령이 들고 나오는 도구. 예전엔 held:null 고정이라 야생에서 도구를 얻을 길이 없었다.
 // 티어가 높을수록 확률·품질이 오른다. 트레이너/알 정령은 makeMon 이후 별도로 덮어쓴다.
 const WILD_HELD={1:["oranberry","cureberry"],2:["oranberry","cureberry","scopelens"],3:["leftovers","powerband","scopelens"]};
@@ -1374,6 +1343,49 @@ function setStatusFields(mon, st, badly){
   if(st==="psn") mon._tox=badly?1:0;
 }
 
+
+
+const FIND_HINT={1:"숲 · 초원",2:"깊은 숲",3:"숲 정상"};   // 오버월드(잔디) 조우의 티어별 깊이 힌트
+const HABITAT_KO={snow:"설원 지대",marsh:"안개 늪지",skyridge:"뇌명 봉우리",ruins:"고대 유적",crater:"불꽃 분화구",garden:"달빛 화원",isle:"여명의 섬",coast:"노을 해안",surf:"수면 위",fishRare:"낚시(대물)",fish:"낚시",lava:"용암 동굴",cave:"수정 동굴"};
+// 도감 "출현" 문구를 실제 조우 풀에서 파생한다. 예전엔 FIND_HINT[tier] 하나만 써서
+// 해안 전용 종도 "숲 · 초원"이라 떴다(거짓 정보).
+function findHint(sp){
+  if(!sp)return "?";
+  const spots=[];
+  if(typeof ENC_POOLS!=="undefined"){ for(const k in ENC_POOLS){ if(ENC_POOLS[k].indexOf(sp.id)>=0){ const ko=HABITAT_KO[k]; if(ko&&spots.indexOf(ko)<0)spots.push(ko); } } }
+  // 오버월드 잔디: 바다 전용/야생 미출현 종은 제외 (pickWild와 동일 규칙)
+  const seaOnly=(typeof SEA_MONS!=="undefined")&&SEA_MONS.has(sp.id);
+  const noWild=(typeof NO_WILD!=="undefined")&&NO_WILD.has(sp.id);
+  if(!seaOnly && !noWild && !sp.legend && !sp.secret) spots.unshift(FIND_HINT[sp.tier]||"숲");
+  if(!spots.length) return sp.legend?"전설 · 특별한 장소":"진화 · 특별한 방법";
+  // 시간대 한정이면 덧붙인다
+  let t=""; if(typeof NIGHT_MONS!=="undefined"&&NIGHT_MONS.has(sp.id))t=" 🌙밤";
+  else if(typeof DAY_MONS!=="undefined"&&DAY_MONS.has(sp.id))t=" ☀️낮";
+  return spots.join(" · ")+t; }
+
+const PRE_EVO={}; DEX.forEach(d=>{ if(d.evolveTo)PRE_EVO[d.evolveTo]=d.id; });
+function baseForm(id){ let cur=id,g=0; while(PRE_EVO[cur]&&g++<6)cur=PRE_EVO[cur]; return cur; }
+function canBreed(a,b){ if(!a||!b||a.isEgg||b.isEgg)return false; if(a.gender==="N"||b.gender==="N")return false; if(a.gender===b.gender)return false;
+  if(baseForm(a.id)===baseForm(b.id))return true;
+  const sa=byId(a.id),sb=byId(b.id); if(!sa||!sb)return false;
+  const ta=[sa.type,sa.type2].filter(Boolean), tb=[sb.type,sb.type2].filter(Boolean);
+  return ta.some(t=>tb.includes(t)); }
+function eggMoves(babyId,a,b){ const baby=byId(babyId); if(!baby)return [];
+  const normal=new Set(baby.moves||[]); (baby.learn||[]).forEach(l=>{ if(l[0]<=5)normal.add(l[1]); });
+  const linePool=new Set(baby.moves||[]); (baby.learn||[]).forEach(l=>linePool.add(l[1]));
+  const babyTypes=[baby.type,baby.type2].filter(Boolean);
+  const parentMoves=[...new Set([...(a.moves||[]),...(b.moves||[])])];
+  const out=[]; parentMoves.forEach(mv=>{ if(!MOVES[mv]||normal.has(mv))return; if(linePool.has(mv)||babyTypes.includes(MOVES[mv].type))out.push(mv); });
+  return out.slice(0,2); }
+function makeEgg(a,b){ const female=(a.gender==="F")?a:(b.gender==="F")?b:a; const babyId=baseForm(female.id);
+  const iv={hp:ri(0,31),atk:ri(0,31),def:ri(0,31),spa:ri(0,31),spDef:ri(0,31),spd:ri(0,31)};
+  const stats=["hp","atk","def","spa","spDef","spd"]; const pick=stats.slice().sort(()=>Math.random()-0.5).slice(0,3);
+  pick.forEach(st=>{ const parent=Math.random()<0.5?a:b; if(parent.ivs&&parent.ivs[st]!=null)iv[st]=parent.ivs[st]; });
+  return { isEgg:true, species:babyId, hatch:ri(20,34), ivInherit:iv, natureInherit:(Math.random()<0.5?a.nature:b.nature), moveInherit:eggMoves(babyId,a,b), id:babyId, name:"알", em:"🥚", level:1, hp:1, maxHp:1, moves:[], pp:{}, stages:newStages() }; }
+function hatchEgg(egg){ const m=makeMon(egg.species,5); if(egg.ivInherit)m.ivs=egg.ivInherit; if(egg.natureInherit)m.nature=egg.natureInherit; if(egg.moveInherit)egg.moveInherit.forEach(mv=>{ if(MOVES[mv])addMove(m,mv); }); m.friendship=70; recalc(m,null,true); m.hp=m.maxHp; return m; }
+function dayStep(){ if(!G.daycare)return; const d=G.daycare;
+  if(d.a&&d.b&&!d.eggReady&&canBreed(d.a,d.b)){ d.steps=(d.steps||0)+1; if(d.steps>=160){ d.eggReady=true; d.steps=0; flashHint("🥚 육아방에 알이 생긴 것 같다!"); saveGame&&saveGame(); } }
+  if(G.party){ for(let i=0;i<G.party.length;i++){ const m=G.party[i]; if(m&&m.isEgg){ m.hatch=(m.hatch||1)-1; if(m.hatch<=0){ const baby=hatchEgg(m); G.party[i]=baby; Audio.sfx&&Audio.sfx("levelup"); if(Audio.cry)Audio.cry(baby.id,baby.type); flashHint(`🐣 알에서 <b>${baby.name}</b>이(가) 태어났다!`); saveGame&&saveGame(); } else if(m.hatch===6){ Audio.sfx&&Audio.sfx("blip"); flashHint("🥚 품 속의 알이 이따금 꿈틀거린다…"); } } } } }
 function noPP(m){ return m.moves.every(mv=>(m.pp[mv]||0)<=0); }
 function foeChooseMove(foe,target){
   if(!foe||!foe.moves)return "struggle"; const st=foe.stages||newStages(); const tgt=target||{status:null,hp:1,maxHp:1,type:"normal"};

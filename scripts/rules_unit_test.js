@@ -21,7 +21,7 @@ const mk=o=>Object.assign({
 
 console.log("\n[규칙 로드]");
 ok(R.__names.length>20, `규칙 심볼 ${R.__names.length}개 추출`);
-ok(R.__order.join(",")==="util,tables,battle", `로드 순서 ${R.__order.join("→")}`);
+ok(R.__order.join(",")==="util,tables,moves,dex,battle", `로드 순서 ${R.__order.join("→")}`);
 
 console.log("\n[랭크 배율 — 본가 표]");
 // 공/방 랭크: s>=0 → (2+s)/2, s<0 → 2/(2-s)
@@ -156,6 +156,51 @@ console.log("\n[속도]");
   const base=mk(); ok(R.effSpd(base)===100, "기본 속도 그대로");
   ok(R.effSpd(mk({status:"par"}))===50, "마비는 속도 절반");
   const up=mk(); up.stages.spd=2; ok(R.effSpd(up)===200, "속도 랭크 +2 → 2배");
+}
+
+console.log("\n[기술 설명 — 배우기/잊기/전투 메뉴가 쓰는 한 줄]");
+// 예전엔 jsdom으로 dist를 통째로 띄워 검사했다(movedesc_test.js). moveDesc/moveSummary가
+// 규칙 계층으로 내려온 뒤로는 브라우저가 전혀 필요 없다 — 같은 커버리지를 여기서 즉시 돌린다.
+{
+  const cases=[
+    ["flare",["불","위력 58","화상","PP"]],        // 공격 + 상태이상
+    ["growl",["노말","공격↓","PP"]],                // 상대 랭크 하락
+    ["agility",["속도↑","자신","PP"]],              // 자신 랭크 상승
+    ["furyswipe",["위력 17","연타","PP"]],          // 연속기
+    ["recover",["회복","PP"]],                      // 회복
+    ["absorb",["흡수","PP"]],                       // 흡수
+    ["quickjab",["선제","PP"]],                     // 선제공격
+    ["reflect",["물리 피해","PP"]],                  // 장막
+    ["leechseed",["씨뿌리기","PP"]],                // 씨앗
+    ["toxic",["독","PP"]],                          // 상태이상
+    ["sunnyday",["쨍쨍","PP"]],                     // 날씨
+    ["stealthrock",["바위 설치","PP"]],             // 함정
+    ["headbutt",["풀죽음","PP"]],                   // 풀죽음
+  ];
+  for(const [mv,needles] of cases){ const t=R.moveSummary(mv);
+    ok(needles.every(n=>t.includes(n)), `${mv} → "${t}"`); }
+  ok(R.moveSummary("__nope__")==="__nope__", "미정의 기술도 안전(키 그대로)");
+  // 변화기도 정체가 드러나야 한다 — 위력만 보고 "변화"로 뭉뚱그리면 UI가 무의미해진다
+  ok(R.moveDesc("agility").length>0 && R.moveDesc("toxic").length>0, "변화기도 설명이 비지 않는다");
+}
+
+console.log("\n[종 데이터 · 개체 생성]");
+// DEX/makeMon도 규칙 계층으로 내려왔다(legendary_test가 브라우저로 하던 검사).
+{
+  ok(R.DEX.length===86, `DEX 86종 (${R.DEX.length})`);
+  const legends=R.DEX.filter(d=>d.legend);
+  ok(legends.length===5 && legends.every(d=>d.tier===4), `전설 5종 전부 tier4 (${legends.length})`);
+  const bst=d=>Object.values(d.base).reduce((a,b)=>a+b,0);
+  const minLegend=Math.min(...legends.map(bst)), maxRegular=Math.max(...R.DEX.filter(d=>!d.legend).map(bst));
+  ok(minLegend>maxRegular, `전설 최소 종족값 > 일반 최강 (${minLegend} > ${maxRegular})`);
+  ok(bst(R.byId("dawnwyrm"))>=260, `여명룡 종족값 대폭 상향 (${bst(R.byId("dawnwyrm"))})`);
+  ok(R.makeMon("dawnwyrm",56).maxHp>=210, `여명룡 Lv56 HP 압도적 (${R.makeMon("dawnwyrm",56).maxHp})`);
+  // makeMon 위생: 레벨 정수화(소수점 레벨 버그 재발 방지) + 학습셋/PP 채움
+  const frac=R.makeMon("foxfire",12.7);
+  ok(frac.level===12, `레벨은 항상 정수 (12.7 → ${frac.level})`);
+  ok(frac.moves.length>0 && frac.moves.every(mv=>frac.pp[mv]>0), "학습 기술과 PP가 채워진다");
+  ok(frac.moves.length<=4, `기술은 최대 4개 (${frac.moves.length})`);
+  ok(R.byId("__nope__")===undefined, "없는 종은 undefined");
 }
 
 console.log("\n[순수성]");

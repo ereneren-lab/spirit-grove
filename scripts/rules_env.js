@@ -6,13 +6,13 @@
 //   vm 컨텍스트 하나에서 평가한다 → 테스트가 도는 코드와 브라우저가 도는 코드가 문자 그대로 같다.
 //   (파일마다 module.exports를 달면 그 자체가 또 하나의 동기화 대상이 된다.)
 //
-// ⚠️ 순서는 build.py의 repl 순서와 반드시 일치해야 한다: util → tables → battle.
+// ⚠️ 순서는 build.py의 repl 순서와 반드시 일치해야 한다: util → tables → moves → dex → battle.
 // ⚠️ vm에서 top-level `const`/`function`은 컨텍스트 객체에 붙지 않는다(렉시컬 스코프).
 //    그래서 선언 이름을 **소스에서 자동 추출**해 내보낸다 — 손으로 나열하면 그 목록이
 //    또 하나의 병렬 테이블이 되어, 이 리팩터가 없애려던 문제를 다시 만든다.
 const fs=require("fs"), path=require("path"), vm=require("vm");
 
-const ORDER=["util","tables","battle"];
+const ORDER=["util","tables","moves","dex","battle"];
 const dir=path.join(__dirname,"..","src","rules");
 const src=ORDER.map(n=>{
   const f=path.join(dir,n+".js");

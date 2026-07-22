@@ -61,7 +61,6 @@ pw() {
   pw goal_test.js
   pw altar_test.js
   pw curve_test.js
-  pw movedesc_test.js
   pw dialog_test.js
 else
   echo "⏭️  스모크 테스트 건너뜀 (npm install jsdom 하면 실행됨)"
@@ -97,7 +96,6 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw catch_identity_test.js
   # type_chart_test.js 는 순수 상성표라 rules_unit_test.js(브라우저 불필요)로 이관됨 → 여기선 제거.
   pw newtypes_test.js
-  pw legendary_test.js
   pw gym_ice_test.js
   pw ability_weather_test.js
   pw marsh_test.js

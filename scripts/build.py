@@ -45,6 +45,8 @@ def rules(name):
 repl = {
     "//@@RULES_UTIL@@": rules("util"),
     "//@@RULES_TYPES@@": rules("tables"),
+    "//@@RULES_MOVES@@": rules("moves"),
+    "//@@RULES_DEX@@": rules("dex"),
     "//@@RULES_BATTLE@@": rules("battle"),
     "//@@HERO_ART@@": hero,
     "//@@HERO_ART_BACK@@": back,

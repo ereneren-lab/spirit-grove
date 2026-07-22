@@ -261,12 +261,16 @@ EV/성격/IV 시스템(`m.evs`·`m.nature`·`m.ivs`)은 다 있고 적용·저�
 ## 순수 규칙 계층 (`src/rules/`) — 브라우저 없는 단위 테스트
 테스트 64개 중 56개가 Chromium을 띄우고 있었는데, 상당수는 **브라우저가 필요해서가 아니라 코드가 HTML 안에 갇혀 있어서**였다. 순수 로직을 떼어내 node에서 바로 돌린다.
 
-- `src/rules/util.js` · `tables.js` · `battle.js` — **DOM을 쓰지 않는다.**
+- `src/rules/util.js` · `tables.js` · `moves.js` · `dex.js` · `battle.js` — **DOM을 쓰지 않는다.**
+  - `moves.js` = `MOVES` + `moveDesc`/`moveSummary`, `dex.js` = `DEX` + `byId`/`STARTERS`/`WILD_HELD`/`wildHeld`/`makeMon`/`addMove`/`recalc`.
+  - ⚠️ `makeMon`은 `newStages`(battle.js)를 부른다 — **함수 선언이라 한 스코프에서 호이스팅**되므로 로드 순서와 무관하다. 반면 `const`(NATURES·ABILITY_OVERRIDE·SHINY_RATE)는 앞선 tables.js에 있어야 한다.
 - **브라우저와 node가 문자 그대로 같은 코드를 돈다**: `build.py`가 `//@@RULES_*@@` 마커에 파일을 인라인하고, `scripts/rules_env.js`가 **같은 파일을 같은 순서로** 이어붙여 node `vm`에서 평가한다.
-  - ⚠️ **순서는 `build.py`의 `repl`과 `rules_env.js`의 `ORDER`가 일치해야 한다**(util → tables → battle).
+  - ⚠️ **순서는 `build.py`의 `repl`과 `rules_env.js`의 `ORDER`가 일치해야 한다**(util → tables → moves → dex → battle). `rules_unit_test`가 이 순서를 단정으로 잡아둔다.
   - ⚠️ 파일마다 `module.exports`를 다는 방식은 **일부러 피했다** — 그 export 목록이 또 하나의 동기화 대상(=위에서 없앤 병렬 테이블)이 된다. 대신 선언 이름을 소스에서 정규식으로 자동 추출한다. 그래서 규칙 파일의 **최상위 선언은 들여쓰기 없이** 쓸 것(추출 정규식이 행 첫 칸을 앵커로 쓴다).
   - ⚠️ vm 컨텍스트에 `document`/`window`가 **없다** = 규칙 계층에 브라우저 코드가 섞이면 즉시 터진다. `injectPalette`만 `typeof document!=="undefined"` 가드 뒤에서 호출된다.
 - `scripts/rules_unit_test.js` — 단정 50여 개가 **0.07초**(브라우저 테스트는 개당 5~20초). `verify.sh` **맨 앞**에 있어, 구간을 나눠 돌리는 환경에서도 규칙 회귀는 항상 즉시 걸린다.
+- **브라우저 테스트 감축 (누적 3건)**: `type_chart_test`(상성표) → `R.EFF` 직접 단정. **`movedesc_test`(jsdom)**·**`legendary_test`(jsdom)** → `MOVES`/`DEX`/`makeMon`을 규칙 계층으로 내린 뒤 `rules_unit_test`로 이관하고 파일 삭제.
+  - ⚠️ **데이터를 규칙 계층으로 옮기는 건 "병렬 테이블 만들기"가 아니다** — 정의가 옮겨갈 뿐 사본이 생기지 않는다(build.py가 같은 파일을 인라인). 사본이 생기는 건 export 목록·테스트 안의 하드코딩 사본 같은 것들이고, 그건 여전히 금지다.
 - **브라우저 테스트 감축 예시**: `type_chart_test.js`(얼음·독·땅 상성표)는 `S.damage().eff`만 봤는데 `eff`는 `EFF`의 곱이라, `R.EFF` 직접 단정으로 여기 이관하고 playwright 목록에서 뺐다(브라우저 1개 감축, 커버리지 동일). ⚠️ 나머지 후보(`movedesc`·`legendary`·`sim_status` 등)는 `MOVES`/`DEX`/`region`/`WILD_FLOOR`를 규칙 계층으로 **추출 선행**이 필요하고, 추출은 또 하나의 동기화 대상을 만드니 신중히. `foe_switch`·`newtypes`·`dex_flavor`는 DOM 렌더·게임 상태 결합이라 브라우저가 진짜 필요하다.
 - 새 순수 로직(데미지·랭크·상태 규칙 등)은 **`src/rules/`에 넣고 여기서 테스트**할 것. 브라우저 테스트는 DOM/캔버스/오디오/입력이 실제로 필요한 것만.
 
