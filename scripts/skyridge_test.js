@@ -1,4 +1,4 @@
-// 신규 지역 회귀: 뇌명 봉우리(skyridge) + 고대 유적(ruins) — 인테리어·조우풀·진입·가드·서식지·저장.
+// 신규 지역 회귀: 뇌명 봉우리(skyridge) + 고대 유적(ruins) + 불꽃 분화구(crater) — 인테리어·조우풀·진입·가드·서식지·저장.
 const { chromium } = require("playwright"); const path=require("path");
 (async()=>{ const b=await chromium.launch();
   const p=await b.newPage({viewport:{width:430,height:760}});
@@ -84,7 +84,34 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(boss.okd && boss.savedSky && boss.savedRu, "skyBossDone/ruinsBossDone 세이브/로드 보존");
   ok(boss.skyNoWild && boss.megaExists, "보스 종은 진화전용(야생 미출현) — 보스가 유일 야생 획득 경로");
 
+  /* ===== 불꽃 분화구(crater) — 불 타입 전용 서식지 ===== */
+  const cr=await p.evaluate(()=>{ const S=window.SG, F=S.flow; S.setG(S.freshState()); const G=S.G();
+    const I=F.INTERIORS.crater; const pool=(F.ENC_POOLS.crater||[]);
+    G.party=[S.makeMon("cindercat",30)]; G.pos={x:7,y:9}; G.indoor="crater"; G.busy=false;
+    const ps=new Set(pool); F.startCraterEncounter();
+    F.enterMap(true); let oPos=null,oWalk=null;
+    for(let y=0;y<50&&!oPos;y++)for(let x=0;x<25;x++){ if(F.tileAt(x,y)==="^"){ oPos=x+","+y; oWalk=F.walkable(x,y); break; } }
+    // 조우풀이 실제로 '불 서식지'인지 — 전 종이 불 타입이어야 테마가 거짓말이 아니다
+    const allFire=pool.every(id=>{ const d=S.byId(id); return d && (d.type==="fire"||d.type2==="fire"); });
+    // 인테리어 폭 15 이하(넘으면 화면 밖으로 잘린다) + str 높이 일치
+    const shape=!!(I && I.id==="crater" && I.str.length===I.H && I.str.every(r=>r.length===I.W) && I.W<=15);
+    return { shape, poolN:pool.length, allExist:pool.every(id=>S.byId(id)), allFire,
+             habitat:(F.HABITAT_KO||{}).crater, findHint:F.findHint(S.byId("pyrewolf")).indexOf("불꽃 분화구")>=0,
+             guard:!!(S.TRAINERS["*"]&&S.TRAINERS["*"].team&&S.flow.GUARD_TILES.indexOf("*")>=0),
+             encInPool:S.G().foe&&ps.has(S.G().foe.id), foe:S.G().foe&&S.G().foe.id, oPos, oWalk }; });
+  ok(cr.shape && cr.poolN>=6 && cr.allExist, `분화구 인테리어(폭\u2264 15)+조우풀 ${cr.poolN}종 실존`);
+  ok(cr.allFire, "조우풀 전원이 불 타입 — '불 서식지'가 실제로 불이다");
+  ok(cr.habitat==="불꽃 분화구" && cr.findHint, "분화구 HABITAT_KO + findHint 반영");
+  ok(cr.guard, "화산 감시자(TRAINERS['*']) + GUARD_TILES 등록");
+  ok(cr.oPos && cr.oWalk===false, `분화구 진입 타일 ^ 존재\u00b7비보행 (${cr.oPos})`);
+  ok(cr.encInPool, `startCraterEncounter가 분화구 풀에서 조우 (${cr.foe})`);
+
+  const cs=await p.evaluate(()=>{ const S=window.SG, F=S.flow; S.setG(S.freshState()); const G=S.G();
+    G.party=[S.makeMon("cindercat",30)]; G.craterSeen=true;
+    const okd=F.deserialize(JSON.parse(JSON.stringify(F.serialize()))); return { okd, round:!!S.G().craterSeen }; });
+  ok(cs.okd && cs.round, "craterSeen 세이브/로드 보존");
+
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
-  console.log(process.exitCode?"\n❌ 실패":"\n🎉 신규 지역(봉우리·유적) 통과");
+  console.log(process.exitCode?"\n❌ 실패":"\n🎉 신규 지역(봉우리·유적·분화구) 통과");
   await b.close(); process.exit(process.exitCode||0);
 })();
