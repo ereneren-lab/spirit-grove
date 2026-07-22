@@ -10,7 +10,7 @@
 // ⚠️ 확률·부하에 좌우되므로 하드 게이트는 "런타임 에러 0 / 진행이 0은 아니다"만. 도달 지점은 참고 출력.
 //
 // ── 현재 상태: 미완(WIP) ────────────────────────────────────────────────
-// 아직 **첫 뱃지도 못 간다.** 지금까지 잡은 건 전부 봇 쪽 결함이고(게임 버그 0건),
+// **첫 뱃지까지 간다**(7분·트레이너전 4회). 그 뒤 구간은 아직 미검증. 지금까지 잡은 건 전부 봇 쪽 결함이고(게임 버그 0건),
 // 게임은 10분 연속 플레이에서 런타임 에러 0으로 버텼다. 고친 결함:
 //   1) HP 18%에서 도주 → 경험치를 못 얻어 Lv5 정체·전멸 반복 → 도주는 최후 수단으로
 //   2) 간호사 회복이 다단 대사라 clearStory가 대사 사이 공백에서 조기 종료 → 회복 완료까지 폴링
@@ -26,6 +26,12 @@
 // ── 트레이스 사용법 ──
 //   TRACE=1 node scripts/fullrun_test.js dist/spirit_grove_3d.html 240
 //   매 루프 한 줄(분기·상태·열린 오버레이 id/버튼)을 찍는다. 정지하면 마지막 몇 줄이 곧 원인이다.
+//
+//   9) **문 앞에서 안 부딪혔다**: 목표(체육관·센터·리그)는 비보행 문이라 봇이 문 앞 칸에 도착한 뒤
+//      목표만 계속 재탭하며 제자리를 맴돌았다(walkTo가 0=이미 도착을 반환해 아무 일도 안 난다).
+//      → 목표가 바로 옆이면 그 방향으로 부딪혀 들어간다. **이걸로 처음 체육관에 들어갔다.**
+//  10) 체육관에 들어가자마자 실내 탈출 로직이 도로 내보냈다 → 체육관·리그는 목표 자체이므로
+//      나가지 말고 위로 걸어 트레이너·관장에게 부딪힌다. **이걸로 첫 뱃지를 땄다(뱃지 1/4).**
 //
 // ⚠️ 남은 것(다음 세션):
 //   · 이제 하드 정지는 없다(파티 4마리·도감 3까지 진행). 대신 목표 트래커 이동이
@@ -268,6 +274,14 @@ const { chromium } = require("playwright"); const path=require("path");
 
     // ⚠️ 실내에서는 목표 트래커가 숨겨져 있어 봇이 방향키 폴백으로 제자리를 맴돈다.
     //    (실측: 센터 안에서 7분간 갇혀 간호사에게만 계속 부딪혔다.) 실내면 먼저 출구로 나간다.
+    // 체육관·리그는 **목표 자체**다 — 나가면 안 되고 위로 걸어 트레이너·관장에게 부딪혀야 한다.
+    if(st.indoor && (/^gym/.test(st.indoor)||st.indoor==="league")){
+      tr("field:gymUp",st);
+      for(let i=0;i<3;i++){ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(260);
+        const q=await p.evaluate(()=>({inB:!!window.SG.G().inBattle,dlg:document.getElementById("dialogBox").classList.contains("show")}));
+        if(q.inB||q.dlg)break; }
+      continue;
+    }
     if(st.indoor){ tr("field:exit",st);
       const walked=await p.evaluate(()=>{ const S=window.SG,F=S.flow,G=S.G();
         const I=F.INTERIORS[G.indoor]; if(!I)return false;
@@ -283,6 +297,17 @@ const { chromium } = require("playwright"); const path=require("path");
         const out=await p.evaluate(()=>!window.SG.G().indoor); if(out)break; }
       await p.waitForTimeout(300); continue;
     }
+
+    // ⚠️ 목표(체육관·센터·리그 입구)는 **비보행 문**이다. 봇은 문 앞 칸에 도착한 뒤
+    //    목표만 계속 재탭하며 제자리를 맴돌았다(walkTo가 0=이미 도착을 반환하므로 아무 일도 안 난다).
+    //    → 목표가 바로 옆이면 그 방향으로 **부딪혀 들어간다**(실제 플레이어가 하는 동작).
+    const bump=await p.evaluate(()=>{ const S=window.SG,F=S.flow,G=S.G();
+      const g=F.currentGoal&&F.currentGoal(); if(!g||g.x==null||G.indoor)return null;
+      const dx=g.x-G.pos.x, dy=g.y-G.pos.y;
+      if(Math.abs(dx)+Math.abs(dy)!==1)return null;
+      if(F.walkable(g.x,g.y))return null;
+      return dy<0?"ArrowUp":dy>0?"ArrowDown":dx<0?"ArrowLeft":"ArrowRight"; });
+    if(bump){ tr("field:bump",st); await p.keyboard.press(bump); await p.waitForTimeout(800); continue; }
 
     tr("field:goal",st);
     const tapped=await p.evaluate(()=>{ const el=document.getElementById("goalTrack");
