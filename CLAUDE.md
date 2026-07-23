@@ -67,6 +67,13 @@ verify 내용:
 - **소스가 진실의 출처**: Actions가 서버에서 빌드하므로 `index.html`(빌드 산출물)은 `.gitignore`. Pages `build_type=workflow`.
 - ⚠️ 워크플로 파일(`.github/workflows/deploy.yml`)이 orphan 스냅샷에 포함돼야 트리거된다 — `git add -A`라 자동 포함. 지우지 말 것.
 
+### 모바일 컨트롤 (게임보이식) + 가로모드
+유저 피드백: "방향키 왼쪽, AB 오른쪽이면 진짜 포켓몬 같잖아" + "가로로 돌렸을 때 화면 꽉차지도 않고".
+- **세로**: 메뉴 6개(도감·가방·정령·지도·카드·귀환)를 **상단 한 줄**(아이콘+라벨, 6열)로. 하단은 **방향키(왼쪽, 십자·A/B 분리)** + **A/B 대각 원형(오른쪽)** — A 위-오른쪽(분홍), B 아래-왼쪽(파랑). 예전엔 A/B가 방향키 십자 안에 박혀 있었다.
+- **가로**(`@media (orientation:landscape) and (max-height:600px)`): 스테이지가 뷰포트를 꽉 채우고, `.map-foot`을 맵 위에 **오버레이**(pointer-events로 컨트롤만 클릭). 방향키 좌하단·A/B 우하단·메뉴 상단 반투명 바·힌트 숨김. `env(safe-area-inset-*)`로 노치 회피.
+- ⚠️ **캔버스 리사이즈 훅**: 회전 시 캔버스 픽셀 크기를 다시 잡아야 한다(예전엔 리스너가 없어 회전해도 안 바뀜) → `resize`/`orientationchange`에 `Field.resize()`(160ms 디바운스, 1회 등록).
+- ⚠️ A/B를 방향키 DOM에서 분리(`.pads`>`.dpad`+`.abpad`)했으니, **방향키는 `data-dir`, A/B는 `#actBtn`/`#backBtn` id**로 배선됨(이건 유지). 회귀 `mobile_controls_test.js`(배치 좌표 + 실제 탭 이동/상호작용).
+
 ### 홈 화면 앱 (iOS PWA)
 아이폰에서 "홈 화면에 추가"하면 **앱처럼 전체화면 실행**된다. `<head>`의 메타태그로 구현:
 - `apple-mobile-web-app-capable=yes`(브라우저 크롬 없이 standalone) · `apple-mobile-web-app-title`(홈 화면 이름) · `apple-mobile-web-app-status-bar-style=black-translucent` · `theme-color` · `apple-touch-icon`(180×180 PNG **data URI 인라인** — 단일 파일 유지) · `viewport-fit=cover`(노치까지).

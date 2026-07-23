@@ -104,14 +104,24 @@
   .canvas-wrap.zoom{transform:scale(1.35)}
   .warp-fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:40;transition:opacity .18s linear}
   #mapCanvas{display:block;width:100%;height:100%}
-  .map-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 4px 14px;gap:10px}
-  .dpad{display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(3,42px);gap:5px}
-  .dpad button{border:1px solid var(--line);background:var(--panel);color:var(--cream);border-radius:10px;font-size:17px;cursor:pointer;font-family:inherit}
+  /* 컨트롤: 메뉴 6개는 상단 한 줄, 아래는 방향키(왼쪽)+A/B(오른쪽) = 게임보이식 엄지 배치 */
+  .map-foot{display:flex;flex-direction:column;padding:8px 8px 12px;gap:9px}
+  .map-actions{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+  .sbtn{border:1px solid var(--line);background:var(--panel);color:var(--cream);border-radius:10px;padding:6px 3px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px}
+  .sbtn .i{font-size:16px;line-height:1}
+  .sbtn:active{background:var(--panel2)}
+  .pads{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .dpad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);gap:5px;flex-shrink:0}
+  .dpad button{border:1px solid var(--line);background:var(--panel);color:var(--cream);border-radius:11px;font-size:19px;cursor:pointer;font-family:inherit;touch-action:none}
   .dpad button:active{background:var(--panel2)}
   .dpad .sp{visibility:hidden}
-  .map-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-  .sbtn{border:1px solid var(--line);background:var(--panel);color:var(--cream);border-radius:11px;padding:10px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px}
-  .sbtn:active{background:var(--panel2)}
+  .dpad .dpc{visibility:visible;background:var(--panel);border:1px solid var(--line);border-radius:11px;opacity:.35}
+  /* A/B: 게임보이 대각 원형(A 위-오른쪽, B 아래-왼쪽) */
+  .abpad{position:relative;width:138px;height:104px;flex-shrink:0}
+  .abtn{position:absolute;width:58px;height:58px;border-radius:50%;border:1px solid var(--line);font-weight:800;font-size:20px;cursor:pointer;font-family:inherit;color:var(--cream);touch-action:none;box-shadow:0 3px 8px rgba(0,0,0,.35)}
+  .abtn:active{transform:translateY(1px)}
+  .abtn.a{right:2px;top:2px;background:radial-gradient(circle at 35% 30%,#e88ca0,#c9556a)}
+  .abtn.b{left:2px;bottom:2px;background:radial-gradient(circle at 35% 30%,#7fb0e0,#4a7ab0)}
   .dialogbox{position:absolute;left:8px;right:8px;bottom:8px;z-index:20;background:linear-gradient(180deg,#fbf6ea,#efe4cc);border:3px solid #34284a;border-radius:14px;padding:13px 16px 15px;box-shadow:0 8px 24px rgba(0,0,0,.45),inset 0 0 0 2px rgba(255,255,255,.4);display:none;cursor:pointer;min-height:64px}
   .dialogbox.show{display:block;animation:dlgIn .16s ease-out}
   @keyframes dlgIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -466,6 +476,27 @@
   .pill{font-size:9.5px;padding:3px 7px}
   .iconbtn{width:26px;height:26px;font-size:12px}
 }
+/* 폰 가로모드: 화면을 꽉 채우고 컨트롤을 맵 위에 오버레이(엄지 존). 세로일 땐 이 블록 무시. */
+@media (orientation:landscape) and (max-height:600px){
+  body{padding:0}
+  .stage{max-width:none;width:100vw;height:100vh;height:100dvh;max-height:none;border:0;border-radius:0;
+    padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom)}
+  .topbar{padding:3px 12px 1px}
+  .brand h1{font-size:13px} .brand .sub{display:none} .brand .mark{width:24px;height:24px;font-size:13px}
+  .canvas-wrap{aspect-ratio:auto;width:100%;height:100%;border-radius:0;border:0}
+  /* map-foot을 맵 위에 겹쳐 띄운다 — 배경/여백 없이 컨트롤만 코너에 */
+  .map-foot{position:absolute;inset:0;flex-direction:column;justify-content:flex-end;padding:0;gap:0;
+    pointer-events:none;background:none;z-index:12}
+  .map-foot>*{pointer-events:auto}
+  .map-actions{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:auto;
+    grid-template-columns:repeat(6,auto);gap:5px;background:rgba(23,19,38,.5);border-radius:12px;padding:4px 7px;backdrop-filter:blur(3px)}
+  .map-actions .sbtn{min-height:0;padding:4px 6px;background:transparent;border:0}
+  .map-actions .sbtn .l{font-size:9px}
+  .pads{position:static}
+  .dpad{position:absolute;left:calc(14px + env(safe-area-inset-left));bottom:14px}
+  .abpad{position:absolute;right:calc(14px + env(safe-area-inset-right));bottom:12px}
+  #mapHint{display:none}   /* 가로에선 하단 힌트가 맵 위에 겹쳐 지저분 — 숨김 */
+}
 </style>
 </head>
 <body>
@@ -542,15 +573,21 @@
         </div>
       </div>
       <div class="map-foot">
-        <div class="dpad">
-          <div class="sp"></div><button data-dir="up" aria-label="위로">▲</button><div class="sp"></div>
-          <button data-dir="left" aria-label="왼쪽">◀</button><button id="actBtn" aria-label="확인">A</button><button data-dir="right" aria-label="오른쪽">▶</button>
-          <div class="sp"></div><button data-dir="down" aria-label="아래로">▼</button><button id="backBtn" aria-label="취소/뒤로">B</button>
-        </div>
         <div class="map-actions">
-          <button class="sbtn" id="openDex">📖 도감</button><button class="sbtn" id="openBag">🎒 가방</button>
-          <button class="sbtn" id="openPC">📦 정령</button><button class="sbtn" id="openMinimap">🗺️ 지도</button>
-          <button class="sbtn" id="openCard">🪪 카드</button><button class="sbtn" id="openWarp">🔥 모닥불 귀환</button>
+          <button class="sbtn" id="openDex"><span class="i">📖</span><span class="l">도감</span></button><button class="sbtn" id="openBag"><span class="i">🎒</span><span class="l">가방</span></button>
+          <button class="sbtn" id="openPC"><span class="i">📦</span><span class="l">정령</span></button><button class="sbtn" id="openMinimap"><span class="i">🗺️</span><span class="l">지도</span></button>
+          <button class="sbtn" id="openCard"><span class="i">🪪</span><span class="l">카드</span></button><button class="sbtn" id="openWarp"><span class="i">🔥</span><span class="l">귀환</span></button>
+        </div>
+        <div class="pads">
+          <div class="dpad">
+            <div class="sp"></div><button data-dir="up" aria-label="위로">▲</button><div class="sp"></div>
+            <button data-dir="left" aria-label="왼쪽">◀</button><div class="sp dpc"></div><button data-dir="right" aria-label="오른쪽">▶</button>
+            <div class="sp"></div><button data-dir="down" aria-label="아래로">▼</button><div class="sp"></div>
+          </div>
+          <div class="abpad">
+            <button id="actBtn" class="abtn a" aria-label="확인">A</button>
+            <button id="backBtn" class="abtn b" aria-label="취소/뒤로">B</button>
+          </div>
         </div>
       </div>
       <div class="dialogbox" id="dialogBox"><div class="dlg-name" id="dlgName"></div><div class="dlg-text" id="dlgText"></div><div class="dlg-next" id="dlgNext">▼</div></div>
@@ -2292,6 +2329,10 @@ function enterMap(fromLoad){ if(fromLoad){ G.indoor=null; _owBackup=null; } if(!
   $("settingsBtn").style.display="grid"; $("moneyPill").style.display="block"; updateBadgePill(); show("map");
   Field.init(); Field.rebuild();
   Field.start(); Audio.startMusic(fieldMusic()); updateGoal();
+  // 화면 회전/리사이즈 시 캔버스 픽셀 크기 재계산(가로↔세로 전환 대응). 1회만 등록.
+  if(!window._sgResizeHooked){ window._sgResizeHooked=true;
+    let _rt=null; const _onResize=()=>{ if(_rt)clearTimeout(_rt); _rt=setTimeout(()=>{ if(Field&&Field.resize){ Field.resize(); } },160); };
+    window.addEventListener("resize",_onResize); window.addEventListener("orientationchange",_onResize); }
   if(!fromLoad)maybeTutorial(); }
 
 function maybeTutorial(){ let done=false; try{done=!!localStorage.getItem("sg4_tut");}catch(e){}
