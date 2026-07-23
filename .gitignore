@@ -1,2 +1,5 @@
 node_modules/
 .DS_Store
+
+# 빌드 산출물 — Actions가 서버에서 빌드하므로 커밋 불필요
+/index.html

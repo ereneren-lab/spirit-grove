@@ -1,0 +1,36 @@
+# main에 push되면 서버에서 빌드(scripts/build.py) → GitHub Pages로 자동 배포.
+# yacht-dice의 Render 자동배포와 같은 역할. 소스가 진실의 출처 — 빌드 산출물은 커밋 안 해도 됨.
+name: Deploy to Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # 수동 실행 버튼도 제공
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:                # 연달아 push해도 마지막 것만 배포
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: 빌드 (src + assets -> index.html)
+        run: python3 scripts/build.py
+      - name: 배포용 폴더 구성 (자립형 단일 파일)
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          # 커스텀 도메인 안 쓰면 CNAME 불필요. .nojekyll로 밑줄 폴더 무시 방지.
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: deploy
+        uses: actions/deploy-pages@v4
