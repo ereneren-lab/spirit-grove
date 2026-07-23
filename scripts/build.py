@@ -60,4 +60,7 @@ for marker, body in repl.items():
 os.makedirs(A("dist"), exist_ok=True)
 out = A("dist/spirit_grove_3d.html")
 open(out, "w", encoding="utf-8").write(html)
-print(f"✅ 빌드 완료: dist/spirit_grove_3d.html  ({os.path.getsize(out)//1024}KB, 크리처 {len(ids)}종)")
+# GitHub Pages 배포용: 저장소 루트에 index.html도 같이 내보낸다(dist와 동일 내용).
+# → Pages 루트 URL(user.github.io/spirit-grove/)로 게임이 바로 열린다. 빌드마다 자동 동기화.
+open(A("index.html"), "w", encoding="utf-8").write(html)
+print(f"✅ 빌드 완료: dist/spirit_grove_3d.html + index.html  ({os.path.getsize(out)//1024}KB, 크리처 {len(ids)}종)")
