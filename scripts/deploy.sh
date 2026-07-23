@@ -25,6 +25,9 @@ echo "  ✅ push 완료"
 echo "▶ 4/4 로컬 정리"
 git checkout -q main
 git branch -D "$BR" >/dev/null
+# ⚠️ checkout main이 로컬 dist/index.html을 main 커밋 상태로 되돌린다. 최신 소스로 다시 빌드해
+#    로컬 산출물이 방금 배포한 것과 일치하게 한다(안 그러면 로컬 테스트가 옛 dist로 헛돈다 — 실제로 겪음).
+python3 scripts/build.py >/dev/null 2>&1 || true
 
 echo ""
 echo "🎉 push 완료 — GitHub Actions가 1~2분 뒤 자동 배포한다."

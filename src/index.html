@@ -476,26 +476,31 @@
   .pill{font-size:9.5px;padding:3px 7px}
   .iconbtn{width:26px;height:26px;font-size:12px}
 }
-/* 폰 가로모드: 화면을 꽉 채우고 컨트롤을 맵 위에 오버레이(엄지 존). 세로일 땐 이 블록 무시. */
+/* 폰 가로모드: 게임보이식 핸드헬드 — 맵은 가운데 밴드, 컨트롤은 양옆 고정 거터(맵을 안 가림).
+   유저 피드백: 버튼이 맵 위에 떠서 어수선(오버레이)했다 → 겹침 없는 거터 배치로. 세로일 땐 무시. */
 @media (orientation:landscape) and (max-height:600px){
   body{padding:0}
   .stage{max-width:none;width:100vw;height:100vh;height:100dvh;max-height:none;border:0;border-radius:0;
-    padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom)}
-  .topbar{padding:3px 12px 1px}
-  .brand h1{font-size:13px} .brand .sub{display:none} .brand .mark{width:24px;height:24px;font-size:13px}
-  .canvas-wrap{aspect-ratio:auto;width:100%;height:100%;border-radius:0;border:0}
-  /* map-foot을 맵 위에 겹쳐 띄운다 — 배경/여백 없이 컨트롤만 코너에 */
-  .map-foot{position:absolute;inset:0;flex-direction:column;justify-content:flex-end;padding:0;gap:0;
-    pointer-events:none;background:none;z-index:12}
+    padding-bottom:env(safe-area-inset-bottom)}
+  .topbar{padding:2px 10px 2px calc(10px + env(safe-area-inset-left));gap:6px}
+  .topbar{padding-right:calc(10px + env(safe-area-inset-right))}
+  .brand h1{font-size:12px} .brand .sub{display:none} .brand .mark{width:22px;height:22px;font-size:12px}
+  .screen{position:relative}
+  /* 맵 = 가운데 밴드. 양옆 거터(왼쪽 방향키·오른쪽 A/B)만큼 안쪽으로. */
+  .canvas-wrap{position:absolute;top:2px;bottom:2px;
+    left:calc(164px + env(safe-area-inset-left));right:calc(160px + env(safe-area-inset-right));
+    width:auto;height:auto;aspect-ratio:auto;border-radius:12px;border:1px solid var(--line)}
+  .map-foot{position:absolute;inset:0;padding:0;background:none;pointer-events:none;z-index:12}
   .map-foot>*{pointer-events:auto}
-  .map-actions{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:auto;
-    grid-template-columns:repeat(6,auto);gap:5px;background:rgba(23,19,38,.5);border-radius:12px;padding:4px 7px;backdrop-filter:blur(3px)}
-  .map-actions .sbtn{min-height:0;padding:4px 6px;background:transparent;border:0}
-  .map-actions .sbtn .l{font-size:9px}
+  /* 왼쪽 거터: 메뉴 6개(2×3 컴팩트) 위 + 방향키 아래. 거터 폭(164)이 방향키(148@left8=우156)를 완전히 담아 맵을 안 가린다. */
+  .map-actions{position:absolute;left:calc(8px + env(safe-area-inset-left));top:6px;width:146px;
+    grid-template-columns:1fr 1fr;gap:4px}
+  .map-actions .sbtn{min-height:38px;padding:3px 2px}
+  .map-actions .sbtn .i{font-size:14px} .map-actions .sbtn .l{font-size:9px}
   .pads{position:static}
-  .dpad{position:absolute;left:calc(14px + env(safe-area-inset-left));bottom:14px}
-  .abpad{position:absolute;right:calc(14px + env(safe-area-inset-right));bottom:12px}
-  #mapHint{display:none}   /* 가로에선 하단 힌트가 맵 위에 겹쳐 지저분 — 숨김 */
+  .dpad{position:absolute;left:calc(8px + env(safe-area-inset-left));bottom:14px}
+  .abpad{position:absolute;right:calc(8px + env(safe-area-inset-right));bottom:14px}
+  #mapHint{display:none}
 }
 </style>
 </head>

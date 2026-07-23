@@ -66,11 +66,13 @@ verify 내용:
 - ⚠️ **로컬 `.git`이 479MB**(dist를 매 빌드 커밋한 이력) → 전체 이력 push는 비현실적이라 deploy.sh가 **orphan 단일 스냅샷**을 remote `main`에 force-push한다. remote `main`=스냅샷 1커밋, **로컬 `main`은 전체 이력 보존**(CLAUDE.md가 커밋 이력을 중요시하므로 로컬은 안 건드린다).
 - **소스가 진실의 출처**: Actions가 서버에서 빌드하므로 `index.html`(빌드 산출물)은 `.gitignore`. Pages `build_type=workflow`.
 - ⚠️ 워크플로 파일(`.github/workflows/deploy.yml`)이 orphan 스냅샷에 포함돼야 트리거된다 — `git add -A`라 자동 포함. 지우지 말 것.
+- ⚠️ **커밋할 때 `dist`도 포함**(`git add -A`). 안 하면 deploy.sh의 `git checkout main`이 로컬 dist를 옛 커밋으로 되돌려 **로컬 테스트가 옛 dist로 헛돈다**(실제로 겪음 — 가로모드 수정이 로컬에서 안 보였다). deploy.sh가 끝에 재빌드해 보정하지만, 커밋에 dist를 넣는 게 근본.
 
 ### 모바일 컨트롤 (게임보이식) + 가로모드
 유저 피드백: "방향키 왼쪽, AB 오른쪽이면 진짜 포켓몬 같잖아" + "가로로 돌렸을 때 화면 꽉차지도 않고".
 - **세로**: 메뉴 6개(도감·가방·정령·지도·카드·귀환)를 **상단 한 줄**(아이콘+라벨, 6열)로. 하단은 **방향키(왼쪽, 십자·A/B 분리)** + **A/B 대각 원형(오른쪽)** — A 위-오른쪽(분홍), B 아래-왼쪽(파랑). 예전엔 A/B가 방향키 십자 안에 박혀 있었다.
-- **가로**(`@media (orientation:landscape) and (max-height:600px)`): 스테이지가 뷰포트를 꽉 채우고, `.map-foot`을 맵 위에 **오버레이**(pointer-events로 컨트롤만 클릭). 방향키 좌하단·A/B 우하단·메뉴 상단 반투명 바·힌트 숨김. `env(safe-area-inset-*)`로 노치 회피.
+- **가로**(`@media (orientation:landscape) and (max-height:600px)`): **핸드헬드식 거터 배치**. 맵은 가운데 밴드(양옆 164/160px 안쪽), 왼쪽 거터=메뉴 2×3+방향키, 오른쪽 거터=A/B. **컨트롤이 맵을 안 가린다**(처음엔 맵 위 오버레이로 했다가 '어수선하다' 피드백 → 거터로 재설계). `env(safe-area-inset-*)`로 노치 회피, 힌트 숨김.
+  - ⚠️ 거터 폭이 방향키(148@left8=우156)·A/B(138)를 **완전히 담아야** 맵을 안 가린다. 회귀가 맵 좌/우변이 컨트롤 거터를 침범하는지 실좌표로 본다.
 - ⚠️ **캔버스 리사이즈 훅**: 회전 시 캔버스 픽셀 크기를 다시 잡아야 한다(예전엔 리스너가 없어 회전해도 안 바뀜) → `resize`/`orientationchange`에 `Field.resize()`(160ms 디바운스, 1회 등록).
 - ⚠️ A/B를 방향키 DOM에서 분리(`.pads`>`.dpad`+`.abpad`)했으니, **방향키는 `data-dir`, A/B는 `#actBtn`/`#backBtn` id**로 배선됨(이건 유지). 회귀 `mobile_controls_test.js`(배치 좌표 + 실제 탭 이동/상호작용).
 
