@@ -20,12 +20,14 @@
     color:var(--cream);display:flex;align-items:center;justify-content:center;min-height:100%;padding:16px;overflow:hidden}
   .stage{width:100%;max-width:430px;height:760px;max-height:94vh;background:linear-gradient(180deg,var(--bg2),var(--bg));
     border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);position:relative;overflow:hidden;display:flex;flex-direction:column}
-  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px}
-  .brand{display:flex;align-items:center;gap:9px}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:14px 18px 10px}
+  .brand{display:flex;align-items:center;gap:9px;flex-shrink:0}
   .brand .mark{width:30px;height:30px;border-radius:9px;background:radial-gradient(circle at 35% 30%, var(--mint), #2f7d63);box-shadow:0 0 14px rgba(127,209,174,.5);display:grid;place-items:center;font-size:16px}
-  .brand h1{font-size:15px;letter-spacing:.5px;font-weight:800}
-  .brand .sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
-  .top-right{display:flex;align-items:center;gap:8px}
+  .brand h1{font-size:15px;letter-spacing:.5px;font-weight:800;white-space:nowrap}
+  .brand .sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
+  /* ⚠️ 상단바 우측 그룹은 진행할수록 칩이 늘어(돈·설정·달리기·소리·도감·뱃지 6개) 좁은 폰(≤400px)에서 넘쳤다.
+     줄바꿈 허용(안전장치) + 좁을수록 간격·패딩 축소로 한 줄에 담는다. 회귀 topbar_fit_test. */
+  .top-right{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;min-width:0}
   .pill{font-size:11px;color:var(--muted);background:var(--panel);border:1px solid var(--line);padding:5px 11px;border-radius:999px}
   .money-pill{color:var(--amber);font-weight:700}
   .iconbtn{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--cream);font-size:14px;cursor:pointer;display:grid;place-items:center}
@@ -436,6 +438,18 @@
 
 .mxprompt{text-align:center;font-size:12px;margin-bottom:8px;opacity:.9}
 .dcbtn.wide.t-fire{border-left:3px solid #e0563f}.dcbtn.wide.t-water{border-left:3px solid #4a90d0}
+/* 좁은 폰: 상단바 칩이 6개까지 늘어도 한 줄에 담기게 간격·패딩을 조인다(줄바꿈은 최후 안전장치). */
+@media (max-width:400px){
+  .topbar{padding:12px 12px 9px}
+  .top-right{gap:5px}
+  .pill{font-size:10px;padding:4px 8px}
+  .iconbtn{width:28px;height:28px;font-size:13px}
+}
+@media (max-width:360px){
+  .top-right{gap:4px}
+  .pill{font-size:9.5px;padding:3px 7px}
+  .iconbtn{width:26px;height:26px;font-size:12px}
+}
 </style>
 </head>
 <body>
