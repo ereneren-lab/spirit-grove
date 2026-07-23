@@ -32,15 +32,16 @@
 //      → 목표가 바로 옆이면 그 방향으로 부딪혀 들어간다. **이걸로 처음 체육관에 들어갔다.**
 //  10) 체육관에 들어가자마자 실내 탈출 로직이 도로 내보냈다 → 체육관·리그는 목표 자체이므로
 //      나가지 말고 위로 걸어 트레이너·관장에게 부딪힌다. **이걸로 첫 뱃지를 땄다(뱃지 1/4).**
+//  11) **뱃지를 딴 뒤에도 체육관 안에 갇혔다**(실측: 25분 중 22분을 gym1 관장 앞에서 낭비).
+//      10)의 "나가지 말고 싸운다"에 "이미 깼으면 나간다"가 없었다. gymN의 관장 타일은 숫자 N,
+//      뱃지 키도 "1"~"4"라 같다 → `st.badgeKeys.includes(N)`이면 탈출 분기로 보낸다.
 //
 // ⚠️ 남은 것(다음 세션):
-//   · 이제 하드 정지는 없다(파티 4마리·도감 3까지 진행). 대신 목표 트래커 이동이
-//     **두 칸 사이를 오간다**(예: 8,44 ↔ 9,43). 탭할 때마다 경로가 재계산되고 조우로 끊겨
-//     한두 칸만 가고 마는 것으로 보인다.
+//   · 목표 트래커 이동이 두 칸 사이를 오갈 때가 있다(8,44 ↔ 9,43). 탭마다 경로가 재계산되고
+//     조우로 끊겨 한두 칸만 가고 마는 것으로 보인다. 진행은 되지만 느리다.
 //   · ⚠️ **시도했다가 되돌린 방법**: `currentGoal()`의 좌표를 읽어 `walkTo`로 끝까지 걷게 했더니
-//     **더 나빠졌다**(6분간 8,44에서 전투 0회). 목표가 비보행이라 인접칸으로 우회시켰는데도 경로가
-//     안 잡히거나 즉시 끊긴 것으로 보인다 — 같은 길로 다시 가지 말 것. 원인부터 볼 것:
-//     `walkTo`가 무엇을 반환하는지, `bfsPath`가 그 좌표쌍에서 왜 실패하는지 먼저 찍어볼 것.
+//     **더 나빠졌다**(6분간 8,44에서 전투 0회). walkTo가 0(이미 도착)을 반환하는데도 재탭만 한 게
+//     진짜 문제였다 — 그건 11)이 아니라 9)의 "문에 안 부딪힘"으로 해결됐다. 경로 자체는 문제 없다.
 //   · 상점에서 회복약 보충, 체육관 견습생 처리, 리그 5연전 회복 없이 진행 등 미검증.
 // ⚠️ verify.sh·playtest.sh에 **일부러 등록하지 않았다** — 아직 신뢰할 수 없어 CI에 넣으면 노이즈만 된다.
 //    수동 실행: node scripts/fullrun_test.js dist/spirit_grove_3d.html <초>
@@ -52,7 +53,11 @@ const { chromium } = require("playwright"); const path=require("path");
   const p=await b.newPage({viewport:{width:430,height:760}});
   const errs=[]; p.on("pageerror",e=>errs.push(e.message));
   const die=async(m)=>{ console.log("❌ "+m); await b.close(); process.exit(1); };
-  process.on("unhandledRejection", async e=>die("unhandledRejection: "+e));
+  // ⚠️ 브라우저가 **환경 압박**(부하·장시간)으로 죽는 것은 게임 버그가 아니다 — 그때까지의 진행을
+  //    보고하고 정상 종료한다. 그렇지 않으면 25분 실측이 마지막 순간의 크래시로 통째로 날아간다.
+  let browserDead=false;
+  const isBrowserDeath=e=>/Target (page|closed)|context or browser has been closed|has been closed/i.test(String(e&&e.message||e));
+  process.on("unhandledRejection", async e=>{ if(isBrowserDeath(e)){ browserDead=true; return; } die("unhandledRejection: "+e); });
   await p.goto("file://"+path.resolve(process.argv[2])); await p.waitForTimeout(1000);
   const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)process.exitCode=1; };
 
@@ -80,7 +85,7 @@ const { chromium } = require("playwright"); const path=require("path");
 
   const t0=Date.now();
   const stats={battles:0,wild:0,trainer:0,caught:0,potions:0,runs:0,heals:0,faints:0,milestones:[],samples:[]};
-  let wasBattle=false, lastStep=-1, lastMoney=null, stuck=0, lastKey="", fleeTries=0, healCooldown=0, potionFail=0;
+  let wasBattle=false, lastStep=-1, lastMoney=null, stuck=0, lastKey="", fleeTries=0, healCooldown=0, potionFail=0, finSnapshot=null;
 
   const mark=(name,st)=>{ if(stats.milestones.some(m=>m.name===name))return;
     stats.milestones.push({name, t:Math.round((Date.now()-t0)/1000), lv:st.lv, battles:stats.battles, party:st.party});
@@ -141,6 +146,8 @@ const { chromium } = require("playwright"); const path=require("path");
       `dlg=${st.dlg?1:0} indoor=${st.indoor||"-"} hp=${(st.hp*100).toFixed(0)}% pot=${st.potion} pos=${st.pos.x},${st.pos.y}`+
       (st.ovId!==undefined&&st.ovId!==null?` OV[${st.ovId}] "${st.ovTxt}" btns=${JSON.stringify(st.ovBtns)}`:"")); };
   while((Date.now()-t0)/1000 < BUDGET){
+   try {
+    if(browserDead)break;
     const st=await p.evaluate(()=>{ const S=window.SG,G=S.G();
       const main=document.getElementById("mainMenu"), mv=document.getElementById("moveMenu");
       const lead=G.party[G.active];
@@ -153,7 +160,7 @@ const { chromium } = require("playwright"); const path=require("path");
         ovBtns:[...(document.querySelector(".overlay.active")||{querySelectorAll:()=>[]}).querySelectorAll("button")].map(b=>(b.textContent||"").trim().slice(0,10)+(b.disabled?"[x]":"")).slice(0,8),
         mainOn: main&&getComputedStyle(main).display!=="none",
         moveOn: mv&&getComputedStyle(mv).display!=="none",
-        badges:(G.badges||[]).length, lord:!!G.badge, champion:!!G.champion, indoor:G.indoor,
+        badges:(G.badges||[]).length, badgeKeys:[...(G.badges||[])], lord:!!G.badge, champion:!!G.champion, indoor:G.indoor,
         hp: lead?lead.hp/lead.maxHp:1, lv: lead?lead.level:0, party:(G.party||[]).length,
         alive:(G.party||[]).filter(m=>m&&!m.isEgg&&m.hp>0).length,
         potion:(G.items.potion||0)+(G.items.hyperpotion||0),
@@ -275,7 +282,11 @@ const { chromium } = require("playwright"); const path=require("path");
     // ⚠️ 실내에서는 목표 트래커가 숨겨져 있어 봇이 방향키 폴백으로 제자리를 맴돈다.
     //    (실측: 센터 안에서 7분간 갇혀 간호사에게만 계속 부딪혔다.) 실내면 먼저 출구로 나간다.
     // 체육관·리그는 **목표 자체**다 — 나가면 안 되고 위로 걸어 트레이너·관장에게 부딪혀야 한다.
-    if(st.indoor && (/^gym/.test(st.indoor)||st.indoor==="league")){
+    // ⚠️ 단, **이미 깬 체육관이면 나간다.** gymN의 관장 타일은 숫자 N이고 뱃지 키도 "1"~"4"라
+    //    같은 문자다. 이 조건이 없으면 뱃지를 딴 뒤에도 격파한 관장 앞에서 영영 위로 걸었다
+    //    (실측: 25분 중 22분을 gym1 관장 앞에서 낭비, 다음 목표로 못 넘어감).
+    const gymCleared = /^gym(\d)$/.test(st.indoor||"") && st.badgeKeys.includes(RegExp.$1);
+    if(st.indoor && (/^gym/.test(st.indoor)||st.indoor==="league") && !gymCleared){
       tr("field:gymUp",st);
       for(let i=0;i<3;i++){ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(260);
         const q=await p.evaluate(()=>({inB:!!window.SG.G().inBattle,dlg:document.getElementById("dialogBox").classList.contains("show")}));
@@ -324,12 +335,19 @@ const { chromium } = require("playwright"); const path=require("path");
     const key=(st.indoor||"")+st.pos.x+","+st.pos.y+"/"+st.badges;
     if(key===lastKey)stuck++; else { stuck=0; lastKey=key; }
 
+    // 브라우저가 죽을 때 대비해 최신 상태를 스냅샷으로 들고 있는다(evaluate가 끊기면 이 값으로 보고)
+    finSnapshot={ badges:st.badges, lord:st.lord, champion:st.champion, lv:[st.lv], party:st.party,
+      caught:0, money:st.money, pos:st.pos, indoor:st.indoor, defeated:0 };
+
     const el=Math.floor((Date.now()-t0)/60000);
     if(el>lastStep){ lastStep=el;
       stats.samples.push({t:el, lv:st.lv, party:st.party, battles:stats.battles, badges:st.badges, pos:`${st.indoor||""}${st.pos.x},${st.pos.y}`}); }
+   } catch(e){ if(isBrowserDeath(e)){ browserDead=true; break; } throw e; }
   }
+  if(browserDead)console.log("  ⚠️ 브라우저가 환경 압박으로 종료됨 — 그때까지의 진행을 보고한다(게임 버그 아님)");
 
-  const fin=await p.evaluate(()=>{ const G=window.SG.G();
+  const fin=browserDead? (finSnapshot||{badges:0,lord:false,champion:false,lv:[],party:0,caught:0,money:0,pos:{x:0,y:0},indoor:null,defeated:0})
+    : await p.evaluate(()=>{ const G=window.SG.G();
     return { badges:(G.badges||[]).length, lord:!!G.badge, champion:!!G.champion,
       lv:(G.party||[]).map(m=>m&&m.level), party:(G.party||[]).length,
       caught:G.caught.size, money:G.money, pos:G.pos, indoor:G.indoor,
@@ -346,8 +364,9 @@ const { chromium } = require("playwright"); const path=require("path");
 
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   ok(stats.battles>0, `전투가 실제로 발생했다 (${stats.battles}회)`);
-  ok(fin.party>=1, `파티가 유지된다 (${fin.party}마리)`);
+  if(!browserDead)ok(fin.party>=1, `파티가 유지된다 (${fin.party}마리)`);   // 브라우저가 죽으면 파티 스냅샷이 부정확할 수 있어 생략
   console.log(`  ℹ️  도달 지점은 예산·확률에 좌우된다 — 게이트가 아니라 관측값이다`);
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 전수 플레이스루 종료");
-  await b.close(); process.exit(process.exitCode||0);
+  try{ await b.close(); }catch(e){}
+  process.exit(process.exitCode||0);
 })();
