@@ -2430,7 +2430,7 @@ function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
 // 지역별 의도 레벨(index=region). 야생 레벨의 하한이자 XP 끌개의 앵커로 함께 쓰인다.
 // 덜 싸운 플레이어는 야생 하한이 끌어올리고, 과하게 그라인딩한 플레이어는 앵커 위에서
 // XP가 급감해(xpMult) 레벨이 지역에 수렴 → 고정 게이트 난이도가 그라인딩 양과 무관해진다.
-const WILD_FLOOR=[5,9,15,20,23,28,34];
+const WILD_FLOOR=[5,7,13,20,23,28,34];   // 초반 완화: 지역1 9→7·지역2 15→13. 마을 직후 야생이 스타터보다 +4~5 위라 첫 야생 승률 24%였다(실측) → 지역1 41%·지역2 67%. 끌개(폭주 방지)는 유지, 첫 구간만 부드럽게. 후반(지역3~6)은 불변.
 function wildFloor(){ return (G&&G.pos&&typeof region==="function")?(WILD_FLOOR[region(G.pos.y)]||0):0; }
 function startEncounter(depth){ const al=Math.max(avgLevel(),wildFloor()); const sp=pickWild(al,depth);
   let lvl=Math.round(al+ri(-1,1)+depth*4); if(sp.tier>=2)lvl+=ri(1,3); if(sp.tier>=3)lvl+=ri(2,4);
