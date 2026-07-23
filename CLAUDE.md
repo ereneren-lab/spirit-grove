@@ -58,6 +58,14 @@ verify 내용:
 - **스모크 테스트**(`scripts/smoke.js`): jsdom으로 dist를 실제 로드 → 런타임 에러 0건 확인 + 전투 계산·적 AI·저장/불러오기 왕복 검사. `npm install jsdom canvas` 하면 자동 실행, 없으면 건너뜀.
 - ⚠️ **dist**는 거대한 base64 줄이 있으니 **흔한 단어로 grep 금지**. 정확한 앵커로만. (src/index.html은 413KB라 자유롭게 grep 가능)
 
+### 홈 화면 앱 (iOS PWA)
+아이폰에서 "홈 화면에 추가"하면 **앱처럼 전체화면 실행**된다. `<head>`의 메타태그로 구현:
+- `apple-mobile-web-app-capable=yes`(브라우저 크롬 없이 standalone) · `apple-mobile-web-app-title`(홈 화면 이름) · `apple-mobile-web-app-status-bar-style=black-translucent` · `theme-color` · `apple-touch-icon`(180×180 PNG **data URI 인라인** — 단일 파일 유지) · `viewport-fit=cover`(노치까지).
+- 아이콘은 `scripts/`가 아니라 PIL로 생성한 것을 base64로 head에 박았다(브랜드 = 민트 그라디언트 + ✦). 재생성하려면 그 파이썬 스니펫 참조.
+- `@media (display-mode:standalone)`: 스테이지를 전체화면으로 펴고 `env(safe-area-inset-*)`로 **다이나믹아일랜드·홈 인디케이터**를 피한다. 일반 브라우저 탭에선 기존 폰-창 레이아웃 유지.
+- ⚠️ build.py는 head를 안 건드리지만, 회귀 방지로 `verify.sh`가 5개 태그 존재를 grep으로 강제한다(누락 시 홈 화면 앱이 깨진다).
+- ⚠️ **실제 설치는 HTTPS 호스팅 필요** — `file://`은 iOS에서 "홈 화면에 추가"가 안 뜬다. GitHub Pages 등에 올려 Safari로 열고 공유→홈 화면에 추가.
+
 ## 아트/설계 규칙
 - 화풍: soft anime, cel-shading, 귀엽고 따뜻하게. 실제 포켓몬 애셋 금지, 오리지널만.
 - 진화라인은 같은 색·모티프(한 정령이 성장하는 느낌). 종이 통째로 바뀌면 어색.

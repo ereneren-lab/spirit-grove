@@ -10,6 +10,12 @@ DEAD=$(grep -c "THREE\.\|Map3D\|BUNDLED_ART" "$F" || true)
 echo "죽은 의존성 참조: $DEAD  (기대: 0)"
 [ "$DEAD" = "0" ] || { echo "❌ 제거된 의존성이 다시 들어왔다"; exit 1; }
 
+# 1b) 홈 화면 앱(iOS PWA) 설정이 살아 있는지 — 빌드가 head를 안 건드리지만 회귀 방지
+for tag in "apple-mobile-web-app-capable" "apple-touch-icon" "apple-mobile-web-app-title" 'display-mode:standalone' "viewport-fit=cover"; do
+  grep -q "$tag" "$F" || { echo "❌ PWA 설정 누락: $tag (홈 화면 앱 실행이 깨진다)"; exit 1; }
+done
+echo "✅ 홈 화면 앱(PWA) 설정 OK"
+
 # 2) JS 문법 (게임 <script> 블록)
 OPEN=$(grep -n "^<script>" "$F" | sed -n '1p' | cut -d: -f1)
 CLOSE=$(grep -n "^</script>" "$F" | sed -n '1p' | cut -d: -f1)
