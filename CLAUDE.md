@@ -58,18 +58,14 @@ verify 내용:
 - **스모크 테스트**(`scripts/smoke.js`): jsdom으로 dist를 실제 로드 → 런타임 에러 0건 확인 + 전투 계산·적 AI·저장/불러오기 왕복 검사. `npm install jsdom canvas` 하면 자동 실행, 없으면 건너뜀.
 - ⚠️ **dist**는 거대한 base64 줄이 있으니 **흔한 단어로 grep 금지**. 정확한 앵커로만. (src/index.html은 413KB라 자유롭게 grep 가능)
 
-### 배포 (GitHub Pages) — ⚠️ HTTPS 푸시 막힘, SSH만 됨
+### 배포 (GitHub Pages + Actions 자동배포)
 라이브 URL: **https://ereneren-lab.github.io/spirit-grove/** (계정 `ereneren-lab`, 저장소 `spirit-grove`).
-- ⚠️ **이 환경은 git-over-HTTPS 푸시(POST)가 막혀 있다** — 1KB조차 무한 행. API·ls-remote(GET)는 됨. **반드시 SSH 원격**(`git@github.com:...`)으로 푸시할 것(`~/.ssh/id_ed25519`로 인증됨). HTTPS로 바꾸면 또 멈춘다.
-- ⚠️ **로컬 `.git`이 479MB**(dist를 매 빌드 커밋한 이력). 전체 히스토리 푸시는 비현실적이라, **orphan 단일 스냅샷**을 remote `main`에 올린다:
-  ```
-  git checkout --orphan deploy && git add -A && git commit -m "배포 스냅샷"
-  git push origin deploy:main        # SSH 원격
-  git checkout main && git branch -D deploy
-  ```
-  → remote `main`은 스냅샷 1커밋, 로컬 `main`은 전체 이력 보존(CLAUDE.md가 커밋 이력을 중요시하므로 로컬은 안 건드린다).
-- Pages는 `main` 루트(`/`)에서 서빙. 빌드가 루트 `index.html`을 dist와 동일하게 내보내므로 스냅샷에 자동 포함.
-- **재배포**: 빌드 → 위 orphan 절차 반복(remote main을 새 스냅샷으로 덮음). Pages는 푸시 후 1~2분 뒤 자동 재빌드.
+- **재배포는 한 줄: `bash scripts/deploy.sh`** — 빌드 검증 → orphan 스냅샷 → SSH push. push되면 **GitHub Actions(`.github/workflows/deploy.yml`)가 서버에서 `build.py`를 돌려 자동 배포**(1~2분). yacht-dice의 Render 자동배포와 같은 흐름.
+- 진행 확인: `gh run watch` · https://github.com/ereneren-lab/spirit-grove/actions
+- ⚠️ **git-over-HTTPS push가 이 환경에서 막혀 있다** — 1KB조차 무한 행. API·ls-remote(GET)는 됨. **반드시 SSH 원격**(`git@github.com:...`, `~/.ssh/id_ed25519`로 인증). HTTPS로 바꾸면 또 멈춘다. deploy.sh가 SSH 원격을 전제.
+- ⚠️ **로컬 `.git`이 479MB**(dist를 매 빌드 커밋한 이력) → 전체 이력 push는 비현실적이라 deploy.sh가 **orphan 단일 스냅샷**을 remote `main`에 force-push한다. remote `main`=스냅샷 1커밋, **로컬 `main`은 전체 이력 보존**(CLAUDE.md가 커밋 이력을 중요시하므로 로컬은 안 건드린다).
+- **소스가 진실의 출처**: Actions가 서버에서 빌드하므로 `index.html`(빌드 산출물)은 `.gitignore`. Pages `build_type=workflow`.
+- ⚠️ 워크플로 파일(`.github/workflows/deploy.yml`)이 orphan 스냅샷에 포함돼야 트리거된다 — `git add -A`라 자동 포함. 지우지 말 것.
 
 ### 홈 화면 앱 (iOS PWA)
 아이폰에서 "홈 화면에 추가"하면 **앱처럼 전체화면 실행**된다. `<head>`의 메타태그로 구현:
