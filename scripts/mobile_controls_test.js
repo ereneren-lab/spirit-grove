@@ -29,6 +29,13 @@ const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)FAIL=true; };
   ok(after.x!==before.x||after.y!==before.y, `방향키 탭으로 이동 (${before.x},${before.y}→${after.x},${after.y})`);
   await p.locator('#actBtn').tap(); await p.waitForTimeout(200);
   await p.locator('#backBtn').tap(); await p.waitForTimeout(200);
+  // ⚠️ 꾹 누르면 iOS 콜아웃(복사/선택)이 뜨던 문제 → 버튼은 user-select none, 저장박스는 복사 가능해야
+  const sel=await p.evaluate(()=>{ const us=el=>{const c=getComputedStyle(el);return c.webkitUserSelect||c.userSelect;};
+    return { dpad:us(document.querySelector('.dpad button')), A:us(document.getElementById('actBtn')),
+             menu:us(document.querySelector('.map-actions .sbtn')),
+             savebox:document.getElementById('saveBox')?us(document.getElementById('saveBox')):"text" }; });
+  ok(sel.dpad==='none'&&sel.A==='none'&&sel.menu==='none', `버튼은 길게 눌러도 선택/복사 안 됨 (dpad ${sel.dpad}/A ${sel.A}/메뉴 ${sel.menu})`);
+  ok(sel.savebox==='text', `저장 내보내기는 복사 가능 유지 (savebox ${sel.savebox})`);
   await ctx.close();
 
   console.log("[가로] 화면 꽉 채움 + 컨트롤 거터(맵을 안 가림)");

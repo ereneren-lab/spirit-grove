@@ -20,7 +20,11 @@
     /* 상태 색 변수(--psn 등)는 STATUSES에서 생성해 주입한다 */
     --shadow:0 10px 30px rgba(0,0,0,.45);--r:14px;
   }
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  /* 모바일에서 버튼(방향키·A/B)을 꾹 누르면 iOS 콜아웃(복사/선택 메뉴)이 뜨고 글자가 선택된다 → 전역 차단.
+     저장 내보내기/불러오기 textarea·input만 예외로 선택·복사 허용(아래). */
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;
+    -webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+  input,textarea,[contenteditable]{-webkit-touch-callout:default;-webkit-user-select:text;user-select:text}
   html,body{height:100%}
   body{font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
     background:radial-gradient(1200px 600px at 50% -10%, #2c2350 0%, transparent 60%),

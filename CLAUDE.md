@@ -68,6 +68,9 @@ verify 내용:
 - ⚠️ 워크플로 파일(`.github/workflows/deploy.yml`)이 orphan 스냅샷에 포함돼야 트리거된다 — `git add -A`라 자동 포함. 지우지 말 것.
 - ⚠️ **커밋할 때 `dist`도 포함**(`git add -A`). 안 하면 deploy.sh의 `git checkout main`이 로컬 dist를 옛 커밋으로 되돌려 **로컬 테스트가 옛 dist로 헛돈다**(실제로 겪음 — 가로모드 수정이 로컬에서 안 보였다). deploy.sh가 끝에 재빌드해 보정하지만, 커밋에 dist를 넣는 게 근본.
 
+### 모바일 롱프레스 콜아웃 차단
+방향키·A/B를 **꾹 누르면 iOS 콜아웃(복사/선택 메뉴)이 뜨고 글자가 선택**됐다(유저 제보). `-webkit-tap-highlight-color`만 있고 콜아웃/선택 방지가 없었다. → `*`에 `-webkit-touch-callout:none` + `-webkit-user-select:none`(전역), `input,textarea,[contenteditable]`은 예외로 `text`(저장 내보내기/불러오기 복사·붙여넣기 유지). 회귀 `mobile_controls_test`가 버튼=none·savebox=text 확인.
+
 ### 모바일 컨트롤 (게임보이식) + 가로모드
 유저 피드백: "방향키 왼쪽, AB 오른쪽이면 진짜 포켓몬 같잖아" + "가로로 돌렸을 때 화면 꽉차지도 않고".
 - **세로**: 메뉴 6개(도감·가방·정령·지도·카드·귀환)를 **상단 한 줄**(아이콘+라벨, 6열)로. 하단은 **방향키(왼쪽, 십자·A/B 분리)** + **A/B 대각 원형(오른쪽)** — A 위-오른쪽(분홍), B 아래-왼쪽(파랑). 예전엔 A/B가 방향키 십자 안에 박혀 있었다.
