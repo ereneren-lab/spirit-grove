@@ -49,6 +49,23 @@ const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)FAIL=true; };
   await lp.locator('.dpad button[data-dir="up"]').tap(); await lp.waitForTimeout(500);
   const la=await lp.evaluate(()=>({...window.SG.G().pos}));
   ok(la.x!==lb.x||la.y!==lb.y, `가로에서 방향키 이동 (${lb.x},${lb.y}→${la.x},${la.y})`);
+
+  // ⚠️ 실제 버그였다: 가로 전투에서 메뉴(공격/포획/도망)가 화면 밖으로 밀려 "까만 화면"처럼 보였다.
+  //    전투 뷰 세로스택(아레나340+메뉴184)이 가로 높이(~357)에 안 맞았다 → 아레나 왼쪽·메뉴 오른쪽으로.
+  await lp.evaluate(()=>{ window.SG.flow.startEncounter(0.3); });
+  await lp.waitForTimeout(2600);
+  const battle=await lp.evaluate(()=>{ const vh=window.innerHeight, vw=window.innerWidth;
+    const btns=[...document.querySelectorAll("#mainMenu .mbtn")];
+    const rects=btns.map(b=>b.getBoundingClientRect());
+    const allInView=rects.every(r=>r.bottom<=vh+1 && r.top>=-1 && r.right<=vw+1 && r.width>0);
+    const fight=document.querySelector('#mainMenu [data-act="fight"]').getBoundingClientRect();
+    return { n:btns.length, allInView, vh, fightBottom:Math.round(fight.bottom), fightRight:Math.round(fight.right) }; });
+  ok(battle.n>=5 && battle.allInView, `가로 전투에서 메뉴 ${battle.n}개가 전부 화면 안 (공격 하단 ${battle.fightBottom} ≤ 뷰 ${battle.vh})`);
+  // 공격 버튼 실제 탭 → 기술 메뉴 뜨는지(조작 가능 증명)
+  await lp.locator('#mainMenu [data-act="fight"]').tap(); await lp.waitForTimeout(400);
+  const moveShown=await lp.evaluate(()=>{ const mv=document.getElementById("moveMenu");
+    return mv && getComputedStyle(mv).display!=="none" && mv.querySelectorAll(".mbtn,.move-btn").length>0; });
+  ok(moveShown, "가로 전투에서 공격 탭 → 기술 메뉴 열림(조작 가능)");
   await lc.close();
 
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs[0]:""));
