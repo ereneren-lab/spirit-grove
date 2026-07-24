@@ -68,6 +68,14 @@ verify 내용:
 - ⚠️ 워크플로 파일(`.github/workflows/deploy.yml`)이 orphan 스냅샷에 포함돼야 트리거된다 — `git add -A`라 자동 포함. 지우지 말 것.
 - ⚠️ **커밋할 때 `dist`도 포함**(`git add -A`). 안 하면 deploy.sh의 `git checkout main`이 로컬 dist를 옛 커밋으로 되돌려 **로컬 테스트가 옛 dist로 헛돈다**(실제로 겪음 — 가로모드 수정이 로컬에서 안 보였다). deploy.sh가 끝에 재빌드해 보정하지만, 커밋에 dist를 넣는 게 근본.
 
+### (대형) 전투 후 검정 화면 — 전투 중 resize가 캔버스를 0으로
+유저 제보: 포획/전투 후 화면이 갑자기 까매졌다. 원인: `Field.resize()`가 `canvasWrap.clientWidth*2`로 캔버스 픽셀크기를 잡는데, **전투 중엔 맵 뷰가 `display:none`이라 clientWidth=0 → 캔버스가 0×0**이 된다. 그 상태로 맵 복귀 시 아무것도 안 그려져 **검정 화면**. **모바일 Safari는 전투 중에도 resize를 자주 쏜다**(주소창 표시/숨김·앱 전환·회전) → 내 회전 훅(`resize`/`orientationchange`→`Field.resize()`)이 거기 반응.
+- 수정: `Field.resize()`가 **wrap 크기가 0이면 스킵**(캔버스를 0으로 안 만든다). + `endBattle`이 `show("map")` 후 `Field.resize()`를 불러 스테일 크기 보정.
+- ⚠️ **숨겨진 요소의 clientWidth로 캔버스 크기를 잡지 말 것.** 회귀 `mobile_controls_test`(전투 중 resize 후 캔버스≠0). 재현: 전투 진입(map 숨김) → resize → 캔버스 0×0 확인 → 수정 후 유지.
+
+### 정령구 디자인 (클래식 포켓몬볼)
+유저: "정령구 너무 구려". 던지는 볼(`.catchball`)이 단색 구슬+흰 점이었다 → **위 컬러/중앙 다크 밴드/아래 밝은 반구/센터 버튼/광택**의 클래식 포켓몬볼 룩으로. 볼마다 `--top`(위 색)만 다르고 프리미엄 볼은 버튼 링이 발광(고급=금·다크=녹·퀵=금). 바닥 정령구(`_itemBall` 캔버스)도 예전 빨강→**민트**(게임 정령구 색)로 통일 + 세로 그라디언트·광택.
+
 ### 모바일 롱프레스 콜아웃 차단
 방향키·A/B를 **꾹 누르면 iOS 콜아웃(복사/선택 메뉴)이 뜨고 글자가 선택**됐다(유저 제보). `-webkit-tap-highlight-color`만 있고 콜아웃/선택 방지가 없었다. → `*`에 `-webkit-touch-callout:none` + `-webkit-user-select:none`(전역), `input,textarea,[contenteditable]`은 예외로 `text`(저장 내보내기/불러오기 복사·붙여넣기 유지). 회귀 `mobile_controls_test`가 버튼=none·savebox=text 확인.
 

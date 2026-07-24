@@ -223,20 +223,27 @@
   @keyframes dmg{0%{opacity:0;transform:translateY(6px) scale(.7)}20%{opacity:1;transform:translateY(-6px) scale(1.1)}100%{opacity:0;transform:translateY(-46px) scale(1)}}
   .particle{position:absolute;font-size:20px;z-index:6;pointer-events:none;animation:part .8s ease-out forwards}
   @keyframes part{0%{opacity:1;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.3)}}
-  .catchball{position:absolute;width:34px;height:34px;border-radius:50%;z-index:7;pointer-events:none;
-    box-shadow:0 3px 7px rgba(0,0,0,.4),inset 0 -4px 6px rgba(0,0,0,.3),inset 0 3px 5px rgba(255,255,255,.25)}
-  .catchball::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:12px;transform:translate(-50%,-50%);
-    border-radius:50%;background:radial-gradient(circle,#fff 42%,#e6eef5 100%);box-shadow:0 0 5px rgba(255,255,255,.9),0 0 0 2px rgba(30,40,50,.3)}
-  .catchball.ball{background:radial-gradient(circle at 34% 26%,#eafff8 3%,#8fe6c8 24%,#3ab492 54%,#1a6650 100%)}
-  .catchball.great{background:radial-gradient(circle at 34% 26%,#f3e8ff 3%,#c69bef 22%,#8248cf 52%,#431d7a 100%)}
-  .catchball.great::after{background:radial-gradient(circle,#ffe9a8 40%,#f0b83a 100%);box-shadow:0 0 6px rgba(255,210,90,.95),0 0 0 2px rgba(60,40,10,.35)}
-  .catchball.ultra{background:radial-gradient(circle at 34% 26%,#fff6d6 3%,#ffd45e 22%,#e0951f 54%,#7a4e08 100%)}
-  .catchball.dusk{background:radial-gradient(circle at 34% 26%,#3a4256 3%,#2a2f42 26%,#14100f 60%,#050505 100%)}
-  .catchball.dusk::after{background:radial-gradient(circle,#5ad07a 40%,#2a8a4a 100%);box-shadow:0 0 6px rgba(90,208,122,.9)}
-  .catchball.net{background:radial-gradient(circle at 34% 26%,#dff3ff 3%,#7fc8e6 24%,#2a7fb0 54%,#0f4468 100%)}
-  .catchball.quick{background:radial-gradient(circle at 34% 26%,#eaf3ff 3%,#7fb4f0 22%,#2f6fd0 54%,#123a7a 100%)}
-  .catchball.quick::after{background:radial-gradient(circle,#ffe9a8 40%,#f0c83a 100%);box-shadow:0 0 6px rgba(255,220,90,.9)}
-  .catchball.heal{background:radial-gradient(circle at 34% 26%,#ffe8f2 3%,#f7a8cf 24%,#e0629a 54%,#8a2a5a 100%)}
+  /* 정령구 — 클래식 포켓몬볼 룩: 위 컬러 / 중앙 다크 밴드 / 아래 밝은 반구 + 광택 + 센터 버튼. 볼마다 위 색(--top)만 다르다. */
+  .catchball{position:absolute;width:36px;height:36px;border-radius:50%;z-index:7;pointer-events:none;--top:#34c88f;
+    background:radial-gradient(circle at 33% 24%, rgba(255,255,255,.6), rgba(255,255,255,0) 46%),
+      linear-gradient(180deg, var(--top) 0%, var(--top) 41%, #15151d 41%, #15151d 59%, #f0f3f8 59%, #ccd3de 100%);
+    box-shadow:0 4px 9px rgba(0,0,0,.45),inset 0 -5px 9px rgba(0,0,0,.28),inset 0 3px 6px rgba(255,255,255,.32);
+    border:1px solid rgba(18,18,26,.55)}
+  .catchball::after{content:"";position:absolute;left:50%;top:50%;width:11px;height:11px;transform:translate(-50%,-50%);
+    border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#dbe2ec);border:2.5px solid #15151d;
+    box-shadow:0 0 6px rgba(255,255,255,.9),0 1px 2px rgba(0,0,0,.45)}
+  .catchball.ball{--top:#34c88f}
+  .catchball.great{--top:#8a4fd6}
+  .catchball.great::after{border-color:#f0b83a;box-shadow:0 0 8px rgba(255,210,90,.95)}
+  .catchball.ultra{--top:#f0b429}
+  .catchball.ultra::after{border-color:#7a4e08}
+  .catchball.dusk{--top:#2a2f42}
+  .catchball.dusk::after{border-color:#5ad07a;box-shadow:0 0 7px rgba(90,208,122,.85)}
+  .catchball.net{--top:#2a9fd0}
+  .catchball.quick{--top:#3f6fd8}
+  .catchball.quick::after{border-color:#f0c83a;box-shadow:0 0 7px rgba(255,220,90,.9)}
+  .catchball.heal{--top:#e0629a}
+  .catchball.heal::after{border-color:#e0629a;box-shadow:0 0 7px rgba(240,120,170,.85)}
   .fx-glyph{position:absolute;font-size:28px;z-index:7;pointer-events:none;transform:translate(-50%,-50%);will-change:transform,left,top,opacity}
   .fx-proj{font-size:32px}
   .fx-particle{position:absolute;font-size:18px;z-index:7;pointer-events:none;transform:translate(-50%,-50%);will-change:transform,opacity}
@@ -2076,7 +2083,10 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
   setDest(x,y){ this.dest={x,y}; }, clearDest(){ this.dest=null; },
   start(){ if(!this.inited)this.init(); if(this.raf)return; const loop=()=>{this.raf=requestAnimationFrame(loop);this.render();}; this.raf=requestAnimationFrame(loop); },
   stop(){ if(this.raf){cancelAnimationFrame(this.raf);this.raf=null;} },
-  resize(){ if(!this.inited)return; const c=$("mapCanvas"),wrap=$("canvasWrap"); c.width=wrap.clientWidth*2; c.height=wrap.clientHeight*2; },
+  resize(){ if(!this.inited)return; const c=$("mapCanvas"),wrap=$("canvasWrap"); const w=wrap.clientWidth, h=wrap.clientHeight;
+    // ⚠️ 전투 중 등 맵이 숨겨져 있으면 wrap 크기가 0 → 캔버스를 0×0으로 만들지 말 것.
+    //    (모바일 Safari가 전투 중에도 resize를 자주 쏜다. 0×0이 되면 맵 복귀 시 아무것도 안 그려져 '검정 화면'이 됐다.)
+    if(w<=0 || h<=0)return; c.width=w*2; c.height=h*2; },
   rebuild(){ this.placeImmediate(); },
   render(){ const ctx=this.ctx; if(!ctx)return; const c=$("mapCanvas"); const cw=c.width,ch=c.height;
     const now=performance.now()/1000; const dt=Math.min(0.05,now-(this._lt||now)); this._lt=now;
@@ -2171,18 +2181,31 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
   // 필드 아이템 볼: 살짝 떠오르는 애니 + 반짝임(눈에 띄어야 "가볼 이유"가 된다)
   _itemBall(ctx,sx,sy,ts,now,x,y){
     const bob=Math.sin((now||0)*2.2 + (x*0.7+y*1.3))*ts*0.05;
-    const cx=sx+ts*0.5, cy=sy+ts*0.55+bob, r=ts*0.19;
-    ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(cx,sy+ts*0.82,r*0.9,r*0.3,0,0,6.29); ctx.fill();
-    ctx.fillStyle="#e8524e"; ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,0); ctx.fill();
-    ctx.fillStyle="#f4f1ea"; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI); ctx.fill();
-    ctx.strokeStyle="rgba(30,24,20,.7)"; ctx.lineWidth=Math.max(1,ts*0.022);
-    ctx.beginPath(); ctx.arc(cx,cy,r,0,6.29); ctx.stroke();
+    const cx=sx+ts*0.5, cy=sy+ts*0.55+bob, r=ts*0.2;
+    // 그림자
+    ctx.fillStyle="rgba(0,0,0,.24)"; ctx.beginPath(); ctx.ellipse(cx,sy+ts*0.84,r*0.95,r*0.3,0,0,6.29); ctx.fill();
+    // 위 반구: 민트(게임 정령구 색), 세로 그라디언트
+    const gt=ctx.createLinearGradient(cx,cy-r,cx,cy);
+    gt.addColorStop(0,"#6fe8bf"); gt.addColorStop(1,"#2ba884");
+    ctx.fillStyle=gt; ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,0); ctx.fill();
+    // 아래 반구: 밝은 회백
+    const gb=ctx.createLinearGradient(cx,cy,cx,cy+r);
+    gb.addColorStop(0,"#f4f7fb"); gb.addColorStop(1,"#ccd3de");
+    ctx.fillStyle=gb; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI); ctx.fill();
+    // 중앙 다크 밴드 + 외곽선
+    ctx.strokeStyle="#15151d"; ctx.lineWidth=Math.max(1.2,ts*0.03);
     ctx.beginPath(); ctx.moveTo(cx-r,cy); ctx.lineTo(cx+r,cy); ctx.stroke();
-    ctx.fillStyle="#f4f1ea"; ctx.beginPath(); ctx.arc(cx,cy,r*0.33,0,6.29); ctx.fill();
-    ctx.strokeStyle="rgba(30,24,20,.7)"; ctx.beginPath(); ctx.arc(cx,cy,r*0.33,0,6.29); ctx.stroke();
+    ctx.lineWidth=Math.max(1,ts*0.022); ctx.strokeStyle="rgba(18,18,26,.75)";
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,6.29); ctx.stroke();
+    // 센터 버튼(흰 + 다크 링)
+    ctx.fillStyle="#f6f8fb"; ctx.beginPath(); ctx.arc(cx,cy,r*0.34,0,6.29); ctx.fill();
+    ctx.lineWidth=Math.max(1.2,ts*0.028); ctx.strokeStyle="#15151d"; ctx.beginPath(); ctx.arc(cx,cy,r*0.34,0,6.29); ctx.stroke();
+    // 광택 하이라이트(좌상단)
+    ctx.fillStyle="rgba(255,255,255,.5)"; ctx.beginPath(); ctx.ellipse(cx-r*0.4,cy-r*0.55,r*0.34,r*0.22,-0.5,0,6.29); ctx.fill();
+    // 반짝임
     const tw=(Math.sin((now||0)*3.4 + x*1.1)*0.5+0.5);
-    ctx.globalAlpha=0.35+tw*0.5; ctx.fillStyle="#fff6c0";
-    ctx.beginPath(); ctx.arc(cx+r*0.75,cy-r*0.8,ts*0.045,0,6.29); ctx.fill(); ctx.globalAlpha=1; },
+    ctx.globalAlpha=0.35+tw*0.5; ctx.fillStyle="#eafff6";
+    ctx.beginPath(); ctx.arc(cx+r*0.72,cy-r*0.85,ts*0.05,0,6.29); ctx.fill(); ctx.globalAlpha=1; },
   // 열매나무: 덤불 + (익었으면) 빨간 열매들. 안 익었으면 잎만.
   _berryTree(ctx,sx,sy,ts,now,ripe){ const cx=sx+ts*0.5, by=sy+ts*0.80;
     ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(cx,by,ts*0.28,ts*0.09,0,0,6.29); ctx.fill();
@@ -4905,7 +4928,7 @@ function showEnding(){ const body=$("endingBody"); const _t=$("endingTitle"); if
 
 function endBattle(){ Coach.finish(); if(Audio.lowHp)Audio.lowHp(false); G.inBattle=false; G.busy=false; G.foe=null; G.trainer=null; G.weather=null; G.weatherTurns=0; heldDir=null; stopPath(); closeOverlay("switchOverlay");
   G.party.forEach(m=>{ m.stages=newStages(); }); // reset volatile stages, keep status
-  show("map"); Field.start(); Audio.startMusic(fieldMusic()); updateGoal(); saveGame(); }
+  show("map"); if(Field.resize)Field.resize(); Field.start(); Audio.startMusic(fieldMusic()); updateGoal(); saveGame(); }   // ⚠️ show 후 resize — 전투 중 스테일해진 캔버스 크기를 맵 복귀 시 바로잡는다(검정 화면 방지)
 
 function blackout(){ healParty(true); G.trainer=null; G.inBattle=false; G.busy=false; G.surfing=false;
   if(G.indoor && typeof _exitInterior==="function"){ _exitInterior(); }   // 즉시판: 아래서 G.pos를 덮어쓰므로 지연 페이드 쓰면 안 됨

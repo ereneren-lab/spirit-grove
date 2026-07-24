@@ -61,6 +61,11 @@ const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)FAIL=true; };
   //    전투 뷰 세로스택(아레나340+메뉴184)이 가로 높이(~357)에 안 맞았다 → 아레나 왼쪽·메뉴 오른쪽으로.
   await lp.evaluate(()=>{ window.SG.flow.startEncounter(0.3); });
   await lp.waitForTimeout(2600);
+  // ⚠️ 검정 화면 버그: 전투 중(맵 숨김) resize가 오면 canvasWrap 크기가 0 → 캔버스 0×0 → 복귀 시 검정.
+  //    모바일 Safari가 전투 중에도 resize를 자주 쏜다. resize 후에도 캔버스가 0이 되면 안 된다.
+  const canv=await lp.evaluate(()=>{ if(window.SG.Field.resize)window.SG.Field.resize();
+    const c=document.getElementById("mapCanvas"); return {w:c.width,h:c.height}; });
+  ok(canv.w>0 && canv.h>0, `전투 중 resize에도 캔버스가 0이 안 됨 (${canv.w}x${canv.h}) — 검정 화면 방지`);
   const battle=await lp.evaluate(()=>{ const vh=window.innerHeight, vw=window.innerWidth;
     const btns=[...document.querySelectorAll("#mainMenu .mbtn")];
     const rects=btns.map(b=>b.getBoundingClientRect());
