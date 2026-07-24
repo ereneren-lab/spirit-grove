@@ -47,10 +47,15 @@
 //      + 공격적 던지기를 party<3까지 확장 → 봇이 **3마리 팀**을 꾸리고 gym2 인테리어까지 도달(1→3마리).
 //      시작 볼 8개로 보통 2마리를 잡아 restock은 볼 소진 후(중반) 걸린다 — 경로는 단독 프로브로 검증됨.
 //
-// ⚠️ 남은 것(다음 세션 — 챔피언 완주엔 아직 부족):
-//   · **팀이 gym2 리더(Lv16~19)에 언더레벨(Lv11~12)** — 이제 블로커는 팀 크기가 아니라 레벨이다.
-//     gym에 도전하기 전에 목표 근처 풀숲에서 **레벨을 올리는 그라인딩 행동**이 필요하다(현재는 목표로 직행해
-//     언더레벨로 리더에게 막힌다). 이게 gym2 돌파 → 이후 gym3·4·리그의 열쇠.
+//  14) **그라인딩 구현**(`grindStep` + GYM_LV): 언더레벨이면 gym에 안 들어가고 반경8 풀숲(T)으로 걸어가
+//      야생과 싸워 레벨을 올린다(gym별 목표 레벨 -1까지). 발동·전투·런타임에러0 확인. ⚠️ **완주급 장기 검증은
+//      부하 높은 환경에서 브라우저가 1~6분에 죽어 못 했다**(load 5~6, 게임 버그 아님 — 저부하 세션에서 재측정).
+//
+// ⚠️ 남은 것(다음 세션 — 저부하 환경 필요):
+//   · 그라인딩→gym2 돌파→gym3·4→리그 완주를 **저부하 환경에서 끝까지** 돌려 확인. 지금은 load 5~6이라
+//     브라우저가 조기 종료돼 gym2 clear 여부까지 못 봤다(그라인딩 로직 자체는 6회 발동·전투 확인).
+//   · grindStep이 median 거리 풀숲을 고정 선택 → 두 타일 사이를 오갈 수 있다(조우가 끊어주지만 비효율).
+//     레벨이 안 오르면 더 멀리/다른 방향으로 흩어지는 개선 여지.
 //   · 목표 트래커 이동이 두 칸 사이를 오갈 때가 있다(8,44 ↔ 9,43). 탭마다 경로가 재계산되고
 //     조우로 끊겨 한두 칸만 가고 마는 것으로 보인다. 진행은 되지만 느리다.
 //   · ⚠️ **시도했다가 되돌린 방법**: `currentGoal()`의 좌표를 읽어 `walkTo`로 끝까지 걷게 했더니
@@ -98,7 +103,7 @@ const { chromium } = require("playwright"); const path=require("path");
   await p.waitForTimeout(500);
 
   const t0=Date.now();
-  const stats={battles:0,wild:0,trainer:0,caught:0,potions:0,runs:0,heals:0,restocks:0,faints:0,milestones:[],samples:[]};
+  const stats={battles:0,wild:0,trainer:0,caught:0,potions:0,runs:0,heals:0,restocks:0,grinds:0,faints:0,milestones:[],samples:[]};
   let wasBattle=false, lastStep=-1, lastMoney=null, stuck=0, lastKey="", fleeTries=0, healCooldown=0, potionFail=0, finSnapshot=null, lastPartyN=null, restockCd=0;
 
   const mark=(name,st)=>{ if(stats.milestones.some(m=>m.name===name))return;
@@ -204,6 +209,28 @@ const { chromium } = require("playwright"); const path=require("path");
     return balls>=4;
   };
 
+  // 그라인딩 — 언더레벨이면 gym에 들어가기 전에 근처 풀숲(T)에서 야생과 싸워 레벨을 올린다.
+  // (봇이 목표로 직행해 gym 리더에게 언더레벨로 막히던 문제. 이동 중 조우는 메인 루프의 전투 로직이 처리.)
+  const grindStep=async()=>{
+    const go=await p.evaluate(()=>{ const S=window.SG,F=S.flow,G=S.G(); if(G.indoor)return false;
+      const cand=[];
+      for(let y=Math.max(1,G.pos.y-8);y<Math.min(49,G.pos.y+9);y++)
+        for(let x=Math.max(1,G.pos.x-8);x<Math.min(24,G.pos.x+9);x++){
+          if(F.tileAt(x,y)!=="T"||!F.walkable(x,y))continue;
+          const d=Math.abs(x-G.pos.x)+Math.abs(y-G.pos.y); if(d>=3)cand.push({x,y,d}); }
+      if(!cand.length)return false;
+      cand.sort((a,b)=>a.d-b.d); const t=cand[Math.min(cand.length-1,Math.floor(cand.length/2))];   // 중간 거리(고정 — Math.random 회피)
+      return F.walkTo(t.x,t.y)?(t.x+","+t.y):false; });
+    if(!go)return false;
+    for(let i=0;i<40;i++){ await p.waitForTimeout(200);
+      const q=await p.evaluate(()=>{ const G=window.SG.G(); return {inB:!!G.inBattle,k:(G.indoor||"")+G.pos.x+","+G.pos.y}; });
+      if(q.inB)break;        // 조우 → 메인 루프가 전투 처리
+      if(q.k===go)break; }   // 도착 → 다음 루프에서 다른 풀숲으로
+    return true;
+  };
+  // gym별 목표 레벨(리더 대비 -1까지 그라인딩). 밸런스 문서 기준 근사치. 4뱃지 후는 리그(44).
+  const GYM_LV=[11,17,25,31];
+
   const TRACE=!!process.env.TRACE;
   let iter=0, lastTrace=Date.now();
   const tr=(branch,st)=>{ if(!TRACE)return; const dt=Date.now()-lastTrace; lastTrace=Date.now();
@@ -228,6 +255,7 @@ const { chromium } = require("playwright"); const path=require("path");
         moveOn: mv&&getComputedStyle(mv).display!=="none",
         badges:(G.badges||[]).length, badgeKeys:[...(G.badges||[])], lord:!!G.badge, champion:!!G.champion, indoor:G.indoor,
         hp: lead?lead.hp/lead.maxHp:1, lv: lead?lead.level:0, party:(G.party||[]).length,
+        partyMaxLv:(G.party||[]).reduce((m,x)=>Math.max(m,(x&&!x.isEgg)?x.level:0),0),
         alive:(G.party||[]).filter(m=>m&&!m.isEgg&&m.hp>0).length,
         potion:(G.items.potion||0)+(G.items.hyperpotion||0),
         balls:(G.items.ball||0)+(G.items.greatball||0),
@@ -366,6 +394,13 @@ const { chromium } = require("playwright"); const path=require("path");
     }
     if(restockCd>0)restockCd--;
 
+    // ⚠️ 언더레벨이면 gym에 들어가지 말고 근처 풀숲에서 레벨을 올린다(리더에게 막히는 것 방지).
+    //    gym별 목표 레벨(GYM_LV)의 -1까지. 이동 중 야생 조우는 메인 루프의 전투 로직이 처리한다.
+    //    grind는 목표 근처에서 도므로(반경8) 그 지역 야생과 싸워 자연히 목표 레벨대로 수렴한다.
+    if(!st.indoor && st.badges<4 && st.partyMaxLv < GYM_LV[st.badges]-1){
+      tr("field:grind",st); const g=await grindStep(); if(g){ stats.grinds++; continue; }
+    }
+
     // ⚠️ 실내에서는 목표 트래커가 숨겨져 있어 봇이 방향키 폴백으로 제자리를 맴돈다.
     //    (실측: 센터 안에서 7분간 갇혀 간호사에게만 계속 부딪혔다.) 실내면 먼저 출구로 나간다.
     // 체육관·리그는 **목표 자체**다 — 나가면 안 되고 위로 걸어 트레이너·관장에게 부딪혀야 한다.
@@ -442,7 +477,7 @@ const { chromium } = require("playwright"); const path=require("path");
 
   const mins=((Date.now()-t0)/60000).toFixed(1);
   console.log(`\n  [전수 플레이스루] ${mins}분 · 예산 ${BUDGET}초`);
-  console.log(`     전투 ${stats.battles}회 (야생 ${stats.wild} · 트레이너 ${stats.trainer}) · 포획 ${stats.caught} · 회복약 ${stats.potions} · 센터회복 ${stats.heals} · 볼보충 ${stats.restocks} · 도주 ${stats.runs}`);
+  console.log(`     전투 ${stats.battles}회 (야생 ${stats.wild} · 트레이너 ${stats.trainer}) · 포획 ${stats.caught} · 회복약 ${stats.potions} · 센터회복 ${stats.heals} · 볼보충 ${stats.restocks} · 그라인딩 ${stats.grinds} · 도주 ${stats.runs}`);
   console.log(`     도달: 뱃지 ${fin.badges}/4 · 숲의 군주 ${fin.lord?"격파":"미격파"} · 챔피언 ${fin.champion?"등극":"미등극"}`);
   console.log(`     파티 ${fin.party}마리 Lv[${fin.lv.join(",")}] · 도감 ${fin.caught} · 소지금 ${fin.money} · 위치 ${fin.indoor||"필드"} ${fin.pos.x},${fin.pos.y}`);
   if(stats.samples.length){ console.log("     진행 곡선(1분 간격):");
