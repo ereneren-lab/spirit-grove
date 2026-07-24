@@ -43,9 +43,14 @@
 //      그게 유일한 시도다. → **파티가 1마리면 HP 무관 turn1에 일단 던지고**, 2마리 이상이면 약한 기술로
 //      깎아서(<0.45/<0.35) 던진다. 이걸로 봇이 **2번째 정령을 잡고 gym2 인테리어까지 도달**(전멸↓·소지금↑).
 //
+//  13) **상점 볼 보충 구현**(`restockBalls`): 오버월드 S(보행 가능, 밟으면 상점)로 걸어가 정령구를 산다.
+//      + 공격적 던지기를 party<3까지 확장 → 봇이 **3마리 팀**을 꾸리고 gym2 인테리어까지 도달(1→3마리).
+//      시작 볼 8개로 보통 2마리를 잡아 restock은 볼 소진 후(중반) 걸린다 — 경로는 단독 프로브로 검증됨.
+//
 // ⚠️ 남은 것(다음 세션 — 챔피언 완주엔 아직 부족):
-//   · **팀이 2마리에서 잘 안 는다** — 볼 8개가 6% 풀피 던지기엔 부족(한 조우에서 소진). 3~4마리로 늘리려면
-//     **상점에서 볼 보충**(돈은 남는다·소지금 1000+) 행동이 필요하다. 이게 gym2+(4마리 전제) 돌파의 열쇠.
+//   · **팀이 gym2 리더(Lv16~19)에 언더레벨(Lv11~12)** — 이제 블로커는 팀 크기가 아니라 레벨이다.
+//     gym에 도전하기 전에 목표 근처 풀숲에서 **레벨을 올리는 그라인딩 행동**이 필요하다(현재는 목표로 직행해
+//     언더레벨로 리더에게 막힌다). 이게 gym2 돌파 → 이후 gym3·4·리그의 열쇠.
 //   · 목표 트래커 이동이 두 칸 사이를 오갈 때가 있다(8,44 ↔ 9,43). 탭마다 경로가 재계산되고
 //     조우로 끊겨 한두 칸만 가고 마는 것으로 보인다. 진행은 되지만 느리다.
 //   · ⚠️ **시도했다가 되돌린 방법**: `currentGoal()`의 좌표를 읽어 `walkTo`로 끝까지 걷게 했더니
@@ -93,8 +98,8 @@ const { chromium } = require("playwright"); const path=require("path");
   await p.waitForTimeout(500);
 
   const t0=Date.now();
-  const stats={battles:0,wild:0,trainer:0,caught:0,potions:0,runs:0,heals:0,faints:0,milestones:[],samples:[]};
-  let wasBattle=false, lastStep=-1, lastMoney=null, stuck=0, lastKey="", fleeTries=0, healCooldown=0, potionFail=0, finSnapshot=null, lastPartyN=null;
+  const stats={battles:0,wild:0,trainer:0,caught:0,potions:0,runs:0,heals:0,restocks:0,faints:0,milestones:[],samples:[]};
+  let wasBattle=false, lastStep=-1, lastMoney=null, stuck=0, lastKey="", fleeTries=0, healCooldown=0, potionFail=0, finSnapshot=null, lastPartyN=null, restockCd=0;
 
   const mark=(name,st)=>{ if(stats.milestones.some(m=>m.name===name))return;
     stats.milestones.push({name, t:Math.round((Date.now()-t0)/1000), lv:st.lv, battles:stats.battles, party:st.party});
@@ -145,6 +150,58 @@ const { chromium } = require("playwright"); const path=require("path");
       const out=await p.evaluate(()=>!window.SG.G().indoor); if(out)break; }
     if(healed)stats.heals++;
     return healed;
+  };
+
+  // 상점에서 정령구 보충 — 팀 구성용. 오버월드 S는 **보행 가능**(밟으면 상점 진입)이라 부딪힘 없이 걸어 들어간다.
+  // 볼 8개가 6% 풀피 던지기엔 부족해 팀이 2에서 안 늘던 문제(헤더 참조)를 푼다. 돈은 남으므로(소지금 1000+).
+  const restockBalls=async()=>{
+    const plan=await p.evaluate(()=>{ const S=window.SG,F=S.flow,G=S.G(); if(G.indoor)return "indoor";
+      let best=null,bd=1e9;
+      for(let y=0;y<50;y++)for(let x=0;x<25;x++){ if(F.tileAt(x,y)!=="S")continue;
+        const d=Math.abs(x-G.pos.x)+Math.abs(y-G.pos.y); if(d<bd){bd=d;best={x,y};} }
+      if(!best)return "no-shop";
+      return F.walkTo(best.x,best.y)?("go:"+best.x+","+best.y):"no-path"; });
+    if(!String(plan).startsWith("go"))return false;
+    // 상점 진입 대기(S를 밟으면 enterInterior(shop))
+    let entered=false,last=null,still=0;
+    for(let i=0;i<70;i++){ await p.waitForTimeout(200);
+      const q=await p.evaluate(()=>{ const G=window.SG.G(); return {indoor:G.indoor,inB:!!G.inBattle,k:G.pos.x+","+G.pos.y}; });
+      if(q.inB)return false;
+      if(q.indoor==="shop"){ entered=true; break; }
+      if(q.k===last){ if(++still>=5)break; } else { still=0; last=q.k; } }
+    if(!entered)return false;
+    await p.waitForTimeout(300);
+    // 카운터(S)로 걸어 올라가 openShop
+    let opened=false;
+    for(let i=0;i<6;i++){ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(260);
+      opened=await p.evaluate(()=>!!document.querySelector("#shopOverlay.active")); if(opened)break; }
+    if(opened){
+      // 구매 탭 보장
+      const tab=await p.evaluate(()=>{ const ov=document.querySelector("#shopOverlay.active"); if(!ov)return "no";
+        const bt=ov.querySelector("#shopBuyTab"); if(bt&&!bt.classList.contains("on")){bt.click();return "tab";} return "ok"; });
+      if(tab==="tab")await p.waitForTimeout(150);
+      // 정령구 행의 구매 클릭(고급/울트라 말고 기본 — 싸서 많이 산다)
+      const rowClicked=await p.evaluate(()=>{ const ov=document.querySelector("#shopOverlay.active"); if(!ov)return false;
+        const rows=[...ov.querySelectorAll(".bag-item")]; const nmOf=r=>((r.querySelector(".nm")||{}).textContent||"");
+        const row=rows.find(r=>/정령구/.test(nmOf(r))&&!/고급|울트라/.test(nmOf(r))) || rows.find(r=>/정령구/.test(nmOf(r)));
+        if(!row)return false; const b=row.querySelector(".pick"); if(!b||b.disabled)return false; b.click(); return true; });
+      if(rowClicked){ await p.waitForTimeout(220);
+        // 수량을 가능한 만큼(≤12) 늘려 한 번에 산다. buyPlus는 클릭마다 renderTrade로 갱신되므로 매번 재조회.
+        await p.evaluate(()=>{ for(let i=0;i<12;i++){ const plus=document.getElementById("buyPlus"); if(plus&&!plus.disabled)plus.click(); else break; } });
+        await p.waitForTimeout(150);
+        await p.evaluate(()=>{ const ok=document.getElementById("buyOk"); if(ok&&!ok.disabled)ok.click(); });
+        await p.waitForTimeout(450); }
+      // 상점 오버레이 닫기(Escape → 안 닫히면 ✕)
+      await p.keyboard.press("Escape"); await p.waitForTimeout(220);
+      await p.evaluate(()=>{ const c=document.querySelector("#shopOverlay.active .closex,#shopOverlay.active [id*=close]"); if(c)c.click(); });
+      await p.waitForTimeout(180);
+    }
+    // 나가기
+    for(let i=0;i<12;i++){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(230);
+      const out=await p.evaluate(()=>!window.SG.G().indoor); if(out)break; }
+    const balls=await p.evaluate(()=>{ const G=window.SG.G(); return (G.items.ball||0)+(G.items.greatball||0); });
+    if(balls>=4)stats.restocks++;
+    return balls>=4;
   };
 
   const TRACE=!!process.env.TRACE;
@@ -223,7 +280,7 @@ const { chromium } = require("playwright"); const path=require("path");
           //    (실측: 10분에 파티 1마리·전멸 9회 죽음 루프). → 팀을 꾸리는 동안엔 **가장 약한 damaging 기술**로
           //    깎아 다음 턴 포획을 노린다. 팀이 차거나(≥3) 상대가 이미 반피 이하면 평소대로 최강 기술.
           const balls=(G.items.ball||0)+(G.items.greatball||0);
-          const wantWeak = foe && !G.trainer && G.party.length<3 && balls>0 && foe.hp/foe.maxHp>0.4;
+          const wantWeak = foe && !G.trainer && G.party.length<4 && balls>0 && foe.hp/foe.maxHp>0.4;
           let best=0, bs=wantWeak?1e9:-1;
           me.moves.forEach((k,i)=>{ const mo=S.MOVES[k]; if(!mo||(me.pp[k]||0)<=0)return;
             if((mo.power||0)<=0)return;   // 변화기 제외(깎지 못함)
@@ -241,9 +298,9 @@ const { chromium } = require("playwright"); const path=require("path");
         // 파티가 모자라면 약해진 야생을 잡는다(게이트는 3~6마리를 전제로 설계돼 있다).
         // ⚠️ 포획 확률은 HP에 크게 좌우된다(풀피 기본볼 ≈6% · 30%HP ≈45%). 하지만 봇이 금세 야생을
         //    outlevel해 **약한 기술로도 OHKO**되면 저HP까지 못 깎는다 → `<0.45` 조건이 한 번도 안 걸려
-        //    볼을 0회 던진다(실측: 8조우 0포획). 그래서 **파티가 1마리뿐이면 HP 무관 turn1에 일단 던진다**
-        //    (칩이 불가능할 때 유일한 시도). 2마리 이상이면 깎아서(<0.45/<0.35) 좋은 확률로 던진다.
-        if(st.wild && st.balls>0 && (st.party<2 || (st.party<3 && st.foeHp<0.45) || (st.party<6 && st.foeHp<0.35))){
+        //    볼을 0회 던진다(실측: 8조우 0포획). 그래서 **팀이 작으면(<3) HP 무관 매 턴 던진다**
+        //    (칩이 불가능할 때 유일한 시도). 볼은 상점 보충으로 채운다(위 restockBalls). 4마리 이상은 깎아서.
+        if(st.wild && st.balls>0 && (st.party<3 || (st.party<4 && st.foeHp<0.45) || (st.party<6 && st.foeHp<0.35))){
           const threw=await p.evaluate(()=>{ const b=[...document.querySelectorAll("#mainMenu .mbtn")].find(x=>/포획/.test(x.textContent||"")); if(b){b.click();return true;} return false; });
           if(threw){ await p.waitForTimeout(1400); continue; }   // 포획 애니는 길다(~5s) → 여기서 세지 않고 파티 증가로 센다(아래)
         }
@@ -300,6 +357,14 @@ const { chromium } = require("playwright"); const path=require("path");
       healCooldown=12;   // 실패하면 한동안 다시 시도하지 않는다(진행을 막지 않게)
     }
     if(healCooldown>0)healCooldown--;
+
+    // 팀이 작은데 볼이 부족하면 상점에서 정령구 보충(팀 구성의 열쇠 — 볼 8개론 6% 풀피 던지기에 부족).
+    if(st.party<4 && st.balls<4 && st.money>=300 && !st.indoor && restockCd<=0){
+      tr("field:restock",st); const r=await restockBalls();
+      restockCd = r?8:20;   // 성공하면 잠깐, 실패하면 오래 쉬어 진행을 막지 않는다
+      continue;
+    }
+    if(restockCd>0)restockCd--;
 
     // ⚠️ 실내에서는 목표 트래커가 숨겨져 있어 봇이 방향키 폴백으로 제자리를 맴돈다.
     //    (실측: 센터 안에서 7분간 갇혀 간호사에게만 계속 부딪혔다.) 실내면 먼저 출구로 나간다.
@@ -377,7 +442,7 @@ const { chromium } = require("playwright"); const path=require("path");
 
   const mins=((Date.now()-t0)/60000).toFixed(1);
   console.log(`\n  [전수 플레이스루] ${mins}분 · 예산 ${BUDGET}초`);
-  console.log(`     전투 ${stats.battles}회 (야생 ${stats.wild} · 트레이너 ${stats.trainer}) · 포획 ${stats.caught} · 회복약 ${stats.potions} · 센터회복 ${stats.heals} · 도주 ${stats.runs}`);
+  console.log(`     전투 ${stats.battles}회 (야생 ${stats.wild} · 트레이너 ${stats.trainer}) · 포획 ${stats.caught} · 회복약 ${stats.potions} · 센터회복 ${stats.heals} · 볼보충 ${stats.restocks} · 도주 ${stats.runs}`);
   console.log(`     도달: 뱃지 ${fin.badges}/4 · 숲의 군주 ${fin.lord?"격파":"미격파"} · 챔피언 ${fin.champion?"등극":"미등극"}`);
   console.log(`     파티 ${fin.party}마리 Lv[${fin.lv.join(",")}] · 도감 ${fin.caught} · 소지금 ${fin.money} · 위치 ${fin.indoor||"필드"} ${fin.pos.x},${fin.pos.y}`);
   if(stats.samples.length){ console.log("     진행 곡선(1분 간격):");
