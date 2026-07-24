@@ -2129,7 +2129,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(_hi&&_hi.complete&&_hi.naturalWidth){ const hx=pcx, gy=pcy+ts*0.30, S=ts*0.98;
         const _hb=moving?Math.abs(Math.sin(now*10))*ts*0.06:Math.sin(now*2.2)*ts*0.012;
         ctx.fillStyle="rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(hx,gy,ts*0.30,ts*0.11,0,0,6.29); ctx.fill();
-        ctx.save(); if(!_back&&(this.dir||"down")==="right"){ ctx.translate(hx,0); ctx.scale(-1,1); ctx.translate(-hx,0); }   // 주인공 아트 기본이 좌향 — 오른쪽 이동 시 뒤집어 진행방향을 본다
+        ctx.save(); if(!_back&&(this.dir||"down")==="left"){ ctx.translate(hx,0); ctx.scale(-1,1); ctx.translate(-hx,0); }   // ⚠️ 주인공 아트 기본은 **우향**(돋보기가 우측)이다 — 왼쪽 이동 시에만 뒤집어 진행방향을 본다. (예전 주석은 좌향이라 했지만 실제 아트는 우향 — 스크린샷으로 확인)
         ctx.drawImage(_hi, hx-S/2, gy-S-_hb, S, S); ctx.restore(); }
       else { this._walker(ctx, pcx, pcy, ts, this.dir||"down", moving, now); } }
     this._grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving);
@@ -2296,10 +2296,19 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     if(((h>>9)&7)===0){ const fx=sx+ts*0.3+rnd(5)*ts*0.4, fy=sy+ts*0.3+rnd(6)*ts*0.4, fc=((h>>12)&1)?"#f0d84a":"#f088b0";
       ctx.fillStyle=fc; for(let a=0;a<5;a++){ const an=a/5*6.28; ctx.beginPath(); ctx.arc(fx+Math.cos(an)*ts*0.055,fy+Math.sin(an)*ts*0.055,ts*0.038,0,6.29); ctx.fill(); } ctx.fillStyle="#fff3b0"; ctx.beginPath(); ctx.arc(fx,fy,ts*0.032,0,6.29); ctx.fill(); }
     if(t==="T"){
-      ctx.fillStyle="rgba(28,66,38,.14)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.9,ts*0.4,ts*0.12,0,0,6.29); ctx.fill();
-      for(let i=0;i<6;i++){ const bx=sx+ts*(0.14+i*0.145)+(rnd(i)-0.5)*ts*0.05, by=sy+ts*(0.95-rnd(i+1)*0.05), hgt=ts*(0.44+rnd(i+2)*0.30), sway=Math.sin((now||0)*2.2+h*0.6+i*1.3+x*0.4+y*0.2)*ts*0.11, tipX=bx+sway+(rnd(i+3)-0.5)*ts*0.08, tipY=by-hgt, wdt=Math.max(0.6,ts*0.05);
-        ctx.fillStyle=(i%2)?rp.t0:rp.t1; ctx.beginPath(); ctx.moveTo(bx-wdt,by); ctx.quadraticCurveTo(bx+sway*0.5,by-hgt*0.6,tipX,tipY); ctx.quadraticCurveTo(bx+sway*0.5,by-hgt*0.6,bx+wdt,by); ctx.closePath(); ctx.fill();
-        if(i%3===0){ ctx.fillStyle="rgba(210,235,170,.5)"; ctx.beginPath(); ctx.arc(tipX,tipY,Math.max(0.8,ts*0.03),0,6.29); ctx.fill(); } } }
+      // 포켓몬식 키큰 풀: **진한 초록 패치**(걸어 들어가는 잔디밭임을 명확히 — 예전엔 키 큰 뾰족한 풀이라
+      // 작은 나무처럼 보여 "나무를 통과하냐"는 오해가 있었다) + 짧고 촘촘한 풀 텍스처.
+      const px=sx+Math.round(ts*0.04), py=sy+Math.round(ts*0.08), pw=Math.round(ts*0.92), ph=Math.round(ts*0.90), pr=Math.max(2,ts*0.14);
+      ctx.fillStyle=rp.t1;
+      ctx.beginPath(); ctx.moveTo(px+pr,py); ctx.arcTo(px+pw,py,px+pw,py+ph,pr); ctx.arcTo(px+pw,py+ph,px,py+ph,pr); ctx.arcTo(px,py+ph,px,py,pr); ctx.arcTo(px,py,px+pw,py,pr); ctx.closePath(); ctx.fill();
+      // 짧은 풀 뭉치(V자) 3열 — 촘촘·낮게. 살랑임은 위쪽만 살짝.
+      ctx.strokeStyle=rp.t0; ctx.lineWidth=Math.max(1,ts*0.055); ctx.lineCap="round";
+      for(let r2=0;r2<3;r2++){ const ry=py+ph*(0.34+r2*0.24);
+        for(let c=0;c<4;c++){ const cx2=px+pw*(0.16+c*0.23)+(rnd(r2*4+c)-0.5)*ts*0.03;
+          const sway=Math.sin((now||0)*2.4+h*0.5+c*1.1+r2)*ts*0.03, bh=ts*(0.13+rnd(r2+c)*0.05);
+          ctx.beginPath(); ctx.moveTo(cx2-ts*0.05, ry); ctx.lineTo(cx2+sway, ry-bh); ctx.lineTo(cx2+ts*0.05, ry); ctx.stroke(); } }
+      // 윗면 하이라이트(잔디밭 결)
+      ctx.fillStyle="rgba(210,235,170,.16)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,py+ph*0.28,pw*0.42,ph*0.14,0,0,6.29); ctx.fill(); }
     else if(t==="C"){ const cx=sx+ts*0.5, by=sy+ts*0.9, pulse=0.5+0.5*Math.sin((now||0)*2+h);
       ctx.fillStyle="rgba(90,224,232,"+(0.08+pulse*0.10)+")"; ctx.beginPath(); ctx.arc(cx,sy+ts*0.5,ts*0.44,0,6.29); ctx.fill();
       [[0.5,0.30,0.5],[0.32,0.52,0.34],[0.68,0.50,0.30]].forEach(([fx,fy,sc],i)=>{ const px=sx+ts*fx, tipY=sy+ts*(fy-sc*0.5), baseY=by-ts*0.02, ww=ts*0.10*sc*2;
