@@ -424,6 +424,15 @@ EV/성격/IV 시스템(`m.evs`·`m.nature`·`m.ivs`)은 다 있고 적용·저�
 - 인트로 동안 메뉴 숨김·`G.busy`로 입력 차단, 내 스프라이트 opacity 0으로 깜빡임 방지. 자동 진행이라 탭 불필요.
 - 모든 야생 조우(일반/동굴/해안/섬/설원/파도/낚시)와 보스에 자동 적용(`!G.trainer` 판정).
 
+### 연전 도장 (Battle Tower · 포스트게임)
+챔피언 후 반복 도전형 엔드게임이 없었다(제단 보스 2종·전설·VS시커 재대결·도감완성뿐, LEAGUE_WIN 텍스트만 "더 강한 개체를" 예고). → **연전 도장** — 리그 앞 도장 관장 세라(`towerkeeper` 16,9, `tower:true` NPC)가 **회복 없이** 도전자들과 무한 연승 대결을 붙인다.
+- **상대 풀은 `DEX` tier3(최종진화 27종)에서 파생**(`towerPool`) — 하드코딩 금지(종 추가 시 자동 반영). 전설 tier4 제외. 한 판 3마리, **7연승마다 상대 Lv +1**(50→60)·이정표 사탕 보너스.
+- **보상은 매 승리 즉시 은행**(`towerWin`: `120+연승*30` → `G.money`) → **전멸해도 번 돈은 남고 소지금 패널티 없음**(일반 전멸의 blackout 절반 페널티와 다름).
+- **배선 3곳**: `trainerDefeated` 맨 위 `tr.tower`면 `towerWin()`(→`startTowerBattle` 체이닝, `G.defeated`에 `__tower` 안 넣음) · `faintMine` 전멸 else의 **패널티 앞**에 `tower`면 `endTowerRun()`(제자리에서 종료, blackout 워프 없음) · `talkNPC`의 `npc.tower`→`openTower`(챔피언 게이트, `confirm`으로 시작).
+- **연전 성립 원리**: `startTowerBattle`이 `transitionToBattle`을 재사용 — 이건 파티 휘발상태(랭크·혼란)만 리셋하고 **HP/PP는 안 건드린다** → 회복 없는 연전이 자연히 성립. 첫 판은 오버월드에서, 이후 체이닝 판은 전투 뷰에서 같은 함수로 진입(와이프가 스왑을 덮음).
+- **저장**: `towerBest`만 영속(`tb`). `towerStreak`/`towerRun`은 런 중에만 — **전투 중 저장 안 하므로 자연히 휘발**(런 중간 세이브·로드 불가 = 로드스컴 방지와 일관). freshState/serialize/deserialize 3곳 배선.
+- ⚠️ NPC 타일 자체는 `walkable`=false(부딪혀 대화)가 정상 — 테스트는 바닥 지형+인접 접근성으로 판정. 회귀 `scripts/tower_test.js`(풀 파생·챔피언 게이트·연승 체이닝·전멸 종료·세이브·배치).
+
 ### 급소 사운드 (`crithit`)
 급소를 맞혀도 (중립 상성이면) 평범한 히트음이라 특별함이 없었다 → `crithit`("챙!" — 상승 반짝임 1500→2000→2600Hz + 임팩트 노이즈) 추가. 히트 피드백에서 `r.crit`이면 eff 히트음 **위에 겹쳐** 재생(super+crit=superhit+챙). 데미지 숫자는 이미 급소 때 금색·30px(`.dmgnum.big`).
 
