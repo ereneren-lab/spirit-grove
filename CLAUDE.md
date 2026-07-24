@@ -68,6 +68,12 @@ verify 내용:
 - ⚠️ 워크플로 파일(`.github/workflows/deploy.yml`)이 orphan 스냅샷에 포함돼야 트리거된다 — `git add -A`라 자동 포함. 지우지 말 것.
 - ⚠️ **커밋할 때 `dist`도 포함**(`git add -A`). 안 하면 deploy.sh의 `git checkout main`이 로컬 dist를 옛 커밋으로 되돌려 **로컬 테스트가 옛 dist로 헛돈다**(실제로 겪음 — 가로모드 수정이 로컬에서 안 보였다). deploy.sh가 끝에 재빌드해 보정하지만, 커밋에 dist를 넣는 게 근본.
 
+### 정령 요약 크리처 아트가 능력치 바를 덮음 (`img.cart` 크기 제약)
+직접 화면 검수로 발견: 정령 요약(showMonSummary)에서 크리처 아트가 **원본 360px로 터져** 능력치 바를 덮었다. 원인은 CLAUDE.md가 반복 경고한 그것 — `creatureVisual`이 뱉는 `<img class="cart">`가 크기 제약이 없다. 요약은 70px 컨테이너에 넣었지만 `.cart`에 매칭되는 크기 규칙이 없어 오버플로. → **`img.cart`에 기본 제약**(`max-width/height:100%;object-fit:contain`) 추가 — `.crit`(전투 100%)·`.em`(1.15em)은 더 구체적이라 그대로. 이 재발 버그를 구조적으로 차단.
+
+### 상점·가방 볼 아이콘 통일 (미니 정령구)
+볼 아이콘이 🔮🟣🥅🌑⚡💚🟡 제각각 이모지였다 → `itemIcon(it)` 헬퍼로 볼은 **클래식 정령구 미니**(`.catchball.mini`, 던지는 볼과 같은 룩), 나머지는 이모지. 상점·가방·구매창 공용. `BALLS[key].cls`로 색 매핑.
+
 ### 정령이 흑백으로 보임 — 진화 실루엣 필터 잔존
 유저 제보: 정령이 가끔 흑백으로 보인다. 원인: 진화 모프(`evolveAnimate`)가 스프라이트에 `filter:brightness(0) invert(1)`(실루엣)을 씌우는데, 연출이 **중간에 끊기면**(전투 종료·리사이즈 등) 그 필터가 남는다. 스프라이트 요소(`#meSprite`/`#foeSprite`)는 재사용이라, 다음 정령이 흑백으로 뜬다. → **`setCrit`(스프라이트 내용 세터, `renderCombatants`가 매 렌더 호출하는 단일 funnel)에서 `sp.style.filter=""` 리셋**. 진화 연출은 setCrit 호출 '뒤'에 실루엣을 다시 씌우므로 안전. (⚠️ `.faint` 제거는 넣지 말 것 — 기절 애니를 끊는다.)
 

@@ -81,6 +81,9 @@
   .pick-card.sel{border-color:var(--mint);background:var(--panel2);box-shadow:0 0 0 3px rgba(127,209,174,.18)}
   .pick-card .em{font-size:46px;display:block;margin-bottom:6px}
   .em svg{width:1.15em;height:1.15em;vertical-align:middle;display:inline-block;overflow:visible}
+  /* ⚠️ 크리처 아트(img.cart)는 원본 360px라 크기 제약 없는 컨테이너를 뚫는다(요약 화면에서 능력치 바를 덮었다).
+     기본 제약으로 컨테이너에 맞춘다 — .crit/.em은 더 구체적이라 그대로 오버라이드된다. */
+  img.cart{max-width:100%;max-height:100%;object-fit:contain;display:block;margin:0 auto}
   .em img.cart{width:1.15em;height:1.15em;vertical-align:middle;object-fit:contain}
   .crit img.cart{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1}
   .crit.shiny img.cart{filter:hue-rotate(150deg) saturate(1.4) brightness(1.05)}
@@ -244,6 +247,9 @@
   .catchball.quick::after{border-color:#f0c83a;box-shadow:0 0 7px rgba(255,220,90,.9)}
   .catchball.heal{--top:#e0629a}
   .catchball.heal::after{border-color:#e0629a;box-shadow:0 0 7px rgba(240,120,170,.85)}
+  /* 상점·가방 목록용 미니 정령구(던지는 볼과 같은 클래식 룩으로 통일 — 예전엔 🔮🟣 등 제각각 이모지였다) */
+  .catchball.mini{position:relative;left:auto;top:auto;width:28px;height:28px;display:inline-block;vertical-align:middle}
+  .catchball.mini::after{width:9px;height:9px;border-width:2px}
   .fx-glyph{position:absolute;font-size:28px;z-index:7;pointer-events:none;transform:translate(-50%,-50%);will-change:transform,left,top,opacity}
   .fx-proj{font-size:32px}
   .fx-particle{position:absolute;font-size:18px;z-index:7;pointer-events:none;transform:translate(-50%,-50%);will-change:transform,opacity}
@@ -5018,6 +5024,8 @@ const BALLS={
   quickball:{ko:"퀵볼",cls:"quick"},
   healball:{ko:"힐볼",cls:"heal"},
 };
+// 아이템 아이콘 — 볼은 클래식 정령구(미니), 나머지는 이모지. 상점·가방·구매창 공용.
+function itemIcon(it){ const k=it&&it.key; if(k&&typeof BALLS!=="undefined"&&BALLS[k])return `<div class="catchball mini ${BALLS[k].cls}"></div>`; return (it&&it.em)||""; }
 function ballBonus(ball,foe){ switch(ball){
   case "greatball": return 0.22;
   case "ultraball": return 0.35;
@@ -5374,7 +5382,7 @@ function renderBag(){ const body=$("bagBody"); body.innerHTML="";
   if(!items.length){ const _e=document.createElement("div"); _e.style.cssText="text-align:center;color:var(--muted);padding:22px 8px;font-size:12px"; _e.textContent="이 주머니는 비어있다."; body.appendChild(_e); }
   if(G.inBattle){ const note=document.createElement("div"); note.style.cssText="font-size:11px;color:var(--muted);margin-bottom:2px"; note.textContent="아이템을 쓰면 상대가 1턴 행동한다."; body.appendChild(note); }
   items.forEach(it=>{ const ct=G.items[it.key]||0; const row=document.createElement("div"); row.className="bag-item";
-    row.innerHTML=`<div class="em">${it.em}</div><div class="info"><div class="nm">${it.nm}</div><div class="ds">${it.ds}</div></div>
+    row.innerHTML=`<div class="em">${itemIcon(it)}</div><div class="info"><div class="nm">${it.nm}</div><div class="ds">${it.ds}</div></div>
       ${it.use?`<button class="pick" style="margin-right:8px" ${ct<=0?"disabled":""}>사용</button>`:""}<div class="ct">×${ct}</div>`;
     if(it.use){ row.querySelector(".pick").addEventListener("click",()=>{ if(G.inBattle)battleUseItem(it); else useItem(it); }); }
     body.appendChild(row); }); }
@@ -5554,7 +5562,7 @@ function renderExchange(){ const body=$("shopBody"); body.innerHTML="";
   head.innerHTML="💱 <b>교환소</b> — 코인으로 희귀한 물건을 바꿔요.<br>타입 부적 · 진화의 돌 · 반짝임의 부적"; body.appendChild(head);
   PREMIUM.forEach(it=>{ const owned=it.key==="shinycharm"&&!!G.shinyCharm; const canAfford=G.money>=it.price;
     const row=document.createElement("div"); row.className="bag-item";
-    row.innerHTML=`<div class="em">${it.em}</div><div class="info"><div class="nm">${it.nm}${owned?' <span style="color:var(--mint);font-size:10px">보유중</span>':''} <span style="color:var(--muted);font-size:10px">${it.held?"×"+((G.heldStock&&G.heldStock[it.key])||0)+" 보유":""}</span></div><div class="ds">${it.ds}</div></div>
+    row.innerHTML=`<div class="em">${itemIcon(it)}</div><div class="info"><div class="nm">${it.nm}${owned?' <span style="color:var(--mint);font-size:10px">보유중</span>':''} <span style="color:var(--muted);font-size:10px">${it.held?"×"+((G.heldStock&&G.heldStock[it.key])||0)+" 보유":""}</span></div><div class="ds">${it.ds}</div></div>
       <button class="pick" ${(!canAfford||owned)?"disabled":""}>${owned?"보유":"교환"}</button><div class="price">💰${it.price}</div>`;
     if(!owned)row.querySelector(".pick").addEventListener("click",()=>exchangeBuy(it));
     body.appendChild(row); }); }
@@ -5584,7 +5592,7 @@ function renderShop(){ const body=$("shopBody"); body.innerHTML="";
     const locked=SHOP.length-stock.length;
     stock.forEach(it=>{ const owned=ownedQty(it);
       const row=document.createElement("div"); row.className="bag-item";
-      row.innerHTML=`<div class="em">${it.em}</div><div class="info"><div class="nm">${it.nm} <span style="color:var(--muted);font-size:10px">×${owned} 보유</span></div><div class="ds">${it.ds}</div></div>
+      row.innerHTML=`<div class="em">${itemIcon(it)}</div><div class="info"><div class="nm">${it.nm} <span style="color:var(--muted);font-size:10px">×${owned} 보유</span></div><div class="ds">${it.ds}</div></div>
         <button class="pick" ${G.money<it.price?"disabled":""}>구매</button><div class="price">💰${it.price}</div>`;
       row.querySelector(".pick").addEventListener("click",()=>{ if(G.money<it.price){toast("코인이 부족해");return;} Audio.sfx("blip"); openTrade(it,"buy"); });
       body.appendChild(row); });
@@ -5597,7 +5605,7 @@ function renderShop(){ const body=$("shopBody"); body.innerHTML="";
     if(!sellable.length){ const e=document.createElement("div"); e.style.cssText="text-align:center;color:var(--muted);padding:26px 8px;font-size:13px"; e.textContent="팔 수 있는 물건이 없어요."; body.appendChild(e); return; }
     sellable.forEach(it=>{ const owned=ownedQty(it);
       const row=document.createElement("div"); row.className="bag-item";
-      row.innerHTML=`<div class="em">${it.em}</div><div class="info"><div class="nm">${it.nm} <span style="color:var(--muted);font-size:10px">×${owned} 보유</span></div><div class="ds">${it.ds}</div></div>
+      row.innerHTML=`<div class="em">${itemIcon(it)}</div><div class="info"><div class="nm">${it.nm} <span style="color:var(--muted);font-size:10px">×${owned} 보유</span></div><div class="ds">${it.ds}</div></div>
         <button class="pick">판매</button><div class="price">💰${sellPrice(it.key)}</div>`;
       row.querySelector(".pick").addEventListener("click",()=>{ Audio.sfx("blip"); openTrade(it,"sell"); });
       body.appendChild(row); });
@@ -5610,7 +5618,7 @@ function openTrade(it,mode){ _trIt=it; _trMode=mode; _trQty=1; renderTrade(); op
 function renderTrade(){ const it=_trIt,mode=_trMode; if(!it)return; const buy=mode==="buy";
   const max=tradeMax(it,mode); _trQty=clamp(_trQty,1,Math.max(1,max));
   const unit=buy?it.price:sellPrice(it.key), total=unit*_trQty, b=$("buyBody");
-  b.innerHTML=`<div class="buy-head"><span class="buy-em">${it.em}</span><div><div class="buy-nm">${it.nm}</div><div class="buy-ds">${it.ds} · 개당 💰${unit}</div></div></div>
+  b.innerHTML=`<div class="buy-head"><span class="buy-em">${itemIcon(it)}</span><div><div class="buy-nm">${it.nm}</div><div class="buy-ds">${it.ds} · 개당 💰${unit}</div></div></div>
     <div class="buy-qtyrow"><button class="buy-step" id="buyMinus" ${_trQty<=1?"disabled":""}>−</button><div class="buy-qty">${_trQty}</div><button class="buy-step" id="buyPlus" ${_trQty>=max?"disabled":""}>+</button></div>
     <div class="buy-total">${buy?"합계":"판매액"} <b>💰 ${total}</b><span class="buy-after">${buy?`구매 후 잔액 💰 ${G.money-total}`:`판매 후 💰 ${G.money+total}`}</span></div>
     <button class="dcbtn wide buy-ok" id="buyOk" ${max<1?"disabled":""}>${max<1?(buy?"코인이 부족해":"팔 수 없어"):(buy?"구매하기":"판매하기")}</button>
