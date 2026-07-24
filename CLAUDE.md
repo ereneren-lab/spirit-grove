@@ -68,6 +68,15 @@ verify 내용:
 - ⚠️ 워크플로 파일(`.github/workflows/deploy.yml`)이 orphan 스냅샷에 포함돼야 트리거된다 — `git add -A`라 자동 포함. 지우지 말 것.
 - ⚠️ **커밋할 때 `dist`도 포함**(`git add -A`). 안 하면 deploy.sh의 `git checkout main`이 로컬 dist를 옛 커밋으로 되돌려 **로컬 테스트가 옛 dist로 헛돈다**(실제로 겪음 — 가로모드 수정이 로컬에서 안 보였다). deploy.sh가 끝에 재빌드해 보정하지만, 커밋에 dist를 넣는 게 근본.
 
+### 정령이 흑백으로 보임 — 진화 실루엣 필터 잔존
+유저 제보: 정령이 가끔 흑백으로 보인다. 원인: 진화 모프(`evolveAnimate`)가 스프라이트에 `filter:brightness(0) invert(1)`(실루엣)을 씌우는데, 연출이 **중간에 끊기면**(전투 종료·리사이즈 등) 그 필터가 남는다. 스프라이트 요소(`#meSprite`/`#foeSprite`)는 재사용이라, 다음 정령이 흑백으로 뜬다. → **`setCrit`(스프라이트 내용 세터, `renderCombatants`가 매 렌더 호출하는 단일 funnel)에서 `sp.style.filter=""` 리셋**. 진화 연출은 setCrit 호출 '뒤'에 실루엣을 다시 씌우므로 안전. (⚠️ `.faint` 제거는 넣지 말 것 — 기절 애니를 끊는다.)
+
+### 가로 오버레이 최적화 (가방·정령·도감)
+유저: 가로에서 오버레이가 이상하고 닫기 버튼이 안 보인다. 세로용 카드가 화면을 다 먹어 1~2개만 보였고, 스크롤하면 ✕가 밀려 사라진 것처럼 보였다(실은 `.ov-head` 고정·`.ov-body` 스크롤이라 남지만, 안전영역·좁은 세로가 문제). → 가로에서 `.overlay`에 **안전영역 패딩**(노치 회피) + `#pcBody`/`#bagBody`를 **2열 그리드**(가방은 `.bag-tabs`가 `grid-column:1/-1`로 전체폭). 헤더(✕)는 고정. 카드 3개+ 보이고 넓은 공간 활용.
+
+### 가로 전투 비율 (아레나 우선)
+유저: 가로 전투가 너무 반반이라 아쉽다. → 아레나/메뉴 58/42 → **68/32**(`#battle .field flex 68%` · `.battle-ui 32% min-width 238px`). 아레나가 화면을 크게 차지하고 메뉴는 우측 슬림 패널. 5버튼 다 뷰 안(회귀 확인).
+
 ### (대형) 전투 후 검정 화면 — 전투 중 resize가 캔버스를 0으로
 유저 제보: 포획/전투 후 화면이 갑자기 까매졌다. 원인: `Field.resize()`가 `canvasWrap.clientWidth*2`로 캔버스 픽셀크기를 잡는데, **전투 중엔 맵 뷰가 `display:none`이라 clientWidth=0 → 캔버스가 0×0**이 된다. 그 상태로 맵 복귀 시 아무것도 안 그려져 **검정 화면**. **모바일 Safari는 전투 중에도 resize를 자주 쏜다**(주소창 표시/숨김·앱 전환·회전) → 내 회전 훅(`resize`/`orientationchange`→`Field.resize()`)이 거기 반응.
 - 수정: `Field.resize()`가 **wrap 크기가 0이면 스킵**(캔버스를 0으로 안 만든다). + `endBattle`이 `show("map")` 후 `Field.resize()`를 불러 스테일 크기 보정.

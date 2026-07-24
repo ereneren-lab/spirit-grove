@@ -514,14 +514,25 @@
   #mapHint{display:none}
   /* 전투: 세로 스택(아레나340+메뉴184=524)이 가로 높이(~357)에 안 들어가 메뉴가 화면 밖으로 밀렸다
      → 가로에선 아레나 왼쪽·메뉴 오른쪽으로 나란히(포켓몬식 가로 전투). */
+  /* 아레나가 화면을 크게 차지하고 메뉴는 우측 슬림 패널(예전 58/42는 '반반'이라 아쉬웠다 → 68/32). */
   #battle{flex-direction:row}
-  #battle .field{min-height:0;flex:1 1 58%;border-radius:0}
-  #battle .battle-ui{flex:0 0 42%;min-height:0;border-radius:18px 0 0 18px;border-top:0;
+  #battle .field{min-height:0;flex:1 1 68%;border-radius:0}
+  #battle .battle-ui{flex:0 0 32%;min-width:238px;min-height:0;border-radius:18px 0 0 18px;border-top:0;
     border-left:1px solid var(--line);padding:10px 12px;overflow-y:auto;
     padding-right:calc(12px + env(safe-area-inset-right))}
-  #battle .msg{min-height:0}
-  #battle .menu-grid{gap:7px}
-  #battle .mbtn{padding:9px}
+  #battle .msg{min-height:0;font-size:13px}
+  #battle .menu-grid{gap:6px}
+  #battle .mbtn{padding:9px 8px;font-size:13px}
+  /* 오버레이(가방·도감·정령·카드): 가로에선 세로용 카드가 화면을 다 먹어 1~2개만 보이고 어수선했다.
+     ✕는 안전영역(노치)에 가릴 수 있었다 → 안전영역 패딩 + 목록 2열로 넓은 공간 활용. 헤더(✕)는 고정. */
+  .overlay{padding:10px 14px;
+    padding-left:calc(14px + env(safe-area-inset-left));padding-right:calc(14px + env(safe-area-inset-right));
+    padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+  .ov-head{margin-bottom:8px} .ov-head h3{font-size:16px} .tabbar{margin-bottom:8px}
+  #pcBody{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
+  #pcBody .mon-card{margin:0}
+  #bagBody{display:grid;grid-template-columns:1fr 1fr;gap:7px;align-content:start}
+  #bagBody .bag-tabs{grid-column:1/-1}
 }
 </style>
 </head>
@@ -3145,6 +3156,10 @@ function leadFollowMon(){ if(typeof G==="undefined"||!G||!G.party)return null; f
 const FOLLOWER_OUTDOOR=new Set(["coast","isle","shrine","snowfield"]);
 function followerVisible(){ if(typeof G==="undefined"||!G)return false; if(CONFIG.follower==="off")return false; if(G.running)return false; if(CONFIG.follower==="out"){ if(G.indoor && !FOLLOWER_OUTDOOR.has(G.indoor))return false; } return true; }
 function setCrit(side,mon){ const sp=spriteEl(side);
+  // ⚠️ 잔여 필터 리셋 — 진화 모프(실루엣 brightness(0) invert(1))가 중간에 끊기면 그 필터가 남아
+  //    다음 정령이 흑백으로 보였다(유저 제보). renderCombatants가 매 렌더 setCrit을 부르므로 여기서 걷는다.
+  //    (진화 연출은 setCrit 호출 '뒤'에 실루엣을 다시 씌우므로 안전.)
+  sp.style.filter="";
   sp.className=sp.className.replace(/\b(t-\w+|arch-\w+)\b/g,"").replace(/\s+/g," ").trim();
   sp.classList.add("crit","t-"+mon.type); sp.classList.toggle("shiny",!!mon.shiny);
   sp.innerHTML=`<div class="crit-shadow"></div>`+creatureVisual(mon.id,mon.type); }
