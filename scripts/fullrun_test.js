@@ -36,7 +36,16 @@
 //      10)의 "나가지 말고 싸운다"에 "이미 깼으면 나간다"가 없었다. gymN의 관장 타일은 숫자 N,
 //      뱃지 키도 "1"~"4"라 같다 → `st.badgeKeys.includes(N)`이면 탈출 분기로 보낸다.
 //
-// ⚠️ 남은 것(다음 세션):
+//  12) **봇이 팀을 못 꾸려 단일 정령 죽음 루프**(실측: 10분에 파티 1마리·전멸 반복, 뱃지1 후 시작 마을 정체).
+//      원인 사슬: (a) 최강 기술로 야생을 OHKO → 잡을 기회 없음. (b) 약한 기술로 깎으려 해도 봇이
+//      금세 야생을 **outlevel**해 약한 기술로도 OHKO → 저HP(<0.45, 좋은 확률)에 못 도달 → 볼을 **0회** 던짐.
+//      포획 확률은 HP 의존(풀피 기본볼 ≈6% · 30%HP ≈45%)이라 풀피 던지기는 비효율이지만, 칩이 불가능하면
+//      그게 유일한 시도다. → **파티가 1마리면 HP 무관 turn1에 일단 던지고**, 2마리 이상이면 약한 기술로
+//      깎아서(<0.45/<0.35) 던진다. 이걸로 봇이 **2번째 정령을 잡고 gym2 인테리어까지 도달**(전멸↓·소지금↑).
+//
+// ⚠️ 남은 것(다음 세션 — 챔피언 완주엔 아직 부족):
+//   · **팀이 2마리에서 잘 안 는다** — 볼 8개가 6% 풀피 던지기엔 부족(한 조우에서 소진). 3~4마리로 늘리려면
+//     **상점에서 볼 보충**(돈은 남는다·소지금 1000+) 행동이 필요하다. 이게 gym2+(4마리 전제) 돌파의 열쇠.
 //   · 목표 트래커 이동이 두 칸 사이를 오갈 때가 있다(8,44 ↔ 9,43). 탭마다 경로가 재계산되고
 //     조우로 끊겨 한두 칸만 가고 마는 것으로 보인다. 진행은 되지만 느리다.
 //   · ⚠️ **시도했다가 되돌린 방법**: `currentGoal()`의 좌표를 읽어 `walkTo`로 끝까지 걷게 했더니
@@ -85,7 +94,7 @@ const { chromium } = require("playwright"); const path=require("path");
 
   const t0=Date.now();
   const stats={battles:0,wild:0,trainer:0,caught:0,potions:0,runs:0,heals:0,faints:0,milestones:[],samples:[]};
-  let wasBattle=false, lastStep=-1, lastMoney=null, stuck=0, lastKey="", fleeTries=0, healCooldown=0, potionFail=0, finSnapshot=null;
+  let wasBattle=false, lastStep=-1, lastMoney=null, stuck=0, lastKey="", fleeTries=0, healCooldown=0, potionFail=0, finSnapshot=null, lastPartyN=null;
 
   const mark=(name,st)=>{ if(stats.milestones.some(m=>m.name===name))return;
     stats.milestones.push({name, t:Math.round((Date.now()-t0)/1000), lv:st.lv, battles:stats.battles, party:st.party});
@@ -168,6 +177,10 @@ const { chromium } = require("playwright"); const path=require("path");
         foeHp: G.foe?G.foe.hp/G.foe.maxHp:1, money:G.money, pos:G.pos };
     });
 
+    // 포획 집계: 인라인 확인은 포획 애니(~5s)보다 일러 항상 0이었다 → 파티 증가로 센다(단일 출처).
+    if(lastPartyN!=null && st.party>lastPartyN)stats.caught+=(st.party-lastPartyN);
+    lastPartyN=st.party;
+
     // 마일스톤
     if(st.badges>=1)mark("체육관1 뱃지",st);
     if(st.badges>=2)mark("체육관2 뱃지",st);
@@ -205,25 +218,34 @@ const { chromium } = require("playwright"); const path=require("path");
       if(st.busy){ tr("battle:busy",st); await p.keyboard.press("Enter"); await p.waitForTimeout(130); continue; }
       if(st.moveOn){ tr("battle:move",st);
         const idx=await p.evaluate(()=>{ const S=window.SG,G=S.G(); const me=G.party[G.active],foe=G.foe;
-          if(!me||!foe)return 0; let best=0,bs=-1;
+          if(!me||!foe)return 0;
+          // ⚠️ 팀이 작을 때(<3) 최강 기술로 야생을 OHKO하면 **잡을 기회가 없어 영영 단일 정령**이 된다
+          //    (실측: 10분에 파티 1마리·전멸 9회 죽음 루프). → 팀을 꾸리는 동안엔 **가장 약한 damaging 기술**로
+          //    깎아 다음 턴 포획을 노린다. 팀이 차거나(≥3) 상대가 이미 반피 이하면 평소대로 최강 기술.
+          const balls=(G.items.ball||0)+(G.items.greatball||0);
+          const wantWeak = foe && !G.trainer && G.party.length<3 && balls>0 && foe.hp/foe.maxHp>0.4;
+          let best=0, bs=wantWeak?1e9:-1;
           me.moves.forEach((k,i)=>{ const mo=S.MOVES[k]; if(!mo||(me.pp[k]||0)<=0)return;
+            if((mo.power||0)<=0)return;   // 변화기 제외(깎지 못함)
             let e=S.EFF?S.EFF[mo.type][foe.type]:1;
             if(foe.type2&&foe.type2!==foe.type&&S.EFF)e*=S.EFF[mo.type][foe.type2];
             const stab=(mo.type===me.type||(me.type2&&mo.type===me.type2))?1.5:1;
-            const sc=(mo.power||0)*e*stab; if(sc>bs){bs=sc;best=i;} });
+            const sc=(mo.power||0)*e*stab;
+            if(wantWeak){ if(sc<bs){bs=sc;best=i;} } else { if(sc>bs){bs=sc;best=i;} } });
           return best; });
         await p.evaluate(i=>{ const bs=[...document.querySelectorAll("#moveMenu .mbtn")].filter(x=>!x.disabled);
           (bs[i]||bs[0]||{click(){}}).click(); }, idx);
         await p.waitForTimeout(230); continue;
       }
       if(st.mainOn){ tr("battle:main",st);
-        // 파티가 모자라면 약해진 야생을 잡는다(게이트는 3~6마리를 전제로 설계돼 있다)
-        if(st.wild && st.party<6 && st.balls>0 && st.foeHp<0.55){
+        // 파티가 모자라면 약해진 야생을 잡는다(게이트는 3~6마리를 전제로 설계돼 있다).
+        // ⚠️ 포획 확률은 HP에 크게 좌우된다(풀피 기본볼 ≈6% · 30%HP ≈45%). 하지만 봇이 금세 야생을
+        //    outlevel해 **약한 기술로도 OHKO**되면 저HP까지 못 깎는다 → `<0.45` 조건이 한 번도 안 걸려
+        //    볼을 0회 던진다(실측: 8조우 0포획). 그래서 **파티가 1마리뿐이면 HP 무관 turn1에 일단 던진다**
+        //    (칩이 불가능할 때 유일한 시도). 2마리 이상이면 깎아서(<0.45/<0.35) 좋은 확률로 던진다.
+        if(st.wild && st.balls>0 && (st.party<2 || (st.party<3 && st.foeHp<0.45) || (st.party<6 && st.foeHp<0.35))){
           const threw=await p.evaluate(()=>{ const b=[...document.querySelectorAll("#mainMenu .mbtn")].find(x=>/포획/.test(x.textContent||"")); if(b){b.click();return true;} return false; });
-          if(threw){ await p.waitForTimeout(1400);
-            const got=await p.evaluate(()=>window.SG.G().party.length);
-            if(got>st.party)stats.caught++;
-            continue; }
+          if(threw){ await p.waitForTimeout(1400); continue; }   // 포획 애니는 길다(~5s) → 여기서 세지 않고 파티 증가로 센다(아래)
         }
         if(st.hp<0.35 && st.potion>0 && potionFail<5){
           await p.evaluate(()=>{ const b=[...document.querySelectorAll("#mainMenu .mbtn")].find(x=>/아이템/.test(x.textContent||"")); if(b)b.click(); });
