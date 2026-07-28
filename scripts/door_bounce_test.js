@@ -1,6 +1,8 @@
-// 문 튕김 버그 회귀 테스트: 위에서 아래키를 누른 채 상점/체육관 문에 들어가면,
-// 입장 직후 heldDir 관성으로 출구 타일을 밟아 바로 튕겨나오던 버그. 워프 시 heldDir 정리+입력잠금으로 방지.
-// (구코드: 입장→continueMovement가 아래로 이동→출구→퇴장, indoor=null. 신코드: shop 유지.)
+// 문 튕김 버그 회귀 테스트: 방향키를 누른 채 문에 들어가면 입장 직후 heldDir 관성으로
+// 출구 타일을 밟아 바로 튕겨나오던 버그. 워프 시 heldDir 정리+입력잠금(_warpLock)으로 방지.
+// (구코드: 입장→continueMovement가 계속 이동→출구→퇴장, indoor=null. 신코드: shop 유지.)
+// ⚠️ 상점 S는 **포켓몬식 정면 출입구**로 바뀌었다 — 문 아래 칸에서 **위키**로 들어간다
+//    (예전엔 S가 보행 타일이라 위에서 아래키로 밟고 들어갔다). 홀드 방향도 그에 맞춰 ArrowUp.
 const { chromium } = require("playwright"); const path=require("path");
 (async()=>{ const b=await chromium.launch();
   const p=await b.newPage({viewport:{width:430,height:760}});
@@ -8,23 +10,23 @@ const { chromium } = require("playwright"); const path=require("path");
   await p.goto("file://"+path.resolve(process.argv[2])); await p.waitForTimeout(900);
   const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)process.exitCode=1; };
 
-  // 상점 문 S(4,26) 바로 위(4,25)에 배치. 인카운터 방지 위해 repel.
+  // 상점 문 S(4,26)의 정면(아래) 칸 (4,27)에 배치. 인카운터 방지 위해 repel.
   await p.evaluate(()=>{ const SG=window.SG,G=SG.freshState(); G.party=[SG.makeMon("emberwolf",20)];
-    G.pos={x:4,y:25}; G.repel=999; SG.setG(G); SG.flow.enterMap(true); });
+    G.pos={x:4,y:27}; G.repel=999; SG.setG(G); SG.flow.enterMap(true); });
   await p.waitForTimeout(300);
 
-  // 아래키를 누른 채로 문으로 입장 (heldDir="down" 유지). Playwright keydown은 자동 리핏 없음.
-  await p.keyboard.down("ArrowDown");
+  // 위키를 누른 채로 문으로 입장 (heldDir="up" 유지). Playwright keydown은 자동 리핏 없음.
+  await p.keyboard.down("ArrowUp");
   // 입장 중 문 페이드(#warpFade) opacity 피크 관측
   let fadePeak=0;
   for(let i=0;i<16;i++){ const o=await p.evaluate(()=>{ const e=document.getElementById("warpFade"); return e?parseFloat(getComputedStyle(e).opacity):0; }); if(o>fadePeak)fadePeak=o; await p.waitForTimeout(45); }
   await p.waitForTimeout(700);   // 입장 + (버그라면) 튕김이 일어날 충분한 시간
-  await p.keyboard.up("ArrowDown");
+  await p.keyboard.up("ArrowUp");
   await p.waitForTimeout(200);
   ok(fadePeak>0.5, `문 진입 시 검정 페이드 재생 (peak opacity=${fadePeak.toFixed(2)})`);
 
   const st=await p.evaluate(()=>({indoor:window.SG.G().indoor, pos:window.SG.G().pos}));
-  ok(st.indoor==="shop", `아래키 홀드로 상점 입장 유지 — 튕겨나오지 않음 (indoor=${st.indoor})`);
+  ok(st.indoor==="shop", `위키 홀드로 상점 입장 유지 — 튕겨나오지 않음 (indoor=${st.indoor})`);
   ok(!(st.pos.x===4&&st.pos.y===6), `출구 타일(4,6)로 걸어나가지 않음 (pos=${st.pos.x},${st.pos.y})`);
 
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));

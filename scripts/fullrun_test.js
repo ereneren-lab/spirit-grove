@@ -174,7 +174,12 @@ const { chromium } = require("playwright"); const path=require("path");
       for(let y=0;y<50;y++)for(let x=0;x<25;x++){ if(F.tileAt(x,y)!=="S")continue;
         const d=Math.abs(x-G.pos.x)+Math.abs(y-G.pos.y); if(d<bd){bd=d;best={x,y};} }
       if(!best)return "no-shop";
-      return F.walkTo(best.x,best.y)?("go:"+best.x+","+best.y):"no-path"; });
+      // ⚠️ 상점 S는 이제 **비보행 문**이다(포켓몬식 정면 출입구) — 예전처럼 밟아서 들어갈 수 없다.
+      //    문 바로 아래 칸까지 걸어간 뒤 위로 부딪혀 들어간다(실제 플레이어와 같은 조작).
+      const front={x:best.x,y:best.y+1};
+      if(!F.walkable(front.x,front.y))return "no-front";
+      const n=F.walkTo(front.x,front.y);
+      return (n||(G.pos.x===front.x&&G.pos.y===front.y))?("go:"+front.x+","+front.y):"no-path"; });
     if(!String(plan).startsWith("go"))return false;
     // 상점 진입 대기(S를 밟으면 enterInterior(shop))
     let entered=false,last=null,still=0;
@@ -183,6 +188,8 @@ const { chromium } = require("playwright"); const path=require("path");
       if(q.inB)return false;
       if(q.indoor==="shop"){ entered=true; break; }
       if(q.k===last){ if(++still>=5)break; } else { still=0; last=q.k; } }
+    if(!entered){ for(let i=0;i<6;i++){ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(240);
+        const q=await p.evaluate(()=>window.SG.G().indoor); if(q==="shop"){ entered=true; break; } } }
     if(!entered)return false;
     await p.waitForTimeout(300);
     // 카운터(S)로 걸어 올라가 openShop
