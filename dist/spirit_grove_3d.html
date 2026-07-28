@@ -2557,7 +2557,9 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     const u=s*0.5; const cyc=moving?Math.floor(now*8)%4:0;
     const lo=(cyc===1)?-u*0.08:(cyc===3)?u*0.06:0, ro=(cyc===3)?-u*0.08:(cyc===1)?u*0.06:0;
     const bob=moving?((cyc===1||cyc===3)?-u*0.04:0):Math.sin(now*2.4)*u*0.015; const ol="rgba(18,14,22,.6)", olw=Math.max(1.2,u*0.05);
-    ctx.fillStyle="rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.64,u*0.42,u*0.15,0,0,6.29); ctx.fill();
+    // 접지: 넓고 옅은 그림자 + 발밑 진한 그림자(2단) — 캐릭터가 땅에 붙어 보인다
+    ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.64,u*0.46,u*0.16,0,0,6.29); ctx.fill();
+    ctx.fillStyle="rgba(0,0,0,.26)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.63,u*0.26,u*0.09,0,0,6.29); ctx.fill();
     cy+=bob; ctx.strokeStyle=ol; ctx.lineWidth=olw;
     ctx.fillStyle=boot; this._rr(ctx,cx-u*0.22,cy+u*0.2+(moving?lo:0),u*0.16,u*0.34,u*0.05); ctx.fill(); ctx.stroke();
     this._rr(ctx,cx+u*0.06,cy+u*0.2+(moving?ro:0),u*0.16,u*0.34,u*0.05); ctx.fill(); ctx.stroke();
@@ -2589,16 +2591,34 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     const _bob=moving?((_cyc===1||_cyc===3)?u*0.045:0):(now?Math.abs(Math.sin(now*2.1+cx*0.6))*u*0.05:0);
     ctx.save(); ctx.translate(0,-_bob);
     ctx.strokeStyle=ol; ctx.lineWidth=olw;
-    ctx.fillStyle=boots; this._rr(ctx,cx-u*0.22,cy+u*0.2+_lo,u*0.16,u*0.34,u*0.05); ctx.fill(); ctx.stroke();
-    this._rr(ctx,cx+u*0.06,cy+u*0.2+_ro,u*0.16,u*0.34,u*0.05); ctx.fill(); ctx.stroke();
-    ctx.fillStyle=this._grad(ctx,outfit,cy-u*0.18,cy+u*0.32); this._rr(ctx,cx-u*0.3,cy-u*0.18,u*0.6,u*0.5,u*0.12); ctx.fill(); ctx.stroke();
-    { ctx.save(); this._rr(ctx,cx-u*0.3,cy-u*0.18,u*0.6,u*0.5,u*0.12); ctx.clip(); ctx.fillStyle="rgba(255,255,255,.12)"; this._rr(ctx,cx-u*0.26,cy-u*0.15,u*0.22,u*0.4,u*0.08); ctx.fill(); ctx.restore(); }  // 왼쪽 하이라이트
-    ctx.fillStyle=accent; ctx.fillRect(cx-u*0.05,cy-u*0.16,u*0.1,u*0.46);
+    // 옆을 볼 땐 몸이 얇아 보이고 다리도 모인다(포켓몬 NPC의 측면 실루엣). 정면/뒷면은 넓게.
+    const _sv=(dir==="left"||dir==="right"), _tw=_sv?u*0.48:u*0.6, _tx=cx-_tw/2, _lsp=_sv?u*0.13:u*0.22;
+    ctx.fillStyle=boots; this._rr(ctx,cx-_lsp,cy+u*0.2+_lo,u*0.16,u*0.34,u*0.05); ctx.fill(); ctx.stroke();
+    this._rr(ctx,cx+_lsp-u*0.16,cy+u*0.2+_ro,u*0.16,u*0.34,u*0.05); ctx.fill(); ctx.stroke();
+    { ctx.fillStyle=this._tint(boots,0.18);   // 신발 끝 — 다리 기둥 두 개로 안 보이게 발을 구분
+      this._rr(ctx,cx-_lsp,cy+u*0.44+_lo,u*0.16,u*0.1,u*0.04); ctx.fill();
+      this._rr(ctx,cx+_lsp-u*0.16,cy+u*0.44+_ro,u*0.16,u*0.1,u*0.04); ctx.fill(); }
+    ctx.fillStyle=this._grad(ctx,outfit,cy-u*0.18,cy+u*0.32); this._rr(ctx,_tx,cy-u*0.18,_tw,u*0.5,u*0.12); ctx.fill(); ctx.stroke();
+    { ctx.save(); this._rr(ctx,_tx,cy-u*0.18,_tw,u*0.5,u*0.12); ctx.clip();
+      ctx.fillStyle="rgba(255,255,255,.12)"; this._rr(ctx,_tx+u*0.04,cy-u*0.15,_tw*0.36,u*0.4,u*0.08); ctx.fill();
+      ctx.fillStyle="rgba(0,0,0,.16)"; ctx.fillRect(_tx,cy+u*0.16,_tw,u*0.18);   // 셀 셰이딩: 아랫단 그늘
+      ctx.restore(); }  // 왼쪽 하이라이트
+    // 팔 — **사람으로 읽히게 하는 핵심**. 예전엔 몸통 블록만 있어 인형처럼 보였다.
+    // 걸을 땐 다리와 반대 위상으로 흔들리고, 옆을 볼 땐 안쪽 팔이 가려지므로 하나만 그린다.
+    { const _ay=cy-u*0.12, _aw=u*0.13, _ah=u*0.3, _sw=moving?u*0.055:0;
+      ctx.fillStyle=this._tint(outfit,-0.14);
+      if(dir!=="right"){ this._rr(ctx,_tx-_aw*0.46,_ay+(_cyc===1?_sw:-_sw),_aw,_ah,u*0.065); ctx.fill(); ctx.stroke(); }
+      if(dir!=="left"){ this._rr(ctx,_tx+_tw-_aw*0.54,_ay+(_cyc===3?_sw:-_sw),_aw,_ah,u*0.065); ctx.fill(); ctx.stroke(); } }
+    if(!_sv)ctx.fillStyle=accent, ctx.fillRect(cx-u*0.05,cy-u*0.16,u*0.1,u*0.46);
     if(spec.extra==="scroll"){ ctx.fillStyle="#e8dcc0"; this._rr(ctx,cx-u*0.42,cy+u*0.02,u*0.2,u*0.26,u*0.04); ctx.fill(); ctx.stroke(); }
     if(spec.extra==="staff"||spec.extra==="rod"||spec.extra==="net"){ ctx.strokeStyle="#7a5a32"; ctx.lineWidth=Math.max(1,u*0.06); ctx.beginPath(); ctx.moveTo(cx+u*0.34,cy-u*0.5); ctx.lineTo(cx+u*0.34,cy+u*0.42); ctx.stroke();
       if(spec.extra==="net"){ ctx.strokeStyle="#cfcfd6"; ctx.lineWidth=Math.max(1,u*0.04); ctx.beginPath(); ctx.arc(cx+u*0.34,cy-u*0.56,u*0.14,0,6.29); ctx.stroke(); } ctx.strokeStyle=ol; ctx.lineWidth=olw; }
     { const sg=ctx.createRadialGradient(cx-u*0.12,cy-u*0.6,u*0.08,cx+u*0.05,cy-u*0.4,u*0.55); sg.addColorStop(0,this._tint(skin,0.16)); sg.addColorStop(1,this._tint(skin,-0.1)); ctx.fillStyle=sg; }
     this._rr(ctx,cx-u*0.28,cy-u*0.7,u*0.56,u*0.56,u*0.2); ctx.fill(); ctx.stroke();
+    // 뒤에서 보면 **뒤통수**다 — 예전엔 머리 뒤에도 피부색 얼굴이 넓게 드러났다(특히 챙 모자).
+    if(dir==="up"){ ctx.fillStyle=this._grad(ctx,hair,cy-u*0.7,cy-u*0.14); this._rr(ctx,cx-u*0.28,cy-u*0.7,u*0.56,u*0.56,u*0.2); ctx.fill(); ctx.stroke(); }
+    { ctx.save(); this._rr(ctx,cx-u*0.28,cy-u*0.7,u*0.56,u*0.56,u*0.2); ctx.clip();   // 정수리 림라이트(입체감)
+      ctx.fillStyle="rgba(255,255,255,.12)"; ctx.beginPath(); ctx.ellipse(cx-u*0.06,cy-u*0.62,u*0.22,u*0.1,0,0,6.29); ctx.fill(); ctx.restore(); }
     const hat=spec.hat||"none";
     if(hat==="cap"){ ctx.fillStyle=hair; this._rr(ctx,cx-u*0.3,cy-u*0.66,u*0.6,u*0.2,u*0.1); ctx.fill(); ctx.fillStyle=hatc; this._rr(ctx,cx-u*0.32,cy-u*0.8,u*0.64,u*0.2,u*0.09); ctx.fill(); ctx.stroke();
       if(dir==="down"){ ctx.fillRect(cx-u*0.02,cy-u*0.66,u*0.34,u*0.07); } else if(dir==="left"){ ctx.fillRect(cx-u*0.34,cy-u*0.66,u*0.3,u*0.07); } else if(dir==="right"){ ctx.fillRect(cx+u*0.04,cy-u*0.66,u*0.3,u*0.07); } }
@@ -2612,9 +2632,18 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(spec._bseed===undefined){ let s=0; const str=(spec.outfit||"")+(spec.skin||"")+(spec.hair||""); for(let i=0;i<str.length;i++)s=(s*31+str.charCodeAt(i))>>>0; spec._bseed=(s%1000)/1000*3.6; }
       const _blk=!CONFIG.reduceMotion&&now&&(((now+spec._bseed)%3.6)<0.12);
       const _ey=_blk?cy-u*0.39:cy-u*0.46, _eh=_blk?u*0.03:u*0.12;
-      if(dir==="left"){ ctx.fillRect(cx-u*0.14,_ey,u*0.09,_eh); }
-      else if(dir==="right"){ ctx.fillRect(cx+u*0.05,_ey,u*0.09,_eh); }
-      else { ctx.fillRect(cx-u*0.15,_ey,u*0.08,_eh); ctx.fillRect(cx+u*0.07,_ey,u*0.08,_eh); }
+      // 눈은 **둥글게 + 하이라이트** — 사각형 블록이면 로봇처럼 보인다(포켓몬 NPC는 동그란 눈).
+      const _eye=(ex)=>{ const rw=u*0.045, rh=_eh/2;
+        ctx.fillStyle="#2a2230"; ctx.beginPath(); ctx.ellipse(ex,_ey+rh,rw,rh,0,0,6.29); ctx.fill();
+        if(!_blk){ ctx.fillStyle="rgba(255,255,255,.9)"; ctx.beginPath(); ctx.arc(ex-rw*0.34,_ey+rh*0.62,rw*0.36,0,6.29); ctx.fill(); } };
+      if(dir==="left"){ _eye(cx-u*0.10); }
+      else if(dir==="right"){ _eye(cx+u*0.10); }
+      else { _eye(cx-u*0.11); _eye(cx+u*0.11); }
+      if(dir==="down"){   // 입·볼 — 표정이 생기면 인형이 아니라 사람으로 보인다
+        ctx.fillStyle="rgba(60,40,50,.55)"; ctx.fillRect(cx-u*0.035,cy-u*0.3,u*0.07,u*0.028);
+        ctx.fillStyle="rgba(240,140,150,.26)";
+        ctx.beginPath(); ctx.ellipse(cx-u*0.19,cy-u*0.33,u*0.06,u*0.038,0,0,6.29); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx+u*0.19,cy-u*0.33,u*0.06,u*0.038,0,0,6.29); ctx.fill(); }
       if(spec.extra==="glasses"){ ctx.strokeStyle="#1a1a22"; ctx.lineWidth=Math.max(1,u*0.04); ctx.strokeRect(cx-u*0.17,cy-u*0.48,u*0.14,u*0.14); ctx.strokeRect(cx+u*0.04,cy-u*0.48,u*0.14,u*0.14); } }
     ctx.restore(); },
 };
