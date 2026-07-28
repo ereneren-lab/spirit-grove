@@ -2,6 +2,35 @@
 
 이 폴더를 그대로 VS Code로 열면 지금까지의 개발 맥락(파이프라인·규칙·현재 상태)이 `CLAUDE.md`에 담겨 있어서, Claude Code가 첫 프롬프트부터 이어받아.
 
+## 🏠 다른 기기에서 이어받기 (집 PC 등)
+
+이 저장소만 클론하면 **편집 → 빌드 → 배포**가 그대로 된다.
+
+```bash
+git clone git@github.com:ereneren-lab/spirit-grove.git
+cd spirit-grove
+npm install                       # playwright·jsdom (테스트용, 게임 실행엔 불필요)
+npx playwright install chromium   # 스크린샷/브라우저 테스트를 돌릴 때만
+python3 scripts/build.py          # src + assets → dist/spirit_grove_3d.html
+open dist/spirit_grove_3d.html    # 브라우저로 확인
+```
+
+- **편집은 `src/index.html`** (게임 코드 전부) + `src/rules/*.js`(순수 규칙). `dist/`는 빌드 산출물이라 직접 고치지 말 것.
+- **검증**: `bash scripts/verify.sh` (브라우저 테스트가 많아 무거우면 `PW_FROM=1 PW_TO=20 bash scripts/verify.sh`처럼 구간 분할)
+- **배포**: `bash scripts/deploy.sh` → GitHub Actions가 서버에서 빌드해 Pages에 올린다(1~2분).
+- 맥락은 **`CLAUDE.md`**(영구 지식: 아키텍처·규칙·함정)와 **`WORKLOG.md`**(지금 어디까지 했나)에 있다. 이 둘을 먼저 읽으면 된다.
+
+### ⚠️ 원격 `main`은 커밋 1개짜리 스냅샷이다
+로컬 `.git`이 479MB라 전체 이력을 push할 수 없어, `deploy.sh`가 **orphan 스냅샷을 force-push**한다.
+- 그래서 **GitHub에는 커밋 이력이 없다**(작업용 맥에만 있다).
+- **양쪽에서 동시에 고치면 나중에 배포한 쪽이 덮어쓴다.** 한 기기에서만 작업하거나,
+  다른 기기에서 고쳤으면 그 변경을 원래 기기로 가져와 반영한 뒤 배포할 것.
+
+### 저장소에 없는 것(일부러 뺐다)
+`포켓몬/`(아트 원본 114MB) · `undefined/`(경로 오생성 흔적) · `WORKLOG 2.md`(중복본)는
+`.gitignore`로 **추적만 빼 두었다**(작업용 맥 로컬에는 그대로 있다). 클론이 가벼워지고 헷갈릴 여지가 없다.
+아트 파이프라인 입력은 `art_inbox/`를 쓴다.
+
 ## 준비물
 - **Anthropic 계정** (Pro / Max / Team / Enterprise 중 하나 — 무료 플랜은 Claude Code 미포함)
 - **VS Code** (또는 Cursor 등 VS Code 계열)
