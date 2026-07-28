@@ -1647,6 +1647,20 @@ function markHeal(){
    스프라이트라 실내만 유독 조악했다(유저 제보). 손으로 20여 개를 채우면 또 하나의 병렬 테이블이 되므로
    **키+이름 해시로 파생**한다 — 트레이너를 추가해도 자동으로 스프라이트가 생긴다.
    ⚠️ 결과는 t._spr에 캐시한다(_char이 눈 깜빡임 위상을 spec에 저장하므로 매 프레임 새 객체면 안 된다). */
+/* 역할 테마 — 본가 트레이너는 **무슨 타입을 쓰는지 차림새로 보인다**(풀=밀짚모자·물=수영모…).
+   이름/이모지 키워드로 팔레트를 고르고, 안 걸리면 해시 폴백. 트레이너를 추가해도 자동 적용된다. */
+const _dark=(hex,f)=>{ const n=parseInt(hex.slice(1),16), r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  const m=v=>Math.max(0,Math.round(v*(1-f)));
+  return "#"+((1<<24)+(m(r)<<16)+(m(g)<<8)+m(b)).toString(16).slice(1); };
+const TRAINER_THEME=[
+  {k:/🌿|🍃|🌾|초원|숲|약초|정원/, o:"#5f8a45", a:"#b8e08a", h:"#3f5a2a", hat:"straw", hc:"#d8c078", boot:"#4a5a34"},
+  {k:/💧|🌊|🫧|호수|심연|물결|진주|파랑/, o:"#3a6f9a", a:"#8fd0f0", h:"#2a3f5a", hat:"cap",  hc:"#2f8ab0", boot:"#2a4560"},
+  {k:/🔥|🌋|용암|불꽃|화산/,            o:"#a8492e", a:"#f0a060", h:"#3a2018", hat:"cap",  hc:"#d8622e", boot:"#5a2a1c"},
+  {k:/🪨|⛰️|🏔️|🗿|⛏️|고원|바위|산|유적|동굴/, o:"#7a6a52", a:"#c8b48a", h:"#3a3026", hat:"hood", hc:"#5a4c38", boot:"#4a3f2e"},
+  {k:/⚡|🌪️|폭풍|창공|하늘|제피르/,     o:"#6a5f9a", a:"#f0d860", h:"#2f2a44", hat:"hood", hc:"#4a4270", boot:"#3a3458"},
+  {k:/🌙|달빛|여울/,                    o:"#5a4a80", a:"#c0a8f0", h:"#2a2440", hat:"hood", hc:"#3f3560", boot:"#332c52"},
+  {k:/👑|챔피언/,                       o:"#6a2f6a", a:"#f0d060", h:"#2a1a2a", hat:"cap",  hc:"#9a4a9a", boot:"#3f2440"},
+  {k:/⭐|별/,                           o:"#8a7a3a", a:"#f0e08a", h:"#3a3320", hat:"cap",  hc:"#c8b04a", boot:"#5a4e28"} ];
 const _TSPR_OUT=["#5a6f8a","#8a5a5a","#4f7a5a","#6a5a8a","#8a6a3a","#3a6a8a","#7a4a6a","#4a6a6a"];
 const _TSPR_HAIR=["#3a2f24","#2a2a33","#4a3320","#5a3a2a","#2a3a3a","#3f2a3a"];
 const _TSPR_SKIN=["#e8c39a","#e0bd96","#d8a878","#f0d0b0","#c99a6e"];
@@ -1657,12 +1671,19 @@ function trainerSpr(key){
   let hsh=0; const str=key+"|"+(t.name||"");
   for(let i=0;i<str.length;i++)hsh=(hsh*31+str.charCodeAt(i))>>>0;
   const league="ijklq".indexOf(key)>=0;
-  const hat=_TSPR_HAT[hsh%_TSPR_HAT.length];
-  const spr={ outfit:_TSPR_OUT[(hsh>>3)%_TSPR_OUT.length], accent:"#cfd8e8",
-    skin:_TSPR_SKIN[(hsh>>6)%_TSPR_SKIN.length], hair:_TSPR_HAIR[(hsh>>9)%_TSPR_HAIR.length],
-    hatc:_TSPR_OUT[(hsh>>12)%_TSPR_OUT.length], boots:"#3a3548",
-    spiky:!!((hsh>>15)&1), boss:league||!!t.boss };
-  if(hat)spr.hat=hat;
+  const tag=(t.name||"")+(t.em||"");
+  const th=TRAINER_THEME.find(x=>x.k.test(tag));
+  // ⚠️ 리그(엘리트4·챔피언)는 견습생과 같은 테마를 쓰면 격이 안 산다(밀짚모자 쓴 엘리트는 농부로 보인다).
+  //    타입 색은 유지하되 **후드 + 짙은 톤**으로 실루엣을 구분한다.
+  const spr = th
+    ? { outfit:league?_dark(th.o,0.28):th.o, accent:th.a,
+        skin:_TSPR_SKIN[(hsh>>6)%_TSPR_SKIN.length], hair:th.h,
+        hat:league?"hood":th.hat, hatc:league?_dark(th.o,0.45):th.hc,
+        boots:league?_dark(th.o,0.55):th.boot, spiky:league?false:!!((hsh>>15)&1), boss:league||!!t.boss }
+    : { outfit:_TSPR_OUT[(hsh>>3)%_TSPR_OUT.length], accent:"#cfd8e8",
+        skin:_TSPR_SKIN[(hsh>>6)%_TSPR_SKIN.length], hair:_TSPR_HAIR[(hsh>>9)%_TSPR_HAIR.length],
+        hatc:_TSPR_OUT[(hsh>>12)%_TSPR_OUT.length], boots:"#3a3548",
+        spiky:!!((hsh>>15)&1), boss:league||!!t.boss };
   t._spr=spr; return spr;
 }
 const GUARD_TILES="789abcdef0ijklqruvyh*?";   // y = 뇌명 봉우리 폭풍지기, h = 유적 수호자, * = 분화구 화산 감시자
@@ -2983,8 +3004,23 @@ function transitionToBattle(after){ heldDir=null; stopPath(); if(G)G.active=firs
     //    G.foe가 null이라 조우 대사(G.foe.shiny/name)가 전부 터진다. 여기서 한 번에 막는다.
     if(!G||!G.foe||!G.inBattle){ wrap.classList.remove("zoom"); return; }
     wrap.classList.remove("zoom"); Field.stop(); show("battle");
-    setupBattleUI(seq); after();                            // seq면 foeOnly로 상대만 먼저 등장
-    if(seq)battleIntroMe(); else showMain(); }, covered); }
+    const _tr=!seq;   // 트레이너 전투
+    setupBattleUI(_tr?"hold":seq); after();                 // seq면 상대만 먼저 · 트레이너면 둘 다 보류(본인이 먼저 선다)
+    if(_tr)battleIntroTrainer(); else if(seq)battleIntroMe(); else showMain(); }, covered); }
+/* 트레이너 전투 인트로 — 본가처럼 **트레이너가 서 있다 → 볼을 던져 정령을 내보내고 물러남 → 내 정령 등장**.
+   ⚠️ 예전엔 setupBattleUI가 와이프에 덮인 동안 상대를 바로 내보내서, 트레이너 스프라이트를 넣어도
+      플레이어 눈엔 한 프레임도 안 보였다(실측). 와이프가 걷힌 뒤 한 박자를 여기서 준다. */
+async function battleIntroTrainer(){
+  if(G)G.busy=true; if(mainMenu)mainMenu.style.display="none";
+  const meSp=$("meSprite"), foeSp=$("foeSprite");
+  if(meSp)meSp.style.opacity="0"; if(foeSp)foeSp.style.opacity="0";
+  await wait(fxT(760));                    // 트레이너가 서 있는 한 박자
+  await sendOutAnim("foe");                // 볼 던지기 → trainerIntroOut()이 물러나게 한다
+  if(G&&G.foe&&Audio.cry)Audio.cry(G.foe.id,G.foe.type);
+  await wait(fxT(360));
+  await sendOutAnim("me");
+  const me=activeMon(); if(me&&Audio.cry)Audio.cry(me.id,me.type);
+  if(G)G.busy=false; showMain(); }
 // 포켓몬식 순차 인트로: 상대 등장("야생 X 나타났다") 한 박자 뒤 → "가랏! 내정령!" 볼 던지며 등장 → 메뉴.
 async function battleIntroMe(){
   if(G)G.busy=true; if(mainMenu)mainMenu.style.display="none";   // 인트로 동안 메뉴 숨김·입력 차단
@@ -3135,6 +3171,7 @@ function applyWeather(){ const fld=$("battleField"); if(!fld)return;
   if(w){ ov.style.background=w.tint; ov.style.opacity="1"; badge.textContent=w.em+" "+w.ko; badge.style.display="block"; }
   else { ov.style.opacity="0"; badge.style.display="none"; } }
 function setupBattleUI(foeOnly){ { const sh=$("skipHint"); if(sh)sh.textContent=CONFIG.battleText==="tap"?"탭하면 진행 ▼":"누르는 동안 빨리감기"; }
+  if(G&&G.trainer&&typeof trainerIntroSprite==="function")trainerIntroSprite();   // 트레이너 본인이 먼저 서 있는다(볼 던지며 빠짐)
   setWeather(); if(G&&G.foe&&Audio.cry)setTimeout(()=>{ if(G&&G.foe)Audio.cry(G.foe.id,G.foe.type); },260); const _bf=$("battleField"); if(_bf&&G)_bf.style.background=REGION_BATTLE_BG[region(G.pos.y)]||_bf.style.background; applyWeather(); battleLog=[]; resetSprites(); renderCombatants(); renderStages();
   // (등장 애니는 아래 sendOutAnim이 단독 담당 — 예전 .enter CSS는 sendOutAnim과 이중으로 걸려 transform 충돌 + 순차 인트로 시 me opacity:0을 덮어 깜빡임을 유발했다. 제거.)
   ["foeSprite","meSprite"].forEach(id=>{ const s=$(id); if(s)s.classList.remove("enter"); });
@@ -3148,7 +3185,9 @@ function setupBattleUI(foeOnly){ { const sh=$("skipHint"); if(sh)sh.textContent=
     G.trainer.team.forEach((_,i)=>{ const d=document.createElement("i"); if(G.trainer.fainted&&G.trainer.fainted.has(i))d.classList.add("dead"); dots.appendChild(d); });
   } else dots.style.display="none";
   logAbilities(); applyIntimidate(activeMon(),G.foe); applyIntimidate(G.foe,activeMon()); renderStages();
-  sendOutAnim("foe"); if(!foeOnly) sendOutAnim("me");
+  // foeOnly==="hold" = 트레이너 인트로: **상대도 아직 안 내보낸다**(트레이너 본인이 먼저 서 있어야 하므로).
+  if(foeOnly!=="hold")sendOutAnim("foe");
+  if(!foeOnly) sendOutAnim("me");
   Coach.maybeStart(); }
 function dispName(m){ if(!m)return ""; return (m.shiny?"✨":"")+(m.nick?m.nick:m.name); }
 function tkLabel(t){ return (TYPE_ICON[t]||"")+" "+TYPE_KO[t]; }
@@ -4410,7 +4449,36 @@ function fxPoof(side){ if(CONFIG.reduceMotion)return; const sp=spriteEl(side),f=
 async function _scaleInSprite(sp,mir){
   try{ await sp.animate([{transform:mir+"scale(0.1)",opacity:0},{transform:mir+"scale(1.18)",opacity:1},{transform:mir+"scale(0.94)",opacity:1},{transform:mir+"scale(1)",opacity:1}],{duration:fxT(440),easing:"cubic-bezier(.34,1.56,.64,1)"}).finished; }catch(e){}
   sp.style.transform=""; sp.style.opacity=""; sp.style.animation=""; }
-async function sendOutAnim(side){ const sp=spriteEl(side); if(!sp)return; const mir=side==="me"?"scaleX(-1) ":"";
+/* 트레이너 전투 인트로 스프라이트 — 본가는 **트레이너 본인이 서 있다가 볼을 던진다**.
+   여기엔 상대 트레이너가 화면에 아예 없어서 "누구랑 싸우는지"가 대사로만 있었다.
+   오버월드와 같은 `_char`로 그려(파생 스프라이트 재사용) 캔버스 요소로 얹고, 정령이 나올 때 옆으로 빠진다. */
+function trainerIntroSprite(){
+  try{
+    if(!G||!G.trainer)return; const field=$("battleField"); if(!field)return;
+    const old=document.getElementById("trainerIntro"); if(old)old.remove();
+    const spec=(typeof trainerSpr==="function")?trainerSpr(G.trainer.key):null; if(!spec)return;
+    const fr=field.getBoundingClientRect(); const S=Math.max(88,Math.min(170,fr.width*0.34));
+    const dpr=Math.min(2,(window.devicePixelRatio||1));
+    const c=document.createElement("canvas"); c.id="trainerIntro";
+    c.width=Math.round(S*dpr); c.height=Math.round(S*dpr);
+    c.style.cssText=`position:absolute;right:6%;top:12%;width:${S}px;height:${S}px;z-index:3;pointer-events:none`;
+    const g=c.getContext("2d"); g.scale(dpr,dpr);
+    Field._char(g, S/2, S*0.5, S*0.92, spec, "down", performance.now()/1000, false);
+    field.appendChild(c);
+    if(!CONFIG.reduceMotion)c.animate([{opacity:0,transform:"translateX(26px)"},{opacity:1,transform:"translateX(0)"}],{duration:fxT(300),easing:"ease-out"});
+  }catch(e){}
+}
+function trainerIntroOut(){ const c=document.getElementById("trainerIntro"); if(!c)return;
+  if(CONFIG.reduceMotion){ c.remove(); return; }
+  // ⚠️ 곧바로 빼면 한 프레임 스치고 사라진다 — 볼이 날아가는 동안(≈0.4초)은 서 있어야
+  //    "트레이너가 던졌다"로 읽힌다(볼의 출발점도 트레이너가 선 오른쪽이다).
+  c.dataset.out="1";
+  setTimeout(()=>{ if(!c.isConnected)return;
+    c.animate([{opacity:1,transform:"translateX(0)"},{opacity:0,transform:"translateX(48px)"}],
+      {duration:fxT(300),easing:"ease-in"}).finished.then(()=>c.remove()).catch(()=>c.remove()); }, fxT(420)); }
+async function sendOutAnim(side){ const sp=spriteEl(side); if(!sp)return;
+  if(side==="foe"&&G&&G.trainer)trainerIntroOut();   /* 트레이너가 볼을 던지며 옆으로 빠진다 */
+  const mir=side==="me"?"scaleX(-1) ":"";
   // 볼 던지기: 내 정령은 항상, 상대는 트레이너 전투일 때(야생은 그냥 나타남)
   const ballThrow = !CONFIG.reduceMotion && (side==="me" || (side==="foe" && typeof G!=="undefined" && G && G.trainer));
   sp.style.animation="none"; sp.style.transform=mir+"scale(0.1)"; sp.style.opacity="0";
@@ -4696,7 +4764,8 @@ function showEnding(){ const body=$("endingBody"); const _t=$("endingTitle"); if
   body.querySelector("#endingClose").addEventListener("click",()=>{Audio.sfx("blip");closeOverlay("endingOverlay");});
   Audio.sfx("win"); openOverlay("endingOverlay"); }
 
-function endBattle(){ Coach.finish(); if(Audio.lowHp)Audio.lowHp(false); G.inBattle=false; G.busy=false; G.foe=null; G.trainer=null; G.weather=null; G.weatherTurns=0; heldDir=null; stopPath(); closeOverlay("switchOverlay");
+function endBattle(){ { const _ti=document.getElementById("trainerIntro"); if(_ti)_ti.remove(); }   // 인트로 스프라이트 잔여 제거
+  Coach.finish(); if(Audio.lowHp)Audio.lowHp(false); G.inBattle=false; G.busy=false; G.foe=null; G.trainer=null; G.weather=null; G.weatherTurns=0; heldDir=null; stopPath(); closeOverlay("switchOverlay");
   G.party.forEach(m=>{ m.stages=newStages(); }); // reset volatile stages, keep status
   show("map"); if(Field.resize)Field.resize(); Field.start(); Audio.startMusic(fieldMusic()); updateGoal(); saveGame(); }   // ⚠️ show 후 resize — 전투 중 스테일해진 캔버스 크기를 맵 복귀 시 바로잡는다(검정 화면 방지)
 
@@ -5745,7 +5814,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, trainerSpr, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)

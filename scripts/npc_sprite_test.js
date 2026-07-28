@@ -114,6 +114,37 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(tr.miss.length===0, `이모지로 떨어지는 타일 트레이너 0명 (스프라이트 ${tr.n}명)${tr.miss.length?" — "+tr.miss.join(", "):""}`);
   ok(tr.variety>=4, `트레이너끼리 외형이 구분된다 (옷 색 ${tr.variety}종)`);
 
+  /* [8] 엘리트4·챔피언은 견습생과 실루엣이 다르다(밀짚모자 쓴 엘리트는 농부로 보인다) */
+  console.log("\n[8] 리그는 격이 다른 차림새");
+  const lg=await p.evaluate(()=>{ const S=window.SG;
+    const league=["i","j","k","l","q"].filter(k=>S.TRAINERS[k]).map(k=>S.flow.trainerSpr(k));
+    const rookie=["7","8","9","0"].filter(k=>S.TRAINERS[k]).map(k=>S.flow.trainerSpr(k));
+    return { leagueHats:[...new Set(league.map(s=>s.hat))], allBoss:league.every(s=>!!s.boss),
+      rookieStraw:rookie.some(s=>s.hat==="straw") }; });
+  ok(lg.leagueHats.length===1&&lg.leagueHats[0]==="hood", `리그는 전원 후드 (${lg.leagueHats.join(",")})`);
+  ok(lg.allBoss, "리그는 전원 보스 오라");
+  ok(lg.rookieStraw, "견습생 쪽엔 밀짚모자가 남아 있다(테마 파생이 살아 있다는 대조군)");
+
+  /* [9] 트레이너 전투 인트로 — 본인이 서 있다가 볼을 던진다
+     ⚠️ 처음엔 setupBattleUI가 와이프에 덮인 동안 상대를 바로 내보내서 **한 프레임도 안 보였다**(실측).
+        "요소를 만들었다"와 "화면에 보인다"는 다르다 → 와이프가 걷힌 뒤에도 남아 있는지 본다. */
+  console.log("\n[9] 트레이너 전투 인트로");
+  await p.evaluate(()=>{ const S=window.SG,G=S.freshState(); G.party=[S.makeMon("foxfire",22)];
+    G.pos={x:8,y:44}; S.setG(G); S.flow.enterMap(true); S.flow.startTrainer("8"); });
+  await p.waitForTimeout(1500);
+  await p.evaluate(()=>{ if(document.querySelector("#dialogBox.show"))window.SG.flow.advanceDialog(); });
+  await p.waitForTimeout(760);
+  const it=await p.evaluate(()=>{ const c=document.getElementById("trainerIntro");
+    const w=document.getElementById("battleWipe");
+    return { has:!!c, w:c?Math.round(c.getBoundingClientRect().width):0,
+      wipeGone:!w||!w.classList.contains("go") }; });
+  ok(it.has && it.w>40, `와이프가 걷힌 뒤에도 트레이너가 서 있다 (폭 ${it.w}px)`);
+  await p.waitForTimeout(5200);
+  const done=await p.evaluate(()=>({ gone:!document.getElementById("trainerIntro"),
+    menu:document.getElementById("mainMenu").style.display, inB:!!window.SG.G().inBattle }));
+  ok(done.gone, "정령이 나온 뒤 트레이너는 물러난다");
+  ok(done.inB && done.menu==="grid", "인트로 후 전투 메뉴가 정상 표시된다(흐름이 멈추지 않는다)");
+
   ok(errs.length===0, `런타임 에러 0 (${errs.length}${errs.length?": "+errs[0]:""})`);
   console.log(fail?"\n❌ 실패":"\n🎉 NPC 스프라이트 통과");
   await b.close(); process.exit(fail);
