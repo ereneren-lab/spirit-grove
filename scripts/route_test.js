@@ -20,11 +20,12 @@ const { chromium } = require("playwright"); const path=require("path");
   process.on("unhandledRejection",async e=>{ console.log("❌ "+e); await b.close(); process.exit(1); });
   await p.goto("file://"+path.resolve(process.argv[2])); await p.waitForTimeout(900);
 
-  // ⚠️ 퇴치 스프레이는 **야생 레벨 < 선두 레벨**일 때만 막는다. 저레벨 파티로 걸으면 루트 안에서
-  //    조우가 걸려 이동이 멈추고 통과 검증이 헛돈다(실제로 겪음) → 선두를 충분히 높게 잡는다.
+  // ⚠️ 퇴치 스프레이는 `max(avgLevel(), wildFloor()) < 선두 레벨`일 때만 막는다.
+  //    **1마리 파티는 평균=선두라 절대 안 막힌다** → 루트 안에서 조우가 걸려 이동이 멈추고
+  //    통과 검증이 간헐 실패한다(실제로 겪음). 저레벨 2번째를 넣어 평균을 낮춘다.
   const boot=async(x,y)=>{
     await p.evaluate(([px,py])=>{ const S=window.SG,G=S.freshState();
-      G.party=[S.makeMon("foxfire",45)];
+      G.party=[S.makeMon("foxfire",50), S.makeMon("shellow",1)];
       G.pos={x:px,y:py}; G.repel=999; S.setG(G); S.flow.enterMap(true); },[x,y]);
     await p.waitForTimeout(500); };
 
@@ -48,6 +49,15 @@ const { chromium } = require("playwright"); const path=require("path");
     ok(gate[id].every(e=>e.near), `${id}: **두 입구 모두 비전기술 없이 접근 가능** — 게이팅 불변`);
   });
 
+  console.log("\n[1-b] 시작 칸이 출구 칸과 겹치지 않는다");
+  // ⚠️ 겹치면 들어가자마자 출구를 밟아 **도로 튕겨 나온다**(실제로 겪음 — pier·frostpass 둘 다).
+  const startOk=await p.evaluate(()=>{ const F=window.SG.flow; const bad=[];
+    Object.keys(F.ROUTE_AT).forEach(k=>{ const r=F.ROUTE_AT[k]; const I=F.INTERIORS[r.id]; if(!I)return;
+      const hit=(I.exits||[]).some(e=>e.x===r.sx&&e.y===r.sy);
+      if(hit||(I.exitX===r.sx&&I.exitY===r.sy))bad.push(r.id+" @"+k+" → ("+r.sx+","+r.sy+")"); });
+    return bad; });
+  ok(startOk.length===0, `시작 칸이 출구와 겹치는 입구 0곳 ${startOk.length?JSON.stringify(startOk):""}`);
+
   console.log("\n[2] 통과형 — 한쪽으로 들어가 반대쪽으로 나온다");
   const walkThrough=async(id)=>{
     const pair=await p.evaluate(rid=>{ const F=window.SG.flow;
@@ -67,8 +77,9 @@ const { chromium } = require("playwright"); const path=require("path");
     await p.waitForTimeout(200);
     // 출구 타일 위에 서면 onArrived가 처리하므로 한 칸 옆에서 밟아 들어간다
     await p.evaluate(([ex,ey])=>{ const S=window.SG,G=S.G(); G.pos={x:ex-1,y:ey}; S.setG(G); if(S.Field.placeImmediate)S.Field.placeImmediate(); },[far.x,far.y]);
-    await p.waitForTimeout(300);
-    await p.keyboard.press("ArrowRight"); await p.waitForTimeout(1400);
+    // ⚠️ 워프 직후 _warpLock(320ms)이 입력을 막는다 — 대기가 짧으면 키가 씹혀 간헐 실패한다(실제로 겪음).
+    await p.waitForTimeout(700);
+    await p.keyboard.press("ArrowRight"); await p.waitForTimeout(1500);
     const after=await p.evaluate(()=>({indoor:window.SG.G().indoor,pos:{...window.SG.G().pos}}));
     return {a,b2,inside,far,after};
   };
