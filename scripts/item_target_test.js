@@ -89,6 +89,66 @@ const { chromium } = require("playwright"); const path=require("path");
     return { n:S.flow.rivalTeam(S.TRAINERS.V).length, base:S.TRAINERS.V.team.length }; });
   ok(sz.n>sz.base && sz.n<=sz.base+2, `마릿수도 파티를 따라 붙는다 (설계 ${sz.base} → ${sz.n}, 원작+2 이내)`);
 
+  /* [C] 포획 = 볼 선택 (한 종류여도 고르게) — 유저 제보 */
+  console.log("\n[C] 포획 버튼 → 볼 선택");
+  await p.reload(); await p.waitForTimeout(900);
+  await p.evaluate(()=>{ const S=window.SG,G=S.freshState();
+    G.party=[S.makeMon("foxfire",12)]; G.items.ball=5; G.items.greatball=2; G.pos={x:9,y:44};
+    S.setG(G); S.flow.enterMap(true); });
+  await p.waitForTimeout(500);
+  await p.evaluate(()=>window.SG.flow.startEncounter(0.2));
+  for(let i=0;i<50;i++){ const r=await p.evaluate(()=>!window.SG.G().busy &&
+      document.getElementById("mainMenu").offsetParent!==null); if(r)break; await p.waitForTimeout(250); }
+  const ballsBefore=await p.evaluate(()=>window.SG.G().items.ball);
+  await p.evaluate(()=>{ const b=[...document.querySelectorAll("#mainMenu .mbtn")].find(x=>/포획/.test(x.textContent||"")); if(b)b.click(); });
+  await p.waitForTimeout(500);
+  const bp=await p.evaluate(()=>({ open:document.getElementById("bagOverlay").classList.contains("active"),
+    txt:(document.getElementById("bagBody").textContent||"").slice(0,30),
+    rows:[...document.querySelectorAll("#bagBody .bag-item .nm")].map(n=>n.textContent),
+    back:[...document.querySelectorAll("#bagBody button")].some(b=>/돌아가기/.test(b.textContent||"")),
+    ball:window.SG.G().items.ball }));
+  ok(bp.open && /어떤 볼/.test(bp.txt), `볼 선택 창이 뜬다 ("${bp.txt.trim()}")`);
+  ok(bp.ball===ballsBefore, `누르자마자 던지지 않는다 (${ballsBefore}→${bp.ball})`);
+  ok(bp.rows.length===2, `가진 볼이 전부 뜬다 (${bp.rows.join(", ")})`);
+  ok(bp.back, "볼 선택에 '돌아가기'가 있다");
+
+  /* [D] 연속 탭 가드 — 확인 단계가 손가락 밑에 떠서 그냥 통과되던 것 */
+  console.log("\n[D] 연속 탭 가드");
+  await p.evaluate(()=>{ const b=[...document.querySelectorAll("#bagBody button")].find(x=>/돌아가기/.test(x.textContent||"")); if(b)b.click(); });
+  await p.waitForTimeout(300);
+  const guard=await p.evaluate(()=>{ const S=window.SG;
+    S.flow.openBallPicker();
+    const btn=[...document.querySelectorAll("#bagBody .bag-item .pick")][0];
+    const before=S.G().items.ball; btn.click();            // 렌더 직후 즉시 클릭 = 무시돼야 한다
+    return { before, after:S.G().items.ball }; });
+  ok(guard.before===guard.after, `렌더 직후 즉시 탭은 무시된다 (${guard.before}→${guard.after})`);
+  await p.waitForTimeout(420);
+  const late=await p.evaluate(()=>{ const S=window.SG;
+    const btn=[...document.querySelectorAll("#bagBody .bag-item .pick")][0];
+    const before=S.G().items.ball; btn.click(); return {before}; });
+  await p.waitForTimeout(1500);
+  ok(await p.evaluate(()=>window.SG.G().items.ball)<late.before, "가드가 풀린 뒤엔 정상적으로 던져진다");
+
+  /* [E] 전투 가방에도 돌아가기 — ✕만으로 나가야 해서 불편하다는 제보 */
+  console.log("\n[E] 전투 가방 돌아가기 버튼");
+  await p.reload(); await p.waitForTimeout(900);
+  await p.evaluate(()=>{ const S=window.SG,G=S.freshState();
+    G.party=[S.makeMon("foxfire",12)]; G.party[0].hp=20; G.items.potion=3; G.pos={x:9,y:44};
+    S.setG(G); S.flow.enterMap(true); });
+  await p.waitForTimeout(500);
+  await p.evaluate(()=>window.SG.flow.startEncounter(0.2));
+  for(let i=0;i<50;i++){ const r=await p.evaluate(()=>!window.SG.G().busy &&
+      document.getElementById("mainMenu").offsetParent!==null); if(r)break; await p.waitForTimeout(250); }
+  await p.evaluate(()=>{ const b=[...document.querySelectorAll("#mainMenu .mbtn")].find(x=>/아이템/.test(x.textContent||"")); if(b)b.click(); });
+  await p.waitForTimeout(500);
+  const bagBack=await p.evaluate(()=>({
+    has:[...document.querySelectorAll("#bagBody button")].some(x=>/배틀로 돌아가기/.test(x.textContent||"")),
+    open:document.getElementById("bagOverlay").classList.contains("active") }));
+  ok(bagBack.has, "전투 가방에 '배틀로 돌아가기'가 있다");
+  await p.evaluate(()=>{ const b=[...document.querySelectorAll("#bagBody button")].find(x=>/배틀로 돌아가기/.test(x.textContent||"")); if(b)b.click(); });
+  await p.waitForTimeout(350);
+  ok(!(await p.evaluate(()=>document.getElementById("bagOverlay").classList.contains("active"))), "누르면 배틀로 돌아간다");
+
   ok(errs.length===0, `런타임 에러 0 (${errs.length}${errs.length?": "+errs[0]:""})`);
   console.log(fail?"\n❌ 실패":"\n🎉 아이템 대상 선택 · 라이벌 스케일링 통과");
   await b.close(); process.exit(fail);

@@ -89,6 +89,7 @@ const { chromium } = require("playwright"); const path=require("path");
         if(t==="z")note("ruins",si);
         if(t==="^")note("crater",si);
         if(t==="!")note("garden",si);
+        if(t==="$")note("mine:"+x+","+y,si);   // 지선 루트(갱도) — 입구가 둘이라 좌표별로 센다
         if(t==="W")note("coast",si);
         if(t==="P")note("sign:"+x+","+y,si);
       }
@@ -108,6 +109,7 @@ const { chromium } = require("playwright"); const path=require("path");
     for(let y=0;y<50;y++)for(let x=0;x<25;x++){ const t=F.tileAt(x,y);
       if(t==="+")all.push("center:"+x+","+y); if(t==="E")all.push("hall:"+x+","+y);
       if(t==="S")all.push("shop:"+x+","+y);   if(t==="P")all.push("sign:"+x+","+y);
+      if(t==="$")all.push("mine:"+x+","+y);
       if(t==="U")all.push("league"); if(t==="X")all.push("altar"); if(t==="D")all.push("cave");
       if(t==="V")all.push("lavacave"); if(t==="M")all.push("snowfield"); if(t==="J")all.push("marsh"); if(t==="O")all.push("skyridge"); if(t==="z")all.push("ruins"); if(t==="^")all.push("crater"); if(t==="!")all.push("garden"); if(t==="W")all.push("coast"); }
     (S.GROUND_ITEMS||[]).forEach(g=>{ if(!g.in)all.push("item:"+g.k); });
