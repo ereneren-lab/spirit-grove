@@ -298,6 +298,24 @@
     0%,100%{box-shadow:0 0 0 2px rgba(127,209,174,.85),0 0 10px rgba(127,209,174,.45)}
     50%{box-shadow:0 0 0 3px rgba(127,209,174,1),0 0 20px rgba(127,209,174,.95)}}
   .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:auto}
+  /* 전투 하단을 본가 배치로: **메시지(크림 박스) 좌 · 행동 메뉴 우 2×2**.
+     예전엔 어두운 패널에 메시지→코치→메뉴가 세로로 쌓여 본가와 인상이 달랐다
+     (유저: "배틀화면 더 파고 들자"). 오버월드 대화창이 이미 포켓몬풍 크림 박스라 톤도 맞춘다.
+     ⚠️ 세로(portrait)에만 적용 — 가로는 이미 아레나 68% / 우측 슬림 패널로 따로 튜닝돼 있다. */
+  @media (orientation:portrait){
+    .battle-ui.mainrow{display:grid;grid-template-columns:1fr 46%;grid-template-rows:auto auto;gap:10px;align-items:start}
+    .battle-ui.mainrow .msg{grid-column:1;grid-row:1;margin:0}
+    .battle-ui.mainrow #mainMenu{grid-column:2;grid-row:1/span 2;margin-top:0;align-content:start}
+    .battle-ui.mainrow .coach-tip{grid-column:1;grid-row:2}
+    /* ⚠️ 로그 버튼은 절대배치라 그리드 규칙이 안 먹는다 — 2열 배치에선 아이템 버튼과 겹치므로
+       메시지 칸(좌측) 위쪽으로 옮긴다. */
+    .battle-ui.mainrow #logBtn{top:auto;bottom:10px;right:auto;left:10px}
+  }
+  /* 전투 메시지도 대화창과 같은 포켓몬풍 크림 박스 */
+  .battle-ui .msg{background:linear-gradient(180deg,#fbf6ea,#efe4cc);border:3px solid #34284a;border-radius:14px;
+    padding:11px 13px;color:#2a2036;font-weight:700;
+    box-shadow:0 6px 18px rgba(0,0,0,.35),inset 0 0 0 2px rgba(255,255,255,.4)}
+  .battle-ui .msg b{color:#a15a22}
   .mbtn{border:1px solid var(--line);background:var(--panel2);color:var(--cream);border-radius:11px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;transition:transform .1s}
   .mbtn:active{transform:scale(.97)} .mbtn:disabled{opacity:.4}
   .mbtn.kbfocus{outline:2.5px solid var(--mint);outline-offset:1px;box-shadow:0 0 11px rgba(127,209,174,.55);border-color:var(--mint)}
@@ -3893,8 +3911,10 @@ function stageChips(m){ let h=""; if(m.status)h+=`<span class="sc ${STATUS_CLS[m
     h+=`<span class="sc ${v>0?"up":"down"}">${STAGE_ABBR[k]}${v>0?"+":""}${v}</span>`; } }); return h; }
 function renderStages(){ if(!G.foe)return; $("foeStages").innerHTML=stageChips(G.foe); $("meStages").innerHTML=stageChips(activeMon()); }
 
-function showMain(){ mainMenu.style.display="grid"; moveMenu.style.display="none"; moveBack.style.display="none"; setMenuEnabled(true); battleFocus(0); }
-function showMoves(){ mainMenu.style.display="none"; moveMenu.style.display="grid"; moveBack.style.display="block"; moveMenu.innerHTML="";
+// ⚠️ 본가 배치(메시지 좌 · 메뉴 우 2×2)는 **메인 메뉴일 때만**. 기술 메뉴는 본가처럼 하단 전체를 쓴다.
+function _battleRow(on){ const ui=document.querySelector("#battle .battle-ui"); if(ui)ui.classList.toggle("mainrow",!!on); }
+function showMain(){ mainMenu.style.display="grid"; moveMenu.style.display="none"; moveBack.style.display="none"; setMenuEnabled(true); _battleRow(true); battleFocus(0); }
+function showMoves(){ mainMenu.style.display="none"; moveMenu.style.display="grid"; moveBack.style.display="block"; _battleRow(false); moveMenu.innerHTML="";
   const me=activeMon();
   if(noPP(me)){ const b=document.createElement("button"); b.className="mbtn move-btn";
     b.innerHTML=`<div class="top"><span>발버둥</span><span class="pp">PP —</span></div><span class="mp">노말 · 반동</span>`;

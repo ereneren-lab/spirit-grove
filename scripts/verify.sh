@@ -148,6 +148,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw door_front_test.js
   pw fieldmove_test.js
   pw map_autotile_test.js
+  pw battle_hud_test.js
 else
   echo "⏭️  오디오 테스트 건너뜀 (npm install playwright 하면 실행됨)"
 fi
