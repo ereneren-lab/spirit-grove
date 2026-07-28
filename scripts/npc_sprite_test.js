@@ -69,6 +69,51 @@ const { chromium } = require("playwright"); const path=require("path");
   console.log("\n[5] 모자 등 장식은 그대로 동작");
   ok(r.cap.fills.length>r.down.fills.length-2, `모자 스프라이트도 정상 (${r.cap.fills.length}개)`);
 
+  /* [6] 구조 단정 — **모든 인물 타일이 공용 렌더러를 지난다**
+     ⚠️ 예전엔 실내 인물(간호사·회관 3인·여명 관장·설산 주인)이 각자 따로 그려져서,
+        오버월드 NPC만 개선했더니 실내는 그대로 남았다(유저 제보: "실내 npc들도 손을 봐야지").
+        개별 외형을 세는 대신 "공용 렌더러를 지나는가"를 잡아야 이 부류가 재발하지 않는다. */
+  console.log("\n[6] 실내 인물도 공용 렌더러(_char)를 지난다");
+  const via=await p.evaluate(()=>{
+    const F=window.SG.Field, S=window.SG;
+    if(!S.G()){ const g=S.freshState(); g.party=[S.makeMon("foxfire",5)]; S.setG(g); }   // 렌더는 G를 읽는다
+    const cases=[["N","center","간호사"],["N","shop","점원"],["N","shrine","신전 로어"],
+                 ["p","hall","감정사"],["n","hall","이름 짓는 사람"],["s","hall","마사지사"],
+                 ["L","isle","여명 관장"],["Q","snowfield","설산의 주인"]];
+    const noop=()=>{};
+    const out=[];
+    for(const [t,indoor,label] of cases){
+      const G=S.G(); const _old=G.indoor; G.indoor=indoor; G.defeated=new Set();
+      let called=0; const orig=F._char; F._char=function(){ called++; };
+      const ctx=new Proxy({},{ get:(o,k)=>{
+          if(k==="canvas")return {width:600,height:600};
+          if(k==="measureText")return ()=>({width:10});
+          if(k==="createLinearGradient"||k==="createRadialGradient")return ()=>({addColorStop(){}});
+          return typeof k==="string"?noop:undefined; }, set:()=>true });
+      try{ F._tile(ctx,t,0,0,32,4,4,1); }catch(e){}
+      F._char=orig; G.indoor=_old;
+      out.push({label,t,indoor,called});
+    }
+    return out; });
+  via.forEach(v=>ok(v.called>0, `${v.label} (${v.indoor}/${v.t}) — _char 사용 ${v.called}회`));
+
+  /* [7] 타일 위 트레이너도 전부 스프라이트 — 이모지 폴백 0
+     ⚠️ 예전엔 관장 4명(1~4)과 숲의 군주(X)만 spr이 있어 **견습생·가드·엘리트4·챔피언이 전부 이모지**였다.
+        필드 NPC 42명은 다 스프라이트였는데 실내만 조악했던 원인. 손으로 채우면 병렬 테이블이 되니
+        키 해시로 파생하고, 여기서 "이모지로 떨어지는 트레이너 0명"을 강제한다. */
+  console.log("\n[7] 타일 트레이너 스프라이트 (이모지 폴백 0)");
+  const tr=await p.evaluate(()=>{
+    const S=window.SG, GT="789abcdef0ijklqruvyh*?".split("").concat(["1","2","3","4","5","6","X"]);
+    const miss=[], have=[];
+    GT.forEach(k=>{ if(!S.TRAINERS[k])return;
+      const sp=S.flow.trainerSpr(k);
+      (sp?have:miss).push(k+"("+(S.TRAINERS[k].name||"")+")"); });
+    // 파생 결과가 서로 구분되는지(전부 같은 색이면 의미 없다)
+    const outfits=new Set(GT.filter(k=>S.TRAINERS[k]).map(k=>(S.flow.trainerSpr(k)||{}).outfit));
+    return {miss, n:have.length, variety:outfits.size}; });
+  ok(tr.miss.length===0, `이모지로 떨어지는 타일 트레이너 0명 (스프라이트 ${tr.n}명)${tr.miss.length?" — "+tr.miss.join(", "):""}`);
+  ok(tr.variety>=4, `트레이너끼리 외형이 구분된다 (옷 색 ${tr.variety}종)`);
+
   ok(errs.length===0, `런타임 에러 0 (${errs.length}${errs.length?": "+errs[0]:""})`);
   console.log(fail?"\n❌ 실패":"\n🎉 NPC 스프라이트 통과");
   await b.close(); process.exit(fail);

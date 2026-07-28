@@ -1642,8 +1642,45 @@ function markHeal(){
 }
 // 실내 트레이너 타일. 벽처럼 막고 있다가 이기면 통과(walkable이 defeated로 열림).
 // r=수정 동굴, u=용암 동굴, v=안개 늪지 — 체육관 밖 실내엔 트레이너가 하나도 없었다.
+/* 타일 트레이너 스프라이트 파생 — ⚠️ 관장 4명(1~4)과 숲의 군주(X)만 spr이 있고 **나머지는 전부 이모지**로
+   그려지고 있었다(체육관 견습생 10명 · 동굴/지역 가드 7명 · 엘리트4+챔피언 5명). 필드 NPC 42명은 전부
+   스프라이트라 실내만 유독 조악했다(유저 제보). 손으로 20여 개를 채우면 또 하나의 병렬 테이블이 되므로
+   **키+이름 해시로 파생**한다 — 트레이너를 추가해도 자동으로 스프라이트가 생긴다.
+   ⚠️ 결과는 t._spr에 캐시한다(_char이 눈 깜빡임 위상을 spec에 저장하므로 매 프레임 새 객체면 안 된다). */
+const _TSPR_OUT=["#5a6f8a","#8a5a5a","#4f7a5a","#6a5a8a","#8a6a3a","#3a6a8a","#7a4a6a","#4a6a6a"];
+const _TSPR_HAIR=["#3a2f24","#2a2a33","#4a3320","#5a3a2a","#2a3a3a","#3f2a3a"];
+const _TSPR_SKIN=["#e8c39a","#e0bd96","#d8a878","#f0d0b0","#c99a6e"];
+const _TSPR_HAT=[null,"cap","hood","straw"];
+function trainerSpr(key){
+  const t=(typeof TRAINERS!=="undefined")?TRAINERS[key]:null; if(!t)return null;
+  if(t.spr)return t.spr; if(t._spr)return t._spr;
+  let hsh=0; const str=key+"|"+(t.name||"");
+  for(let i=0;i<str.length;i++)hsh=(hsh*31+str.charCodeAt(i))>>>0;
+  const league="ijklq".indexOf(key)>=0;
+  const hat=_TSPR_HAT[hsh%_TSPR_HAT.length];
+  const spr={ outfit:_TSPR_OUT[(hsh>>3)%_TSPR_OUT.length], accent:"#cfd8e8",
+    skin:_TSPR_SKIN[(hsh>>6)%_TSPR_SKIN.length], hair:_TSPR_HAIR[(hsh>>9)%_TSPR_HAIR.length],
+    hatc:_TSPR_OUT[(hsh>>12)%_TSPR_OUT.length], boots:"#3a3548",
+    spiky:!!((hsh>>15)&1), boss:league||!!t.boss };
+  if(hat)spr.hat=hat;
+  t._spr=spr; return spr;
+}
 const GUARD_TILES="789abcdef0ijklqruvyh*?";   // y = 뇌명 봉우리 폭풍지기, h = 유적 수호자, * = 분화구 화산 감시자
 // 인테리어 바닥/벽 색 테마. wt는 벽 상단 밴드(생략 시 기본 갈색).
+/* 실내 인물 스펙 — **오버월드 NPC와 같은 렌더러(`_char`)를 쓰기 위한 단일 출처**.
+   ⚠️ 예전엔 간호사·회관 3인·여명 관장·설산 주인이 **각자 따로** 그려져(원·사각형 조합)
+      오버월드 NPC만 개선하면 실내 사람들은 그대로 남았다(유저 제보). 이제 전부 여기를 지난다.
+   ⚠️ 상수로 두는 이유: `_char`이 눈 깜빡임 위상(_bseed)을 spec에 캐시한다 — 매 프레임 새 객체면 캐시가 무의미해진다. */
+const NPC_SPR={
+  nurse:{outfit:"#f2f2f4",accent:"#f0b0c8",skin:"#e8c39a",hair:"#f08fb0",hat:"nurse",hatc:"#ffffff",boots:"#d8d8e0"},
+  clerk:{outfit:"#5a7db0",accent:"#8ab0d8",skin:"#e8c39a",hair:"#4a3728",boots:"#3a4a5a"},
+  lore :{outfit:"#3a6a9a",accent:"#6a9ac8",skin:"#e8c39a",hair:"#cfd8e0",boots:"#2c3a4a"},
+  p:{outfit:"#5a6a9a",accent:"#8a9ac0",skin:"#e8c39a",hair:"#3a3a4a",boots:"#33405a",extra:"glasses"},
+  n:{outfit:"#8a6aa0",accent:"#c0a0d0",skin:"#f0d0b0",hair:"#4a3a4a",boots:"#4a3a58"},
+  s:{outfit:"#6aa08a",accent:"#a0d0c0",skin:"#e8c39a",hair:"#3a4a42",boots:"#3a5a4a"},
+  isleLeader:{outfit:"#2f7aa0",accent:"#4fd0e0",skin:"#e8c39a",hair:"#3a2a1a",spiky:true,boots:"#24506a",boss:true},
+  snowMaster:{outfit:"#5a7a9a",accent:"#9fc0e0",skin:"#e8d0b0",hair:"#dff0ff",spiky:true,boots:"#3a5a7a",boss:true} };
+const HALL_TOOL={p:"🔍",n:"✒️",s:"💆"};
 const GYM_THEME={ gym1:{fl:"#bcd0a0",wl:"#7a9a5a"}, gym2:{fl:"#9ab88a",wl:"#4f7a4a"}, gym3:{fl:"#a6c8cc",wl:"#4a8a8a"}, gym4:{fl:"#c8bfa0",wl:"#8a7a5a"}, league:{fl:"#39344f",wl:"#6a5a8a"},
   center:{fl:"#eef1f4",wl:"#d4514c",wt:"#b83f3c",gr:"rgba(150,170,190,.42)"},
   hall:{fl:"#e4d6b8",wl:"#9a7a4a",wt:"#7a5e36",gr:"rgba(150,120,70,.35)"} };
@@ -1718,7 +1755,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(typeof berryAt==="function"){ const bt=berryAt(x,y); if(bt)this._berryTree(ctx,sx,sy,ts,now,berryRipe(bt)); } }
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const sx=ox+x*ts,sy=oy+y*ts; if(sx<-ts||sy<-ts||sx>cw||sy>ch)continue;
       const t=tileAt(x,y); let emoji=null, spec=null, sdir="down";
-      if(isTrainerTile(t)&&!G.defeated.has(t)){ if(TRAINERS[t]&&TRAINERS[t].spr)spec=TRAINERS[t].spr; else emoji=(TRAINERS[t]&&TRAINERS[t].em)||null; }
+      if(isTrainerTile(t)&&!G.defeated.has(t)){ const _ts=trainerSpr(t); if(_ts)spec=_ts; else emoji=(TRAINERS[t]&&TRAINERS[t].em)||null; }
       if(spec){ this._char(ctx, sx+ts/2, sy+ts*0.46, ts*0.92, spec, sdir, now); }
       else if(emoji){ ctx.font=Math.floor(ts*0.72)+"px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(emoji,sx+ts/2,sy+ts*0.4); } }
     // NPC 보간 이동 패스 — 논리 타일(n.x/n.y)로 rx/ry가 이징. 로밍 NPC가 타일 사이를 부드럽게 걷는다(툭툭 튐 제거).
@@ -1858,12 +1895,12 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(t==="#"){ ctx.fillStyle="#7a5a3a"; ctx.fillRect(sx+ts*0.44,sy+ts*0.42,ts*0.12,ts*0.48); ctx.fillStyle="#3f8b52"; for(let a=0;a<5;a++){ const an=Math.PI+a*0.78; ctx.beginPath(); ctx.ellipse(sx+ts*0.5+Math.cos(an)*ts*0.2,sy+ts*0.36+Math.sin(an)*ts*0.12,ts*0.19,ts*0.07,an,0,6.29); ctx.fill(); } return; }
       if(t==="T"){ for(let i=0;i<6;i++){ const bx=sx+ts*(0.14+i*0.145); ctx.strokeStyle="#5aa85a"; ctx.lineWidth=Math.max(1,ts*0.05); ctx.beginPath(); ctx.moveTo(bx,sy+ts*0.88); ctx.quadraticCurveTo(bx,sy+ts*0.5,bx+Math.sin(i+(now||0)*2)*ts*0.08,sy+ts*0.36); ctx.stroke(); } return; }
       if(t==="C"){ ctx.fillStyle="#f2dbe2"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.62,ts*0.22,Math.PI,0); ctx.fill(); ctx.strokeStyle="#d59aa8"; ctx.lineWidth=Math.max(1,ts*0.02); for(let a=0;a<4;a++){ ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*0.62); ctx.lineTo(sx+ts*(0.3+a*0.13),sy+ts*0.42); ctx.stroke(); } return; }
-      if(t==="N"){ const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5; ctx.fillStyle="rgba(0,0,0,.2)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.42,u*0.3,u*0.1,0,0,6.29); ctx.fill(); ctx.fillStyle="#3a6a9a"; ctx.fillRect(cx-u*0.22,cy-u*0.02,u*0.44,u*0.44); ctx.fillStyle="#e8c39a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.22,u*0.2,0,6.29); ctx.fill(); ctx.fillStyle="#dfe6ec"; ctx.beginPath(); ctx.arc(cx,cy-u*0.32,u*0.24,Math.PI,0); ctx.fill(); ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.09,cy-u*0.22,u*0.04,u*0.05); ctx.fillRect(cx+u*0.05,cy-u*0.22,u*0.04,u*0.05); return; }
+      if(t==="N"){ this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.92,NPC_SPR.lore,"down",now); return; }
       if(t==="&"){ ctx.fillStyle="rgba(150,200,240,.42)"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.5,ts*0.44,0,6.29); ctx.fill(); ctx.fillStyle="rgba(0,0,0,.16)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.88,ts*0.24,ts*0.06,0,0,6.29); ctx.fill(); ctx.fillStyle="#8fb8d8"; ctx.fillRect(sx+ts*0.34,sy+ts*0.5,ts*0.32,ts*0.36); ctx.fillStyle="#c0e4f8"; ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*0.14); ctx.lineTo(sx+ts*0.66,sy+ts*0.42); ctx.lineTo(sx+ts*0.5,sy+ts*0.56); ctx.lineTo(sx+ts*0.34,sy+ts*0.42); ctx.closePath(); ctx.fill(); ctx.fillStyle="#eafaff"; ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*0.22); ctx.lineTo(sx+ts*0.57,sy+ts*0.4); ctx.lineTo(sx+ts*0.5,sy+ts*0.48); ctx.lineTo(sx+ts*0.43,sy+ts*0.4); ctx.closePath(); ctx.fill(); return; }
-      if(t==="Q"){ if(typeof G!=="undefined"&&G.defeated&&G.defeated.has("SNOW"))return; const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5; ctx.fillStyle="rgba(0,0,0,.2)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.46,u*0.32,u*0.1,0,0,6.29); ctx.fill(); ctx.fillStyle="#5a7a9a"; ctx.fillRect(cx-u*0.26,cy-u*0.04,u*0.52,u*0.52); ctx.fillStyle="#e8d0b0"; ctx.beginPath(); ctx.arc(cx,cy-u*0.24,u*0.22,0,6.29); ctx.fill(); ctx.fillStyle="#dff0ff"; ctx.beginPath(); ctx.arc(cx,cy-u*0.33,u*0.27,Math.PI,0); ctx.fill(); ctx.fillStyle="#9fc0e0"; ctx.beginPath(); ctx.moveTo(cx-u*0.18,cy-u*0.42); ctx.lineTo(cx,cy-u*0.58); ctx.lineTo(cx+u*0.18,cy-u*0.42); ctx.closePath(); ctx.fill(); ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.1,cy-u*0.24,u*0.045,u*0.055); ctx.fillRect(cx+u*0.055,cy-u*0.24,u*0.045,u*0.055); return; }
+      if(t==="Q"){ if(typeof G!=="undefined"&&G.defeated&&G.defeated.has("SNOW"))return; this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.96,NPC_SPR.snowMaster,"down",now); return; }
       if(t==="K"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx+ts*0.16,sy+ts*0.44,ts*0.68,ts*0.46); ctx.fillStyle="#5a4632"; ctx.fillRect(sx+ts*0.42,sy+ts*0.6,ts*0.16,ts*0.3); ctx.fillStyle="#e0563f"; ctx.fillRect(sx+ts*0.08,sy+ts*0.3,ts*0.84,ts*0.16); ctx.fillStyle="#f5f0e6"; for(var _i=0;_i<4;_i++){ ctx.fillRect(sx+ts*(0.08+_i*0.21),sy+ts*0.3,ts*0.105,ts*0.16); } ctx.fillStyle="#ffd23f"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.22,ts*0.06,0,6.29); ctx.fill(); return; }
       if(t==="H"){ ctx.fillStyle="rgba(0,0,0,.14)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.9,ts*0.34,ts*0.08,0,0,6.29); ctx.fill(); ctx.fillStyle="#d8c4a0"; ctx.fillRect(sx+ts*0.2,sy+ts*0.44,ts*0.6,ts*0.46); ctx.fillStyle="#6f4f96"; ctx.beginPath(); ctx.moveTo(sx+ts*0.12,sy+ts*0.46); ctx.lineTo(sx+ts*0.5,sy+ts*0.18); ctx.lineTo(sx+ts*0.88,sy+ts*0.46); ctx.closePath(); ctx.fill(); ctx.fillStyle="#5a4632"; ctx.fillRect(sx+ts*0.42,sy+ts*0.62,ts*0.16,ts*0.28); ctx.fillStyle="#8fd0ff"; ctx.fillRect(sx+ts*0.26,sy+ts*0.5,ts*0.12,ts*0.12); return; }
-      if(t==="L"){ if(typeof G!=="undefined"&&G.defeated&&G.defeated.has("L"))return; const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5; ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.46,u*0.34,u*0.11,0,0,6.29); ctx.fill(); ctx.fillStyle="#2f7aa0"; ctx.fillRect(cx-u*0.26,cy-u*0.04,u*0.52,u*0.52); ctx.fillStyle="#e8c39a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.24,u*0.22,0,6.29); ctx.fill(); ctx.fillStyle="#3a2a1a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.32,u*0.26,Math.PI,0); ctx.fill(); ctx.fillStyle="#4fd0e0"; ctx.beginPath(); ctx.moveTo(cx-u*0.16,cy-u*0.4); ctx.lineTo(cx,cy-u*0.56); ctx.lineTo(cx+u*0.16,cy-u*0.4); ctx.closePath(); ctx.fill(); ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.1,cy-u*0.24,u*0.045,u*0.055); ctx.fillRect(cx+u*0.055,cy-u*0.24,u*0.045,u*0.055); return; }
+      if(t==="L"){ if(typeof G!=="undefined"&&G.defeated&&G.defeated.has("L"))return; this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.96,NPC_SPR.isleLeader,"down",now); return; }
       if(t==="."){ ctx.fillStyle="rgba(120,90,50,.45)"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="rgba(255,240,200,.18)"; ctx.fillRect(sx,sy,tb,ts*0.4); return; }
       return;
     }
@@ -1904,17 +1941,11 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         ctx.fillStyle="rgba(200,180,255,"+(0.5+fl*0.5)+")"; ctx.beginPath(); ctx.arc(cx,sy+ts*0.32,ts*0.1,0,6.29); ctx.fill();
         ctx.fillStyle="#e8e0ff"; ctx.beginPath(); ctx.arc(cx,sy+ts*0.32,ts*0.05,0,6.29); ctx.fill(); }
       else if(t==="p"||t==="n"||t==="s"){ ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb);
-        const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5;
-        const sk={p:{robe:"#5a6a9a",hair:"#3a3a4a",em:"🔍"},n:{robe:"#8a6aa0",hair:"#4a3a4a",em:"✒️"},s:{robe:"#6aa08a",hair:"#3a4a42",em:"💆"}}[t];
-        ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.42,u*0.32,u*0.1,0,0,6.29); ctx.fill();
-        ctx.fillStyle=sk.robe; ctx.fillRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45);
-        ctx.fillStyle="#e8c39a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.22,u*0.24,0,6.29); ctx.fill();
-        ctx.fillStyle=sk.hair; ctx.beginPath(); ctx.arc(cx,cy-u*0.3,u*0.26,Math.PI,0); ctx.fill();
-        ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.12,cy-u*0.22,u*0.05,u*0.06); ctx.fillRect(cx+u*0.07,cy-u*0.22,u*0.05,u*0.06);
-        ctx.strokeStyle="rgba(30,20,12,.35)"; ctx.lineWidth=Math.max(1,ts*0.015); ctx.strokeRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45);
-        ctx.font=Math.floor(ts*0.34)+"px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText(sk.em, cx, sy+ts*0.14); }
-      else if(t==="N"){ ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5; const _nurse=G.indoor==="center"; ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.42,u*0.32,u*0.1,0,0,6.29); ctx.fill(); ctx.fillStyle=_nurse?"#f2f2f4":"#5a7db0"; ctx.fillRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45); ctx.fillStyle="#e8c39a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.22,u*0.24,0,6.29); ctx.fill(); ctx.fillStyle=_nurse?"#f08fb0":"#4a3728"; ctx.beginPath(); ctx.arc(cx,cy-u*0.3,u*0.26,Math.PI,0); ctx.fill(); if(_nurse){ ctx.fillStyle="#fff"; ctx.fillRect(cx-u*0.2,cy-u*0.46,u*0.4,u*0.14); ctx.fillStyle="#e0403c"; ctx.fillRect(cx-u*0.03,cy-u*0.44,u*0.06,u*0.1); ctx.fillRect(cx-u*0.08,cy-u*0.42,u*0.16,u*0.045); } ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.12,cy-u*0.22,u*0.05,u*0.06); ctx.fillRect(cx+u*0.07,cy-u*0.22,u*0.05,u*0.06); ctx.strokeStyle="rgba(30,20,12,.35)"; ctx.lineWidth=Math.max(1,ts*0.015); ctx.strokeRect(cx-u*0.24,cy-u*0.05,u*0.48,u*0.45); }
+        this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.92,NPC_SPR[t],"down",now);
+        // 머리 위 도구 아이콘 — 누가 무슨 서비스인지 한눈에(감정사🔍 · 이름✒️ · 마사지💆)
+        ctx.font=Math.floor(ts*0.3)+"px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(HALL_TOOL[t], sx+ts*0.5, sy+ts*0.1); }
+      else if(t==="N"){ ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.92,(G.indoor==="center")?NPC_SPR.nurse:NPC_SPR.clerk,"down",now); }
       else if(t==="B"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="#8a6240"; ctx.fillRect(sx+ts*0.14,sy+ts*0.2,ts*0.72,ts*0.68); ctx.fillStyle="#e8e2d8"; ctx.fillRect(sx+ts*0.18,sy+ts*0.24,ts*0.64,ts*0.4); ctx.fillStyle="#d86a6a"; ctx.fillRect(sx+ts*0.18,sy+ts*0.5,ts*0.64,ts*0.34); ctx.fillStyle="#f0eee8"; ctx.fillRect(sx+ts*0.22,sy+ts*0.27,ts*0.34,ts*0.16); ctx.strokeStyle="rgba(40,26,14,.4)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.14,sy+ts*0.2,ts*0.72,ts*0.68); }
       else if(t==="5"||t==="6"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx,sy,tb,tb);
         if(typeof G==="undefined"||!G.defeated||!G.defeated.has(t)){ const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5; const armor=t==="5"?"#aab4c4":"#6a5a84";
@@ -2200,6 +2231,10 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     const hat=spec.hat||"none";
     if(hat==="cap"){ ctx.fillStyle=hair; this._rr(ctx,cx-u*0.3,cy-u*0.66,u*0.6,u*0.2,u*0.1); ctx.fill(); ctx.fillStyle=hatc; this._rr(ctx,cx-u*0.32,cy-u*0.8,u*0.64,u*0.2,u*0.09); ctx.fill(); ctx.stroke();
       if(dir==="down"){ ctx.fillRect(cx-u*0.02,cy-u*0.66,u*0.34,u*0.07); } else if(dir==="left"){ ctx.fillRect(cx-u*0.34,cy-u*0.66,u*0.3,u*0.07); } else if(dir==="right"){ ctx.fillRect(cx+u*0.04,cy-u*0.66,u*0.3,u*0.07); } }
+    else if(hat==="nurse"){   // 간호사 나스캡 — 흰 캡 + 적십자(정령센터의 상징)
+      ctx.fillStyle=hair; this._rr(ctx,cx-u*0.3,cy-u*0.7,u*0.6,u*0.26,u*0.12); ctx.fill(); ctx.stroke();
+      ctx.fillStyle="#ffffff"; this._rr(ctx,cx-u*0.24,cy-u*0.86,u*0.48,u*0.2,u*0.06); ctx.fill(); ctx.stroke();
+      ctx.fillStyle="#e0403c"; ctx.fillRect(cx-u*0.035,cy-u*0.83,u*0.07,u*0.14); ctx.fillRect(cx-u*0.09,cy-u*0.795,u*0.18,u*0.07); }
     else if(hat==="straw"){ ctx.fillStyle=hair; this._rr(ctx,cx-u*0.28,cy-u*0.64,u*0.56,u*0.18,u*0.1); ctx.fill(); ctx.fillStyle=hatc; ctx.beginPath(); ctx.ellipse(cx,cy-u*0.66,u*0.5,u*0.15,0,0,6.29); ctx.fill(); ctx.stroke(); this._rr(ctx,cx-u*0.2,cy-u*0.84,u*0.4,u*0.2,u*0.09); ctx.fill(); ctx.stroke(); }
     else if(hat==="hood"){ ctx.fillStyle=hatc; this._rr(ctx,cx-u*0.33,cy-u*0.82,u*0.66,u*0.66,u*0.24); ctx.fill(); ctx.stroke(); if(dir!=="up"){ ctx.fillStyle=skin; this._rr(ctx,cx-u*0.22,cy-u*0.58,u*0.44,u*0.44,u*0.16); ctx.fill(); } }
     else { ctx.fillStyle=hair; this._rr(ctx,cx-u*0.3,cy-u*0.74,u*0.6,(dir==="up"?u*0.48:u*0.27),u*0.13); ctx.fill(); ctx.stroke();
@@ -5710,7 +5745,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, trainerSpr, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
