@@ -742,7 +742,7 @@
       <div class="ov-body" id="sumBody"></div>
     </div>
     <div class="overlay" id="warpOverlay">
-      <div class="ov-head"><h3>🔥 모닥불 귀환</h3><button class="closex" data-close="warpOverlay">✕</button></div>
+      <div class="ov-head"><h3 id="warpTitle">🔥 모닥불 귀환</h3><button class="closex" data-close="warpOverlay">✕</button></div>
       <div class="ov-body" id="warpBody"></div>
     </div>
     <div class="overlay" id="shopOverlay">
@@ -1949,7 +1949,7 @@ function talkNPC(npc){ if(_talking||dialogActive())return;
 const STARTPOS={x:8,y:48};
 let G=null;
 function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box:[],active:0,caught:new Set(),seen:new Set(),
-  items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},lastHeal:null,repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
+  items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},lastHeal:null,repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),flySpots:new Set(),hasFly:false,seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
   inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,rodTier:0,lakeDone:false,snowSeen:false,snowDone:false,marshSeen:false,skySeen:false,ruinsSeen:false,craterSeen:false,gardenSeen:false,seaBossDone:false,skyBossDone:false,ruinsBossDone:false,towerBest:0,towerStreak:0,towerRun:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,berries:{},heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
 function activeMon(){return G.party[G.active];}
 function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
@@ -2110,6 +2110,10 @@ const ESCAPABLE={cave:1,lavacave:1,marsh:1,snowfield:1,skyridge:1,ruins:1,crater
 function markHeal(){
   const ow=_owBackup?_owBackup.pos:G.pos, id=G.indoor||null;
   G.lastHeal={x:ow.x,y:ow.y,indoor:(id&&REVIVE_REENTER[id])?id:null};
+  // 쉰 곳은 **공중날기 착륙 지점**으로도 등록된다. markHeal이 센터·침대·모닥불·여관의 단일 관문이라
+  // 여기 한 곳만 걸면 모든 회복 지점이 자동으로 지도에 오른다(병렬 목록을 안 만든다).
+  if(!G.flySpots)G.flySpots=new Set();
+  G.flySpots.add(ow.x+","+ow.y);
 }
 // 실내 트레이너 타일. 벽처럼 막고 있다가 이기면 통과(walkable이 defeated로 열림).
 // r=수정 동굴, u=용암 동굴, v=안개 늪지 — 체육관 밖 실내엔 트레이너가 하나도 없었다.
@@ -5228,7 +5232,8 @@ async function trainerDefeated(){ const tr=G.trainer;
   if(firstWin && _gdef && _gdef.gym){ G.badges=G.badges||[]; if(!G.badges.includes(tr.key))G.badges.push(tr.key); updateBadgePill();
     setMsg(`🏅 <b>${_gdef.badge}</b>을(를) 얻었다!${tr.key==="L"?"":` (${forestBadges()}/4)`}`); await mw(1600);
     if(tr.key!=="L" && forestBadges()>=4){ setMsg("✨ 네 조각이 모두 모였다 — 군주의 제단과 정령 리그가 열렸다!"); await mw(1800); } }
-  if(tr.key!=="L" && firstWin){ if(!G.hasCut && forestBadges()>=1){ G.hasCut=true; setMsg("🌿 비전 기술 <b>자르기</b>를 배웠다! 작은 덤불을 벨 수 있다."); await mw(1600); } else if(!G.hasStrength && forestBadges()>=2){ G.hasStrength=true; setMsg("💪 비전 기술 <b>괴력</b>을 배웠다! 바위를 밀 수 있다."); await mw(1600); } else if(!G.hasSurf && forestBadges()>=3){ G.hasSurf=true; setMsg("🌊 비전 기술 <b>파도타기</b>를 배웠다! 물 위를 건널 수 있다."); await mw(1600); } }
+  if(tr.key!=="L" && firstWin){ if(!G.hasCut && forestBadges()>=1){ G.hasCut=true; setMsg("🌿 비전 기술 <b>자르기</b>를 배웠다! 작은 덤불을 벨 수 있다."); await mw(1600); } else if(!G.hasStrength && forestBadges()>=2){ G.hasStrength=true; setMsg("💪 비전 기술 <b>괴력</b>을 배웠다! 바위를 밀 수 있다."); await mw(1600); } else if(!G.hasSurf && forestBadges()>=3){ G.hasSurf=true; setMsg("🌊 비전 기술 <b>파도타기</b>를 배웠다! 물 위를 건널 수 있다."); await mw(1600); }
+    else if(!G.hasFly && forestBadges()>=3){ G.hasFly=true; setMsg("🕊️ 비전 기술 <b>공중날기</b>를 배웠다! 쉬어본 곳이라면 어디로든 날아갈 수 있다."); await mw(1700); } }
   if(tr.key!=="L" && firstWin && !(G.items&&G.items.vsseeker) && forestBadges()>=1){ G.items=G.items||{}; G.items.vsseeker=1; setMsg("📡 <b>VS 시커</b>를 받았다! 가방에서 사용하면 격파한 트레이너와 재대결할 수 있다."); await mw(1700); }
   if(_gdef && _gdef.champion && firstWin){ G.champion=true; updateBadgePill(); setMsg("👑 그대가 새로운 챔피언이다!"); await mw(1400);
     recordHallOfFame(); saveGame(); endBattle();
@@ -6192,19 +6197,47 @@ function openHeld(tab,i){ const m=(tab==="party"?G.party:G.box)[i]; if(!m)return
 /* ===================== FAST TRAVEL (campfire warp) ===================== */
 $("openWarp").addEventListener("click",()=>{ Audio.sfx("blip"); openWarp(); });
 function openWarp(){ if(G.indoor){ flashHint("실내에서는 이동의 모닥불을 쓸 수 없다."); return; } renderWarp(); openOverlay("warpOverlay"); }
+/* 공중날기 / 이동의 모닥불 — 착륙 지점은 **쉬어본 곳**(정령센터·모닥불·침대·여관)에서 자동 등록된다.
+   ⚠️ 지점 이름표는 좌표를 하드코딩하지 않고 **그 자리의 타일에서 파생**한다(+=정령센터 · R=모닥불 · 그 외=쉼터).
+      맵을 고쳐도 표기가 자동으로 따라온다. */
+function flySpotLabel(x,y){
+  const t=(typeof OVERWORLD_STR0!=="undefined"&&OVERWORLD_STR0[y])?OVERWORLD_STR0[y][x]:"";
+  if(t==="+")return {em:"🏥",nm:"정령센터"};
+  if(t==="R")return {em:"🔥",nm:"모닥불"};
+  if(t==="H")return {em:"🏠",nm:"쉼터"};
+  return {em:"📍",nm:"쉬어간 곳"};
+}
+function flyList(){
+  const set=new Set([...(G.flySpots||[]), ...(G.campfires||[])]);
+  return [...set].map(k=>{ const [x,y]=k.split(",").map(Number); return {k,x,y,r:region(y)}; })
+    .filter(s=>Number.isFinite(s.x)&&Number.isFinite(s.y))
+    .sort((a,b)=>b.y-a.y);   // 남(시작 마을)에서 북(리그)으로 — 진행 순서와 같게
+}
 function renderWarp(){ const body=$("warpBody"); body.innerHTML="";
-  const list=G.campfires?[...G.campfires]:[];
-  if(!list.length){ body.innerHTML=`<div style="color:var(--muted);text-align:center;padding:26px;font-size:13px;line-height:1.7">아직 쉬어본 모닥불이 없어.<br>🔥 모닥불에서 한 번 쉬면 여기에 등록돼.</div>`; return; }
+  const fly=!!G.hasFly;
+  { const h=$("warpTitle"); if(h)h.textContent=fly?"🕊️ 공중날기":"🔥 이동의 모닥불"; }
+  const list=fly?flyList():flyList().filter(s=>(G.campfires||new Set()).has(s.k));
+  if(!list.length){ body.innerHTML=`<div style="color:var(--muted);text-align:center;padding:26px;font-size:13px;line-height:1.7">${fly?"아직 쉬어본 곳이 없어.<br>정령센터나 모닥불에서 한 번 쉬면 여기에 등록돼.":"아직 쉬어본 모닥불이 없어.<br>🔥 모닥불에서 한 번 쉬면 여기에 등록돼."}</div>`; return; }
+  if(!fly){ const note=document.createElement("div"); note.style.cssText="font-size:11px;color:var(--muted);margin-bottom:6px;text-align:center";
+    note.textContent="비전 기술 공중날기를 배우면 정령센터로도 날아갈 수 있다"; body.appendChild(note); }
   const here=G.pos.x+","+G.pos.y;
-  list.sort((a,b)=>(+a.split(",")[1])-(+b.split(",")[1]));
-  list.forEach(key=>{ const [x,y]=key.split(",").map(Number); const rg=REGION_NAME[region(y)]; const cur=(key===here);
+  list.forEach(sp=>{ const cur=(sp.k===here); const lb=flySpotLabel(sp.x,sp.y);
     const card=document.createElement("div"); card.className="mon-card";
-    card.innerHTML=`<div class="em">🔥</div><div class="info"><div class="nm">${rg}의 모닥불</div><div class="st">${cur?"지금 여기":"좌표 ("+x+", "+y+")"}</div></div>
-      <button class="pick" ${cur?"disabled":""}>${cur?"현재 위치":"이동"}</button>`;
-    if(!cur)card.querySelector(".pick").addEventListener("click",()=>warpTo(x,y)); body.appendChild(card); }); }
-function warpTo(x,y){ Audio.sfx("heal"); closeOverlay("warpOverlay"); stopPath(); heldDir=null; lastRegion=-1;
-  if(G.indoor){ G.indoor=null; _owBackup=null; MAP_STR=OVERWORLD_STR0.slice(); W=25; H=50; if(Field.rebuild)Field.rebuild(); }
-  G.pos={x,y}; Field.placeImmediate(); healParty(true); updateGoal(); flashHint("모닥불로 돌아왔다 🔥"); saveGame(); }
+    card.innerHTML=`<div class="em">${lb.em}</div><div class="info"><div class="nm">${REGION_NAME[sp.r]}의 ${lb.nm}</div>
+      <div class="st">${cur?"지금 여기":"("+sp.x+", "+sp.y+")"}</div></div>
+      <button class="pick" ${cur?"disabled":""}>${cur?"현재 위치":(fly?"날아간다":"이동")}</button>`;
+    if(!cur)card.querySelector(".pick").addEventListener("click",()=>warpTo(sp.x,sp.y));
+    body.appendChild(card); });
+}
+function warpTo(x,y){ const fly=!!G.hasFly;
+  Audio.sfx(fly?"blip":"heal"); closeOverlay("warpOverlay"); stopPath(); heldDir=null; lastRegion=-1;
+  const _go=()=>{
+    if(G.indoor){ G.indoor=null; _owBackup=null; MAP_STR=OVERWORLD_STR0.slice(); W=25; H=50; if(Field.rebuild)Field.rebuild(); }
+    G.pos={x,y}; Field.placeImmediate(); healParty(true); updateGoal();
+    const lb=flySpotLabel(x,y);
+    flashHint(fly?`🕊️ ${REGION_NAME[region(y)]}의 ${lb.nm}에 내려앉았다`:"모닥불로 돌아왔다 🔥"); saveGame(); };
+  // 공중날기는 본가처럼 **암전 전환**으로 날아간다(문 이동과 같은 warpFade 재사용 — 새 연출 시스템을 안 만든다)
+  if(fly && typeof warpFade==="function" && !CONFIG.reduceMotion) warpFade(_go); else _go(); }
 
 /* ===================== MINIMAP ===================== */
 let _miniRaf=null;
@@ -6265,7 +6298,7 @@ function serialize(){ return {v:4, ts:_nowMs(), pe:G.playerEmoji, ps:G.styleIdx|
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0} }; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp,tox:m._tox||0}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
   recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; m._tox=p.tox||0; if(p.nick)m.nick=p.nick; return m; }
@@ -6273,7 +6306,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.playerEmoji=o.pe||"🧑‍🔬"; s.styleIdx=o.ps||0; s.active=o.active||0;
   s.items=Object.assign({ball:0,greatball:0,potion:0,revive:0,antidote:0,hyperpotion:0,repel:0,candy:0,xatk:0,xdef:0,xspd:0},o.items||{});
   s.money=o.money!=null?o.money:600; s.pos=o.pos||{x:STARTPOS.x,y:STARTPOS.y}; s.lastHeal=o.lh||null; s.repel=o.repel||0;   // 구세이브는 null → blackout이 STARTPOS로 폴백
-  s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.lavaSeen=!!o.lavaSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.rodTier=(o.rodTier!=null)?o.rodTier:(o.hasRod?1:0); s.lakeDone=!!o.lakeDone; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.skySeen=!!o.skySeen; s.ruinsSeen=!!o.ruinsSeen; s.craterSeen=!!o.craterSeen; s.gardenSeen=!!o.gardenSeen; s.seaBossDone=!!o.seaBossDone; s.skyBossDone=!!o.skyBossDone; s.ruinsBossDone=!!o.ruinsBossDone; s.towerBest=o.tb||0; s.dexMaster=!!o.dexMaster; s.shinyCharm=!!o.shinyCharm; s.berries=o.berries||{}; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
+  s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.flySpots=new Set(o.flySpots||[]); s.hasFly=!!o.hasFly; s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.lavaSeen=!!o.lavaSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.rodTier=(o.rodTier!=null)?o.rodTier:(o.hasRod?1:0); s.lakeDone=!!o.lakeDone; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.skySeen=!!o.skySeen; s.ruinsSeen=!!o.ruinsSeen; s.craterSeen=!!o.craterSeen; s.gardenSeen=!!o.gardenSeen; s.seaBossDone=!!o.seaBossDone; s.skyBossDone=!!o.skyBossDone; s.ruinsBossDone=!!o.ruinsBossDone; s.towerBest=o.tb||0; s.dexMaster=!!o.dexMaster; s.shinyCharm=!!o.shinyCharm; s.berries=o.berries||{}; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
   s.hallOfFame=Array.isArray(o.hof)?o.hof:[]; s.trades=o.trades||{};
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
@@ -6370,7 +6403,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
