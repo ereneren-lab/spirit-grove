@@ -773,6 +773,10 @@
       <div class="ov-head"><h3>🔄 교체할 정령</h3><button class="closex" data-close="switchOverlay" id="switchClose">✕</button></div>
       <div class="ov-body" id="switchBody"></div>
     </div>
+    <div class="overlay" id="slotOverlay">
+      <div class="ov-head"><div><h3 id="slotTitle">📕 리포트</h3><div class="sub" id="slotSub">이어서 진행할 리포트를 고르자</div></div><button class="closex" data-close="slotOverlay">✕</button></div>
+      <div class="ov-body" id="slotBody"></div>
+    </div>
     <div class="overlay" id="setOverlay">
       <div class="ov-head"><h3>⚙️ 저장 / 설정</h3><button class="closex" data-close="setOverlay">✕</button></div>
       <div class="ov-body"><div class="set-row">
@@ -795,7 +799,8 @@
         <button class="btn ghost" id="copySaveBtn">저장 코드 복사</button>
         <textarea class="savebox" id="loadBox" placeholder="저장 코드 붙여넣기"></textarea>
         <button class="btn ghost" id="loadCodeBtn">코드에서 불러오기</button>
-        <button class="btn ghost" id="resetBtn" style="color:var(--rose)">새 게임 (저장 삭제)</button>
+        <div id="slotLabel" style="font-size:11px;color:var(--muted);text-align:center;margin:2px 0 6px">📕 리포트 —</div>
+        <button class="btn ghost" id="resetBtn" style="color:var(--rose)">이 리포트 지우고 새로 시작</button>
       </div></div>
     </div>
     <div class="overlay" id="artOverlay">
@@ -874,6 +879,26 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 const SAVE_KEY="spiritGroveSave_v4";
+/* 리포트(저장 슬롯) — 본가처럼 **여러 플레이를 동시에** 진행할 수 있게 3칸.
+   ⚠️ 1번 슬롯은 기존 키를 그대로 쓴다 — 구세이브를 무효화하지 않는다(이 프로젝트의 저장 원칙).
+   현재 슬롯은 localStorage에 따로 기억해 다음 실행에서도 같은 칸을 이어간다. */
+const _nowMs=()=>{ try{ return Date.now(); }catch(e){ return 0; } };
+const SAVE_SLOTS=3;
+const slotKey=n=>n===1?SAVE_KEY:(SAVE_KEY+"_s"+n);
+let CUR_SLOT=(()=>{ try{ const v=parseInt(localStorage.getItem("sg4_slot")||"1",10); return (v>=1&&v<=SAVE_SLOTS)?v:1; }catch(e){ return 1; } })();
+function setSlot(n){ CUR_SLOT=n; try{ localStorage.setItem("sg4_slot",String(n)); }catch(e){} }
+/* 슬롯 요약 — 전체를 되살리지 않고 저장 문자열만 읽어 카드에 쓸 정보를 뽑는다(빠르고 부작용 없음). */
+function slotInfo(n){
+  try{ const raw=localStorage.getItem(slotKey(n)); if(!raw)return {empty:true};
+    const o=JSON.parse(raw); if(!o||o.v!==4)return {empty:true};
+    const party=(o.party||[]).filter(Boolean);
+    return { empty:false, ts:o.ts||0, badges:(o.badges||[]).length, champion:!!o.champion,
+      dex:(o.caught||[]).length, sec:o.playSec||0, money:o.money||0, ps:o.ps||0,
+      lv:party.map(m=>m&&m.lv).filter(v=>v!=null), n:party.length,
+      y:(o.pos&&o.pos.y!=null)?o.pos.y:48 };
+  }catch(e){ return {empty:true}; }
+}
+function anySave(){ for(let i=1;i<=SAVE_SLOTS;i++) if(!slotInfo(i).empty)return true; return false; }
 
 /* ===== CONFIG ===== */
 const DIFF={easy:{lvl:-3,dmg:0.6,catch:0.18,nm:"쉬움"},normal:{lvl:0,dmg:0.8,catch:0.05,nm:"보통"},hard:{lvl:2,dmg:1.12,catch:-0.06,nm:"어려움"}};
@@ -2325,7 +2350,22 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     }
     if(typeof G!=="undefined" && G.indoor){
       const _th=(typeof GYM_THEME!=="undefined"&&GYM_THEME[G.indoor])?GYM_THEME[G.indoor]:null; const _flC=_th?_th.fl:"#c8a878"; const _wlC=_th?_th.wl:"#5c4636"; const _wtC=(_th&&_th.wt)?_th.wt:"#6e5644"; const _grC=(_th&&_th.gr)?_th.gr:"rgba(150,108,66,.35)";
-      if(t==="#"){ ctx.fillStyle=_wlC; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle=_wtC; ctx.fillRect(sx,sy,tb,ts*0.28); ctx.fillStyle="rgba(255,235,200,.08)"; ctx.fillRect(sx,sy,tb,ts*0.06); ctx.strokeStyle="rgba(30,20,12,.45)"; ctx.lineWidth=1; ctx.strokeRect(sx+0.5,sy+0.5,ts,ts); }
+      if(t==="#"){
+        // ⚠️ 예전엔 타일마다 **외곽선 있는 납작한 블록**이라 실내가 격자로 보였다(유저: "맵이 너무 타일처럼").
+        //    오버월드 오토타일과 같은 원리 — 이웃도 벽이면 그 변의 선을 안 그려 **하나의 벽면**으로 잇는다.
+        //    + 위가 트였으면 상단 몰딩, 아래가 트였으면 걸레받이와 **바닥으로 떨어지는 그림자**(본가 실내의 입체감).
+        const _wn=(dx,dy)=>{ const nx=x+dx,ny=y+dy; return nx>=0&&ny>=0&&nx<W&&ny<H&&tileAt(nx,ny)==="#"; };
+        const _wu=_wn(0,-1),_wd=_wn(0,1),_wl2=_wn(-1,0),_wr=_wn(1,0);
+        ctx.fillStyle=this._grad(ctx,_wlC,sy,sy+ts); ctx.fillRect(sx,sy,tb,tb);
+        if(!_wu){ ctx.fillStyle=_wtC; ctx.fillRect(sx,sy,tb,ts*0.26);
+          ctx.fillStyle="rgba(255,240,214,.14)"; ctx.fillRect(sx,sy,tb,ts*0.06); }
+        if(!_wd){ ctx.fillStyle="rgba(0,0,0,.22)"; ctx.fillRect(sx,sy+ts*0.84,tb,ts*0.16); }
+        ctx.strokeStyle="rgba(30,20,12,.42)"; ctx.lineWidth=1; ctx.beginPath();
+        if(!_wu){ctx.moveTo(sx,sy+0.5);ctx.lineTo(sx+ts,sy+0.5);}
+        if(!_wd){ctx.moveTo(sx,sy+ts-0.5);ctx.lineTo(sx+ts,sy+ts-0.5);}
+        if(!_wl2){ctx.moveTo(sx+0.5,sy);ctx.lineTo(sx+0.5,sy+ts);}
+        if(!_wr){ctx.moveTo(sx+ts-0.5,sy);ctx.lineTo(sx+ts-0.5,sy+ts);}
+        ctx.stroke(); }
       else if(t==="I"){ ctx.fillStyle="#c2e6f2"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="rgba(255,255,255,.4)"; ctx.fillRect(sx,sy,tb,ts*0.15); ctx.strokeStyle="rgba(130,185,215,.55)"; ctx.lineWidth=1; ctx.strokeRect(sx+0.5,sy+0.5,ts,ts); ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.beginPath(); ctx.moveTo(sx+ts*0.15,sy+ts*0.68); ctx.lineTo(sx+ts*0.42,sy+ts*0.5); ctx.stroke(); }   // 얼음 바닥(미끄럼)
       else if(t==="S"){ ctx.fillStyle="#caa878"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="#8a6240"; ctx.fillRect(sx+ts*0.08,sy+ts*0.38,ts*0.84,ts*0.5); ctx.fillStyle="#a37c52"; ctx.fillRect(sx+ts*0.05,sy+ts*0.3,ts*0.9,ts*0.1); ctx.strokeStyle="rgba(40,26,14,.5)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.08,sy+ts*0.38,ts*0.84,ts*0.5); ctx.fillStyle="#f0d048"; ctx.fillRect(sx+ts*0.3,sy+ts*0.44,ts*0.4,ts*0.06); }
       else if(t==="A"){ ctx.fillStyle="#3a3054"; ctx.fillRect(sx,sy,tb,tb); const cx=sx+ts*0.5, fl=Math.sin((now||0)*3)*0.5+0.5;
@@ -2375,7 +2415,16 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
           ctx.fillStyle="#e8c39a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.22,u*0.2,0,6.29); ctx.fill();
           ctx.fillStyle="#3a2a1a"; ctx.beginPath(); ctx.arc(cx,cy-u*0.3,u*0.24,Math.PI,0); ctx.fill();
           ctx.fillStyle="#2a1810"; ctx.fillRect(cx-u*0.09,cy-u*0.22,u*0.04,u*0.05); ctx.fillRect(cx+u*0.05,cy-u*0.22,u*0.04,u*0.05); } }
-      else { ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); ctx.strokeStyle=_grC; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(sx,sy+Math.round(ts*0.5)+0.5); ctx.lineTo(sx+ts,sy+Math.round(ts*0.5)+0.5); ctx.stroke(); if((h>>3)&1){ ctx.beginPath(); ctx.moveTo(sx+Math.round(ts*0.5)+0.5,sy); ctx.lineTo(sx+Math.round(ts*0.5)+0.5,sy+ts*0.5); ctx.stroke(); } else { ctx.beginPath(); ctx.moveTo(sx+Math.round(ts*0.5)+0.5,sy+ts*0.5); ctx.lineTo(sx+Math.round(ts*0.5)+0.5,sy+ts); ctx.stroke(); } }
+      else { ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb);
+        // 바닥 명암 — 타일마다 아주 살짝 밝기를 달리해 단색 판때기로 안 보이게(격자는 이음선이 아니라 명암으로 읽힌다)
+        ctx.fillStyle=((h>>5)&1)?"rgba(255,255,255,.05)":"rgba(0,0,0,.035)"; ctx.fillRect(sx,sy,tb,tb);
+        ctx.strokeStyle=_grC; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(sx,sy+Math.round(ts*0.5)+0.5); ctx.lineTo(sx+ts,sy+Math.round(ts*0.5)+0.5); ctx.stroke();
+        if((h>>3)&1){ ctx.beginPath(); ctx.moveTo(sx+Math.round(ts*0.5)+0.5,sy); ctx.lineTo(sx+Math.round(ts*0.5)+0.5,sy+ts*0.5); ctx.stroke(); }
+        else { ctx.beginPath(); ctx.moveTo(sx+Math.round(ts*0.5)+0.5,sy+ts*0.5); ctx.lineTo(sx+Math.round(ts*0.5)+0.5,sy+ts); ctx.stroke(); }
+        // 벽 바로 아래 칸엔 그림자를 깔아 벽이 서 있는 것처럼 보이게 한다(본가 실내의 기본 문법)
+        if(y>0&&tileAt(x,y-1)==="#"){ const _g=ctx.createLinearGradient(0,sy,0,sy+ts*0.34);
+          _g.addColorStop(0,"rgba(0,0,0,.20)"); _g.addColorStop(1,"rgba(0,0,0,0)");
+          ctx.fillStyle=_g; ctx.fillRect(sx,sy,tb,ts*0.34); } }
       return;
     }
     if(t==="~"){
@@ -3105,8 +3154,61 @@ function buildStarter(){ const row=$("starterRow"); row.innerHTML=""; pickedStar
     c.innerHTML=`<span class="em">${creatureVisual(sp.id,sp.type)}</span><span class="nm">${sp.name}</span><span class="type-tag ${TYPE_CLASS[sp.type]}">${tkLabel(sp.type)}</span><div class="ds">${adv}</div>`;
     const pick=()=>{ pickedStarter=sp.id; Audio.sfx("blip"); [...row.children].forEach(x=>x.classList.remove("sel")); c.classList.add("sel"); $("confirmStarter").disabled=false; };
     c.addEventListener("click",pick); c.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick();}}); row.appendChild(c); }); }
-$("newGameBtn").addEventListener("click",()=>{ Audio.init(); Audio.sfx("blip"); G=freshState(); Field=Map2D; show("charsel"); buildChar(); });
-$("continueBtn").addEventListener("click",()=>{ Audio.init(); Audio.sfx("blip"); if(loadGame()){ applySettingsUI(); Field=Map2D; enterMap(true); } else toast("저장을 불러올 수 없어"); });
+/* ===================== 리포트(저장 슬롯) =====================
+   본가처럼 여러 플레이를 동시에 굴린다. 새 게임/이어하기 둘 다 이 화면을 거친다.
+   ⚠️ 새 게임으로 **쓰여 있는 칸**을 고르면 반드시 확인을 받는다(덮어쓰기는 되돌릴 수 없다). */
+let _slotMode="load";
+function _fmtPlay(sec){ const h=Math.floor(sec/3600), m=Math.floor(sec%3600/60); return h?`${h}시간 ${m}분`:`${m}분`; }
+function _fmtWhen(ts){ if(!ts)return "";
+  const d=new Date(ts), p=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()%100}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+function renderSlots(){
+  const body=$("slotBody"); body.innerHTML="";
+  $("slotTitle").textContent=_slotMode==="new"?"📕 새 리포트":"📕 리포트";
+  $("slotSub").textContent=_slotMode==="new"?"어느 칸에서 새로 시작할까?":"이어서 진행할 리포트를 고르자";
+  for(let n=1;n<=SAVE_SLOTS;n++){
+    const info=slotInfo(n); const row=document.createElement("div"); row.className="bag-item";
+    if(info.empty){
+      row.innerHTML=`<div class="em">📄</div><div class="info"><div class="nm">리포트 ${n}</div>
+        <div class="ds">비어 있음</div></div>
+        <button class="pick" ${_slotMode==="new"?"":"disabled"}>${_slotMode==="new"?"시작":"—"}</button>`;
+    } else {
+      const who=(typeof CHARS!=="undefined"&&CHARS[info.ps])?CHARS[info.ps].nm:"정령사";   // ⚠️ CHARS의 이름 필드는 nm (name 아님)
+      const where=(typeof REGION_NAME!=="undefined")?REGION_NAME[region(info.y)]:"";
+      row.innerHTML=`<div class="em">${info.champion?"👑":"📕"}</div>
+        <div class="info"><div class="nm">리포트 ${n} · ${who}${n===CUR_SLOT?' <span style="color:var(--mint);font-size:10px">현재</span>':""}</div>
+          <div class="ds">🎖 ${info.badges}/4 · 📖 ${info.dex} · 정령 ${info.n}마리${info.lv.length?` (Lv ${Math.max(...info.lv)})`:""}</div>
+          <div class="ds" style="opacity:.7">⏱ ${_fmtPlay(info.sec)} · ${where} · ${_fmtWhen(info.ts)}</div></div>
+        <button class="pick">${_slotMode==="new"?"덮어쓰기":"이어하기"}</button>`;
+    }
+    const btn=row.querySelector(".pick");
+    if(btn&&!btn.disabled)btn.addEventListener("click",()=>{
+      if(_slotMode==="new"){
+        if(!info.empty && !confirm(`리포트 ${n}에는 이미 기록이 있다.\n덮어쓰면 되돌릴 수 없어. 계속할까?`))return;
+        Audio.sfx("blip"); setSlot(n); closeOverlay("slotOverlay");
+        G=freshState(); Field=Map2D; show("charsel"); buildChar();
+      } else {
+        Audio.sfx("blip");
+        if(loadGame(n)){ closeOverlay("slotOverlay"); applySettingsUI(); Field=Map2D; enterMap(true); }
+        else toast("저장을 불러올 수 없어");
+      }
+    });
+    // 지우기(쓰여 있는 칸만)
+    if(!info.empty){ const del=document.createElement("button"); del.className="pick"; del.textContent="🗑";
+      del.style.marginLeft="6px";
+      del.addEventListener("click",()=>{ if(!confirm(`리포트 ${n}을(를) 지울까? 되돌릴 수 없어.`))return;
+        try{ localStorage.removeItem(slotKey(n)); }catch(e){}
+        Audio.sfx("blip"); renderSlots(); if(!anySave())$("continueBtn").style.display="none"; });
+      row.appendChild(del); }
+    body.appendChild(row);
+  }
+}
+function openSlots(mode){ _slotMode=mode||"load"; renderSlots(); openOverlay("slotOverlay"); }
+$("newGameBtn").addEventListener("click",()=>{ Audio.init(); Audio.sfx("blip");
+  // 아무 기록도 없으면 굳이 고르게 하지 않는다(첫 플레이의 마찰 제거) — 1번 칸으로 바로 시작
+  if(!anySave()){ setSlot(1); G=freshState(); Field=Map2D; show("charsel"); buildChar(); return; }
+  openSlots("new"); });
+$("continueBtn").addEventListener("click",()=>{ Audio.init(); Audio.sfx("blip"); openSlots("load"); });
 $("confirmChar").addEventListener("click",()=>{ if(pickedChar==null)return; G.styleIdx=pickedChar; G.playerEmoji=CHARS[pickedChar].em; Audio.sfx("blip"); show("starter"); buildStarter(); });
 $("confirmStarter").addEventListener("click",()=>{ if(!pickedStarter)return;
   const m=makeMon(pickedStarter,5); G.party=[m]; G.active=0; G.caught.add(pickedStarter); G.seen.add(pickedStarter);
@@ -6054,7 +6156,7 @@ function drawTopo(){ const c=$("minimapCanvas"),ctx=c.getContext("2d"); const CW
   ctx.fillText("🌫 미탐험   ➤ 목표   · 지나온 길", CW/2, CH-4); }
 
 /* ===================== SAVE / LOAD ===================== */
-function serialize(){ return {v:4, pe:G.playerEmoji, ps:G.styleIdx||0,
+function serialize(){ return {v:4, ts:_nowMs(), pe:G.playerEmoji, ps:G.styleIdx||0,
   party:G.party.map(serMon),
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
@@ -6080,10 +6182,10 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
 // 매 턴 자동 저장을 불러서, 버튼만 막아서는 소용이 없다 → 저장 자체를 한 곳에서 막는다.
 // endBattle/blackout은 G.inBattle=false로 만든 뒤 저장하므로 전투 결과는 정상 반영된다.
 function saveGame(){ if(G&&G.inBattle)return;
-  try{ localStorage.setItem(SAVE_KEY,JSON.stringify(serialize())); }
+  try{ localStorage.setItem(slotKey(CUR_SLOT),JSON.stringify(serialize())); }
   catch(e){ if(!saveGame._warned){saveGame._warned=true; toast("⚠️ 저장 불가(브라우저 설정)");} } }
-function hasSave(){ try{ return !!localStorage.getItem(SAVE_KEY); }catch(e){ return false; } }
-function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)return false; return deserialize(JSON.parse(raw)); }catch(e){ return false; } }
+function hasSave(){ try{ return !!localStorage.getItem(slotKey(CUR_SLOT)); }catch(e){ return false; } }
+function loadGame(n){ if(n)setSlot(n); try{ const raw=localStorage.getItem(slotKey(CUR_SLOT)); if(!raw)return false; return deserialize(JSON.parse(raw)); }catch(e){ return false; } }
 
 /* ===================== SETTINGS ===================== */
 $("settingsBtn").addEventListener("click",()=>{ Audio.sfx("blip"); applySettingsUI();
@@ -6091,7 +6193,8 @@ $("settingsBtn").addEventListener("click",()=>{ Audio.sfx("blip"); applySettings
   if(G.inBattle){ $("saveBox").value="전투 중에는 저장할 수 없다"; }
   else { try{ $("saveBox").value=btoa(unescape(encodeURIComponent(JSON.stringify(serialize())))); }catch(e){ $("saveBox").value=""; } }
   openOverlay("setOverlay"); });
-function applySettingsUI(){ document.querySelectorAll("#segDiff button").forEach(b=>b.classList.toggle("on",b.dataset.v===CONFIG.difficulty));
+function applySettingsUI(){ { const _sl=$("slotLabel"); if(_sl)_sl.textContent=`📕 리포트 ${CUR_SLOT} / ${SAVE_SLOTS} — 저장은 이 칸에 쓰인다`; }
+  document.querySelectorAll("#segDiff button").forEach(b=>b.classList.toggle("on",b.dataset.v===CONFIG.difficulty));
   document.querySelectorAll("#segSpeed button").forEach(b=>b.classList.toggle("on",parseFloat(b.dataset.v)===CONFIG.textSpeed));
   $("volRange").value=Math.round(CONFIG.volume*100); $("volVal").textContent=Math.round(CONFIG.volume*100);
   document.querySelectorAll("#segMotion button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.reduceMotion));
@@ -6129,7 +6232,7 @@ $("loadCodeBtn").addEventListener("click",()=>{ const v=$("loadBox").value.trim(
   try{ const obj=JSON.parse(decodeURIComponent(escape(atob(v)))); if(deserialize(obj)){ saveGame(); closeOverlay("setOverlay");
     updateDexPill(); updateMoney(); Field.rebuild(); Field.start(); toast("불러오기 완료"); } else toast("올바르지 않은 코드"); }
   catch(e){ toast("불러오기 실패"); } });
-$("resetBtn").addEventListener("click",()=>{ if(!confirm("저장을 삭제하고 처음으로 돌아갈까?"))return; try{ localStorage.removeItem(SAVE_KEY); }catch(e){} closeOverlay("setOverlay");
+$("resetBtn").addEventListener("click",()=>{ if(!confirm(`리포트 ${CUR_SLOT}번을 지우고 처음으로 돌아갈까?`))return; try{ localStorage.removeItem(slotKey(CUR_SLOT)); }catch(e){} closeOverlay("setOverlay");
   Field.stop(); Audio.stopMusic(); $("settingsBtn").style.display="none"; $("moneyPill").style.display="none"; $("continueBtn").style.display="none"; show("title"); toast("저장을 삭제했다"); });
 
 /* ===================== DEBUG HOOK ===================== */
@@ -6163,12 +6266,12 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
 try{ $("dexPill").textContent=`도감 0 / ${DEX.length}`; const _dt=$("dexTotal"); if(_dt)_dt.textContent=DEX.length; const _sb=$("spCountBadge"); if(_sb)_sb.textContent=`정령 ${DEX.length}종`; }catch(e){}
-if(hasSave()) $("continueBtn").style.display="block";
+if(anySave()) $("continueBtn").style.display="block";
 
 })();
 
