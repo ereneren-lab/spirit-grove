@@ -2255,6 +2255,28 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         const bx=cx+d[0]*ts, byy=by-ts*0.40+d[1]*ts+bob;
         ctx.fillStyle="#e0556a"; ctx.beginPath(); ctx.arc(bx,byy,ts*0.055,0,6.29); ctx.fill();
         ctx.fillStyle="rgba(255,255,255,.55)"; ctx.beginPath(); ctx.arc(bx-ts*0.018,byy-ts*0.018,ts*0.018,0,6.29); ctx.fill(); } } },
+  // 오토타일 공용: 같은 종류끼리 이어진 변은 각지게, 바깥으로 드러난 모서리만 둥글게 깎는다.
+  // ⚠️ 물·길은 타일을 꽉 채워 그리므로 그냥 둥글리면 모서리가 뚫린다 → **바탕을 먼저 깔고 클립해서** 올린다.
+  // 지역 경계에서 바닥색이 **한 줄로 뚝 끊겨** 지도에 인공적인 가로줄이 생겼다(유저: "맵이 너무 타일처럼").
+  // 경계 앞뒤 4칸에 걸쳐 두 지역 팔레트를 섞어 자연스럽게 넘어가게 한다. (region 판정 자체는 그대로 — 게임 규칙 불변)
+  _gcol(y){ const B=[47,41,34,27,20,12];
+    for(const b of B){ if(y>=b-2&&y<=b+1){
+      const south=REGIONPAL[region(b)].g, north=REGIONPAL[region(b-1)].g;
+      const t=Math.max(0,Math.min(1,(y-(b-2))/3.5));
+      return [0,1,2].map(i=>Math.round(north[i]+(south[i]-north[i])*t)); } }
+    return REGIONPAL[region(y)].g; },
+  _autoPath(ctx,sx,sy,ts,x,y,same,r){
+    const n=(dx,dy)=>{ const nx=x+dx,ny=y+dy; return nx>=0&&ny>=0&&nx<W&&ny<H&&same(tileAt(nx,ny)); };
+    const u=n(0,-1),d=n(0,1),l=n(-1,0),rt=n(1,0);
+    const x0=sx-(l?1:0), y0=sy-(u?1:0), x1=sx+ts+(rt?1:0), y1=sy+ts+(d?1:0);
+    const tl=(!u&&!l)?r:0, tr=(!u&&!rt)?r:0, br=(!d&&!rt)?r:0, bl=(!d&&!l)?r:0;
+    ctx.beginPath(); ctx.moveTo(x0+tl,y0);
+    ctx.lineTo(x1-tr,y0); if(tr)ctx.arcTo(x1,y0,x1,y0+tr,tr);
+    ctx.lineTo(x1,y1-br); if(br)ctx.arcTo(x1,y1,x1-br,y1,br);
+    ctx.lineTo(x0+bl,y1); if(bl)ctx.arcTo(x0,y1,x0,y1-bl,bl);
+    ctx.lineTo(x0,y0+tl); if(tl)ctx.arcTo(x0,y0,x0+tl,y0,tl);
+    ctx.closePath();
+  },
   _tile(ctx,t,sx,sy,ts,x,y,now){ const h=((x*73856093)^(y*19349663))>>>0; const rnd=n=>((h>>(n*3))&7)/7; const ol="rgba(20,42,24,.4)"; sx=Math.round(sx); sy=Math.round(sy); const tb=Math.ceil(ts)+1;
     if(typeof G!=="undefined" && (G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh"||G.indoor==="skyridge"||G.indoor==="ruins"||G.indoor==="crater"||G.indoor==="garden")){
       const sv=((h>>3)&3), _isle=G.indoor==="isle", _shr=G.indoor==="shrine", _snow=G.indoor==="snowfield", _marsh=G.indoor==="marsh", _sky=G.indoor==="skyridge", _ruins=G.indoor==="ruins", _crater=G.indoor==="crater", _gard=G.indoor==="garden"; ctx.fillStyle=_gard?`rgb(${72-sv*3},${68-sv*3},${104-sv*4})`:_crater?`rgb(${152-sv*6},${96-sv*5},${78-sv*5})`:_ruins?`rgb(${168-sv*5},${154-sv*5},${126-sv*5})`:_sky?`rgb(${118-sv*4},${128-sv*4},${150-sv*4})`:_snow?`rgb(${232-sv*3},${238-sv*3},${248-sv*3})`:_shr?`rgb(${210-sv*3},${216-sv*3},${236-sv*3})`:_marsh?`rgb(${104-sv*4},${120-sv*4},${86-sv*4})`:_isle?`rgb(${96-sv*4},${170-sv*5},${94-sv*4})`:`rgb(${226-sv*5},${206-sv*5},${158-sv*5})`; ctx.fillRect(sx,sy,tb,tb);
@@ -2338,7 +2360,10 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       else { ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); ctx.strokeStyle=_grC; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(sx,sy+Math.round(ts*0.5)+0.5); ctx.lineTo(sx+ts,sy+Math.round(ts*0.5)+0.5); ctx.stroke(); if((h>>3)&1){ ctx.beginPath(); ctx.moveTo(sx+Math.round(ts*0.5)+0.5,sy); ctx.lineTo(sx+Math.round(ts*0.5)+0.5,sy+ts*0.5); ctx.stroke(); } else { ctx.beginPath(); ctx.moveTo(sx+Math.round(ts*0.5)+0.5,sy+ts*0.5); ctx.lineTo(sx+Math.round(ts*0.5)+0.5,sy+ts); ctx.stroke(); } }
       return;
     }
-    if(t==="~"){ ctx.fillStyle="#3a86c8"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="rgba(255,255,255,.10)"; ctx.fillRect(sx,sy,ts,ts*0.5);
+    if(t==="~"){
+      const _wg=this._gcol(y); ctx.fillStyle=`rgb(${_wg[0]},${_wg[1]},${_wg[2]})`; ctx.fillRect(sx,sy,tb,tb);
+      ctx.save(); this._autoPath(ctx,sx,sy,ts,x,y,c=>c==="~",Math.max(3,ts*0.34)); ctx.clip();
+      ctx.fillStyle="#3a86c8"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="rgba(255,255,255,.10)"; ctx.fillRect(sx,sy,ts,ts*0.5);
       ctx.strokeStyle="rgba(255,255,255,.35)"; ctx.lineWidth=Math.max(1,ts*0.05); ctx.lineCap="round";
       for(let i=0;i<3;i++){ const ph=(now||0)*1.3+(x*0.5+y*0.7)+i*1.1; const wy=sy+ts*(0.3+i*0.22)+Math.sin(ph)*ts*0.04; ctx.beginPath(); ctx.moveTo(sx+ts*0.18+Math.sin(ph)*ts*0.05,wy); ctx.lineTo(sx+ts*0.46,wy); ctx.stroke(); } ctx.lineCap="butt";
       const wn=(dx,dy)=>{ const nx=x+dx,ny=y+dy; return !(nx>=0&&ny>=0&&nx<W&&ny<H&&tileAt(nx,ny)==="~"); };
@@ -2347,14 +2372,17 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(wn(0,1)){ctx.moveTo(sx,sy+ts*0.95);ctx.lineTo(sx+ts,sy+ts*0.95);}
       if(wn(-1,0)){ctx.moveTo(sx+ts*0.05,sy);ctx.lineTo(sx+ts*0.05,sy+ts);}
       if(wn(1,0)){ctx.moveTo(sx+ts*0.95,sy);ctx.lineTo(sx+ts*0.95,sy+ts);}
-      ctx.stroke(); return; }
-    if(t==="."){ ctx.fillStyle="#caa86a"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="rgba(120,90,50,.25)";
+      ctx.stroke(); ctx.restore(); return; }
+    if(t==="."){
+      const _pg=this._gcol(y); ctx.fillStyle=`rgb(${_pg[0]},${_pg[1]},${_pg[2]})`; ctx.fillRect(sx,sy,tb,tb);
+      ctx.save(); this._autoPath(ctx,sx,sy,ts,x,y,c=>c===".",Math.max(3,ts*0.38)); ctx.clip();
+      ctx.fillStyle="#caa86a"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="rgba(120,90,50,.25)";
       for(let i=0;i<3;i++) ctx.fillRect(sx+rnd(i)*ts*0.82, sy+rnd(i+1)*ts*0.82, ts*0.09, ts*0.06);
       const dn=(dx,dy)=>{ const nx=x+dx,ny=y+dy; return !(nx>=0&&ny>=0&&nx<W&&ny<H&&tileAt(nx,ny)===".");};
       ctx.fillStyle="rgba(85,161,91,.55)";
       if(dn(0,-1))ctx.fillRect(sx,sy,tb,ts*0.14); if(dn(0,1))ctx.fillRect(sx,sy+ts*0.86,tb,ts*0.14);
-      if(dn(-1,0))ctx.fillRect(sx,sy,ts*0.14,tb); if(dn(1,0))ctx.fillRect(sx+ts*0.86,sy,ts*0.14,tb); return; }
-    const rp=REGIONPAL[region(y)], _gb=rp.g, _gv=((h>>3)&3)-1; ctx.fillStyle=`rgb(${_gb[0]+_gv*6},${_gb[1]+_gv*6},${_gb[2]+_gv*5})`; ctx.fillRect(sx,sy,tb,tb);
+      if(dn(-1,0))ctx.fillRect(sx,sy,ts*0.14,tb); if(dn(1,0))ctx.fillRect(sx+ts*0.86,sy,ts*0.14,tb); ctx.restore(); return; }
+    const rp=REGIONPAL[region(y)], _gb=this._gcol(y), _gv=((h>>3)&3)-1; ctx.fillStyle=`rgb(${_gb[0]+_gv*6},${_gb[1]+_gv*6},${_gb[2]+_gv*5})`; ctx.fillRect(sx,sy,tb,tb);
     ctx.fillStyle="rgba(120,185,115,.13)"; ctx.beginPath(); ctx.arc(sx+rnd(0)*ts,sy+rnd(1)*ts,ts*0.5,0,6.29); ctx.fill();
     ctx.fillStyle="rgba(40,110,60,.09)"; ctx.beginPath(); ctx.arc(sx+rnd(2)*ts+ts*0.3,sy+rnd(3)*ts+ts*0.3,ts*0.4,0,6.29); ctx.fill();
     if(((h>>4)&3)===0){ ctx.fillStyle="rgba(40,110,60,.3)"; const dx=sx+rnd(0)*ts*0.7+ts*0.15, dy=sy+rnd(1)*ts*0.7+ts*0.15; ctx.fillRect(dx,dy,ts*0.06,ts*0.06); ctx.fillRect(dx+ts*0.07,dy+ts*0.04,ts*0.05,ts*0.05); }
@@ -2363,9 +2391,26 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     if(t==="T"){
       // 포켓몬식 키큰 풀: **진한 초록 패치**(걸어 들어가는 잔디밭임을 명확히 — 예전엔 키 큰 뾰족한 풀이라
       // 작은 나무처럼 보여 "나무를 통과하냐"는 오해가 있었다) + 짧고 촘촘한 풀 텍스처.
-      const px=sx+Math.round(ts*0.04), py=sy+Math.round(ts*0.08), pw=Math.round(ts*0.92), ph=Math.round(ts*0.90), pr=Math.max(2,ts*0.14);
-      ctx.fillStyle=rp.t1;
-      ctx.beginPath(); ctx.moveTo(px+pr,py); ctx.arcTo(px+pw,py,px+pw,py+ph,pr); ctx.arcTo(px+pw,py+ph,px,py+ph,pr); ctx.arcTo(px,py+ph,px,py,pr); ctx.arcTo(px,py,px+pw,py,pr); ctx.closePath(); ctx.fill();
+      // ⚠️ **오토타일**: 이웃도 T면 그 변을 타일 끝까지 이어 붙이고 모서리를 각지게 한다.
+      //    예전엔 타일마다 인셋된 둥근 사각형이라, 붙어 있어도 하나하나 떨어져 보여 격자가 드러났다
+      //    (유저: "맵이 너무 타일처럼 되어있으니까 아쉬워"). 이제 풀숲이 하나의 덩어리로 이어진다.
+      const _nT=(dx,dy)=>{ const nx=x+dx,ny=y+dy; return nx>=0&&ny>=0&&nx<W&&ny<H&&tileAt(nx,ny)==="T"; };
+      const _tu=_nT(0,-1),_td=_nT(0,1),_tl=_nT(-1,0),_tr=_nT(1,0);
+      const _ix=Math.round(ts*0.04), _iy0=Math.round(ts*0.08), _iy1=Math.round(ts*0.02);
+      const px=sx+(_tl?-1:_ix), py=sy+(_tu?-1:_iy0);
+      const pw=(sx+ts+(_tr?1:-_ix))-px, ph=(sy+ts+(_td?1:-_iy1))-py, pr=Math.max(2,ts*0.16);
+      const _rTL=(!_tu&&!_tl)?pr:0, _rTR=(!_tu&&!_tr)?pr:0, _rBR=(!_td&&!_tr)?pr:0, _rBL=(!_td&&!_tl)?pr:0;
+      ctx.fillStyle=rp.t1; ctx.beginPath();
+      ctx.moveTo(px+_rTL,py);
+      ctx.lineTo(px+pw-_rTR,py); if(_rTR)ctx.arcTo(px+pw,py,px+pw,py+_rTR,_rTR);
+      ctx.lineTo(px+pw,py+ph-_rBR); if(_rBR)ctx.arcTo(px+pw,py+ph,px+pw-_rBR,py+ph,_rBR);
+      ctx.lineTo(px+_rBL,py+ph); if(_rBL)ctx.arcTo(px,py+ph,px,py+ph-_rBL,_rBL);
+      ctx.lineTo(px,py+_rTL); if(_rTL)ctx.arcTo(px,py,px+_rTL,py,_rTL);
+      ctx.closePath(); ctx.fill();
+      // 바깥 가장자리(위)엔 풀날이 살짝 삐져나와 경계가 딱 떨어지지 않게 — 덩어리의 윤곽을 흐린다
+      if(!_tu){ ctx.strokeStyle=rp.t1; ctx.lineWidth=Math.max(1,ts*0.07); ctx.lineCap="round";
+        for(let e=0;e<4;e++){ const ex=px+pw*(0.18+e*0.22)+(rnd(e)-0.5)*ts*0.04;
+          ctx.beginPath(); ctx.moveTo(ex,py+ts*0.04); ctx.lineTo(ex+Math.sin((now||0)*2+e+h)*ts*0.02,py-ts*0.05); ctx.stroke(); } }
       // 짧은 풀 뭉치(V자) 3열 — 촘촘·낮게. 살랑임은 위쪽만 살짝.
       ctx.strokeStyle=rp.t0; ctx.lineWidth=Math.max(1,ts*0.055); ctx.lineCap="round";
       for(let r2=0;r2<3;r2++){ const ry=py+ph*(0.34+r2*0.24);
@@ -2427,13 +2472,18 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       ctx.fillStyle="#9878c4"; ctx.beginPath(); ctx.moveTo(sx+ts*0.16,sy+ts*0.4); ctx.lineTo(sx+ts*0.5,sy+ts*0.13); ctx.lineTo(sx+ts*0.84,sy+ts*0.4); ctx.closePath(); ctx.fill();
       ctx.fillStyle="#5a4632"; ctx.fillRect(sx+ts*0.4,sy+ts*0.58,ts*0.2,ts*0.32);
       ctx.fillStyle="#ffd23f"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.3,ts*0.085,0,6.29); ctx.fill(); ctx.strokeStyle="#b88a1a"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.stroke(); return; }
-    else if(t==="#"){ ctx.fillStyle="rgba(0,0,0,.16)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.84,ts*0.32,ts*0.1,0,0,6.29); ctx.fill(); ctx.fillStyle="#6b4a2e"; ctx.fillRect(sx+ts*0.43,sy+ts*0.56,ts*0.14,ts*0.32);
+    else if(t==="#"){
+      // ⚠️ 나무가 전부 같은 크기·같은 자리라 **숲이 격자로 보였다**. 타일 해시로 결정적 흔들기(위치·크기)를
+      //    줘서 자연스러운 숲으로. 결정적이라 프레임마다 떨리지 않고, 흔들기 폭이 작아 충돌(타일)과 어긋나 보이지 않는다.
+      const _jx=(rnd(1)-0.5)*ts*0.16, _jy=(rnd(2)-0.5)*ts*0.12, _js=0.90+rnd(3)*0.22, _cx0=sx+ts*0.5, _cy0=sy+ts*0.5;
+      ctx.save(); ctx.translate(_cx0+_jx,_cy0+_jy); ctx.scale(_js,_js); ctx.translate(-_cx0,-_cy0);
+      ctx.fillStyle="rgba(0,0,0,.16)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.84,ts*0.32,ts*0.1,0,0,6.29); ctx.fill(); ctx.fillStyle="#6b4a2e"; ctx.fillRect(sx+ts*0.43,sy+ts*0.56,ts*0.14,ts*0.32);
       ctx.strokeStyle="rgba(20,42,24,.5)"; ctx.lineWidth=Math.max(1,ts*0.03);
       const blobs=[[0.5,0.34,0.26],[0.34,0.44,0.18],[0.66,0.44,0.18],[0.5,0.52,0.2]];
       const tc=rp.big[h&3];
       ctx.fillStyle=tc; for(const b of blobs){ ctx.beginPath(); ctx.arc(sx+ts*b[0],sy+ts*b[1],ts*b[2],0,6.29); ctx.fill(); }
       ctx.fillStyle="rgba(20,60,30,.35)"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.58,ts*0.24,0.2,Math.PI-0.2); ctx.fill();
-      ctx.fillStyle="#54a05a"; ctx.beginPath(); ctx.arc(sx+ts*0.4,sy+ts*0.3,ts*0.1,0,6.29); ctx.fill(); }
+      ctx.fillStyle="#54a05a"; ctx.beginPath(); ctx.arc(sx+ts*0.4,sy+ts*0.3,ts*0.1,0,6.29); ctx.fill(); ctx.restore(); }
     else if(t==="E"){ ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.92,ts*0.42,ts*0.1,0,0,6.29); ctx.fill();
       ctx.fillStyle="#e8dcc0"; ctx.fillRect(sx+ts*0.14,sy+ts*0.48,ts*0.72,ts*0.42);
       ctx.strokeStyle="rgba(70,50,25,.45)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.14,sy+ts*0.48,ts*0.72,ts*0.42);
