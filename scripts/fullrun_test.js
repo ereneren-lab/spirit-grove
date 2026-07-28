@@ -51,6 +51,14 @@
 //      야생과 싸워 레벨을 올린다(gym별 목표 레벨 -1까지). 발동·전투·런타임에러0 확인. ⚠️ **완주급 장기 검증은
 //      부하 높은 환경에서 브라우저가 1~6분에 죽어 못 했다**(load 5~6, 게임 버그 아님 — 저부하 세션에서 재측정).
 //
+//  15) **(게임 버그를 잡았다) 닫히지 않는 오버레이에 45분을 통째로 날렸다.** 저부하 환경 첫 완주 시도가
+//      전투 1회·제자리로 끝났다. 트레이스를 보니 필드에서 `OV[switchOverlay] btns=["✕","내보내기[x]"]`가
+//      무한 반복 — **전멸 후 필드에 남은 강제 교체 모달**이었다(원인·수정은 `faint_modal_test.js` 참조).
+//      봇 쪽 결함은 **Escape만 믿은 것**: 필드 Escape는 `CANCELABLE_OVERLAYS`에 든 것만 닫는데
+//      switchOverlay는 그 목록에 없다 → 보이는 `.closex`를 먼저 누르도록 바꿨다.
+//      + **감시장치**: 같은 오버레이가 25루프를 버티면 게임 결함으로 기록(리포트에 출력·exit 1)하고
+//      강제로 걷어 진행한다. 봇이 조용히 갇히면 그 판이 통째로 헛돈다는 걸 값비싸게 배웠다.
+//
 // ⚠️ 남은 것(다음 세션 — 저부하 환경 필요):
 //   · 그라인딩→gym2 돌파→gym3·4→리그 완주를 **저부하 환경에서 끝까지** 돌려 확인. 지금은 load 5~6이라
 //     브라우저가 조기 종료돼 gym2 clear 여부까지 못 봤다(그라인딩 로직 자체는 6회 발동·전투 확인).
@@ -105,6 +113,7 @@ const { chromium } = require("playwright"); const path=require("path");
   const t0=Date.now();
   const stats={battles:0,wild:0,trainer:0,caught:0,potions:0,runs:0,heals:0,restocks:0,grinds:0,faints:0,milestones:[],samples:[]};
   let wasBattle=false, lastStep=-1, lastMoney=null, stuck=0, lastKey="", fleeTries=0, healCooldown=0, potionFail=0, finSnapshot=null, lastPartyN=null, restockCd=0;
+  let lastOvKey="", ovStuck=0; const stuckOverlays=[];   // 닫히지 않는 오버레이 감시(게임 결함 기록용)
 
   const mark=(name,st)=>{ if(stats.milestones.some(m=>m.name===name))return;
     stats.milestones.push({name, t:Math.round((Date.now()-t0)/1000), lv:st.lv, battles:stats.battles, party:st.party});
@@ -370,7 +379,25 @@ const { chromium } = require("playwright"); const path=require("path");
         const b=[...ov.querySelectorAll("button")].filter(visible)
           .find(x=>/내보내기|배운다|확인|그만|예|닫기/.test(x.textContent||""));
         if(b){b.click();return true;} return false; });
-      if(!handled){ await p.keyboard.press("Escape"); }
+      // ⚠️ Escape만 믿으면 안 된다 — 필드 Escape는 `CANCELABLE_OVERLAYS`에 든 오버레이만 닫는다
+      //    (switchOverlay는 목록에 없다). 그래서 **보이는 ✕(.closex)** 를 먼저 누른다.
+      if(!handled){
+        const closed=await p.evaluate(()=>{ const ov=document.querySelector(".overlay.active"); if(!ov)return false;
+          const c=[...ov.querySelectorAll(".closex,[data-close]")].find(x=>x.offsetParent!==null);
+          if(c){c.click();return true;} return false; });
+        if(!closed)await p.keyboard.press("Escape");
+      }
+      // ⚠️ 그래도 안 닫히면 **게임 결함**이다(실측: 전멸 후 필드에 남은 강제 교체 모달 — ✕가 숨겨져 있어
+      //    아무것도 닫지 못했고 45분 런이 통째로 여기서 죽었다). 봇이 조용히 갇히면 그 판이 헛돌므로
+      //    같은 오버레이가 계속 버티면 **결함으로 기록**하고 강제로 걷어 진행을 이어간다.
+      const ovKey=(st.ovId||"")+"/"+(st.ovTxt||"").slice(0,24);
+      if(ovKey===lastOvKey){ if(++ovStuck===25){
+          const note=`닫을 수 없는 오버레이: ${st.ovId} "${(st.ovTxt||"").slice(0,40)}" (필드, 버튼 ${JSON.stringify(st.ovBtns)})`;
+          if(!stuckOverlays.includes(note))stuckOverlays.push(note);
+          console.log("     ⚠️ "+note+" → 강제로 닫고 계속한다");
+          await p.evaluate(()=>{ const ov=document.querySelector(".overlay.active"); if(ov)ov.classList.remove("active"); });
+          ovStuck=0; } }
+      else { lastOvKey=ovKey; ovStuck=0; }
       await p.waitForTimeout(220); continue;
     }
     if(st.alive===0){ tr("field:wipe",st); stats.faints++; await p.waitForTimeout(700); continue; }
@@ -483,6 +510,7 @@ const { chromium } = require("playwright"); const path=require("path");
   if(stats.samples.length){ console.log("     진행 곡선(1분 간격):");
     stats.samples.forEach(s=>console.log(`       ${String(s.t).padStart(2)}분  Lv${String(s.lv).padStart(2)} · 파티${s.party} · 전투 ${String(s.battles).padStart(3)}회 · 뱃지 ${s.badges} · ${s.pos}`)); }
   if(!stats.milestones.length)console.log("     ⚠️ 마일스톤 0건 — 예산 안에서 첫 뱃지도 못 얻었다");
+  if(stuckOverlays.length){ console.log("     ❌ 닫히지 않는 오버레이(게임 결함):"); stuckOverlays.forEach(n=>console.log("        · "+n)); process.exitCode=1; }
 
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   ok(stats.battles>0, `전투가 실제로 발생했다 (${stats.battles}회)`);

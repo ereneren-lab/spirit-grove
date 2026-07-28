@@ -5007,6 +5007,8 @@ function blackout(){ healParty(true); G.trainer=null; G.inBattle=false; G.busy=f
   if(typeof saveGame==="function")saveGame(); }
 async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("faint");
   setMsg(`<b>${activeMon().name}</b>이(가) 쓰러졌다…`); activeMon().stages=newStages(); await mw(800);
+  if(!G.inBattle)return;   // ⚠️ await 사이에 전투가 이미 끝났다(전멸 처리 완료 후 재개된 스테일 체인) — blackout이 파티를 회복해 놨으므로
+                           //    여기서 계속하면 alive>0으로 오판해 **필드에 닫을 수 없는 강제 교체 모달**을 남긴다(실측: 45분 봇 런이 여기서 죽었다)
   const alive=G.party.filter(m=>m.hp>0);
   if(alive.length>0){ setMsg("다음 정령을 내보내자."); G.busy=false; openSwitch(true); }
   else if(G.trainer&&G.trainer.tower){ await endTowerRun(); }   // 연전 도장 전멸 = 그 자리에서 도전 종료(워프·소지금 패널티 없음, 번 돈 유지)
@@ -5146,7 +5148,8 @@ async function tryRun(){ if(G.busy)return; if(G.trainer){ setMsg("트레이너 �
 
 /* ===================== SWITCH ===================== */
 let switchForced=false;
-function openSwitch(forced){ if(!forced && G.inBattle && typeof activeMon==="function" && activeMon() && activeMon()._trapped>0){ flashHint("묶여 있어서 교체할 수 없다!"); Audio.sfx&&Audio.sfx("miss"); return; }   // 묶기: 자발적 교체 봉쇄(강제 교체는 통과)
+function openSwitch(forced){ if(!G.inBattle)return;   // ⚠️ 전투 밖에서는 절대 열지 않는다 — 강제 교체는 ✕가 숨겨져 있어 필드에 뜨면 아무것도 닫을 수 없는 모달이 된다(전멸 스테일 체인 방지, faintMine 가드와 한 세트)
+  if(!forced && G.inBattle && typeof activeMon==="function" && activeMon() && activeMon()._trapped>0){ flashHint("묶여 있어서 교체할 수 없다!"); Audio.sfx&&Audio.sfx("miss"); return; }   // 묶기: 자발적 교체 봉쇄(강제 교체는 통과)
   switchForced=forced; $("switchClose").style.display=forced?"none":"block"; renderSwitch(); openOverlay("switchOverlay"); }
 function renderSwitch(){ const body=$("switchBody"); body.innerHTML="";
   G.party.forEach((m,i)=>{ recalc(m); const card=document.createElement("div");
