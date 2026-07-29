@@ -38,11 +38,30 @@ setTimeout(() => {
     ok(g.name === name && g.y === y, `뱃지 ${G.badges.length}개 → ${g.name} (8,${g.y})`);
   }
 
-  console.log("[3] 인장 4조각 — 리그가 열리는가");
+  console.log("[3] 인장 4조각 — 전설 준비 단계를 거쳐 리그로");
   G.badges.push("4");
+  /* ⚠️ 4뱃지 → **곧장 리그**가 아니다. 리그 완주율이 전설 보유로 크게 갈리는데(실측 Lv48 7.6%→18.4%)
+     그 준비가 사슬 밖이라 아무도 안내받지 못했다 → 전설이 없으면 호수 제단을 한 단계 끼운다. */
+  const gp = F.currentGoal();
+  ok(gp.name === "호수 제단", "전설이 없으면 먼저 호수 제단으로 안내한다: " + gp.name);
+  ok(F.tileAt(gp.x, gp.y) === "%", `좌표가 실제 호수 제단 % 타일과 일치 (${gp.x},${gp.y})`);
+  ok(!F.hasLegendary(), "이 시점에 전설을 보유하지 않았다(전제 확인)");
+
+  // 전설을 보유하면 단계가 사라지고 리그로 넘어간다
+  G.party.push(SG.makeMon("aqualord", 52));
+  ok(F.hasLegendary(), "전설을 파티에 넣으면 보유로 인식한다");
   const gl = F.currentGoal();
-  ok(gl.name === "정령 리그", "목표: " + gl.name);
+  ok(gl.name === "정령 리그", "전설 보유 시 목표: " + gl.name);
   ok(gl.x === 18 && gl.y === 9, "좌표가 실제 리그 입구 U 타일(18,9)과 일치");
+
+  /* ⚠️ **영구 정체 방지 반례**: 전설을 안 잡고 쓰러뜨리기만 해도 단계가 사라져야 한다.
+     안 그러면 제단을 비운 플레이어가 트래커에 영영 붙잡힌다(`lakeDone`은 격파·포획 양쪽에 배선돼 있다). */
+  G.party.pop();
+  ok(!F.hasLegendary(), "전설을 빼면 다시 미보유");
+  G.lakeDone = true;
+  const gd = F.currentGoal();
+  ok(gd.name === "정령 리그", "격파만 해도(lakeDone) 단계가 사라진다: " + gd.name);
+  G.lakeDone = false; G.party.push(SG.makeMon("aqualord", 52));
 
   console.log("[4] 챔피언 달성 — 최종 목표로 전환");
   G.champion = true;

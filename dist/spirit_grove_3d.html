@@ -3226,6 +3226,20 @@ document.addEventListener("keyup",e=>{ const k=e.key.toLowerCase();
    좌표는 실제 게이트 타일에서 가져온다(GYM_AT / 리그 U 타일). 탭하면 그 지점까지 자동 이동. */
 const LEAGUE_XY={x:18,y:9};
 const GYM_ORDER=[["1","8,43"],["2","8,35"],["3","8,26"],["4","8,17"]];
+/* 오버월드에서 특정 타일을 찾는다. ⚠️ 좌표를 상수로 박지 않는 게 이 트래커의 원칙이다 —
+   맵을 고쳐도 목표가 안 어긋난다(GYM_AT·리그 U와 같은 방침). 결과는 캐시한다(맵은 안 바뀐다). */
+const _tileCache={};
+function findTile(ch){
+  if(_tileCache[ch]!==undefined)return _tileCache[ch];
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++) if(MAP_STR[y]&&MAP_STR[y][x]===ch)return (_tileCache[ch]={x,y});
+  return (_tileCache[ch]=null);
+}
+/* 파티와 보관함을 통틀어 전설을 하나라도 가지고 있는가. ⚠️ 도감(seen/caught)이 아니라 **보유** 기준이다 —
+   봤거나 놓아준 것은 리그에서 도움이 안 된다. */
+function hasLegendary(){
+  const own=[...(G.party||[]),...(G.box||[])];
+  return own.some(m=>{ if(!m||m.isEgg)return false; const d=byId(m.id); return !!(d&&d.legend); });
+}
 function currentGoal(){
   if(!G||!G.party||!G.party.length)return null;
   const badges=G.badges||[];
@@ -3234,6 +3248,15 @@ function currentGoal(){
     const [gx,gy]=pos.split(",").map(Number);
     const gym=INTERIORS[GYM_AT[pos]];
     return {name:gym?gym.name:"체육관", sub:`🏅 인장 조각 ${forestBadges()}/4`, x:gx, y:gy};
+  }
+  /* ⚠️ **전설 준비 단계** — 리그 완주율은 전설 보유 여부로 크게 갈린다(실측: Lv48 7.6%→18.4% ·
+     Lv51 22%→39.6% · Lv54 42%→61.6%). "신전에서 전설을 잡아 오는 것이 리그 준비의 일부"라는 설계였는데
+     진행 사슬이 **4뱃지 → 곧장 리그**로 안내해서 그 의도가 플레이어에게 전달되지 않았다(리그 절벽의 원인).
+     → 전설이 하나도 없으면 **호수 제단**을 한 단계 끼운다(배·낚싯대가 필요 없는 가장 접근성 좋은 전설).
+     ⚠️ 영구 정체 방지: 잡든 쓰러뜨리든 `lakeDone`이 서면 단계가 사라진다(둘 다 배선돼 있다). */
+  if(!G.champion && !G.lakeDone && !hasLegendary()){
+    const alt=findTile("%");
+    if(alt)return {name:"호수 제단", sub:"전설 정령을 잡아 리그에 대비하라", x:alt.x, y:alt.y};
   }
   if(!G.champion)
     return {name:"정령 리그", sub:"4조각을 모았다 — 챔피언에 도전하라", x:LEAGUE_XY.x, y:LEAGUE_XY.y};
@@ -6695,7 +6718,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
