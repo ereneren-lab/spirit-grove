@@ -19,10 +19,12 @@ const { chromium } = require("playwright"); const path=require("path");
     const unreachable=outdoor.filter(g=>!F.walkable(g.x,g.y)).map(g=>g.k);
     for(const g of indoor){
       F.enterInterior(F.INTERIORS[g.in]);
-      // ⚠️ `enterInterior`는 **warpFade 지연 스왑(150ms)** 이다 — 덜 기다리면 `walkable()`이 아직
-      //    직전 인테리어를 보고 있어 **엉뚱한 항목이 '보행 불가'로 잡힌다**(실측: 배열 순서를 바꾸자
-      //    frostpass 도구가 앞선 fallspath의 물 좌표로 판정돼 거짓 실패). 스왑 완료까지 기다린다.
-      await new Promise(r=>setTimeout(r,260));
+      /* ⚠️ `enterInterior`는 **warpFade 지연 스왑(150ms)** 이다 — 덜 기다리면 `walkable()`이 아직
+         직전 인테리어를 보고 있어 **엉뚱한 항목이 '보행 불가'로 잡힌다**(실측: 배열 순서를 바꾸자
+         frostpass 도구가 앞선 fallspath의 물 좌표로 판정돼 거짓 실패).
+         ⚠️ **고정 대기는 부하에서 또 깨진다**(260ms로도 pier가 스왑 미완으로 잡혔다) → 스왑 완료를
+            폴링한다. 게임 타이밍에 의존하는 검사는 고정 예산이 아니라 상태를 봐야 한다. */
+      for(let t=0;t<40 && window.SG.G().indoor!==g.in;t++) await new Promise(r=>setTimeout(r,50));
       const inHere=window.SG.G().indoor===g.in;
       if(!inHere||!F.walkable(g.x,g.y))unreachable.push(g.k+"@"+g.in+(inHere?"":"(스왑 미완)"));
     }
