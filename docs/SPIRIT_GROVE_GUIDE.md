@@ -63,7 +63,13 @@ verify 내용:
 - **재배포는 한 줄: `bash scripts/deploy.sh`** — 빌드 검증 → orphan 스냅샷 → SSH push. push되면 **GitHub Actions(`.github/workflows/deploy.yml`)가 서버에서 `build.py`를 돌려 자동 배포**(1~2분). yacht-dice의 Render 자동배포와 같은 흐름.
 - 진행 확인: `gh run watch` · https://github.com/ereneren-lab/spirit-grove/actions
 - ⚠️ **git-over-HTTPS push가 이 환경에서 막혀 있다** — 1KB조차 무한 행. API·ls-remote(GET)는 됨. **반드시 SSH 원격**(`git@github.com:...`, `~/.ssh/id_ed25519`로 인증). HTTPS로 바꾸면 또 멈춘다. deploy.sh가 SSH 원격을 전제.
-- ⚠️ **로컬 `.git`이 479MB**(dist를 매 빌드 커밋한 이력) → 전체 이력 push는 비현실적이라 deploy.sh가 **orphan 단일 스냅샷**을 remote `main`에 force-push한다. remote `main`=스냅샷 1커밋, **로컬 `main`은 전체 이력 보존**(CLAUDE.md가 커밋 이력을 중요시하므로 로컬은 안 건드린다).
+- **원격 브랜치가 둘이다**: `main`=배포 스냅샷 1커밋(Pages가 빌드하는 것) · **`history`=전체 커밋 이력**.
+  deploy.sh가 `main`을 매번 orphan 스냅샷으로 force-push하므로 **이력은 `history`에 따로 올린다**(`git push origin main:history`).
+  로컬 `main`은 언제나 전체 이력을 보존한다.
+  - ⚠️ **예전 결론 "`.git`이 479MB라 이력 push는 비현실적"은 틀렸다** — 이 저장소는 **한 번도 packing된 적이 없었다**
+    (`size-pack: 0`, 느슨한 객체 1885개). dist 144버전은 서로 거의 같은 파일이라 델타 압축이 잘 먹는다:
+    `git gc --aggressive --prune=now` 한 번으로 **457MB → 193MB**(팩 180MB), 커밋 199개 그대로.
+    **용량 문제로 뭔가를 포기하기 전에 `git count-objects -vH`로 packing 여부부터 볼 것.**
 - **소스가 진실의 출처**: Actions가 서버에서 빌드하므로 `index.html`(빌드 산출물)은 `.gitignore`. Pages `build_type=workflow`.
 - ⚠️ 워크플로 파일(`.github/workflows/deploy.yml`)이 orphan 스냅샷에 포함돼야 트리거된다 — `git add -A`라 자동 포함. 지우지 말 것.
 - ⚠️ **커밋할 때 `dist`도 포함**(`git add -A`). 안 하면 deploy.sh의 `git checkout main`이 로컬 dist를 옛 커밋으로 되돌려 **로컬 테스트가 옛 dist로 헛돈다**(실제로 겪음 — 가로모드 수정이 로컬에서 안 보였다). deploy.sh가 끝에 재빌드해 보정하지만, 커밋에 dist를 넣는 게 근본.

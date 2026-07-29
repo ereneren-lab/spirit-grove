@@ -3,7 +3,12 @@
 # 사용:  bash scripts/deploy.sh
 #
 # ⚠️ 이 환경은 git-over-HTTPS push가 막혀 SSH 원격만 됨(origin = git@github.com:...).
-# ⚠️ 로컬 .git이 479MB라 전체 이력 push는 비현실적 → orphan 단일 스냅샷을 main에 올린다.
+# ⚠️ main은 **orphan 단일 스냅샷**이다(Pages가 이것만 빌드하면 되고, dist 144버전이 든 이력을
+#    매번 밀어올릴 이유가 없다). 커밋 이력은 별도 `history` 브랜치에 있다 — 아래 참조.
+# ⚠️ **커밋 이력을 남기려면 `git push origin main:history`** 를 같이 할 것. main은 이 스크립트가
+#    매번 force-push로 덮으므로 이력이 남지 않는다(로컬 main = 전체 이력, 원격 main = 스냅샷 1개).
+#    (예전 주석: ".git이 479MB라 이력 push는 비현실적" → `git gc --aggressive`로 193MB가 됐고
+#     한 번도 packing된 적이 없었던 게 원인이었다. 이제 이력 push가 현실적이다.)
 #    로컬 main의 전체 커밋 이력은 건드리지 않는다(CLAUDE.md가 이력을 중요시함).
 set -e
 cd "$(dirname "$0")/.."
