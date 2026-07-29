@@ -38,7 +38,10 @@ const { chromium } = require("playwright"); const path=require("path");
     return {spot,n,sample};
   };
 
-  const REGIONS=["cave","lavacave","marsh","snowfield","skyridge","ruins","crater","garden"];
+  // ⚠️ **지선 루트가 이 목록에서 통째로 빠져 있었다** — 특수 지역만 보고 루트는 안 봤다.
+  //    루트도 같은 `onArrived` 실내 블록을 지나므로 같은 방식으로 죽을 수 있다. 6개 전부 넣는다.
+  const REGIONS=["cave","lavacave","marsh","snowfield","skyridge","ruins","crater","garden",
+                 "mine","hillpath","pier","frostpass","mosshollow","fallspath"];
   let total=0, dead=[];
   for(const r of REGIONS){
     const res=await walk(r,30);

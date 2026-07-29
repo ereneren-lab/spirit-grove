@@ -1539,7 +1539,7 @@ function setStatusFields(mon, st, badly){
 
 
 const FIND_HINT={1:"숲 · 초원",2:"깊은 숲",3:"숲 정상"};   // 오버월드(잔디) 조우의 티어별 깊이 힌트
-const HABITAT_KO={pier:"호숫가 잔교",frostpass:"서리 고갯길",hillpath:"바람 언덕길",mine:"버려진 갱도",snow:"설원 지대",marsh:"안개 늪지",skyridge:"뇌명 봉우리",ruins:"고대 유적",crater:"불꽃 분화구",garden:"달빛 화원",isle:"여명의 섬",coast:"노을 해안",surf:"수면 위",fishRare:"낚시(대물)",fish:"낚시",lava:"용암 동굴",cave:"수정 동굴"};
+const HABITAT_KO={pier:"호숫가 잔교",frostpass:"서리 고갯길",hillpath:"바람 언덕길",mine:"버려진 갱도",mosshollow:"이끼 골짜기",fallspath:"물안개 벼랑길",snow:"설원 지대",marsh:"안개 늪지",skyridge:"뇌명 봉우리",ruins:"고대 유적",crater:"불꽃 분화구",garden:"달빛 화원",isle:"여명의 섬",coast:"노을 해안",surf:"수면 위",fishRare:"낚시(대물)",fish:"낚시",lava:"용암 동굴",cave:"수정 동굴"};
 // 도감 "출현" 문구를 실제 조우 풀에서 파생한다. 예전엔 FIND_HINT[tier] 하나만 써서
 // 해안 전용 종도 "숲 · 초원"이라 떴다(거짓 정보).
 function findHint(sp){
@@ -1769,6 +1769,14 @@ GROUND_ITEMS.push(
   {k:"gi_sky3",in:"skyridge",x:2,y:10,item:"ether",qty:2},
   {k:"gi_pier1",in:"pier",x:4,y:7,item:"greatball",qty:2},
   {k:"gi_pier2",in:"pier",x:8,y:5,item:"netball",qty:3},
+  // 이끼 골짜기 · 물안개 벼랑길 — ⚠️ 좌표는 반드시 **그 인테리어의 통행 가능한 칸**이어야 한다
+  //    (실외 도구가 나무 위에 놓여 영영 못 줍던 전례가 있다). 출구·시작 칸·모닥불과도 겹치지 않게.
+  {k:"gi_hollow1",in:"mosshollow",x:6,y:7,item:"greatball",qty:2},
+  {k:"gi_hollow2",in:"mosshollow",x:11,y:3,item:"hyperpotion",qty:1},
+  {k:"gi_hollow3",in:"mosshollow",x:5,y:5,item:"leafstone",qty:1},
+  {k:"gi_falls1",in:"fallspath",x:3,y:7,item:"elixir",qty:1},
+  {k:"gi_falls2",in:"fallspath",x:7,y:4,item:"revive",qty:1},
+  {k:"gi_falls3",in:"fallspath",x:9,y:2,item:"ultraball",qty:2},
   {k:"gi_frost1",in:"frostpass",x:2,y:8,item:"hyperpotion",qty:1},
   {k:"gi_frost2",in:"frostpass",x:10,y:3,item:"revive",qty:1},
   {k:"gi_hill1",in:"hillpath",x:12,y:4,item:"potion",qty:2},
@@ -1996,9 +2004,7 @@ function updateMoney(){ $("moneyPill").textContent="💰 "+G.money; $("shopMoney
 window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,HELD_ITEMS,byId,makeMon,recalc,damage,stageMul,accMul,newStages,resetStages,effSpd,foeChooseMove,noPP,
   G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary,stripNamePrefix};
 /* ===== MAP (17 x 42) ===== */
-let MAP_STR=[
-  "#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT#goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg#gggggx~~~~~~~~~~~g##","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg##g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT##","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg##gT#","#gTTggggggTTgEggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT#PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#",
-];
+let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT##","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg##gT#","#gTTggggggTTgEggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT#PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
 let W=25,H=50;
 const OVERWORLD_STR0=MAP_STR.slice();
 const tileAt=(x,y)=>(MAP_STR[y]&&MAP_STR[y][x])||"#";
@@ -2021,7 +2027,17 @@ const ROUTE_AT={
   "10,26":{id:"pier", sx:14, sy:2},
   // 서리 고갯길 — 얼음(I)에서 미끄러진다(체육관3 퍼즐과 같은 기믹).
   "12,13":{id:"frostpass", sx:2,  sy:9},
-  "21,10":{id:"frostpass", sx:12, sy:1} };
+  "21,10":{id:"frostpass", sx:12, sy:1},
+  /* 다섯째·여섯째 — **지역 경계에 지선이 없던 두 곳**을 메운다(깊은 숲↔호수, 호수↔고원).
+     이걸로 초원부터 리그까지 지선만 타고 이어진다: 언덕길(1↔2) → 갱도(2↔3) → 골짜기(3↔4)
+     → 잔교(4 내부) → 벼랑길(4↔5) → 고갯길(5↔6).
+     ⚠️ 좌표는 감으로 찍지 않고 **게임 실제 `walkable()`로 BFS**해 (a)벽 타일이라 통행성이 안 변하고
+        (b)착지 칸이 도달 가능하며 (c)두 입구의 **실제 도보 거리가 멀어** 지름길 값어치가 있는 것으로 골랐다
+        (`scripts/route_probe.js` — 골짜기 21칸 · 벼랑길 25칸을 건너뛴다). */
+  "11,31":{id:"mosshollow", sx:2,  sy:9},
+  "23,24":{id:"mosshollow", sx:14, sy:1},
+  "4,24": {id:"fallspath",  sx:2,  sy:11},
+  "4,13": {id:"fallspath",  sx:10, sy:1} };
 const INTERIORS={
   // 버려진 갱도 — 가로로 긴 통과형 루트(양쪽 끝이 출구). 바위·땅 계열 서식.
   // 호숫가 잔교 — 물 위 판자길. 좌하 ↔ 우상 통과. ⚠️ 물(~)은 실내에서 못 건넌다(파도타기는 오버월드 전용) → 판자가 유일한 길.
@@ -2050,6 +2066,40 @@ const INTERIORS={
          "##gI###########",
          "#...g##########",
          "###############"] },
+  /* 이끼 골짜기 — 깊은 숲(11,31) ↔ 수정 호수(23,24). **루트 최초의 모닥불 야영지(R)** 가 중간에 있다
+     (지름길이자 쉼터 — 회복 + 저장 + 공중날기 지점 등록). ⚠️ `R`는 원래 실외 블록에만 있어서
+     실내에선 안 돌았다 → onArrived 실내 블록에 분기를 추가했다(거기 없으면 그냥 밟히는 장식이 된다). */
+  mosshollow:{ id:"mosshollow", W:17, H:11, startX:2, startY:9, exitX:1, exitY:9, name:"이끼 골짜기",
+    exits:[{x:1,y:9,ox:11,oy:32},{x:15,y:1,ox:23,oy:25}],
+    str:["#################",
+         "############.g..#",
+         "############.####",
+         "#########...g####",
+         "#########.#######",
+         "#####g..R.g######",
+         "######.##########",
+         "###...g##########",
+         "###.#############",
+         "#..g#############",
+         "#################"] },
+  /* 물안개 벼랑길 — 수정 호수(4,24) ↔ 고원(4,13). 폭포 옆 좁은 바위 턱을 지그재그로 오른다.
+     ⚠️ 물(~)은 **실내에서 못 건넌다**(파도타기는 오버월드 전용) → 턱이 유일한 길이고 물이 곧 벽이다.
+        낚싯대가 있으면 물가에서 낚시는 된다(잔교와 같은 동작 — `move()`의 rod 분기는 실내 스코프가 아니다). */
+  fallspath:{ id:"fallspath", W:13, H:13, startX:2, startY:11, exitX:1, exitY:11, name:"물안개 벼랑길",
+    exits:[{x:1,y:11,ox:4,oy:25},{x:11,y:1,ox:4,oy:14}],
+    str:["#############",
+         "#~~~~~~~~...#",
+         "#~~~~~~~~.~~#",
+         "#~~~~~~..g~~#",
+         "#~~~~~~.~~~~#",
+         "#~~~~g..~~~~#",
+         "#~~~~.~~~~~~#",
+         "#~~g..~~~~~~#",
+         "#~~.~~~~~~~~#",
+         "#~.g~~~~~~~~#",
+         "#~.~~~~~~~~~#",
+         "#..~~~~~~~~~#",
+         "#############"] },
   // 바람 언덕길 — **야외형** 지선(풀숲·나무가 나오는 오솔길). 왼쪽 아래 ↔ 오른쪽 위로 비스듬히 통과한다.
   hillpath:{ id:"hillpath", W:19, H:11, startX:2, startY:9, exitX:1, exitY:9, name:"바람 언덕길",
     exits:[{x:1,y:9,ox:6,oy:43},{x:17,y:1,ox:21,oy:37}],
@@ -2183,6 +2233,8 @@ function regionMusic(r){ return r===0?"town":r===1?"explore":(r===2||r===3)?"for
 function fieldMusic(){ if(G.indoor){ if(G.indoor.indexOf("gym")===0)return "gym"; if(G.indoor==="pier")return "lake";
   if(G.indoor==="frostpass")return "highland";
   if(G.indoor==="hillpath")return "explore";   // ⚠️ 트랙 이름은 Audio.tracks에 있는 것만 — 없는 이름이면 매 프레임 터진다(실측 108건)
+  if(G.indoor==="mosshollow")return "forest";
+  if(G.indoor==="fallspath")return "lake";
   if(G.indoor==="cave"||G.indoor==="lavacave"||G.indoor==="mine")return "cave"; if(G.indoor==="coast")return "lake"; if(G.indoor==="isle")return "highland"; if(G.indoor==="snowfield")return "lake"; if(G.indoor==="marsh")return "cave"; if(G.indoor==="skyridge")return "highland"; if(G.indoor==="ruins")return "cave"; if(G.indoor==="crater")return "cave"; if(G.indoor==="garden")return "forest"; if(G.indoor==="shrine")return "altar"; if(G.indoor==="league")return "boss"; return Audio.track||"town"; } return regionMusic(region(G.pos.y)); }
 // 포켓몬식 문 페이드: 검정으로 덮은 뒤(스왑은 커버 아래) 새 장면으로 페이드인. reduceMotion이면 즉시.
 function warpFade(swap){ const ov=(typeof $!=="undefined")&&$("warpFade");
@@ -2401,7 +2453,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         ctx.drawImage(_hi, hx-S/2, gy-S-_hb, S, S); ctx.restore(); }
       else { this._walker(ctx, pcx, pcy, ts, this.dir||"down", moving, now); } }
     this._grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving);
-    if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh"||G.indoor==="skyridge"||G.indoor==="ruins"||G.indoor==="mine"||G.indoor==="hillpath"||G.indoor==="pier"||G.indoor==="crater"||G.indoor==="garden") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; }
+    if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh"||G.indoor==="skyridge"||G.indoor==="ruins"||G.indoor==="mine"||G.indoor==="hillpath"||G.indoor==="pier"||G.indoor==="mosshollow"||G.indoor==="fallspath"||G.indoor==="crater"||G.indoor==="garden") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; }
     if(typeof owWeather==="function"){ const _wx=owWeather(); if(_wx!=="clear" && typeof drawWeatherFx==="function")drawWeatherFx(ctx,cw,ch,ts,_wx); } },
   // 풀숲 게임필 3종: (1) 밟은 칸이 술렁임 (2) 풀숲에 서면 하체가 풀에 가림 (3) 달릴 때 발밑 먼지.
   // ⚠️ Map2D는 객체 리터럴이다 — 메서드를 추가할 땐 앞 메서드 끝의 콤마를 확인할 것.
@@ -2494,10 +2546,10 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     ctx.closePath();
   },
   _tile(ctx,t,sx,sy,ts,x,y,now){ const h=((x*73856093)^(y*19349663))>>>0; const rnd=n=>((h>>(n*3))&7)/7; const ol="rgba(20,42,24,.4)"; sx=Math.round(sx); sy=Math.round(sy); const tb=Math.ceil(ts)+1;
-    if(typeof G!=="undefined" && (G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh"||G.indoor==="skyridge"||G.indoor==="ruins"||G.indoor==="crater"||G.indoor==="garden"||G.indoor==="hillpath"||G.indoor==="pier")){
-      const sv=((h>>3)&3), _isle=G.indoor==="isle", _shr=G.indoor==="shrine", _snow=G.indoor==="snowfield", _marsh=G.indoor==="marsh", _sky=G.indoor==="skyridge", _ruins=G.indoor==="ruins", _crater=G.indoor==="crater", _gard=G.indoor==="garden", _hill=G.indoor==="hillpath", _pier=G.indoor==="pier";
+    if(typeof G!=="undefined" && (G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh"||G.indoor==="skyridge"||G.indoor==="ruins"||G.indoor==="crater"||G.indoor==="garden"||G.indoor==="hillpath"||G.indoor==="pier"||G.indoor==="mosshollow"||G.indoor==="fallspath")){
+      const sv=((h>>3)&3), _isle=G.indoor==="isle", _shr=G.indoor==="shrine", _snow=G.indoor==="snowfield", _marsh=G.indoor==="marsh", _sky=G.indoor==="skyridge", _ruins=G.indoor==="ruins", _crater=G.indoor==="crater", _gard=G.indoor==="garden", _hill=G.indoor==="hillpath", _pier=G.indoor==="pier", _moss=G.indoor==="mosshollow", _falls=G.indoor==="fallspath";
       // ⚠️ 이 표에 없는 지역은 **모래색 폴백**으로 떨어진다 — 야외 브랜치에 새 지역을 넣으면 색도 같이 넣을 것(안 넣으면 사막처럼 보인다).
-      ctx.fillStyle=_pier?`rgb(${58-sv*2},${104-sv*3},${140-sv*4})`:_hill?`rgb(${112-sv*4},${168-sv*5},${92-sv*4})`:_gard?`rgb(${72-sv*3},${68-sv*3},${104-sv*4})`:_crater?`rgb(${152-sv*6},${96-sv*5},${78-sv*5})`:_ruins?`rgb(${168-sv*5},${154-sv*5},${126-sv*5})`:_sky?`rgb(${118-sv*4},${128-sv*4},${150-sv*4})`:_snow?`rgb(${232-sv*3},${238-sv*3},${248-sv*3})`:_shr?`rgb(${210-sv*3},${216-sv*3},${236-sv*3})`:_marsh?`rgb(${104-sv*4},${120-sv*4},${86-sv*4})`:_isle?`rgb(${96-sv*4},${170-sv*5},${94-sv*4})`:`rgb(${226-sv*5},${206-sv*5},${158-sv*5})`; ctx.fillRect(sx,sy,tb,tb);
+      ctx.fillStyle=_moss?`rgb(${86-sv*3},${122-sv*4},${78-sv*3})`:_falls?`rgb(${124-sv*4},${140-sv*4},${138-sv*4})`:_pier?`rgb(${58-sv*2},${104-sv*3},${140-sv*4})`:_hill?`rgb(${112-sv*4},${168-sv*5},${92-sv*4})`:_gard?`rgb(${72-sv*3},${68-sv*3},${104-sv*4})`:_crater?`rgb(${152-sv*6},${96-sv*5},${78-sv*5})`:_ruins?`rgb(${168-sv*5},${154-sv*5},${126-sv*5})`:_sky?`rgb(${118-sv*4},${128-sv*4},${150-sv*4})`:_snow?`rgb(${232-sv*3},${238-sv*3},${248-sv*3})`:_shr?`rgb(${210-sv*3},${216-sv*3},${236-sv*3})`:_marsh?`rgb(${104-sv*4},${120-sv*4},${86-sv*4})`:_isle?`rgb(${96-sv*4},${170-sv*5},${94-sv*4})`:`rgb(${226-sv*5},${206-sv*5},${158-sv*5})`; ctx.fillRect(sx,sy,tb,tb);
       if(t==="@"){ ctx.fillStyle="rgba(255,224,120,"+(0.14+0.12*Math.sin((now||0)*2+h))+")"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.5,ts*0.48,0,6.29); ctx.fill(); ctx.fillStyle="#d8c8a0"; ctx.fillRect(sx+ts*0.26,sy+ts*0.62,ts*0.48,ts*0.2); ctx.fillStyle="#e8dcc0"; ctx.fillRect(sx+ts*0.32,sy+ts*0.3,ts*0.36,ts*0.34); ctx.fillStyle="#fff0b0"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.44,ts*0.12,0,6.29); ctx.fill(); return; }
       if(t==="Y"||t==="Z"){ ctx.fillStyle="rgba(0,0,0,.16)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.86,ts*0.36,ts*0.1,0,0,6.29); ctx.fill(); ctx.fillStyle="#8a5a34"; ctx.beginPath(); ctx.moveTo(sx+ts*0.16,sy+ts*0.56); ctx.lineTo(sx+ts*0.84,sy+ts*0.56); ctx.lineTo(sx+ts*0.72,sy+ts*0.82); ctx.lineTo(sx+ts*0.28,sy+ts*0.82); ctx.closePath(); ctx.fill(); ctx.fillStyle="#a06a40"; ctx.fillRect(sx+ts*0.2,sy+ts*0.5,ts*0.6,ts*0.08); ctx.strokeStyle="#c8b89a"; ctx.lineWidth=Math.max(1,ts*0.035); ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*0.52); ctx.lineTo(sx+ts*0.5,sy+ts*0.18); ctx.stroke(); ctx.fillStyle="#eee6d6"; ctx.beginPath(); ctx.moveTo(sx+ts*0.52,sy+ts*0.2); ctx.lineTo(sx+ts*0.74,sy+ts*0.4); ctx.lineTo(sx+ts*0.52,sy+ts*0.46); ctx.closePath(); ctx.fill(); return; }
       if(t==="$"){   // 갱도 입구 — 절벽에 난 굴 + 갱목(오버월드 전용, 좌표는 ROUTE_AT이 스코프)
@@ -2521,6 +2573,19 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(t==="K"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx+ts*0.16,sy+ts*0.44,ts*0.68,ts*0.46); ctx.fillStyle="#5a4632"; ctx.fillRect(sx+ts*0.42,sy+ts*0.6,ts*0.16,ts*0.3); ctx.fillStyle="#e0563f"; ctx.fillRect(sx+ts*0.08,sy+ts*0.3,ts*0.84,ts*0.16); ctx.fillStyle="#f5f0e6"; for(var _i=0;_i<4;_i++){ ctx.fillRect(sx+ts*(0.08+_i*0.21),sy+ts*0.3,ts*0.105,ts*0.16); } ctx.fillStyle="#ffd23f"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.22,ts*0.06,0,6.29); ctx.fill(); return; }
       if(t==="H"){ ctx.fillStyle="rgba(0,0,0,.14)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.9,ts*0.34,ts*0.08,0,0,6.29); ctx.fill(); ctx.fillStyle="#d8c4a0"; ctx.fillRect(sx+ts*0.2,sy+ts*0.44,ts*0.6,ts*0.46); ctx.fillStyle="#6f4f96"; ctx.beginPath(); ctx.moveTo(sx+ts*0.12,sy+ts*0.46); ctx.lineTo(sx+ts*0.5,sy+ts*0.18); ctx.lineTo(sx+ts*0.88,sy+ts*0.46); ctx.closePath(); ctx.fill(); ctx.fillStyle="#5a4632"; ctx.fillRect(sx+ts*0.42,sy+ts*0.62,ts*0.16,ts*0.28); ctx.fillStyle="#8fd0ff"; ctx.fillRect(sx+ts*0.26,sy+ts*0.5,ts*0.12,ts*0.12); return; }
       if(t==="L"){ if(typeof G!=="undefined"&&G.defeated&&G.defeated.has("L"))return; this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.96,NPC_SPR.isleLeader,"down",now); return; }
+      /* 모닥불 — 야외형 인테리어(이끼 골짜기 야영지)에도 보여야 한다.
+         ⚠️ 이 분기는 끝에서 `return`하므로 **여기 없는 타일은 바닥색만** 칠해진다 →
+            불이 안 그려져 "밟으면 회복되는 빈 칸"이 된다(실제로 그렇게 보였다). */
+      if(t==="R"){ ctx.fillStyle="#6a6560";
+        for(let i=0;i<5;i++){ const a=i/5*6.28; ctx.beginPath(); ctx.arc(sx+ts*0.5+Math.cos(a)*ts*0.26,sy+ts*0.68+Math.sin(a)*ts*0.12,ts*0.09,0,6.29); ctx.fill(); }
+        const _fl=0.6+0.4*Math.sin((now||0)*4+h);
+        ctx.fillStyle="rgba(255,150,50,"+(0.30*_fl).toFixed(2)+")"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.52,ts*0.44,0,6.29); ctx.fill();
+        ctx.fillStyle="#e87a2a"; ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*(0.18-0.05*_fl));
+        ctx.quadraticCurveTo(sx+ts*0.76,sy+ts*0.56,sx+ts*0.5,sy+ts*0.7);
+        ctx.quadraticCurveTo(sx+ts*0.24,sy+ts*0.56,sx+ts*0.5,sy+ts*(0.18-0.05*_fl)); ctx.fill();
+        ctx.fillStyle="#ffd45a"; ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*0.36);
+        ctx.quadraticCurveTo(sx+ts*0.63,sy+ts*0.56,sx+ts*0.5,sy+ts*0.66);
+        ctx.quadraticCurveTo(sx+ts*0.37,sy+ts*0.56,sx+ts*0.5,sy+ts*0.36); ctx.fill(); return; }
       if(t==="."){ ctx.fillStyle="rgba(120,90,50,.45)"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="rgba(255,240,200,.18)"; ctx.fillRect(sx,sy,tb,ts*0.4); return; }
       return;
     }
@@ -2930,6 +2995,8 @@ function wildRoll(t,depth){
     else if(G.indoor==="pier"){ if(t==="."&&Math.random()<0.11){ enc=true; startPierEncounter(); } }
     else if(G.indoor==="frostpass"){ if(t==="."&&Math.random()<0.13){ enc=true; startFrostEncounter(); } }
     else if(G.indoor==="mine"){ if(t==="."&&Math.random()<0.12){ enc=true; startMineEncounter(); } }
+    else if(G.indoor==="mosshollow"){ if((t==="."||t==="g")&&Math.random()<0.12){ enc=true; startHollowEncounter(); } }
+    else if(G.indoor==="fallspath"){ if((t==="."||t==="g")&&Math.random()<0.13){ enc=true; startFallsEncounter(); } }
     else if(G.indoor==="cave"){ if(t==="."&&Math.random()<0.11){ enc=true; startCaveEncounter(); } } else if(G.indoor==="lavacave"){ if(t==="."&&Math.random()<0.13){ enc=true; startLavaEncounter(); } } else if(G.indoor==="coast"){ if((t==="T"||t==="g")&&Math.random()<0.12){ enc=true; startCoastEncounter(); } } else if(G.indoor==="isle"||G.indoor==="shrine"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startIsleEncounter(); } } else if(G.indoor==="snowfield"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startSnowEncounter(); } } else if(G.indoor==="marsh"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startMarshEncounter(); } } else if(G.indoor==="skyridge"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startSkyEncounter(); } } else if(G.indoor==="ruins"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startRuinsEncounter(); } } else if(G.indoor==="crater"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startCraterEncounter(); } } else if(G.indoor==="garden"){ if((t==="T"||t==="g")&&Math.random()<(dayPhase()==="night"?0.17:0.11)){ enc=true; startGardenEncounter(); } } else if(G.surfing&&t==="~"){ if(Math.random()<0.12){ enc=true; startSurfEncounter(); } } else if(!G.indoor&&t==="T"&&Math.random()<0.22+depth*0.09){ enc=true; startEncounter(depth); }
     else if(!G.indoor&&t==="g"&&Math.random()<0.05+depth*0.04){ enc=true; startEncounter(depth); }
     if(enc)encCooldown=ri(3,6); }
@@ -2947,6 +3014,10 @@ function onArrived(){
     if(_t==="I"){ const _d=(Field&&Field.dir)||"down"; const _dv={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[_d];   // 얼음 미끄럼: 벽/트레이너 만날 때까지 같은 방향으로 계속 미끄러진다(포켓몬 체육관 퍼즐)
       if(_dv && walkable(G.pos.x+_dv[0], G.pos.y+_dv[1])){ stopPath(); Audio.sfx&&Audio.sfx("step"); move(_d,true); return; } }
     if(_t==="S"){ stopPath(); openShop(); return; }
+    /* ⚠️ 모닥불(R)은 원래 **실외 블록에만** 있었다 — 실내 블록이 먼저 return하므로 인테리어에 R을 놓아도
+       그냥 밟히는 장식이었다. 이끼 골짜기의 야영지가 실제로 회복되려면 여기 분기가 필요하다.
+       (`markHeal`은 실내면 `_owBackup.pos`(들어온 오버월드 입구)를 기록하므로 부활 지점도 안전하다.) */
+    if(_t==="R"){ stopPath(); if(G.campfires)G.campfires.add(G.pos.x+","+G.pos.y); healParty(true); healFx(); markHeal(); flashHint("모닥불에서 모두 회복했다 🔥"); saveGame(); return; }
     if(_t==="B"){ stopPath(); healParty(true); healFx(); markHeal(); flashHint("침대에서 푹 쉬었다 — 모두 회복! 😴"); saveGame(); return; }
     if(_t==="A"){ stopPath();
       const st=altarStage();
@@ -3425,6 +3496,8 @@ const ENC_POOLS={
   hillpath:["dustbunny","racoonmon","sprigfawn","petalwing","seedbean","thunderowl"],   // 언덕 오솔길 = 노말·풀·비행
   pier:["shellow","otterwave","nipling","dewdrop","puddlet","jellure"],                 // 잔교 = 물가
   frostpass:["frostpup","iceling","frostfish","snowl","sharkfin","pebblet"],            // 고갯길 = 얼음
+  mosshollow:["mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing"],     // 골짜기 = 이끼·숲
+  fallspath:["riverine","gullian","sandwhirl","tidewhale","pebblet","dewdrop"],         // 벼랑길 = 폭포(물·바위·비행)
    // 언덕 오솔길 = 노말·풀·비행(전부 실존 종)   // 광산 = 바위·땅 계열(전부 실존 종)
   
   ruins:["terrapin","thumplord","lumbeast","wyverna","pebblet","boulderin","burrowmouse","mossback","hedgemoss","sandwhirl"],
@@ -3551,6 +3624,16 @@ function startHillEncounter(){ const pool=ENC_POOLS.hillpath.filter(id=>byId(id)
   const al=Math.max(avgLevel(), 9); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,6,26);
   G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter");
   transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}풀숲이 흔들리더니 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startHollowEncounter(){ const pool=ENC_POOLS.mosshollow.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)];
+  // 깊은 숲↔호수를 잇는 지선 — 레벨대도 그 사이(양 끝이 원래 갈 수 있던 곳이라 게이팅 불변).
+  const al=Math.max(avgLevel(), 19); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,16,36);
+  G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter");
+  transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}이끼 덤불에서 <b>${G.foe.name}</b>이(가) 튀어나왔다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startFallsEncounter(){ const pool=ENC_POOLS.fallspath.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)];
+  // 호수↔고원을 잇는 지선 — 잔교(18~40)와 고갯길(24~48) 사이 레벨대.
+  const al=Math.max(avgLevel(), 25); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,21,44);
+  G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter");
+  transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}물보라 사이에서 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 function startMineEncounter(){ const pool=ENC_POOLS.mine.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)];
   // 갱도는 숲↔깊은 숲을 잇는 **중반 지름길**이다 — 레벨대도 그 사이로 잡는다(양 끝이 원래 갈 수 있던 곳이라 게이팅 불변).
   const al=Math.max(avgLevel(), 14); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,12,32);
@@ -6612,7 +6695,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)

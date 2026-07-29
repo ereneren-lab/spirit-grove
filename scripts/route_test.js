@@ -110,6 +110,37 @@ const { chromium } = require("playwright"); const path=require("path");
     ok(c.habitat, `${c.id}: 도감 서식지 표기가 있다`);
   });
 
+  console.log("\n[3-b] 이끼 골짜기 모닥불 야영지 — 루트 최초의 회복 지점");
+  // ⚠️ `R`(모닥불)은 원래 **실외 블록에만** 있었다(실내 블록이 먼저 return) → 인테리어에 R을 놓아도
+  //    그냥 밟히는 장식이었다. "타일을 놨다"와 "밟으면 회복된다"는 다르다 → 실제로 밟아서 확인한다.
+  const camp=await p.evaluate(async()=>{ const S=window.SG,F=S.flow;
+    S.setG(S.freshState()); const G=S.G();
+    G.party=[S.makeMon("foxfire",30), S.makeMon("shellow",28)];
+    F.enterMap(true); F.enterInterior(F.INTERIORS.mosshollow);
+    await new Promise(r=>setTimeout(r,700));
+    // 모닥불 좌표를 지도에서 찾는다(하드코딩하면 맵을 고칠 때 조용히 어긋난다)
+    const I=F.INTERIORS.mosshollow; let R=null;
+    for(let y=0;y<I.H;y++)for(let x=0;x<I.W;x++)if(F.tileAt(x,y)==="R")R={x,y};
+    if(!R)return {err:"모닥불 타일이 없다"};
+    const g=S.G(); g.party.forEach(m=>{ m.hp=1; m.status="psn"; });
+    // 모닥불 **바로 옆**에 서서 걸어 들어간다(밟는 동작이 onArrived를 태운다)
+    g.pos={x:R.x-1,y:R.y}; S.Field.player={x:R.x-1,y:R.y}; S.Field.target={x:R.x-1,y:R.y}; S.Field.arrived=true;
+    return {R, before:g.party.map(m=>m.hp+"/"+m.maxHp+(m.status||""))};
+  });
+  if(camp.err)ok(false, camp.err);
+  else {
+    await p.keyboard.press("ArrowRight"); await p.waitForTimeout(900);
+    const after=await p.evaluate(()=>{ const G=window.SG.G();
+      return { pos:{...G.pos}, full:G.party.every(m=>m.hp===m.maxHp), noStatus:G.party.every(m=>!m.status),
+        fly:(G.flySpots?[...G.flySpots]:[]).length, heal:G.lastHeal?{...G.lastHeal}:null }; });
+    ok(after.pos.x===camp.R.x && after.pos.y===camp.R.y, `모닥불 칸에 도착했다 (${after.pos.x},${after.pos.y})`);
+    ok(after.full, "파티가 전부 회복됐다");
+    ok(after.noStatus, "상태이상도 낫는다");
+    // ⚠️ 실내 회복 지점은 `_owBackup.pos`(들어온 오버월드 입구)를 기록해야 한다 — 실내 좌표를 기록하면 부활이 깨진다
+    ok(after.heal && after.heal.indoor===null, `부활 지점이 오버월드 기준이다 (${JSON.stringify(after.heal)})`);
+    ok(after.fly>0, `공중날기 지점으로 등록됐다 (${after.fly}곳)`);
+  }
+
   console.log("\n[4] 음악 트랙 이름이 실존한다 (없는 이름이면 매 프레임 터진다)");
   const music=await p.evaluate(ids=>{ const S=window.SG;
     const names=Object.keys(S.Audio&&S.Audio.tracks?S.Audio.tracks:{});
