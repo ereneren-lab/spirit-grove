@@ -1563,7 +1563,7 @@ function setStatusFields(mon, st, badly){
 
 
 const FIND_HINT={1:"숲 · 초원",2:"깊은 숲",3:"숲 정상"};   // 오버월드(잔디) 조우의 티어별 깊이 힌트
-const HABITAT_KO={pier:"호숫가 잔교",frostpass:"서리 고갯길",hillpath:"바람 언덕길",mine:"버려진 갱도",mosshollow:"이끼 골짜기",fallspath:"물안개 벼랑길",snow:"설원 지대",marsh:"안개 늪지",skyridge:"뇌명 봉우리",ruins:"고대 유적",crater:"불꽃 분화구",garden:"달빛 화원",isle:"여명의 섬",coast:"노을 해안",surf:"수면 위",fishRare:"낚시(대물)",fish:"낚시",lava:"용암 동굴",cave:"수정 동굴"};
+const HABITAT_KO={fireflyway:"반딧불 오솔길",pier:"호숫가 잔교",frostpass:"서리 고갯길",hillpath:"바람 언덕길",mine:"버려진 갱도",mosshollow:"이끼 골짜기",fallspath:"물안개 벼랑길",snow:"설원 지대",marsh:"안개 늪지",skyridge:"뇌명 봉우리",ruins:"고대 유적",crater:"불꽃 분화구",garden:"달빛 화원",isle:"여명의 섬",coast:"노을 해안",surf:"수면 위",fishRare:"낚시(대물)",fish:"낚시",lava:"용암 동굴",cave:"수정 동굴"};
 // 도감 "출현" 문구를 실제 조우 풀에서 파생한다. 예전엔 FIND_HINT[tier] 하나만 써서
 // 해안 전용 종도 "숲 · 초원"이라 떴다(거짓 정보).
 function findHint(sp){
@@ -1793,6 +1793,9 @@ GROUND_ITEMS.push(
   {k:"gi_sky3",in:"skyridge",x:2,y:10,item:"ether",qty:2},
   {k:"gi_pier1",in:"pier",x:4,y:7,item:"greatball",qty:2},
   {k:"gi_pier2",in:"pier",x:8,y:5,item:"netball",qty:3},
+  {k:"gi_ff1",in:"fireflyway",x:6,y:7,item:"ball",qty:3},
+  {k:"gi_ff2",in:"fireflyway",x:5,y:5,item:"potion",qty:2},
+  {k:"gi_ff3",in:"fireflyway",x:10,y:3,item:"antidote",qty:2},
   // 이끼 골짜기 · 물안개 벼랑길 — ⚠️ 좌표는 반드시 **그 인테리어의 통행 가능한 칸**이어야 한다
   //    (실외 도구가 나무 위에 놓여 영영 못 줍던 전례가 있다). 출구·시작 칸·모닥불과도 겹치지 않게.
   {k:"gi_hollow1",in:"mosshollow",x:6,y:7,item:"greatball",qty:2},
@@ -1923,6 +1926,27 @@ function npcAmbient(npc){
   return pool;
 }
 const QUESTS=[
+  /* ── 초반 퀘스트 2종(평가 #6) ────────────────────────────────────────────
+     퀘스트 7개가 전부 중후반에 몰려 있어 **이탈이 가장 많은 초반이 가장 비어 있었다.**
+     ⚠️ `giver`는 실존 NPC id여야 한다(회귀가 유령 의뢰인을 잡는다). mina·daycare는 마을 주민이다.
+     ⚠️ 서비스 겸용 NPC(daycare)는 `questForGiver`가 서비스 분기보다 먼저 오므로 안전하다
+        — 완료되면 자연히 서비스로 넘어간다(q_bond에서 확인된 패턴). */
+  { id:"q_firstteam", giver:"mina", title:"혼자보다는 셋", desc:"정령 3마리로 팀 꾸리기",
+    check:()=>((G.party||[]).length+((G.box||[]).length))>=3,
+    prog:()=>`${Math.min((G.party||[]).length+((G.box||[]).length),3)}/3마리`,
+    reward:{ball:5,potion:3},
+    offer:["미나: 혼자 다니면 위험해. 정령은 서로 약점을 메워 주거든.",
+           "미나: <b>3마리</b>만 모아 와. 그럼 여행이 훨씬 수월해질 거야."],
+    active:["미나: 풀숲에서 약하게 만든 다음 정령구를 던지면 돼. 체력이 낮을수록 잘 잡혀."],
+    done:["미나: 오, 벌써 셋이나! 이제 제법 정령사 같은데?","미나: 이거 받아. 여행에 보탬이 될 거야."] },
+  { id:"q_firefly", giver:"daycare", title:"반딧불을 찾아서", desc:"반딧불 오솔길에서 반딧불이 잡기",
+    check:()=>!!(G.caught&&G.caught.has("glowfly")),
+    prog:()=>(G.caught&&G.caught.has("glowfly"))?"완료":"미포획",
+    reward:{greatball:2,candy:1},
+    offer:["보육사: 마을 서쪽하고 초원 동쪽에 <b>좁은 오솔길</b>이 하나 나 있어. 지름길이지.",
+           "보육사: 거기 반딧불이가 산다던데… 한 마리만 보여 주지 않겠나?"],
+    active:["보육사: 오솔길 입구는 마을 서쪽 끝이야. 벽처럼 보이지만 걸어 들어가 보게."],
+    done:["보육사: 이야, 진짜 잡아 왔군! 밤에 보면 더 예쁘다네.","보육사: 약속한 사례일세."] },
   { id:"q_scout", giver:"t22", title:"흩어진 보급품", desc:"필드에 놓인 도구 6개 회수",
     check:()=>((G.found&&G.found.length)||0)>=6, prog:()=>`${Math.min((G.found&&G.found.length)||0,6)}/6개`,
     reward:{greatball:4,elixir:1},
@@ -2028,7 +2052,7 @@ function updateMoney(){ $("moneyPill").textContent="💰 "+G.money; $("shopMoney
 window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,HELD_ITEMS,byId,makeMon,recalc,damage,stageMul,accMul,newStages,resetStages,effSpd,foeChooseMove,noPP,
   G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary,stripNamePrefix};
 /* ===== MAP (17 x 42) ===== */
-let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT##","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg##gT#","#gTTggggggTTgEggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT#PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
+let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg##gT#","#gTTggggggTTgEggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT$PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
 let W=25,H=50;
 const OVERWORLD_STR0=MAP_STR.slice();
 const tileAt=(x,y)=>(MAP_STR[y]&&MAP_STR[y][x])||"#";
@@ -2060,6 +2084,11 @@ const ROUTE_AT={
         (`scripts/route_probe.js` — 골짜기 21칸 · 벼랑길 25칸을 건너뛴다). */
   "11,31":{id:"mosshollow", sx:2,  sy:9},
   "23,24":{id:"mosshollow", sx:14, sy:1},
+  /* 일곱째 — 반딧불 오솔길: **마을 ↔ 초원**. 초반 2지역이 체육관·센터·상점뿐이라
+     이탈이 가장 많은 구간이 가장 비어 있었다(평가 #6) → 처음 만나는 지선을 여기 둔다.
+     도보 25칸을 건너뛴다(route_probe 실측 — 초반 후보 중 최장). */
+  "3,47": {id:"fireflyway", sx:2,  sy:9},
+  "23,42":{id:"fireflyway", sx:14, sy:1},
   "4,24": {id:"fallspath",  sx:2,  sy:11},
   "4,13": {id:"fallspath",  sx:10, sy:1} };
 const INTERIORS={
@@ -2090,6 +2119,21 @@ const INTERIORS={
          "##gI###########",
          "#...g##########",
          "###############"] },
+  /* 반딧불 오솔길 — 마을(3,47) ↔ 초원(23,42). **플레이어가 처음 만나는 지선**이라
+     조우 레벨을 스타터 대역(4~18)으로 낮게 잡고 바닥 도구를 넉넉히 뒀다. */
+  fireflyway:{ id:"fireflyway", W:17, H:11, startX:2, startY:9, exitX:1, exitY:9, name:"반딧불 오솔길",
+    exits:[{x:1,y:9,ox:3,oy:48},{x:15,y:1,ox:23,oy:43}],
+    str:["#################",
+         "############g.g.#",
+         "############.####",
+         "########g....####",
+         "########.########",
+         "####g...g########",
+         "####.############",
+         "##g...g##########",
+         "##.##############",
+         "#.g##############",
+         "#################"] },
   /* 이끼 골짜기 — 깊은 숲(11,31) ↔ 수정 호수(23,24). **루트 최초의 모닥불 야영지(R)** 가 중간에 있다
      (지름길이자 쉼터 — 회복 + 저장 + 공중날기 지점 등록). ⚠️ `R`는 원래 실외 블록에만 있어서
      실내에선 안 돌았다 → onArrived 실내 블록에 분기를 추가했다(거기 없으면 그냥 밟히는 장식이 된다). */
@@ -2257,6 +2301,7 @@ function regionMusic(r){ return r===0?"town":r===1?"explore":(r===2||r===3)?"for
 function fieldMusic(){ if(G.indoor){ if(G.indoor.indexOf("gym")===0)return "gym"; if(G.indoor==="pier")return "lake";
   if(G.indoor==="frostpass")return "highland";
   if(G.indoor==="hillpath")return "explore";   // ⚠️ 트랙 이름은 Audio.tracks에 있는 것만 — 없는 이름이면 매 프레임 터진다(실측 108건)
+  if(G.indoor==="fireflyway")return "explore";
   if(G.indoor==="mosshollow")return "forest";
   if(G.indoor==="fallspath")return "lake";
   if(G.indoor==="cave"||G.indoor==="lavacave"||G.indoor==="mine")return "cave"; if(G.indoor==="coast")return "lake"; if(G.indoor==="isle")return "highland"; if(G.indoor==="snowfield")return "lake"; if(G.indoor==="marsh")return "cave"; if(G.indoor==="skyridge")return "highland"; if(G.indoor==="ruins")return "cave"; if(G.indoor==="crater")return "cave"; if(G.indoor==="garden")return "forest"; if(G.indoor==="shrine")return "altar"; if(G.indoor==="league")return "boss"; return Audio.track||"town"; } return regionMusic(region(G.pos.y)); }
@@ -3019,6 +3064,7 @@ function wildRoll(t,depth){
     else if(G.indoor==="pier"){ if(t==="."&&Math.random()<0.11){ enc=true; startPierEncounter(); } }
     else if(G.indoor==="frostpass"){ if(t==="."&&Math.random()<0.13){ enc=true; startFrostEncounter(); } }
     else if(G.indoor==="mine"){ if(t==="."&&Math.random()<0.12){ enc=true; startMineEncounter(); } }
+    else if(G.indoor==="fireflyway"){ if((t==="."||t==="g")&&Math.random()<0.13){ enc=true; startFireflyEncounter(); } }
     else if(G.indoor==="mosshollow"){ if((t==="."||t==="g")&&Math.random()<0.12){ enc=true; startHollowEncounter(); } }
     else if(G.indoor==="fallspath"){ if((t==="."||t==="g")&&Math.random()<0.13){ enc=true; startFallsEncounter(); } }
     else if(G.indoor==="cave"){ if(t==="."&&Math.random()<0.11){ enc=true; startCaveEncounter(); } } else if(G.indoor==="lavacave"){ if(t==="."&&Math.random()<0.13){ enc=true; startLavaEncounter(); } } else if(G.indoor==="coast"){ if((t==="T"||t==="g")&&Math.random()<0.12){ enc=true; startCoastEncounter(); } } else if(G.indoor==="isle"||G.indoor==="shrine"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startIsleEncounter(); } } else if(G.indoor==="snowfield"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startSnowEncounter(); } } else if(G.indoor==="marsh"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startMarshEncounter(); } } else if(G.indoor==="skyridge"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startSkyEncounter(); } } else if(G.indoor==="ruins"){ if((t==="T"||t==="g")&&Math.random()<0.13){ enc=true; startRuinsEncounter(); } } else if(G.indoor==="crater"){ if((t==="T"||t==="g")&&Math.random()<0.14){ enc=true; startCraterEncounter(); } } else if(G.indoor==="garden"){ if((t==="T"||t==="g")&&Math.random()<(dayPhase()==="night"?0.17:0.11)){ enc=true; startGardenEncounter(); } } else if(G.surfing&&t==="~"){ if(Math.random()<0.12){ enc=true; startSurfEncounter(); } } else if(!G.indoor&&t==="T"&&Math.random()<0.22+depth*0.09){ enc=true; startEncounter(depth); }
@@ -3543,6 +3589,7 @@ const ENC_POOLS={
   hillpath:["dustbunny","racoonmon","sprigfawn","petalwing","seedbean","thunderowl"],   // 언덕 오솔길 = 노말·풀·비행
   pier:["shellow","otterwave","nipling","dewdrop","puddlet","jellure"],                 // 잔교 = 물가
   frostpass:["frostpup","iceling","frostfish","snowl","sharkfin","pebblet"],            // 고갯길 = 얼음
+  fireflyway:["glowfly","dustbunny","bunnyhop","sparkmouse","sprigfawn","shellow"],   // 오솔길 = 초반 소형종
   mosshollow:["mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing"],     // 골짜기 = 이끼·숲
   fallspath:["riverine","gullian","sandwhirl","tidewhale","pebblet","dewdrop"],         // 벼랑길 = 폭포(물·바위·비행)
    // 언덕 오솔길 = 노말·풀·비행(전부 실존 종)   // 광산 = 바위·땅 계열(전부 실존 종)
@@ -3671,6 +3718,11 @@ function startHillEncounter(){ const pool=ENC_POOLS.hillpath.filter(id=>byId(id)
   const al=Math.max(avgLevel(), 9); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,6,26);
   G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter");
   transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}풀숲이 흔들리더니 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startFireflyEncounter(){ const pool=ENC_POOLS.fireflyway.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)];
+  // 마을↔초원을 잇는 **초반** 지선 — 스타터 대역(4~18)으로 낮게 잡는다.
+  const al=Math.max(avgLevel(), 6); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,4,18);
+  G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter");
+  transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}풀숲에서 <b>${G.foe.name}</b>이(가) 튀어나왔다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 function startHollowEncounter(){ const pool=ENC_POOLS.mosshollow.filter(id=>byId(id)); const id=pool[ri(0,pool.length-1)];
   // 깊은 숲↔호수를 잇는 지선 — 레벨대도 그 사이(양 끝이 원래 갈 수 있던 곳이라 게이팅 불변).
   const al=Math.max(avgLevel(), 19); let lvl=clamp(al+ri(-1,2)+DIFF[CONFIG.difficulty].lvl,16,36);
@@ -6825,7 +6877,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)

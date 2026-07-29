@@ -33,7 +33,7 @@ const { chromium } = require("playwright"); const path=require("path");
   console.log("도달 칸 "+out.reach+"개");
   console.log("\n현재 루트:"); Object.keys(out.cur).forEach(id=>console.log("  "+id.padEnd(10)+out.cur[id].join("  ↔  ")));
   console.log("\n밴드별 입구 후보(벽 타일 · 도달칸 인접 · front=아래에서 접근 가능):");
-  [3,4,5].forEach(band=>{ const c=(out.cand[band]||[]).filter(e=>e.front);
+  [0,1,2,3,4,5].forEach(band=>{ const c=(out.cand[band]||[]).filter(e=>e.front);
     console.log(`  밴드${band}: ${c.length}곳 — ${c.slice(0,14).map(e=>e.k).join(" ")}`); });
 
   // ⚠️ **지름길인지 재본다** — 두 입구의 착지 칸(입구 바로 아래) 사이 실제 도보 거리가 짧으면 루트를 팔 이유가 없다.

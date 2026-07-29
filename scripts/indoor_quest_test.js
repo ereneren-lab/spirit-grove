@@ -67,6 +67,10 @@ const { chromium } = require("playwright"); const path=require("path");
     G.party[0].friendship=200;
     ["7","8","9","0","a","b","c","d","e","f"].forEach(k=>G.defeated.add(k));   // q_gauntlet: 견습 전원 격파
     G.berries={};
+    // ⚠️ 새 퀘스트를 추가하면 **여기 조건 충족 블록도 같이 채워야 한다** — 안 채우면
+    //    "조건을 채우면 완료된다"가 거짓으로 실패한다(게임이 아니라 픽스처 문제).
+    G.party.push(S.makeMon("shellow",18), S.makeMon("dustbunny",16));           // q_firstteam: 3마리
+    G.caught.add("glowfly");                                                    // q_firefly: 반딧불이 포획
     Q.forEach(x=>{ after[x.id]=!!x.check(); });
     return { before, after, progOk };
   });
