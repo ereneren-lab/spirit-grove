@@ -335,6 +335,11 @@
   .ov-head .sub{font-size:11px;color:var(--muted)}
   .closex{border:1px solid var(--line);background:var(--panel);color:var(--cream);width:34px;height:34px;border-radius:9px;font-size:16px;cursor:pointer}
   .ov-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:2px}
+  /* ⚠️ `.sheet`는 오랫동안 **CSS 정의가 아예 없는 빈 클래스**였다(카드·구매·기술전문가·데이케어·듀오 5곳).
+     그래서 본문이 길면 스크롤 없이 그냥 넘쳤고, 가로(높이 ~390)에서 **닫기 버튼이 화면 밖으로 밀려
+     못 누르는** 상태가 됐다(유저 제보 "지도를 닫을 수가 없어"와 같은 종). 스크롤 컨테이너로 못박는다. */
+  .sheet{width:100%;margin:0 auto;flex:1;min-height:0;overflow-y:auto}
+  .sheet::-webkit-scrollbar{width:5px} .sheet::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
   .ov-body::-webkit-scrollbar{width:5px} .ov-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
   .tabbar{display:flex;gap:7px;margin-bottom:12px}
   .tabbar button{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
@@ -403,9 +408,10 @@
   input[type=range]{width:100%;accent-color:var(--mint)}
   textarea.savebox{width:100%;height:74px;background:#120e1d;border:1px solid var(--line);border-radius:11px;color:var(--cream);font-family:monospace;font-size:11px;padding:10px;resize:none}
 
-  #minimap{position:absolute;inset:0;background:rgba(15,11,25,.9);z-index:45;display:none;flex-direction:column;align-items:center;justify-content:center;padding:18px;gap:14px}
-  #minimap.active{display:flex}
-  #minimapCanvas{border:1px solid var(--line);border-radius:12px;background:#0e1419;image-rendering:pixelated;width:280px;height:auto}
+  /* 지도는 이제 `.overlay` 규칙을 그대로 쓴다(위 마크업 주석 참조) — 여기선 지도 고유 스타일만 둔다. */
+  #minimap{z-index:45}
+  #minimap .ov-body{gap:12px;flex:1;min-height:0}
+  #minimapCanvas{border:1px solid var(--line);border-radius:12px;background:#0e1419;image-rendering:pixelated;width:280px;height:auto;flex:0 0 auto}
   #minimap .legend{font-size:11px;color:var(--muted);text-align:center;line-height:1.7}
 
   .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60}
@@ -573,6 +579,10 @@
   #pcBody .mon-card{margin:0}
   #bagBody{display:grid;grid-template-columns:1fr 1fr;gap:7px;align-content:start}
   #bagBody .bag-tabs{grid-column:1/-1}
+  /* 지도: 세로용 캔버스가 280×430이라 가로 높이(~390)에 안 들어갔다 → **높이 기준**으로 맞춘다.
+     ⚠️ width만 두고 max-height를 걸면 비율이 깨진다 → height + aspect-ratio로 폭을 파생시킨다. */
+  #minimapCanvas{width:auto;height:100%;max-height:calc(100% - 84px);aspect-ratio:26/40;max-width:100%}
+  #minimap .legend{font-size:10px;line-height:1.5}
 }
 </style>
 </head>
@@ -714,10 +724,14 @@
       </div>
     </section>
 
-    <div class="overlay" id="cardOverlay"><div class="sheet" style="max-width:400px">
-      <div id="cardBody"></div>
-      <button class="dcbtn" id="cardClose" style="width:100%;margin-top:12px">닫기</button>
-    </div></div>
+    <!-- ⚠️ 카드는 본문이 길어(뱃지·기록·명예의 전당) 가로에선 하단 '닫기'가 화면 밖으로 밀렸다
+         → 다른 패널처럼 **고정 헤더 ✕**를 둔다. 본문 스크롤은 `.sheet` 규칙이 담당. -->
+    <div class="overlay" id="cardOverlay">
+      <div class="ov-head"><h3>🎫 트레이너 카드</h3><button class="closex" data-close="cardOverlay">✕</button></div>
+      <div class="sheet" style="max-width:400px">
+        <div id="cardBody"></div>
+        <button class="dcbtn" id="cardClose" style="width:100%;margin-top:12px">닫기</button>
+      </div></div>
     <div class="overlay" id="dexOverlay">
       <div class="ov-head"><h3>📖 도감</h3><button class="closex" data-close="dexOverlay">✕</button></div>
       <div class="dex-stat">
@@ -859,9 +873,16 @@
       <div class="ov-body" id="endingBody"></div>
     </div>
 
-    <div id="minimap"><canvas id="minimapCanvas" width="260" height="400"></canvas>
-      <div class="legend">🟢시작 · 🔴트레이너 · 🟡상점 · 🟠모닥불 · ⬜당신</div>
-      <button class="btn ghost" id="closeMinimap" style="width:200px">닫기</button>
+    <!-- ⚠️ 지도는 예전엔 `.overlay`가 아닌 **별도 패널**이라 가로 최적화·Escape 배선에서 통째로 빠져 있었다
+         → 가로에서 닫기 버튼이 화면 밖으로 밀리고 Escape도 안 먹어 **리로드 말곤 못 벗어났다**(유저 제보).
+         다른 패널과 같은 구조(.ov-head 고정 ✕ + .ov-body 스크롤)로 통일한다. -->
+    <div class="overlay" id="minimap">
+      <div class="ov-head"><h3>🗺️ 지도</h3><button class="closex" data-close="minimap">✕</button></div>
+      <div class="ov-body" style="align-items:center;justify-content:center">
+        <canvas id="minimapCanvas" width="260" height="400"></canvas>
+        <div class="legend">🟢시작 · 🔴트레이너 · 🟡상점 · 🟠모닥불 · ⬜당신</div>
+        <button class="btn ghost" id="closeMinimap" style="width:200px;flex:0 0 auto">닫기</button>
+      </div>
     </div>
 
     <div class="flash" id="flash"></div>
@@ -2644,7 +2665,9 @@ function pickupGroundItem(gi){ if(!gi)return; G.found=G.found||[]; if(G.found.in
   saveGame(); }
 function updateRunBtn(){ const b=$("runBtn"); if(b)b.textContent=(G&&G.running)?"👟":"🚶"; }
 function toggleRun(){ G.running=!G.running; if(Field)Field.moveSpeed=G.running?11.4:6.8; updateRunBtn(); flashHint(G.running?"👟 달리기 켜짐":"🚶 걷기 모드"); }
-const CANCELABLE_OVERLAYS=["buyOverlay","dexDetailOverlay","dexOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay"];
+/* ⚠️ 여기 빠진 패널은 **Escape·B·✕(가려지면)로 못 닫는다.** 지도(minimap)가 목록 밖이라
+   가로에서 버튼이 화면 밖으로 밀렸을 때 리로드 말곤 탈출로가 없었다(유저 제보). 새 패널을 만들면 여기 등록할 것. */
+const CANCELABLE_OVERLAYS=["buyOverlay","dexDetailOverlay","dexOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay","minimap"];
 function anyOverlayOpen(){ for(const id of CANCELABLE_OVERLAYS){ const el=$(id); if(el&&el.classList.contains("active"))return id; } return null; }
 function cancelBtn(){ if(dialogActive()){ advanceDialog(); return; } const id=anyOverlayOpen(); if(id){ closeOverlay(id); if(Audio&&Audio.sfx)Audio.sfx("blip"); } }
 document.addEventListener("keydown",e=>{ if(!$("map").classList.contains("active"))return; const k=e.key.toLowerCase();
@@ -2723,7 +2746,9 @@ if($("goalTrack")) $("goalTrack").addEventListener("click",()=>{
 function show(id){ document.querySelectorAll(".view").forEach(v=>v.classList.remove("active")); $(id).classList.add("active");
   document.body.classList.toggle("battling", id==="battle"); }
 function openOverlay(id){ $(id).classList.add("active"); }
-function closeOverlay(id){ $(id).classList.remove("active"); }
+/* ⚠️ 닫힘 뒷정리는 **여기 한 곳**에 모은다 — 지도는 requestAnimationFrame 루프를 도는데, 예전엔
+   그 정지가 '닫기 버튼 핸들러'에만 있어 Escape·✕로 닫으면 루프가 살아남아 계속 그렸다. */
+function closeOverlay(id){ $(id).classList.remove("active"); if(id==="minimap")stopMinimapLoop(); }
 document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>{Audio.sfx("blip");closeOverlay(b.dataset.close);}));
 function toast(txt){ const el=$("toast"); el.textContent=txt; el.classList.remove("go"); void el.offsetWidth; el.classList.add("go"); }
 function triggerLevelup(lv){ const el=$("levelup"); el.textContent="Lv "+lv+" 달성!"; el.classList.remove("go"); void el.offsetWidth; el.classList.add("go"); }
@@ -5865,9 +5890,13 @@ function warpTo(x,y){ const fly=!!G.hasFly;
 
 /* ===================== MINIMAP ===================== */
 let _miniRaf=null;
-$("openMinimap").addEventListener("click",()=>{ Audio.sfx("blip"); $("minimap").classList.add("active");
-  if(_miniRaf)cancelAnimationFrame(_miniRaf); const loop=()=>{ drawTopo(); _miniRaf=requestAnimationFrame(loop); }; loop(); });
-$("closeMinimap").addEventListener("click",()=>{ Audio.sfx("blip"); $("minimap").classList.remove("active"); if(_miniRaf){cancelAnimationFrame(_miniRaf);_miniRaf=null;} });
+/* ⚠️ `closeOverlay`(2726줄)가 이걸 부른다 — **함수 선언이라 호이스팅**되므로 `_miniRaf`(let) 선언 옆에 두는 게
+   안전하다. closeOverlay 옆에 두면 TDZ에 걸린다(`typeof` 가드는 let에 안 통한다). */
+function stopMinimapLoop(){ if(_miniRaf){ cancelAnimationFrame(_miniRaf); _miniRaf=null; } }
+$("openMinimap").addEventListener("click",()=>{ Audio.sfx("blip"); openOverlay("minimap");
+  stopMinimapLoop(); const loop=()=>{ drawTopo(); _miniRaf=requestAnimationFrame(loop); }; loop(); });
+/* 닫기는 세 경로(하단 버튼·헤더 ✕·Escape) 전부 `closeOverlay` 하나로 모인다 — 루프 정지가 거기 있다. */
+$("closeMinimap").addEventListener("click",()=>{ Audio.sfx("blip"); closeOverlay("minimap"); });
 function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 let _altarXY=null;
 function mmReveal(cx,cy){ if(!G)return; if(!G.seenTiles)G.seenTiles=new Set(); if(!G.trail)G.trail=new Set(); G.trail.add(cx+","+cy); const R=2; for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){ const nx=cx+dx,ny=cy+dy; if(nx>=0&&ny>=0&&nx<W&&ny<H)G.seenTiles.add(nx+","+ny); } }
