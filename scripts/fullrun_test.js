@@ -59,6 +59,23 @@
 //      + **감시장치**: 같은 오버레이가 25루프를 버티면 게임 결함으로 기록(리포트에 출력·exit 1)하고
 //      강제로 걷어 진행한다. 봇이 조용히 갇히면 그 판이 통째로 헛돈다는 걸 값비싸게 배웠다.
 //
+//  16) **(게임 UI가 바뀌면 봇이 조용히 멈춘다) '포획'이 볼 선택 가방을 연다.** 지난 세션의 볼 선택 UI 이후
+//      봇은 `bagOverlay`면 무조건 ✕로 닫았다 → 포획 → 닫기 → 포획 …으로 **무한 핑퐁**, 전투 하나에 갇혔다
+//      (실측: 15분 판이 전투 1회). 같은 이유로 **회복약도 죽어 있었다** — 아이템 대상 선택이 한 단계 더
+//      붙었는데 봇은 개수 감소만 확인해 항상 실패로 세고 5회 뒤 회복약을 영영 포기했다.
+//      → 볼 선택 화면이면 기본 정령구를 던지고, 대상 목록이 뜨면 **HP 비율이 가장 낮은** 정령을 고른다.
+//      ⚠️ 두 화면 모두 렌더 후 300ms 연속탭 가드가 있다 — 그보다 넉넉히 기다린 뒤 눌러야 클릭이 먹는다.
+//
+//  17) **벽시계의 70%가 메시지 대기였다**(실측: 5분에 전투 10회 · `battle:busy` 210초 = 판당 21초).
+//      게임엔 **누르는 동안 빨리감기**(SKIP)가 있는데 봇은 Enter만 두드렸다 — SKIP은 `#battleField`
+//      **pointerdown 홀드** 상태라 키로는 안 걸린다. → busy 동안 홀드하고 메뉴를 누를 때 뗀다.
+//      판당 busy 21초 → 3.6초, 같은 5분에 **전투 10 → 31회**. 실제 플레이어가 하는 조작 그대로다.
+//
+//  18) **볼만 사고 회복약은 안 샀다** → 5분에 소지금 21로 파산·회복약 0·저HP마다 도주 10회.
+//      전멸하면 소지금 절반이라 자급이 끊긴다. → 상점에서 볼과 회복약을 **한 번에** 산다.
+//      16~18을 고친 뒤 7분 판에서 **뱃지 2/4 · 파티 5 · Lv20 · 소지금 1442**(이전 최고는 12.8분에 뱃지 2).
+//      ⚠️ 판마다 편차가 크다 — 같은 코드로 12전투/뱃지0(전멸 4)과 38전투/뱃지2가 나온다. 한 판으로 판단 금지.
+//
 // ⚠️ 남은 것(다음 세션 — 저부하 환경 필요):
 //   · 그라인딩→gym2 돌파→gym3·4→리그 완주를 **저부하 환경에서 끝까지** 돌려 확인. 지금은 load 5~6이라
 //     브라우저가 조기 종료돼 gym2 clear 여부까지 못 봤다(그라인딩 로직 자체는 6회 발동·전투 확인).
@@ -201,17 +218,24 @@ const { chromium } = require("playwright"); const path=require("path");
       const tab=await p.evaluate(()=>{ const ov=document.querySelector("#shopOverlay.active"); if(!ov)return "no";
         const bt=ov.querySelector("#shopBuyTab"); if(bt&&!bt.classList.contains("on")){bt.click();return "tab";} return "ok"; });
       if(tab==="tab")await p.waitForTimeout(150);
-      // 정령구 행의 구매 클릭(고급/울트라 말고 기본 — 싸서 많이 산다)
-      const rowClicked=await p.evaluate(()=>{ const ov=document.querySelector("#shopOverlay.active"); if(!ov)return false;
-        const rows=[...ov.querySelectorAll(".bag-item")]; const nmOf=r=>((r.querySelector(".nm")||{}).textContent||"");
-        const row=rows.find(r=>/정령구/.test(nmOf(r))&&!/고급|울트라/.test(nmOf(r))) || rows.find(r=>/정령구/.test(nmOf(r)));
-        if(!row)return false; const b=row.querySelector(".pick"); if(!b||b.disabled)return false; b.click(); return true; });
-      if(rowClicked){ await p.waitForTimeout(220);
-        // 수량을 가능한 만큼(≤12) 늘려 한 번에 산다. buyPlus는 클릭마다 renderTrade로 갱신되므로 매번 재조회.
-        await p.evaluate(()=>{ for(let i=0;i<12;i++){ const plus=document.getElementById("buyPlus"); if(plus&&!plus.disabled)plus.click(); else break; } });
+      // ⚠️ 볼만 사면 봇이 굶는다 — 5분 프로브에서 **소지금 21로 파산 + 회복약 0**이라 저HP마다 도주했다.
+      //    회복약이 없으면 전멸→소지금 절반이 반복돼 자급이 끊긴다. 볼과 회복약을 **한 번에** 산다.
+      //    (고급/울트라는 비싸서 제외 — 싼 것을 많이 사는 게 봇에겐 낫다.)
+      const wish=[{re:"정령구", ex:"고급|울트라|다크|네트|퀵|힐", n:12},{re:"회복약", ex:"고급|최고", n:8}];
+      for(const w of wish){
+        const rowClicked=await p.evaluate(({re,ex})=>{ const ov=document.querySelector("#shopOverlay.active"); if(!ov)return false;
+          const rows=[...ov.querySelectorAll(".bag-item")]; const nmOf=r=>((r.querySelector(".nm")||{}).textContent||"");
+          const R=new RegExp(re), X=new RegExp(ex);
+          const row=rows.find(r=>R.test(nmOf(r))&&!X.test(nmOf(r))) || rows.find(r=>R.test(nmOf(r)));
+          if(!row)return false; const b=row.querySelector(".pick"); if(!b||b.disabled)return false; b.click(); return true; }, w);
+        if(!rowClicked)continue;
+        await p.waitForTimeout(220);
+        // 수량을 살 수 있는 만큼 늘려 한 번에 산다. buyPlus는 클릭마다 renderTrade로 갱신되므로 매번 재조회.
+        await p.evaluate(n=>{ for(let i=0;i<n;i++){ const plus=document.getElementById("buyPlus"); if(plus&&!plus.disabled)plus.click(); else break; } }, w.n);
         await p.waitForTimeout(150);
         await p.evaluate(()=>{ const ok=document.getElementById("buyOk"); if(ok&&!ok.disabled)ok.click(); });
-        await p.waitForTimeout(450); }
+        await p.waitForTimeout(450);
+      }
       // 상점 오버레이 닫기(Escape → 안 닫히면 ✕)
       await p.keyboard.press("Escape"); await p.waitForTimeout(220);
       await p.evaluate(()=>{ const c=document.querySelector("#shopOverlay.active .closex,#shopOverlay.active [id*=close]"); if(c)c.click(); });
@@ -247,6 +271,14 @@ const { chromium } = require("playwright"); const path=require("path");
   // gym별 목표 레벨(리더 대비 -1까지 그라인딩). 밸런스 문서 기준 근사치. 4뱃지 후는 리그(44).
   const GYM_LV=[11,17,25,31];
 
+  // 전투 빨리감기(SKIP) — 게임은 **배틀 필드를 누르는 동안** 텍스트/애니를 빨리 넘긴다(자동 모드).
+  // ⚠️ 이걸 안 쓰면 벽시계의 **70%가 메시지 대기**로 사라진다(실측: 5분에 전투 10회 · busy 210초).
+  //    Enter를 두드려봐야 소용없다 — SKIP은 pointerdown 홀드 상태다. 실제 플레이어와 같은 조작으로
+  //    busy 동안 누르고 있다가, 메뉴를 눌러야 할 때 뗀다.
+  let holding=false;
+  const ffOn=async()=>{ if(holding)return; try{ await p.dispatchEvent("#battleField","pointerdown"); holding=true; }catch(e){} };
+  const ffOff=async()=>{ if(!holding)return; try{ await p.dispatchEvent("#battleField","pointerup"); }catch(e){} holding=false; };
+
   const TRACE=!!process.env.TRACE;
   let iter=0, lastTrace=Date.now();
   const tr=(branch,st)=>{ if(!TRACE)return; const dt=Date.now()-lastTrace; lastTrace=Date.now();
@@ -278,6 +310,9 @@ const { chromium } = require("playwright"); const path=require("path");
         foeHp: G.foe?G.foe.hp/G.foe.maxHp:1, money:G.money, pos:G.pos };
     });
 
+    // 빨리감기 홀드는 **메시지 대기 중에만** — 메뉴를 누르거나 필드로 나가면 손을 뗀다.
+    if(holding && !(st.inB && st.busy))await ffOff();
+
     // 포획 집계: 인라인 확인은 포획 애니(~5s)보다 일러 항상 0이었다 → 파티 증가로 센다(단일 출처).
     if(lastPartyN!=null && st.party>lastPartyN)stats.caught+=(st.party-lastPartyN);
     lastPartyN=st.party;
@@ -301,7 +336,18 @@ const { chromium } = require("playwright"); const path=require("path");
         const picked=await p.evaluate(()=>{ const ov=document.querySelector(".overlay.active"); if(!ov)return false;
           // ⚠️ 오버레이 종류를 구분해야 한다. 예전엔 전부 "아무 버튼이나 누르기"로 처리해서,
           //    가방이 열린 채로 남으면 **주머니 탭만 무한 클릭**하며 전투가 영영 안 끝났다.
-          if(ov.id==="bagOverlay"){ const x=[...ov.querySelectorAll("button")].find(b=>b.offsetParent!==null&&/✕|×/.test(b.textContent||""));
+          if(ov.id==="bagOverlay"){
+            // ⚠️ **'포획'은 이제 볼 선택 가방을 연다**(볼 선택 UI). bagOverlay를 무조건 닫던 옛 코드는
+            //    포획 → 닫기 → 포획 …으로 **무한 핑퐁**하며 전투 하나에 갇혔다(실측: 15분 판이 전투 1회).
+            //    → 볼 선택 화면이면 닫지 말고 **기본 정령구를 던진다**(싸고 수량이 많다).
+            if(/어떤 볼을 던질까/.test(ov.textContent||"")){
+              const rows=[...ov.querySelectorAll(".bag-item")];
+              const nm=r=>((r.querySelector(".nm")||{}).textContent||"");
+              const row=rows.find(r=>/정령구/.test(nm(r))&&!/고급|울트라|다크|네트|퀵|힐/.test(nm(r)))||rows[0];
+              const b=row&&[...row.querySelectorAll("button")].find(x=>x.offsetParent!==null&&!x.disabled);
+              if(b){ b.click(); return "throw"; }
+            }
+            const x=[...ov.querySelectorAll("button")].find(b=>b.offsetParent!==null&&/✕|×/.test(b.textContent||""));
             if(x){ x.click(); return true; } return false; }
           // ⚠️ **숨겨진 버튼을 누르면 안 된다.** 강제 교체(기절 후)에서는 게임이 닫기 ✕를 display:none으로
           //    감추는데, .click()은 숨겨진 버튼도 동작한다 → 봇이 ✕를 눌러 닫고 게임이 다시 열어
@@ -314,9 +360,9 @@ const { chromium } = require("playwright"); const path=require("path");
           const card=[...ov.querySelectorAll(".mon-card")].find(c=>!/기절/.test(c.textContent||"")&&c.offsetParent!==null);
           if(card){ card.click(); return true; } return false; });
         tr("battle:overlay",st); if(!picked)await p.keyboard.press("Enter");
-        await p.waitForTimeout(320); continue;
+        await p.waitForTimeout(picked==="throw"?1400:320); continue;   // 포획 애니는 길다
       }
-      if(st.busy){ tr("battle:busy",st); await p.keyboard.press("Enter"); await p.waitForTimeout(130); continue; }
+      if(st.busy){ tr("battle:busy",st); await ffOn(); await p.keyboard.press("Enter"); await p.waitForTimeout(110); continue; }
       if(st.moveOn){ tr("battle:move",st);
         const idx=await p.evaluate(()=>{ const S=window.SG,G=S.G(); const me=G.party[G.active],foe=G.foe;
           if(!me||!foe)return 0;
@@ -359,6 +405,20 @@ const { chromium } = require("playwright"); const path=require("path");
             if(clickIn(ov))return true;
             for(const t of [...ov.querySelectorAll("button")].filter(b=>/회복|도구/.test(b.textContent||""))){ t.click(); if(clickIn(ov))return true; }
             return false; });
+          // ⚠️ 회복약은 이제 **대상 정령 선택**이 한 단계 더 붙는다(아이템 대상 선택 UI).
+          //    예전 코드는 여기서 곧장 개수 감소만 확인해 **항상 실패로 세고 5회 뒤 회복약을 영영 포기**했다.
+          //    → 대상 목록이 떠 있으면 HP 비율이 가장 낮은 정령을 고른다. renderItemTarget의 연속탭 가드가
+          //      300ms이므로 그보다 넉넉히 기다린 뒤 눌러야 클릭이 먹는다.
+          if(used){ await p.waitForTimeout(420);
+            await p.evaluate(()=>{ const ov=document.getElementById("bagOverlay"); if(!ov)return false;
+              if(!/누구에게 쓸까/.test(ov.textContent||""))return false;
+              let best=null,bh=2;
+              for(const r of ov.querySelectorAll(".bag-item")){
+                const b=r.querySelector("button"); if(!b||b.disabled||b.offsetParent===null)continue;
+                const m=/(\d+)\s*\/\s*(\d+)/.exec(((r.querySelector(".ds")||{}).textContent)||"");
+                const h=m?Number(m[1])/Number(m[2]):1; if(h<bh){ bh=h; best=b; } }
+              if(best){ best.click(); return true; } return false; });
+            await p.waitForTimeout(320); }
           // ⚠️ 클릭이 "먹혔는지"를 개수 감소로 확인해야 한다 — 안 그러면 실패한 클릭을 성공으로 세고
           //    같은 분기를 무한 반복한다(실측: 5분에 169회).
           const after=await p.evaluate(()=>{ const G=window.SG.G(); return (G.items.potion||0)+(G.items.hyperpotion||0); });
@@ -421,7 +481,8 @@ const { chromium } = require("playwright"); const path=require("path");
     if(healCooldown>0)healCooldown--;
 
     // 팀이 작은데 볼이 부족하면 상점에서 정령구 보충(팀 구성의 열쇠 — 볼 8개론 6% 풀피 던지기에 부족).
-    if(st.party<4 && st.balls<4 && st.money>=300 && !st.indoor && restockCd<=0){
+    // ⚠️ 볼뿐 아니라 **회복약이 마르면** 저HP마다 도주·전멸로 진행이 끊긴다 → 둘 중 하나만 부족해도 상점에 간다.
+    if(((st.party<4 && st.balls<4) || st.potion<=1) && st.money>=300 && !st.indoor && restockCd<=0){
       tr("field:restock",st); const r=await restockBalls();
       restockCd = r?8:20;   // 성공하면 잠깐, 실패하면 오래 쉬어 진행을 막지 않는다
       continue;
@@ -511,7 +572,7 @@ const { chromium } = require("playwright"); const path=require("path");
 
   const mins=((Date.now()-t0)/60000).toFixed(1);
   console.log(`\n  [전수 플레이스루] ${mins}분 · 예산 ${BUDGET}초`);
-  console.log(`     전투 ${stats.battles}회 (야생 ${stats.wild} · 트레이너 ${stats.trainer}) · 포획 ${stats.caught} · 회복약 ${stats.potions} · 센터회복 ${stats.heals} · 볼보충 ${stats.restocks} · 그라인딩 ${stats.grinds} · 도주 ${stats.runs}`);
+  console.log(`     전투 ${stats.battles}회 (야생 ${stats.wild} · 트레이너 ${stats.trainer}) · 포획 ${stats.caught} · 회복약 ${stats.potions} · 센터회복 ${stats.heals} · 상점보충 ${stats.restocks} · 그라인딩 ${stats.grinds} · 도주 ${stats.runs} · 전멸(추정) ${stats.faints}`);
   console.log(`     도달: 뱃지 ${fin.badges}/4 · 숲의 군주 ${fin.lord?"격파":"미격파"} · 챔피언 ${fin.champion?"등극":"미등극"}`);
   console.log(`     파티 ${fin.party}마리 Lv[${fin.lv.join(",")}] · 도감 ${fin.caught} · 소지금 ${fin.money} · 위치 ${fin.indoor||"필드"} ${fin.pos.x},${fin.pos.y}`);
   if(stats.samples.length){ console.log("     진행 곡선(1분 간격):");
