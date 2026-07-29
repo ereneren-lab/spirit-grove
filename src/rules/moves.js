@@ -68,6 +68,30 @@ const MOVES={
   poisonpowder:{name:"독가루",type:"poison",power:0,acc:75,pp:20,pri:0,eff:{status:"psn",chance:1}},
   dig:{name:"땅파기",type:"ground",power:60,acc:100,pp:10,pri:0},
   quake:{name:"지진",type:"ground",power:78,acc:100,pp:8,pri:0},
+  /* ── 타입별 공격기 보강(평가 #3) ─────────────────────────────────────────
+     불·물 정령이 30종인데 그 타입 공격기가 각 4개뿐이라 **같은 타입 정령이 거의 같은 기술**을 썼다.
+     독은 2개, 땅은 4개로 더 심했다. 타입당 최소 6개가 되도록 13개를 추가한다.
+     ⚠️ **전부 플레이어 전용 TM으로만 배운다** — 레벨업 학습셋에 안 넣으므로 트레이너·야생은 안 쓰고
+        따라서 **밸런스는 구조적으로 불변**이다(지닌물건·방어·2턴기 때와 같은 원칙).
+     ⚠️ 공격기를 추가하면 `SIGFX`에도 반드시 전용 연출을 넣을 것 — 회귀가 `atkSig===atkAll`을 강제한다. */
+  // 불 4→6
+  emberburst:{name:"불티폭발",type:"fire",power:50,acc:100,pp:15,pri:0,eff:{status:"brn",chance:0.15}},
+  heatlance:{name:"열창",type:"fire",power:66,acc:95,pp:10,pri:0,highCrit:true},
+  // 물 4→6
+  bubblebeam:{name:"거품광선",type:"water",power:48,acc:100,pp:20,pri:0,eff:{stat:"spd",stage:-1,target:"foe",chance:0.35}},
+  whirlpool:{name:"소용돌이",type:"water",power:56,acc:90,pp:12,pri:0,eff:{trap:true}},
+  // 독 2→6
+  acidspray:{name:"애시드샷",type:"poison",power:44,acc:100,pp:20,pri:0,eff:{stat:"spDef",stage:-2,target:"foe",chance:0.5}},
+  venomfang:{name:"독니",type:"poison",power:58,acc:95,pp:15,pri:0,eff:{status:"psn",chance:0.3}},
+  toxicwave:{name:"독의물결",type:"poison",power:70,acc:90,pp:10,pri:0,eff:{status:"psn",chance:0.2}},
+  needlerush:{name:"바늘연타",type:"poison",power:22,acc:95,pp:15,pri:0,multi:[2,5]},
+  // 땅 4→6
+  sandblast:{name:"모래폭풍탄",type:"ground",power:52,acc:95,pp:15,pri:0,eff:{stat:"acc",stage:-1,target:"foe",chance:0.4}},
+  fissure:{name:"땅가르기",type:"ground",power:68,acc:90,pp:8,pri:0,highCrit:true},
+  // 전기·비행·얼음 5→6
+  voltfang:{name:"전격니",type:"elec",power:56,acc:95,pp:15,pri:0,eff:{status:"par",chance:0.3}},
+  windblade:{name:"질풍참",type:"flying",power:54,acc:100,pp:15,pri:0,highCrit:true},
+  frostshard:{name:"서리파편",type:"ice",power:50,acc:100,pp:20,pri:0,eff:{status:"frz",chance:0.1}},
   // ===== 다단히트 =====
   doublekick:{name:"두번차기",type:"ground",power:18,acc:100,pp:20,pri:0,multi:[2,2]},
   rockblast:{name:"돌팔매연타",type:"rock",power:14,acc:90,pp:15,pri:0,multi:[2,5]},

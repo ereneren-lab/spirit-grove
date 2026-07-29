@@ -1255,6 +1255,30 @@ const MOVES={
   poisonpowder:{name:"독가루",type:"poison",power:0,acc:75,pp:20,pri:0,eff:{status:"psn",chance:1}},
   dig:{name:"땅파기",type:"ground",power:60,acc:100,pp:10,pri:0},
   quake:{name:"지진",type:"ground",power:78,acc:100,pp:8,pri:0},
+  /* ── 타입별 공격기 보강(평가 #3) ─────────────────────────────────────────
+     불·물 정령이 30종인데 그 타입 공격기가 각 4개뿐이라 **같은 타입 정령이 거의 같은 기술**을 썼다.
+     독은 2개, 땅은 4개로 더 심했다. 타입당 최소 6개가 되도록 13개를 추가한다.
+     ⚠️ **전부 플레이어 전용 TM으로만 배운다** — 레벨업 학습셋에 안 넣으므로 트레이너·야생은 안 쓰고
+        따라서 **밸런스는 구조적으로 불변**이다(지닌물건·방어·2턴기 때와 같은 원칙).
+     ⚠️ 공격기를 추가하면 `SIGFX`에도 반드시 전용 연출을 넣을 것 — 회귀가 `atkSig===atkAll`을 강제한다. */
+  // 불 4→6
+  emberburst:{name:"불티폭발",type:"fire",power:50,acc:100,pp:15,pri:0,eff:{status:"brn",chance:0.15}},
+  heatlance:{name:"열창",type:"fire",power:66,acc:95,pp:10,pri:0,highCrit:true},
+  // 물 4→6
+  bubblebeam:{name:"거품광선",type:"water",power:48,acc:100,pp:20,pri:0,eff:{stat:"spd",stage:-1,target:"foe",chance:0.35}},
+  whirlpool:{name:"소용돌이",type:"water",power:56,acc:90,pp:12,pri:0,eff:{trap:true}},
+  // 독 2→6
+  acidspray:{name:"애시드샷",type:"poison",power:44,acc:100,pp:20,pri:0,eff:{stat:"spDef",stage:-2,target:"foe",chance:0.5}},
+  venomfang:{name:"독니",type:"poison",power:58,acc:95,pp:15,pri:0,eff:{status:"psn",chance:0.3}},
+  toxicwave:{name:"독의물결",type:"poison",power:70,acc:90,pp:10,pri:0,eff:{status:"psn",chance:0.2}},
+  needlerush:{name:"바늘연타",type:"poison",power:22,acc:95,pp:15,pri:0,multi:[2,5]},
+  // 땅 4→6
+  sandblast:{name:"모래폭풍탄",type:"ground",power:52,acc:95,pp:15,pri:0,eff:{stat:"acc",stage:-1,target:"foe",chance:0.4}},
+  fissure:{name:"땅가르기",type:"ground",power:68,acc:90,pp:8,pri:0,highCrit:true},
+  // 전기·비행·얼음 5→6
+  voltfang:{name:"전격니",type:"elec",power:56,acc:95,pp:15,pri:0,eff:{status:"par",chance:0.3}},
+  windblade:{name:"질풍참",type:"flying",power:54,acc:100,pp:15,pri:0,highCrit:true},
+  frostshard:{name:"서리파편",type:"ice",power:50,acc:100,pp:20,pri:0,eff:{status:"frz",chance:0.1}},
   // ===== 다단히트 =====
   doublekick:{name:"두번차기",type:"ground",power:18,acc:100,pp:20,pri:0,multi:[2,2]},
   rockblast:{name:"돌팔매연타",type:"rock",power:14,acc:90,pp:15,pri:0,multi:[2,5]},
@@ -4498,6 +4522,61 @@ async function _drainFx(s,d,n,sz){ const from=fxCenter(d),to=fxCenter(s);
     await wait(fxT(34)); }
   fxBurst(d,"grass",n>=8?3:2); _pop("💚",fxCenter(s),"#7fd1ae",0,-30,fxT(520)); await wait(fxT(160)); }
 const SIGFX={
+  /* ── 타입별 공격기 보강(평가 #3)의 전용 연출 13종 ─────────────────────────
+     ⚠️ 공격기는 **전원 전용 연출**이 있어야 한다(`movefx_variety_test`가 `atkSig===atkAll`을 강제).
+        폴백으로 두면 같은 타입 기술이 전부 똑같이 보여 "기술을 늘린 의미"가 사라진다. */
+  emberburst: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<9;i++){ const a=i/9*6.28; _pop("🔥",c,TYPE_COLOR.fire,Math.cos(a)*rand(26,46),Math.sin(a)*rand(26,46),rand(300,460)); }
+    fxBurst(d,"fire",2); impactFlash(); await wait(fxT(110)); },
+  heatlance: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<6;i++){ const t=i/5; const g=fxGlyph("🔥",{x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t},TYPE_COLOR.fire,"fx-particle");
+      g.style.fontSize=(10+t*16)+"px";
+      g.animate([{opacity:1},{opacity:0}],{duration:fxT(260)}).finished.then(()=>g.remove()).catch(()=>g.remove()); await wait(fxT(22)); }
+    fxSlash(d); fxBurst(d,"fire",2); screenShake(false); await wait(fxT(90)); },
+  bubblebeam: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<8;i++){ const t=i/7; _pop("🫧",{x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t-rand(0,10)},TYPE_COLOR.water,rand(-8,8),rand(-14,2),rand(280,420)); await wait(fxT(20)); }
+    fxBurst(d,"water",2); await wait(fxT(80)); },
+  whirlpool: async(s,d)=>{ const c=fxCenter(d);
+    for(let r=0;r<3;r++){ for(let i=0;i<6;i++){ const a=i/6*6.28+r*0.5; _pop("🌀",c,TYPE_COLOR.water,Math.cos(a)*(18+r*12),Math.sin(a)*(10+r*7),rand(320,460)); } await wait(fxT(70)); }
+    fxBurst(d,"water",1); await wait(fxT(80)); },
+  acidspray: async(s,d)=>{ const dS=spriteEl(d), c=fxCenter(d);
+    for(let i=0;i<7;i++)_pop("🧪",c,TYPE_COLOR.poison,rand(-34,34),rand(-26,10),rand(300,440));
+    dS.style.filter="hue-rotate(70deg) saturate(1.5)"; setTimeout(()=>{dS.style.filter="";},fxT(380));
+    fxBurst(d,"poison",2); await wait(fxT(100)); },
+  venomfang: async(s,d)=>{ const aS=spriteEl(s), c=fxCenter(d);
+    aS.classList.add("lunge"); await wait(fxT(150)); aS.classList.remove("lunge");
+    for(const dir of [-1,1]){ const g=fxGlyph("🦷",{x:c.x+dir*22,y:c.y},TYPE_COLOR.poison,"fx-particle"); g.style.fontSize="19px";
+      g.animate([{transform:`translate(-50%,-50%) translateX(${dir*14}px)`,opacity:1},{transform:"translate(-50%,-50%)",opacity:0}],{duration:fxT(300)}).finished.then(()=>g.remove()).catch(()=>g.remove()); }
+    for(let i=0;i<4;i++)_pop("☠️",c,TYPE_COLOR.poison,rand(-18,18),rand(-24,0),rand(320,460));
+    fxBurst(d,"poison",2); await wait(fxT(100)); },
+  toxicwave: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let w=0;w<3;w++){ for(let i=0;i<5;i++){ const t=i/4; _pop("🟣",{x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t+(w-1)*14},TYPE_COLOR.poison,0,0,rand(260,380)); } await wait(fxT(60)); }
+    fxBurst(d,"poison",3); impactFlash(); await wait(fxT(90)); },
+  needlerush: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<4;i++){ const g=fxGlyph("📍",{x:c.x+rand(-22,22),y:c.y+rand(-18,18)},TYPE_COLOR.poison,"fx-particle");
+      g.animate([{opacity:1,transform:"translate(-50%,-50%) scale(1.3)"},{opacity:0,transform:"translate(-50%,-50%) scale(.7)"}],{duration:fxT(220)}).finished.then(()=>g.remove()).catch(()=>g.remove());
+      fxSlash(d); await wait(fxT(70)); }
+    fxBurst(d,"poison",1); await wait(fxT(70)); },
+  sandblast: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<12;i++)_pop("🟫",{x:c.x-40,y:c.y+rand(-20,20)},TYPE_COLOR.ground,rand(50,86),rand(-14,14),rand(340,500));
+    fxBurst(d,"ground",2); screenShake(false); await wait(fxT(110)); },
+  fissure: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<5;i++){ const g=fxGlyph("⛰️",{x:c.x+(i-2)*16,y:c.y+26},TYPE_COLOR.ground,"fx-particle"); g.style.fontSize="18px";
+      g.animate([{opacity:1,transform:"translate(-50%,-50%) translateY(10px)"},{opacity:0,transform:"translate(-50%,-50%) translateY(-24px)"}],{duration:fxT(360)}).finished.then(()=>g.remove()).catch(()=>g.remove()); }
+    fxSlash(d); fxBurst(d,"ground",2); screenShake(true); impactFlash(); await wait(fxT(120)); },
+  voltfang: async(s,d)=>{ const aS=spriteEl(s), c=fxCenter(d);
+    aS.classList.add("lunge"); await wait(fxT(140)); aS.classList.remove("lunge");
+    for(const dir of [-1,1])_pop("⚡",{x:c.x+dir*20,y:c.y},TYPE_COLOR.elec,dir*10,-8,rand(300,420));
+    fxSlash(d); fxBurst(d,"elec",2); impactFlash(); await wait(fxT(90)); },
+  windblade: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<2;i++){ const g=fxGlyph("🌬️",{x:c.x,y:c.y+(i?14:-14)},TYPE_COLOR.flying,"fx-particle"); g.style.fontSize="22px";
+      g.animate([{opacity:1,transform:"translate(-50%,-50%) translateX(-30px)"},{opacity:0,transform:"translate(-50%,-50%) translateX(30px)"}],{duration:fxT(260)}).finished.then(()=>g.remove()).catch(()=>g.remove());
+      fxSlash(d); await wait(fxT(80)); }
+    fxBurst(d,"flying",1); await wait(fxT(70)); },
+  frostshard: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<8;i++){ const a=i/8*6.28; _pop("🔹",c,TYPE_COLOR.ice,Math.cos(a)*rand(24,44),Math.sin(a)*rand(24,44),rand(300,440)); }
+    const dS=spriteEl(d); dS.style.filter="brightness(1.2) saturate(.6)"; setTimeout(()=>{dS.style.filter="";},fxT(360));
+    fxBurst(d,"ice",2); await wait(fxT(100)); },
   // ── 노말 근접: 내려찍기(위에서 찍음) / 박치기(머리 충돌+별) / 날쌘일격(짧은 잽) / 물기(이빨 자국) / 발버둥(자기도 아픔)
   slam: async(s,d)=>{ const aS=spriteEl(s), c=fxCenter(d);
     aS.animate([{transform:"translateY(0)"},{transform:"translateY(-22px)"},{transform:"translateY(6px)"}],{duration:fxT(280),easing:"ease-in"});
@@ -6031,6 +6110,21 @@ const BAG_ITEMS=[
   {key:"thunderstone",em:"⚡",nm:"천둥돌",ds:"특정 정령을 진화시킨다",use:"evostone",where:"map"},
   {key:"leafstone",em:"🍃",nm:"잎사귀돌",ds:"특정 정령을 진화시킨다",use:"evostone",where:"map"},
   {key:"tm_rockslide",em:"💿",nm:"기술머신: 락슬라이드",ds:"바위 정령에게 락슬라이드를 가르친다",use:"tm",move:"rockslide",where:"map"},
+  /* 타입별 공격기 보강(평가 #3)의 기술머신 13종 — ⚠️ **타입 전용**(universal 아님)이라
+     그 타입 정령만 배운다. 레벨업 학습셋엔 안 넣으므로 트레이너·야생은 못 쓴다 = 밸런스 불변. */
+  {key:"tm_emberburst",em:"💿",nm:"기술머신: 불티폭발",ds:"fire 정령에게 불티폭발을(를) 가르친다",use:"tm",move:"emberburst",where:"map"},
+  {key:"tm_heatlance",em:"💿",nm:"기술머신: 열창",ds:"fire 정령에게 열창을(를) 가르친다",use:"tm",move:"heatlance",where:"map"},
+  {key:"tm_bubblebeam",em:"💿",nm:"기술머신: 거품광선",ds:"water 정령에게 거품광선을(를) 가르친다",use:"tm",move:"bubblebeam",where:"map"},
+  {key:"tm_whirlpool",em:"💿",nm:"기술머신: 소용돌이",ds:"water 정령에게 소용돌이을(를) 가르친다",use:"tm",move:"whirlpool",where:"map"},
+  {key:"tm_acidspray",em:"💿",nm:"기술머신: 애시드샷",ds:"poison 정령에게 애시드샷을(를) 가르친다",use:"tm",move:"acidspray",where:"map"},
+  {key:"tm_venomfang",em:"💿",nm:"기술머신: 독니",ds:"poison 정령에게 독니을(를) 가르친다",use:"tm",move:"venomfang",where:"map"},
+  {key:"tm_toxicwave",em:"💿",nm:"기술머신: 독의물결",ds:"poison 정령에게 독의물결을(를) 가르친다",use:"tm",move:"toxicwave",where:"map"},
+  {key:"tm_needlerush",em:"💿",nm:"기술머신: 바늘연타",ds:"poison 정령에게 바늘연타을(를) 가르친다",use:"tm",move:"needlerush",where:"map"},
+  {key:"tm_sandblast",em:"💿",nm:"기술머신: 모래폭풍탄",ds:"ground 정령에게 모래폭풍탄을(를) 가르친다",use:"tm",move:"sandblast",where:"map"},
+  {key:"tm_fissure",em:"💿",nm:"기술머신: 땅가르기",ds:"ground 정령에게 땅가르기을(를) 가르친다",use:"tm",move:"fissure",where:"map"},
+  {key:"tm_voltfang",em:"💿",nm:"기술머신: 전격니",ds:"elec 정령에게 전격니을(를) 가르친다",use:"tm",move:"voltfang",where:"map"},
+  {key:"tm_windblade",em:"💿",nm:"기술머신: 질풍참",ds:"flying 정령에게 질풍참을(를) 가르친다",use:"tm",move:"windblade",where:"map"},
+  {key:"tm_frostshard",em:"💿",nm:"기술머신: 서리파편",ds:"ice 정령에게 서리파편을(를) 가르친다",use:"tm",move:"frostshard",where:"map"},
   {key:"tm_hydro",em:"💿",nm:"기술머신: 하이드로",ds:"물 정령에게 하이드로를 가르친다",use:"tm",move:"hydro",where:"map"},
   {key:"tm_twinbolt",em:"💿",nm:"기술머신: 트윈볼트",ds:"전기 정령에게 트윈볼트를 가르친다",use:"tm",move:"twinbolt",where:"map"},
   {key:"tm_skyrush",em:"💿",nm:"기술머신: 스카이러시",ds:"비행 정령에게 스카이러시를 가르친다",use:"tm",move:"skyrush",where:"map"},
@@ -6287,6 +6381,19 @@ const SHOP=[
   {key:"tm_raindance",em:"💿",nm:"기술머신: 비바라기",ds:"5턴 비",price:1400,need:2},
   {key:"tm_sandstorm",em:"💿",nm:"기술머신: 모래바람",ds:"5턴 모래바람",price:1400,need:3},
   {key:"tm_rockslide",em:"💿",nm:"기술머신: 락슬라이드",ds:"바위 타입 전용",price:1400,need:2},
+  {key:"tm_emberburst",em:"💿",nm:"기술머신: 불티폭발",ds:"fire 타입 전용",price:1200,need:2},
+  {key:"tm_heatlance",em:"💿",nm:"기술머신: 열창",ds:"fire 타입 전용",price:1600,need:3},
+  {key:"tm_bubblebeam",em:"💿",nm:"기술머신: 거품광선",ds:"water 타입 전용",price:1200,need:2},
+  {key:"tm_whirlpool",em:"💿",nm:"기술머신: 소용돌이",ds:"water 타입 전용",price:1600,need:3},
+  {key:"tm_acidspray",em:"💿",nm:"기술머신: 애시드샷",ds:"poison 타입 전용",price:1200,need:2},
+  {key:"tm_venomfang",em:"💿",nm:"기술머신: 독니",ds:"poison 타입 전용",price:1400,need:2},
+  {key:"tm_toxicwave",em:"💿",nm:"기술머신: 독의물결",ds:"poison 타입 전용",price:1800,need:3},
+  {key:"tm_needlerush",em:"💿",nm:"기술머신: 바늘연타",ds:"poison 타입 전용",price:1400,need:2},
+  {key:"tm_sandblast",em:"💿",nm:"기술머신: 모래폭풍탄",ds:"ground 타입 전용",price:1200,need:2},
+  {key:"tm_fissure",em:"💿",nm:"기술머신: 땅가르기",ds:"ground 타입 전용",price:1800,need:3},
+  {key:"tm_voltfang",em:"💿",nm:"기술머신: 전격니",ds:"elec 타입 전용",price:1400,need:2},
+  {key:"tm_windblade",em:"💿",nm:"기술머신: 질풍참",ds:"flying 타입 전용",price:1400,need:2},
+  {key:"tm_frostshard",em:"💿",nm:"기술머신: 서리파편",ds:"ice 타입 전용",price:1200,need:2},
   {key:"tm_hydro",em:"💿",nm:"기술머신: 하이드로",ds:"물 타입 전용",price:1400,need:2},
   {key:"tm_twinbolt",em:"💿",nm:"기술머신: 트윈볼트",ds:"전기 타입 전용",price:1400,need:2},
   {key:"tm_skyrush",em:"💿",nm:"기술머신: 스카이러시",ds:"비행 타입 전용",price:1400,need:2},
