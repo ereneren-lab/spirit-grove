@@ -13,6 +13,22 @@
 //    (battle_layout·pc_card에서 이미 두 번 밟은 함정) → 열렸는지를 먼저 단정한다.
 const { chromium } = require("playwright"); const path=require("path");
 
+/* 게임 흐름으로 열리는 패널들 — 메뉴 버튼이 없어 감사에서 빠지기 쉽다(유저: "이런 것들도 다 검토해줘").
+   ⚠️ 이것들이 진짜 위험하다. 상점·교체는 **내용이 길어** 가로에서 제일 넘치기 쉬운데
+      메뉴에 안 걸려 있어 눈에 안 띈다. `SG.flow`로 직접 열어 같은 잣대를 건다. */
+const FLOW_PANELS=[
+  {id:"shopOverlay",  call:"openShop",     ko:"상점"},
+  {id:"shopOverlay",  call:"openExchange", ko:"교환소"},
+  {id:"slotOverlay",  call:"openSlots",    ko:"저장 슬롯"},
+];
+/* ⚠️ 전투 중에만 열리는 패널은 **실제로 전투에 들어가서** 재야 한다.
+   `openSwitch`는 전투 밖이면 아예 안 열린다(전멸 모달 버그를 막는 구조적 관문 — 되돌리지 말 것)
+   → 필드에서 부르면 "안 열림"이 나오는데 그건 게임이 옳고 픽스처가 틀린 것이다. */
+const BATTLE_PANELS=[
+  {id:"switchOverlay",call:"openSwitch", arg:false, ko:"전투 중 교체"},
+  {id:"bagOverlay",   call:"openBattleBag",         ko:"전투 중 가방"},
+];
+
 const PANELS=[
   {id:"minimap",    btn:"openMinimap", ko:"지도"},
   {id:"dexOverlay", btn:"openDex",     ko:"도감"},
@@ -73,6 +89,68 @@ const PANELS=[
       await p.evaluate(id=>{ const el=document.getElementById(id); if(el)el.classList.remove("active"); }, pn.id);
       await p.waitForTimeout(120);
     }
+    for(const pn of FLOW_PANELS){
+      const r=await p.evaluate(async(pn)=>{
+        const F=window.SG.flow; if(typeof F[pn.call]!=="function")return {err:"flow에 없음: "+pn.call};
+        try{ F[pn.call](pn.arg); }catch(e){ return {err:String(e).slice(0,60)}; }
+        await new Promise(r=>setTimeout(r,320));
+        const el=document.getElementById(pn.id); if(!el)return {err:"패널 없음: "+pn.id};
+        const st=document.getElementById("stage")||document.body, sr=st.getBoundingClientRect();
+        const vis=x=>x.offsetParent!==null && !x.disabled;
+        const closer=[...el.querySelectorAll("button")].filter(vis)
+          .find(x=>/✕|×|닫기/.test(x.textContent||""))||null;
+        const cr=closer?closer.getBoundingClientRect():null;
+        return { open:el.classList.contains("active"),
+          stage:{top:Math.round(sr.top),bottom:Math.round(sr.bottom)},
+          closer: closer?{ top:Math.round(cr.top),bottom:Math.round(cr.bottom),
+            size:Math.round(cr.width)+"×"+Math.round(cr.height),
+            inside: cr.top>=sr.top-1 && cr.bottom<=sr.bottom+1 && cr.left>=sr.left-1 && cr.right<=sr.right+1 }:null };
+      }, pn);
+      if(r.err){ ok(false, `${pn.ko}: ${r.err}`); continue; }
+      ok(r.open, `${pn.ko}: 열린다`);
+      ok(!!r.closer && r.closer.size!=="0×0", `${pn.ko}: 보이는 닫기 컨트롤이 있다 ${r.closer?r.closer.size:""}`);
+      if(r.closer)ok(r.closer.inside,
+        `${pn.ko}: 닫기 컨트롤이 화면 안에 있다 (${r.closer.top}~${r.closer.bottom} / 스테이지 ${r.stage.top}~${r.stage.bottom})`);
+      await p.evaluate(id=>{ const el=document.getElementById(id); if(el)el.classList.remove("active"); }, pn.id);
+      await p.waitForTimeout(120);
+    }
+
+    // 전투에 실제로 들어가서 전투 전용 패널을 잰다
+    await p.evaluate(()=>window.SG.flow.startEncounter());
+    for(let i=0;i<30;i++){ await p.waitForTimeout(200);
+      const st=await p.evaluate(()=>({b:!!window.SG.G().inBattle,busy:!!window.SG.G().busy}));
+      if(st.b&&!st.busy)break; }
+    const inB=await p.evaluate(()=>!!window.SG.G().inBattle);
+    ok(inB, "전투에 진입했다(전투 전용 패널 측정 전제)");
+    if(inB)for(const pn of BATTLE_PANELS){
+      // ⚠️ 전투 패널은 `G.busy`면 열리지 않는다(정상 가드) → 풀릴 때까지 기다린 뒤 연다.
+      //    안 기다리면 "안 열림"이 뜨는데 그건 게임이 옳고 픽스처가 틀린 것이다.
+      for(let i=0;i<25;i++){ const busy=await p.evaluate(()=>!!window.SG.G().busy); if(!busy)break; await p.waitForTimeout(200); }
+      const r=await p.evaluate(async(pn)=>{
+        const F=window.SG.flow; if(typeof F[pn.call]!=="function")return {err:"flow에 없음: "+pn.call};
+        try{ F[pn.call](pn.arg); }catch(e){ return {err:String(e).slice(0,60)}; }
+        await new Promise(r=>setTimeout(r,340));
+        const el=document.getElementById(pn.id); if(!el)return {err:"패널 없음: "+pn.id};
+        const st=document.getElementById("stage")||document.body, sr=st.getBoundingClientRect();
+        const vis=x=>x.offsetParent!==null && !x.disabled;
+        const closer=[...el.querySelectorAll("button")].filter(vis)
+          .find(x=>/✕|×|닫기|돌아가기/.test(x.textContent||""))||null;
+        const cr=closer?closer.getBoundingClientRect():null;
+        return { open:el.classList.contains("active"),
+          stage:{top:Math.round(sr.top),bottom:Math.round(sr.bottom)},
+          closer: closer?{ top:Math.round(cr.top),bottom:Math.round(cr.bottom),
+            size:Math.round(cr.width)+"×"+Math.round(cr.height),
+            inside: cr.top>=sr.top-1 && cr.bottom<=sr.bottom+1 && cr.left>=sr.left-1 && cr.right<=sr.right+1 }:null };
+      }, pn);
+      if(r.err){ ok(false, `${pn.ko}: ${r.err}`); continue; }
+      ok(r.open, `${pn.ko}: 열린다`);
+      ok(!!r.closer && r.closer.size!=="0×0", `${pn.ko}: 보이는 닫기 컨트롤이 있다 ${r.closer?r.closer.size:""}`);
+      if(r.closer)ok(r.closer.inside,
+        `${pn.ko}: 닫기 컨트롤이 화면 안에 있다 (${r.closer.top}~${r.closer.bottom} / 스테이지 ${r.stage.top}~${r.stage.bottom})`);
+      await p.evaluate(id=>{ const el=document.getElementById(id); if(el)el.classList.remove("active"); }, pn.id);
+      await p.waitForTimeout(120);
+    }
+
     ok(errs.length===0, `런타임 에러 0 (${errs.length}${errs.length?": "+errs[0]:""})`);
     await p.close();
   };
