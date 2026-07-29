@@ -131,6 +131,7 @@ const { chromium } = require("playwright"); const path=require("path");
   const stats={battles:0,wild:0,trainer:0,caught:0,potions:0,runs:0,heals:0,restocks:0,grinds:0,faints:0,milestones:[],samples:[]};
   let wasBattle=false, lastStep=-1, lastMoney=null, stuck=0, lastKey="", fleeTries=0, healCooldown=0, potionFail=0, finSnapshot=null, lastPartyN=null, restockCd=0;
   let lastOvKey="", ovStuck=0; const stuckOverlays=[];   // 닫히지 않는 오버레이 감시(게임 결함 기록용)
+  let bumpKey="", bumpCnt=0;   // 같은 자리 부딪힘 감시(문이 안 열리는 경우 폴백)
 
   const mark=(name,st)=>{ if(stats.milestones.some(m=>m.name===name))return;
     stats.milestones.push({name, t:Math.round((Date.now()-t0)/1000), lv:st.lv, battles:stats.battles, party:st.party});
@@ -529,13 +530,34 @@ const { chromium } = require("playwright"); const path=require("path");
     // ⚠️ 목표(체육관·센터·리그 입구)는 **비보행 문**이다. 봇은 문 앞 칸에 도착한 뒤
     //    목표만 계속 재탭하며 제자리를 맴돌았다(walkTo가 0=이미 도착을 반환하므로 아무 일도 안 난다).
     //    → 목표가 바로 옆이면 그 방향으로 **부딪혀 들어간다**(실제 플레이어가 하는 동작).
+    // ⚠️ **건물 문은 정면(아래)에서만 열린다**(`DOOR_TILES="+EHGUSX"`, 포켓몬식 정면 출입구).
+    //    옆이나 위에서 부딪히면 "🚪 입구는 건물 정면(아래쪽)에 있다"만 뜨고 영영 안 들어가진다.
+    //    목표 트래커는 **인접한 아무 보행칸**으로 데려다주므로 옆에 서는 일이 흔하다 →
+    //    실측: `field:bump`가 800ms씩 181회 반복하며 60분 판이 체육관2 앞에서 죽었다.
+    //    → 정면 칸이 보행 가능하면 **거기로 먼저 걸어가서** 위로 부딪힌다.
+    //    (자연 입구 D·V·M·J·O·z·^·!·W는 문이 아니라 방향을 안 가리고, 정면 칸이 없는 곳도 있어 옛 방식 유지.)
     const bump=await p.evaluate(()=>{ const S=window.SG,F=S.flow,G=S.G();
       const g=F.currentGoal&&F.currentGoal(); if(!g||g.x==null||G.indoor)return null;
+      if(F.walkable(g.x,g.y))return null;
+      const front={x:g.x,y:g.y+1};
+      if(F.walkable(front.x,front.y)){
+        if(G.pos.x===front.x&&G.pos.y===front.y)return "ArrowUp";
+        return F.walkTo(front.x,front.y)?"walk":null; }
       const dx=g.x-G.pos.x, dy=g.y-G.pos.y;
       if(Math.abs(dx)+Math.abs(dy)!==1)return null;
-      if(F.walkable(g.x,g.y))return null;
       return dy<0?"ArrowUp":dy>0?"ArrowDown":dx<0?"ArrowLeft":"ArrowRight"; });
-    if(bump){ tr("field:bump",st); await p.keyboard.press(bump); await p.waitForTimeout(800); continue; }
+    if(bump==="walk"){ tr("field:front",st);   // 정면 칸까지 이동(도착·전투·정지 중 먼저 오는 것까지)
+      let last=null,still=0;
+      for(let i=0;i<40;i++){ await p.waitForTimeout(200);
+        const q=await p.evaluate(()=>{ const G=window.SG.G(); return {k:G.pos.x+","+G.pos.y, inB:!!G.inBattle}; });
+        if(q.inB)break;
+        if(q.k===last){ if(++still>=3)break; } else { still=0; last=q.k; } }
+      continue; }
+    if(bump){ const bk=st.pos.x+","+st.pos.y+"/"+bump;
+      if(bk===bumpKey)bumpCnt++; else { bumpKey=bk; bumpCnt=0; }
+      // ⚠️ 같은 자리에서 부딪히기만 하는 상황(정면 칸을 NPC가 막는 등)이 남을 수 있다 →
+      //    일정 횟수를 넘기면 목표 탭으로 폴백해 판이 통째로 헛도는 걸 막는다.
+      if(bumpCnt<=12){ tr("field:bump",st); await p.keyboard.press(bump); await p.waitForTimeout(800); continue; } }
 
     tr("field:goal",st);
     const tapped=await p.evaluate(()=>{ const el=document.getElementById("goalTrack");
