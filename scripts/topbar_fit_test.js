@@ -24,13 +24,23 @@ const { chromium } = require("playwright"); const path=require("path");
       const items=[...document.querySelectorAll(".top-right > *")].filter(el=>el.offsetParent!==null);
       let maxRight=0, minLeft=1e9;
       for(const el of items){ const b=el.getBoundingClientRect(); maxRight=Math.max(maxRight,b.right); minLeft=Math.min(minLeft,b.left); }
-      const brand=document.querySelector(".brand h1").getBoundingClientRect();
+      const brandEl=document.querySelector(".brand h1");
+      const brand=brandEl.getBoundingClientRect();
+      const brandHidden=getComputedStyle(brandEl).display==="none";
+      /* ⚠️ 같은 줄 판정은 top이 아니라 **세로 중심**으로 한다 — 칩(알약 24px)과 아이콘 버튼(30px)의
+         높이가 달라 같은 줄이어도 top이 갈린다(그래서 예전 측정이 "4줄"로 보였다). */
+      const rows=[...new Set(items.map(e=>{ const b=e.getBoundingClientRect(); return Math.round((b.top+b.bottom)/2); }))];
       return { shown:items.length, overflowR:Math.round(maxRight-st.right), overflowL:Math.round(st.left-minLeft),
-               brandTwoLine: brand.height>24 }; });
+               brandTwoLine: !brandHidden && brand.height>24,
+               rows:rows.length, barH:Math.round(document.querySelector(".topbar").getBoundingClientRect().height) }; });
     ok(r.shown>=6, `w=${w}: 칩 6개 표시됨 (${r.shown})`);
     ok(r.overflowR<=0, `w=${w}: 우측 안 잘림 (여유 ${-r.overflowR}px)`);
     ok(r.overflowL<=0, `w=${w}: 좌측 안 잘림 (여유 ${-r.overflowL}px)`);
     ok(!r.brandTwoLine, `w=${w}: 브랜드 제목 한 줄 유지`);
+    /* ⚠️ 단정을 "안 잘림"에서 **"세로에서도 1줄"** 로 올린다 — flex-wrap이 안전장치로 깔려 있어
+       예전엔 모든 세로 폭에서 2줄로 접혀 상단바가 75~94px(스테이지 높이의 10~13%)를 먹는데도
+       이 테스트는 초록이었다(전체 감사 F-11). 이제 그 부류가 조용히 통과하지 못한다. */
+    ok(r.rows===1, `w=${w}: 칩이 한 줄에 들어간다 (${r.rows}줄 · 상단바 ${r.barH}px)`);
     await ctx.close();
   }
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,2).join(" / "):""));

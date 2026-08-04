@@ -30,7 +30,12 @@
     background:radial-gradient(1200px 600px at 50% -10%, #2c2350 0%, transparent 60%),
       radial-gradient(900px 500px at 90% 110%, #1d2c3a 0%, transparent 55%), var(--bg);
     color:var(--cream);display:flex;align-items:center;justify-content:center;min-height:100%;padding:16px;overflow:hidden}
-  .stage{width:100%;max-width:430px;height:760px;max-height:94vh;background:linear-gradient(180deg,var(--bg2),var(--bg));
+  /* ⚠️ 한국어는 **어절 단위로 줄바꿈**해야 한다 — lang="ko" 기본값은 음절 단위라
+     "…상성이 돌아 / 간다", "…A를 눌 / 러 기술을" 처럼 한 글자 파편이 생긴다(전체 감사 F-03,
+     하필 스타터 선택·오프닝·첫 코치 = 새 플레이어가 가장 먼저 보는 세 화면에서 실측됐다).
+     keep-all은 긴 영문/URL을 못 자르므로 overflow-wrap을 같이 둔다. */
+  .stage{word-break:keep-all;overflow-wrap:break-word;
+    width:100%;max-width:430px;height:760px;max-height:94vh;background:linear-gradient(180deg,var(--bg2),var(--bg));
     border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);position:relative;overflow:hidden;display:flex;flex-direction:column}
   /* 홈 화면 앱(standalone)에선 브라우저 크롬이 없어 스테이지가 화면을 꽉 채운다.
      아이폰 다이나믹아일랜드/홈 인디케이터에 안 가리게 안전영역만큼 안쪽으로 민다. */
@@ -63,7 +68,11 @@
   .top-right{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;min-width:0}
   .pill{font-size:11px;color:var(--muted);background:var(--panel);border:1px solid var(--line);padding:5px 11px;border-radius:999px}
   .money-pill{color:var(--amber);font-weight:700}
-  .iconbtn{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--cream);font-size:14px;cursor:pointer;display:grid;place-items:center}
+  /* ⚠️ ⚙️(설정/저장)·🔊(음소거)는 **오답 탭의 비용이 큰데 가장 작은 버튼**이었다(430에서 32px,
+     360에서 26px — iOS/Android 권장 44pt 미달. 전체 감사 F-12).
+     시각 크기는 그대로 두고 **히트 영역만** 넓힌다(가상 요소) — 안 그러면 상단바가 더 두꺼워진다. */
+  .iconbtn{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--cream);font-size:14px;cursor:pointer;display:grid;place-items:center;position:relative}
+  .iconbtn::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:44px;height:44px}
   .iconbtn:active{background:var(--panel2)}
   .screen{flex:1;position:relative;overflow:hidden}
   .view{position:absolute;inset:0;display:none;flex-direction:column}
@@ -130,7 +139,9 @@
   .sbtn{border:1px solid var(--line);background:var(--panel);color:var(--cream);border-radius:10px;padding:6px 3px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px}
   .sbtn .i{font-size:16px;line-height:1}
   .sbtn:active{background:var(--panel2)}
-  .pads{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  /* ⚠️ 아래 여백은 `.hint`(bottom:0 고정) 자리를 비워두는 것이다 — 없으면 D패드 ▼와 겹친다
+     (430px에서 148×17px 실측, 큰 폰일수록 심해진다 = 작은 폰만 보고 튜닝된 흔적. 전체 감사 F-10). */
+  .pads{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:22px}
   .dpad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);gap:5px;flex-shrink:0}
   .dpad button{border:1px solid var(--line);background:var(--panel);color:var(--cream);border-radius:11px;font-size:19px;cursor:pointer;font-family:inherit;touch-action:none}
   .dpad button:active{background:var(--panel2)}
@@ -287,7 +298,13 @@
   @keyframes advBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
 
   .battle-ui{background:var(--panel);border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:14px;min-height:184px;display:flex;flex-direction:column}
-  .msg{font-size:14px;line-height:1.5;min-height:46px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+  /* ⚠️ 예전엔 flex + gap:4px이었다. 그게 <b>이름</b>을 flex 아이템으로 만들어 **뒤따르는 조사와 벌어졌고**
+     ("<b>찌리볼</b>은(는)" → 화면엔 "찌리볼 은(는)"), 한국어 조사는 명사에 붙어야 한다(전체 감사 F-06).
+     ⚠️ 그렇다고 gap만 0으로 두면 **띄어쓰기가 통째로 사라진다** — flex는 요소 사이의 공백 텍스트 노드를
+        렌더하지 않아서, 그 gap이 "야생 <b>X</b> 정령이"의 띄어쓰기까지 겸하고 있었다(실제로 겪음:
+        "야생설을삐미정령이 나타났다!"). → **flex를 걷고 일반 인라인 흐름으로 돌린다.**
+        그러면 소스의 공백은 공백대로, 조사는 이름에 붙는다. 수직 여백은 padding으로 준다. */
+  .msg{font-size:14px;line-height:1.5;min-height:46px;display:block;padding:6px 0}
   /* 첫 전투 코치 */
   .coach-tip{display:none;margin:6px 0 2px;padding:9px 11px;border-radius:10px;font-size:12px;line-height:1.5;
     color:#eafaf3;background:linear-gradient(180deg,rgba(127,209,174,.20),rgba(127,209,174,.09));
@@ -309,7 +326,9 @@
     .battle-ui.mainrow .coach-tip{grid-column:1;grid-row:2}
     /* ⚠️ 로그 버튼은 절대배치라 그리드 규칙이 안 먹는다 — 2열 배치에선 아이템 버튼과 겹치므로
        메시지 칸(좌측) 위쪽으로 옮긴다. */
-    .battle-ui.mainrow #logBtn{top:auto;bottom:10px;right:auto;left:10px}
+    /* ⚠️ .stage가 border-radius:24px + overflow:hidden이라 (10,10)에 두면 **모서리 라운드에 잘린다**
+       (430×760에서 아이콘 좌하단이 실제로 깎여 보였다 — 전체 감사 F-07). 반경 밖으로 뺀다. */
+    .battle-ui.mainrow #logBtn{top:auto;bottom:16px;right:auto;left:18px}
   }
   /* 전투 메시지도 대화창과 같은 포켓몬풍 크림 박스 */
   .battle-ui .msg{background:linear-gradient(180deg,#fbf6ea,#efe4cc);border:3px solid #34284a;border-radius:14px;
@@ -456,6 +475,10 @@
   /* 장소 표찰(placard) — 지역/특수지역/루트에 들어설 때 좌상단에서 밀려 들어온다.
      ⚠️ 세로에서만 보이던 #mapHint와 달리 가로에서도 떠야 한다(경계를 넘는 감각이 핵심이라). */
   /* top:84px — 목표 트래커(.goal: top 8 + 높이 67) 바로 아래. 실측으로 잡았다(54px는 21px 겹쳤다). */
+  /* 접힌 목표 트래커 — 화살표만 남는다. 좁은 폰에서 맵의 9.2%(폭의 47.5%)를 영구히 가리던 문제
+     (전체 감사 F-08). 기능은 그대로 두고 **접을 자유**만 준다. */
+  .goal.mini{max-width:none;width:auto;padding:6px 8px}
+  .goal.mini .gtxt{display:none}
   .placard{position:absolute;left:0;top:84px;z-index:46;opacity:0;pointer-events:none;
     background:linear-gradient(180deg,rgba(36,31,72,.96),rgba(24,20,46,.96));
     border:1px solid var(--line);border-left:3px solid var(--mint);border-radius:0 12px 12px 0;
@@ -533,16 +556,35 @@
 .mxprompt{text-align:center;font-size:12px;margin-bottom:8px;opacity:.9}
 .dcbtn.wide.t-fire{border-left:3px solid #e0563f}.dcbtn.wide.t-water{border-left:3px solid #4a90d0}
 /* 좁은 폰: 상단바 칩이 6개까지 늘어도 한 줄에 담기게 간격·패딩을 조인다(줄바꿈은 최후 안전장치). */
+/* ⚠️ 상단바가 **모든 세로 폭에서 2줄 이상**으로 접혀 스테이지 높이의 10~13%(75~94px)를 먹고 있었다
+   (430=4줄·390=3줄·360=4줄 실측. 전체 감사 F-11). flex-wrap은 "잘림 방지 안전장치"로 넣은 것인데
+   의도한 1줄 레이아웃이 세로에서 **한 번도 성립하지 않았다** — topbar_fit_test는 "안 잘림"만 봐서 초록이었다.
+   브랜드가 144px을 먹는 게 주범이라 세로에선 부제를 접고 칩을 조인다(가로는 이미 1줄이라 건드리지 않는다). */
+@media (orientation:portrait){
+  .brand .sub{display:none}
+  /* ⚠️ 제목은 세로에서 접는다 — 브랜드가 86px을 먹어 후반 소지금(5자리)이면 칩이 줄바꿈됐다.
+     ✦ 마크는 남기고, 게임 이름은 타이틀 화면이 크게 보여준다. */
+  .brand h1{display:none}
+  .brand .mark{width:26px;height:26px;font-size:14px}
+  .topbar{gap:6px}
+  .top-right{gap:4px}
+  .brand{min-width:0}
+  .topbar .pill{padding:4px 7px;font-size:10px}
+  .topbar .iconbtn{width:30px;height:30px;font-size:13px}
+}
 @media (max-width:400px){
   .topbar{padding:12px 12px 9px}
-  .top-right{gap:5px}
-  .pill{font-size:10px;padding:4px 8px}
-  .iconbtn{width:28px;height:28px;font-size:13px}
+  .top-right{gap:4px}
+  .brand{min-width:0}
+  /* ⚠️ 세로 블록이 `.topbar .pill`(특이도 0,2,0)이라 여기 `.pill`(0,1,0)은 덮어쓰지 못한다 —
+     좁은 폰 전용 축소가 조용히 무시됐다(실측으로 발견). 같은 특이도로 맞춘다. */
+  .topbar .pill{font-size:10px;padding:4px 6px}
+  .topbar .iconbtn{width:28px;height:28px;font-size:13px}
 }
 @media (max-width:360px){
   .top-right{gap:4px}
-  .pill{font-size:9.5px;padding:3px 7px}
-  .iconbtn{width:26px;height:26px;font-size:12px}
+  .topbar .pill{font-size:9.5px;padding:3px 5px}
+  .topbar .iconbtn{width:26px;height:26px;font-size:12px}
 }
 /* 폰 가로모드: 게임보이식 핸드헬드 — 맵은 가운데 밴드, 컨트롤은 양옆 고정 거터(맵을 안 가림).
    유저 피드백: 버튼이 맵 위에 떠서 어수선(오버레이)했다 → 겹침 없는 거터 배치로. 세로일 땐 무시. */
@@ -586,7 +628,13 @@
     border-left:1px solid var(--line);padding:10px 12px;overflow-y:auto;
     padding-right:calc(12px + env(safe-area-inset-right))}
   #battle .msg{min-height:0;font-size:13px}
-  #battle .menu-grid{gap:6px}
+  /* ⚠️ 가로에선 .menu-grid의 margin-top:auto가 메뉴를 패널 바닥까지 밀어 **y 58~310(패널의 59%)이
+     빈 보라색**이었다 — 메시지는 맨 위, 메뉴는 맨 아래라 시선이 두 번 움직인다(전체 감사 F-13).
+     세로에선 그 auto가 옳으므로(메시지와 메뉴가 자연히 붙는다) 가로에서만 푼다. */
+  #battle .menu-grid{gap:6px;margin-top:12px}
+  /* ⚠️ 📜가 top:8px/right:10px이라 **메시지 상자를 34×31px 덮고 있었다**(전체 감사 F-07 가로).
+     메뉴 아래 빈 자리로 내린다. */
+  #battle .battle-ui #logBtn{top:auto;bottom:10px;right:12px}
   #battle .mbtn{padding:9px 8px;font-size:13px}
   /* 오버레이(가방·도감·정령·카드): 가로에선 세로용 카드가 화면을 다 먹어 1~2개만 보이고 어수선했다.
      ✕는 안전영역(노치)에 가릴 수 있었다 → 안전영역 패딩 + 목록 2열로 넓은 공간 활용. 헤더(✕)는 고정. */
@@ -598,9 +646,20 @@
   #pcBody .mon-card{margin:0}
   #bagBody{display:grid;grid-template-columns:1fr 1fr;gap:7px;align-content:start}
   #bagBody .bag-tabs{grid-column:1/-1}
+  /* ⚠️ 도감이 가로 2열 처리에서 빠져 있었다 — **86종으로 이 게임에서 가장 긴 목록이자 수집 루프의 얼굴**인데
+     1460px 폭 행에 스프라이트 하나가 떠 본문 스크롤이 27화면이었다(전체 감사 F-05).
+     가이드는 "가방·정령·도감"을 가로 최적화했다고 적어놨지만 도감은 실제로 안 돼 있었다. */
+  #dexBody{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
+  #dexBody > .tabbar, #dexBody > .bag-tabs, #dexBody > .dexbar{grid-column:1/-1}
   /* 지도: 세로용 캔버스가 280×430이라 가로 높이(~390)에 안 들어갔다 → **높이 기준**으로 맞춘다.
      ⚠️ width만 두고 max-height를 걸면 비율이 깨진다 → height + aspect-ratio로 폭을 파생시킨다. */
-  #minimapCanvas{width:auto;height:100%;max-height:calc(100% - 84px);aspect-ratio:26/40;max-width:100%}
+  /* ⚠️ 세로 25×50 맵이라 높이에 맞추면 캔버스가 좁다 — 760px 화면에서 **좌우 63%가 빈 공간**이었다
+     (전체 감사 F-16). 캔버스를 더 키울 순 없으니(비율 고정) **옆을 쓴다**: 지도 | 범례+닫기 2단.
+     ⚠️ 캔버스는 높이 기준을 유지한다 — width만 두고 max-height를 걸면 비율이 깨진다. */
+  #minimap .ov-body{flex-direction:row;gap:16px;align-items:center;justify-content:center}
+  #minimap .ov-body > .legend,#minimap .ov-body > #closeMinimap{flex:0 0 auto}
+  #minimap .side{display:flex;flex-direction:column;gap:12px;align-items:center;max-width:38%}
+  #minimapCanvas{width:auto;height:100%;max-height:calc(100% - 24px);aspect-ratio:26/40;max-width:100%;flex:0 0 auto}
   #minimap .legend{font-size:10px;line-height:1.5}
 }
 </style>
@@ -614,7 +673,7 @@
       <button class="iconbtn" id="settingsBtn" title="저장/설정" style="display:none">⚙️</button>
       <button class="iconbtn" id="runBtn" title="달리기 (Shift)">🚶</button>
       <button class="iconbtn" id="muteBtn" title="소리">🔊</button>
-      <div class="pill" id="dexPill">도감 0 / 86</div>
+      <div class="pill" id="dexPill">📖 0/86</div>
       <div class="pill" id="badgePill" style="display:none">🏅 0/4</div>
     </div>
   </div>
@@ -726,6 +785,12 @@
           <div class="hpbar"><div class="hpghost" id="meHpGhost"></div><div class="hpfill" id="meHp"></div></div>
           <div class="expbar"><div class="expfill" id="meExp"></div></div>
           <div class="hptxt" id="meHpTxt">— / —</div>
+          <!-- ⚠️ 상대 HUD엔 타입칩이 있는데 **내 쪽엔 요소 자체가 없었다**(전체 감사 F-09).
+               이 게임의 핵심 재미가 상성인데 공격 쪽 정보(기술 메뉴의 효과 표시)만 있고
+               방어 쪽이 없어 "왜 이렇게 아프지?"를 화면에서 읽을 수 없었다. -->
+          <div style="display:flex;justify-content:flex-start;align-items:center;gap:4px">
+            <span class="type-tag t-normal" id="meType" style="margin-top:4px;font-size:9px">노말</span>
+          </div>
           <div class="stagerow" id="meStages"></div>
         </div></div></div>
         <div class="field-flash" id="fieldFlash"></div>
@@ -903,8 +968,10 @@
       <div class="ov-head"><h3>🗺️ 지도</h3><button class="closex" data-close="minimap">✕</button></div>
       <div class="ov-body" style="align-items:center;justify-content:center">
         <canvas id="minimapCanvas" width="260" height="400"></canvas>
-        <div class="legend">🟢시작 · 🔴트레이너 · 🟡상점 · 🟠모닥불 · ⬜당신</div>
-        <button class="btn ghost" id="closeMinimap" style="width:200px;flex:0 0 auto">닫기</button>
+        <div class="side">
+          <div class="legend">🟢시작 · 🔴트레이너 · 🟡상점 · 🟠모닥불 · ⬜당신</div>
+          <button class="btn ghost" id="closeMinimap" style="width:200px;flex:0 0 auto">닫기</button>
+        </div>
       </div>
     </div>
 
@@ -1625,7 +1692,7 @@ function makeEgg(a,b){ const female=(a.gender==="F")?a:(b.gender==="F")?b:a; con
 function hatchEgg(egg){ const m=makeMon(egg.species,5); if(egg.ivInherit)m.ivs=egg.ivInherit; if(egg.natureInherit)m.nature=egg.natureInherit; if(egg.moveInherit)egg.moveInherit.forEach(mv=>{ if(MOVES[mv])addMove(m,mv); }); m.friendship=70; recalc(m,null,true); m.hp=m.maxHp; return m; }
 function dayStep(){ if(!G.daycare)return; const d=G.daycare;
   if(d.a&&d.b&&!d.eggReady&&canBreed(d.a,d.b)){ d.steps=(d.steps||0)+1; if(d.steps>=160){ d.eggReady=true; d.steps=0; flashHint("🥚 육아방에 알이 생긴 것 같다!"); saveGame&&saveGame(); } }
-  if(G.party){ for(let i=0;i<G.party.length;i++){ const m=G.party[i]; if(m&&m.isEgg){ m.hatch=(m.hatch||1)-1; if(m.hatch<=0){ const baby=hatchEgg(m); G.party[i]=baby; Audio.sfx&&Audio.sfx("levelup"); if(Audio.cry)Audio.cry(baby.id,baby.type); flashHint(`🐣 알에서 <b>${baby.name}</b>이(가) 태어났다!`); saveGame&&saveGame(); } else if(m.hatch===6){ Audio.sfx&&Audio.sfx("blip"); flashHint("🥚 품 속의 알이 이따금 꿈틀거린다…"); } } } } }
+  if(G.party){ for(let i=0;i<G.party.length;i++){ const m=G.party[i]; if(m&&m.isEgg){ m.hatch=(m.hatch||1)-1; if(m.hatch<=0){ const baby=hatchEgg(m); G.party[i]=baby; Audio.sfx&&Audio.sfx("levelup"); if(Audio.cry)Audio.cry(baby.id,baby.type); flashHint(`🐣 알에서 ${baby.name}이(가) 태어났다!`); saveGame&&saveGame(); } else if(m.hatch===6){ Audio.sfx&&Audio.sfx("blip"); flashHint("🥚 품 속의 알이 이따금 꿈틀거린다…"); } } } } }
 function noPP(m){ return m.moves.every(mv=>(m.pp[mv]||0)<=0); }
 function foeChooseMove(foe,target){
   if(!foe||!foe.moves)return "struggle"; const st=foe.stages||newStages(); const tgt=target||{status:null,hp:1,maxHp:1,type:"normal"};
@@ -2066,7 +2133,7 @@ function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box
   inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,rodTier:0,lakeDone:false,lakeSignSeen:false,deepwoodsSeen:false,snowSeen:false,snowDone:false,marshSeen:false,skySeen:false,ruinsSeen:false,craterSeen:false,gardenSeen:false,seaBossDone:false,skyBossDone:false,ruinsBossDone:false,towerBest:0,towerStreak:0,towerRun:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,berries:{},heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
 function activeMon(){return G.party[G.active];}
 function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
-function updateDexPill(){$("dexPill").textContent=`도감 ${G.caught.size} / ${DEX.length}${G.dexMaster?" 🏆":""}`;}
+function updateDexPill(){$("dexPill").textContent=`📖 ${G.caught.size}/${DEX.length}${G.dexMaster?" 🏆":""}`;}
 function forestBadges(){ return (G.badges||[]).filter(b=>b==="1"||b==="2"||b==="3"||b==="4").length; }
 function updateBadgePill(){ const p=$("badgePill"); if(!p)return; const fb=forestBadges(); const isle=(G.badges||[]).includes("L"); p.textContent=`🏅 ${Math.min(fb,4)}/4${isle?" 🌊":""}${G.champion?" 👑":""}`; p.style.display="block"; }
 function updateMoney(){ $("moneyPill").textContent="💰 "+G.money; $("shopMoney").textContent="💰 "+G.money; }
@@ -3333,7 +3400,7 @@ function showDialog(pages,onDone){ if(!Array.isArray(pages))pages=[pages];
 // 포켓몬식 타이핑: 태그 제거한 평문을 한 글자씩 → 완료 시 서식(innerHTML) 적용 + ▼ 커서. 탭/A로 즉시완성→진행.
 function _renderDlgPage(){ const p=_dlgQueue[_dlgIdx]; const nm=$("dlgName"); nm.textContent=p.name||""; nm.style.display=p.name?"block":"none";
   const txt=$("dlgText"), cue=$("dlgNext"); if(_dlgTimer){ clearInterval(_dlgTimer); _dlgTimer=null; } cue.style.display="none";
-  const full=String(p.text||"");
+  const full=fixJosa(String(p.text||""));
   if(CONFIG.reduceMotion){ txt.innerHTML=full; _dlgTyping=false; cue.style.display="block"; return; }
   const chars=[...full.replace(/<[^>]+>/g,"")]; txt.textContent=""; _dlgTyping=true; let i=0;
   const speed=Math.max(12, Math.round(30*(CONFIG.textSpeed||1)));
@@ -3350,7 +3417,7 @@ function dialogActive(){ return !!_dlgQueue; }
 function showPlace(name,sub){ const el=$("placeBanner"); if(!el)return;
   $("placeName").textContent=name; $("placeSub").textContent=sub||"";
   el.classList.remove("go"); void el.offsetWidth; el.classList.add("go"); }
-function flashHint(txt){ const h=$("mapHint"); h.textContent=txt; clearTimeout(h._t);
+function flashHint(txt){ const h=$("mapHint"); h.textContent=fixJosa(txt); clearTimeout(h._t);
   h._t=setTimeout(()=>{h.textContent="풀숲에서 정령 조우 · 모닥불 회복 · 상점 구매 · 위로 갈수록 강함";},2600); }
 /* dpad input + tap-to-path handled in flow module (press-and-hold, pathfinding) */
 function interact(){ if(typeof G==="undefined"||!G||G.busy||G.inBattle||dialogActive())return; if(Field&&Field.arrived===false)return;
@@ -3447,6 +3514,7 @@ function updateGoal(){
   const g=(!G||G.inBattle)?null:currentGoal();
   if(!g){ el.classList.remove("on"); return; }
   el.classList.add("on"); el.classList.toggle("done",!!g.done);
+  el.classList.toggle("mini",!!CONFIG.goalMini);   /* 접힘 상태는 갱신 때마다 다시 반영(안 하면 목표가 바뀔 때 펴진다) */
   $("goalName").textContent=g.name;
   const arrow=$("goalArrow");
   if(g.x==null||G.indoor){
@@ -3462,7 +3530,19 @@ function updateGoal(){
   }
   el._goal=g;
 }
+/* ⚠️ 길게 누르면 접힌다(짧게 누르면 기존대로 목표까지 자동 이동).
+   트래커는 이 게임에서 가장 좋은 장치 중 하나라 **기능을 빼지 않고 접을 자유만** 준다.
+   CONFIG에 얹어 세이브(cfg)에 함께 저장된다 — 껐다 켜도 유지된다. */
+let _goalLongPressed=false;
+if($("goalTrack")){ const _gt=$("goalTrack"); let _lp=null;
+  const _toggle=()=>{ CONFIG.goalMini=!CONFIG.goalMini; _gt.classList.toggle("mini",!!CONFIG.goalMini);
+    Audio.sfx("blip"); if(typeof saveGame==="function")saveGame();
+    flashHint(CONFIG.goalMini?"목표 트래커를 접었다 — 길게 눌러 다시 펼친다":"목표 트래커를 펼쳤다"); };
+  _gt.addEventListener("pointerdown",()=>{ _goalLongPressed=false; _lp=setTimeout(()=>{ _goalLongPressed=true; _toggle(); },560); });
+  ["pointerup","pointerleave","pointercancel"].forEach(e=>_gt.addEventListener(e,()=>{ if(_lp)clearTimeout(_lp); _lp=null; }));
+}
 if($("goalTrack")) $("goalTrack").addEventListener("click",()=>{
+  if(_goalLongPressed){ _goalLongPressed=false; return; }   /* 길게 누른 직후의 click은 삼킨다 */
   const g=$("goalTrack")._goal;
   if(!g||g.x==null||G.indoor||G.busy||G.inBattle){ Audio.sfx("blip"); return; }
   Audio.sfx("blip");
@@ -3495,7 +3575,26 @@ function openOverlay(id){ $(id).classList.add("active"); }
    그 정지가 '닫기 버튼 핸들러'에만 있어 Escape·✕로 닫으면 루프가 살아남아 계속 그렸다. */
 function closeOverlay(id){ $(id).classList.remove("active"); if(id==="minimap")stopMinimapLoop(); }
 document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>{Audio.sfx("blip");closeOverlay(b.dataset.close);}));
-function toast(txt){ const el=$("toast"); el.textContent=txt; el.classList.remove("go"); void el.offsetWidth; el.classList.add("go"); }
+/* ===================== 조사 자동 선택 ===================== */
+/* ⚠️ 이 게임의 이름은 전부 **한글 고정 데이터**다(DEX 86종·아이템 102종) — 종성만 보면 조사를
+   정확히 고를 수 있는데도 소스에 괄호형 조사가 145건 있었다(은(는) 46·이(가) 56·을(를) 42·와(과) 1).
+   매 턴 보이는 전투 메시지가 전부 이 형태라 체감이 컸다(전체 감사 F-17).
+   → **145곳을 각각 고치지 않는다.** 텍스트가 화면으로 나가는 길목에서 한 번 고른다(단일 출처).
+   ⚠️ 앞 글자를 찾을 때 `</b>` 같은 태그를 건너뛴다 — "<b>찌리볼</b>은(는)"이 대표 형태라 안 그러면 못 고른다.
+   ⚠️ 한글이 아니면(영문·숫자·이모지) **원문을 그대로 둔다** — 억지로 고르면 더 이상해진다. */
+function fixJosa(txt){
+  if(txt==null)return txt; const s=String(txt); if(s.indexOf("(")<0)return s;
+  return s.replace(/(은\(는\)|이\(가\)|을\(를\)|와\(과\))/g,(m,g1,off)=>{
+    let i=off-1;
+    while(i>=0&&s[i]===">"){ const st=s.lastIndexOf("<",i); if(st<0)break; i=st-1; }   /* 태그 건너뛰기 */
+    const ch=i>=0?s[i]:"";
+    if(!(ch>="가"&&ch<="힣"))return m;
+    const bat=(ch.charCodeAt(0)-0xAC00)%28;                                            /* 종성 유무 */
+    if(m==="와(과)")return bat?"과":"와";
+    return bat?m[0]:m[2];                                                              /* "은(는)" → 은 / 는 */
+  });
+}
+function toast(txt){ const el=$("toast"); el.textContent=fixJosa(txt); el.classList.remove("go"); void el.offsetWidth; el.classList.add("go"); }
 function triggerLevelup(lv){ const el=$("levelup"); el.textContent="Lv "+lv+" 달성!"; el.classList.remove("go"); void el.offsetWidth; el.classList.add("go"); }
 
 /* ===================== ENTER MAP (3D or 2D fallback) ===================== */
@@ -3611,7 +3710,7 @@ const STORY_INTRO=[
 ];
 let _storyPages=[],_storyI=0,_storyDone=null;
 function playStory(pages,done){ _storyPages=pages; _storyI=0; _storyDone=done; _storyShow(); openOverlay("storyOverlay"); }
-function _storyShow(){ const pg=_storyPages[_storyI]; $("storyArt").innerHTML=pg.art; $("storyText").innerHTML=pg.t;
+function _storyShow(){ const pg=_storyPages[_storyI]; $("storyArt").innerHTML=pg.art; $("storyText").innerHTML=fixJosa(pg.t);
   $("storyNext").textContent=_storyI<_storyPages.length-1?"계속":"숲으로"; }
 function _storyEnd(){ closeOverlay("storyOverlay"); const d=_storyDone; _storyDone=null; if(d)d(); }
 $("storyNext").addEventListener("click",()=>{ Audio.sfx("blip"); _storyI++; if(_storyI>=_storyPages.length)_storyEnd(); else _storyShow(); });
@@ -4148,6 +4247,12 @@ function setupBattleUI(foeOnly){ { const sh=$("skipHint"); if(sh)sh.textContent=
   ["foeSprite","meSprite"].forEach(id=>{ const s=$(id); if(s)s.classList.remove("enter"); });
   $("foeType").textContent=tkLabel(G.foe.type); $("foeType").className="type-tag "+TYPE_CLASS[G.foe.type];
   $("foeType").style.marginTop="6px"; $("foeType").style.fontSize="9px";
+  { const me=G.party&&G.party[G.active], el=document.getElementById("meType");
+    if(el&&me){ el.textContent=tkLabel(me.type); el.className="type-tag "+TYPE_CLASS[me.type];
+      el.style.marginTop="4px"; el.style.fontSize="9px";
+      const o2=document.getElementById("meType2"); if(o2)o2.remove();
+      if(me.type2){ const m2=document.createElement("span"); m2.id="meType2"; m2.className="type-tag "+TYPE_CLASS[me.type2];
+        m2.textContent=tkLabel(me.type2); m2.style.cssText="margin-left:4px;margin-top:4px;font-size:9px"; el.parentNode.appendChild(m2); } } }
   { const o=document.getElementById("foeType2"); if(o)o.remove();
     if(G.foe.type2){ const t2=document.createElement("span"); t2.id="foeType2"; t2.className="type-tag "+TYPE_CLASS[G.foe.type2]; t2.textContent=tkLabel(G.foe.type2); t2.style.cssText="margin-left:4px;font-size:9px"; $("foeType").after(t2); } }
   $("foeSprite").classList.remove("faint"); $("meSprite").classList.remove("faint");
@@ -4605,7 +4710,7 @@ function renderCombatants(){ const f=G.foe,m=activeMon();
 function setBar(el,r){ r=clamp(r,0,1); el.style.width=(r*100)+"%"; el.classList.remove("warn","crit");
   if(r<=0.2)el.classList.add("crit"); else if(r<=0.5)el.classList.add("warn"); }
 let battleLog=[];
-function setMsg(html){ $("battleMsg").innerHTML=html; const txt=html.replace(/<[^>]+>/g,"").trim(); if(txt){ battleLog.push(txt); if(battleLog.length>80)battleLog.shift(); } }
+function setMsg(html){ html=fixJosa(html); $("battleMsg").innerHTML=html; const txt=html.replace(/<[^>]+>/g,"").trim(); if(txt){ battleLog.push(txt); if(battleLog.length>80)battleLog.shift(); } }
 function openLog(){ const body=$("logBody"); body.innerHTML="";
   if(!battleLog.length){ body.innerHTML='<div style="color:var(--muted);text-align:center;padding:24px;font-size:13px">아직 기록이 없다</div>'; }
   else battleLog.slice(-40).forEach(t=>{ const d=document.createElement("div"); d.className="logline"; d.textContent=t; body.appendChild(d); });
@@ -6368,7 +6473,16 @@ function renderBag(){ const body=$("bagBody"); body.innerHTML="";
     const dv=document.createElement("div"); dv.style.cssText="height:1px;background:rgba(255,255,255,.12);margin:6px 0"; body.appendChild(dv); }
   if(!G._bagTab)G._bagTab="ball";
   const _tb=document.createElement("div"); _tb.className="bag-tabs"; BAG_TABS.forEach(t=>{ const b=document.createElement("button"); b.className="bag-tab"+(G._bagTab===t[0]?" on":""); b.textContent=t[1]; b.onclick=()=>{ G._bagTab=t[0]; renderBag(); }; _tb.appendChild(b); }); body.appendChild(_tb);
-  const items=(G.inBattle?BAG_ITEMS.filter(it=>it.use&&it.where!=="map"):BAG_ITEMS.filter(it=>!it.use||it.where!=="battle")).filter(it=>bagPocket(it)===G._bagTab);
+  /* ⚠️ 예전엔 보유량과 무관하게 주머니의 전 품목을 나열했다 — 새 게임 직후 **75행 중 69행이 ×0**
+     (💿기술 44/44가 전부 0개). 회복약을 찾으러 들어온 사람이 못 쓰는 기술머신을 스크롤해야 했다
+     (전체 감사 F-04. longrun 봇도 예전에 같은 벽에 부딪혔다는 기록이 WORKLOG에 있다).
+     → 기본은 **가진 것만**. "안 가진 것도 보고 싶다"는 수요는 토글로 남긴다(상점이 목록 역할을 한다). */
+  let items=(G.inBattle?BAG_ITEMS.filter(it=>it.use&&it.where!=="map"):BAG_ITEMS.filter(it=>!it.use||it.where!=="battle")).filter(it=>bagPocket(it)===G._bagTab);
+  const _ownedN=items.filter(it=>(G.items[it.key]||0)>0).length, _hiddenN=items.length-_ownedN;
+  if(!G._bagShowAll)items=items.filter(it=>(G.items[it.key]||0)>0);
+  if(_hiddenN>0){ const tg=document.createElement("button"); tg.className="bag-tab"; tg.style.cssText="margin:0 0 6px;font-size:11px";
+    tg.textContent=G._bagShowAll?`가진 것만 보기`:`안 가진 것도 보기 (${_hiddenN})`;
+    tg.addEventListener("click",()=>{ Audio.sfx("blip"); G._bagShowAll=!G._bagShowAll; renderBag(); }); body.appendChild(tg); }
   if(!items.length){ const _e=document.createElement("div"); _e.style.cssText="text-align:center;color:var(--muted);padding:22px 8px;font-size:12px"; _e.textContent="이 주머니는 비어있다."; body.appendChild(_e); }
   if(G.inBattle){ const note=document.createElement("div"); note.style.cssText="font-size:11px;color:var(--muted);margin-bottom:2px"; note.textContent="아이템을 쓰면 상대가 1턴 행동한다."; body.appendChild(note); }
   // ⚠️ 전투 중엔 ✕(우상단)만으로 돌아가야 해서 불편하다는 제보 → 본문에도 돌아가기를 둔다.
@@ -6495,7 +6609,7 @@ function applyItemEffect(it,tgt){ const m=tgt||activeMon();
   if(it.use==="mint"){ if(!m){flashHint("정령이 없다");return false;}
     if(m.nature===it.nature){ flashHint(`${dispName(m)}은(는) 이미 그 성격이다`); return false; }
     G.items[it.key]--; m.nature=it.nature; recalc(m); m.hp=Math.min(m.hp,m.maxHp); Audio.sfx("heal");
-    flashHint(`🌿 ${dispName(m)}의 성격이 <b>${(NATURE_BY_K[it.nature]&&NATURE_BY_K[it.nature].ko)||it.nature}</b>(으)로 바뀌었다!`); return true; }
+    flashHint(`🌿 ${dispName(m)}의 성격이 ${(NATURE_BY_K[it.nature]&&NATURE_BY_K[it.nature].ko)||it.nature}(으)로 바뀌었다!`); return true; }
   if(it.use==="bottlecap"){ if(!m){flashHint("정령이 없다");return false;} m.ivs=m.ivs||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0};
     if(["hp","atk","def","spa","spDef","spd"].every(k=>(m.ivs[k]||0)>=31)){ flashHint(`${dispName(m)}의 개체값은 이미 최고다`); return false; }
     G.items[it.key]--; ["hp","atk","def","spa","spDef","spd"].forEach(k=>m.ivs[k]=31); recalc(m); m.hp=Math.min(m.hp,m.maxHp); Audio.sfx("levelup");
@@ -6729,10 +6843,10 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
   if(!list.length){ body.innerHTML=`<div style="color:var(--muted);text-align:center;padding:30px;font-size:13px">${pcTab==="party"?"파티가 비어있다":"보관함이 비어있다"}</div>`; return; }
   list.forEach((m,i)=>{ recalc(m); const card=document.createElement("div"); card.className="mon-card"+(pcTab==="party"&&i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"");
     let actions="";
-    if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<button class="pick" data-a="nick">✏️</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
-    else { const canWith=G.party.length<6; actions=`<button class="pick" data-a="nick">✏️</button><button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel">방생</button>`; }
-    if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<div style="display:flex;gap:4px"><button class="pick" data-a="up" ${i>0?"":"disabled"} style="padding:7px 9px" title="위로">▲</button><button class="pick" data-a="down" ${i<G.party.length-1?"":"disabled"} style="padding:7px 9px" title="아래로">▼</button></div><button class="pick" data-a="sum">📋</button><button class="pick" data-a="nick">✏️</button><button class="pick" data-a="held">🎒</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
-    else { const canWith=G.party.length<6; actions=`<button class="pick" data-a="sum">📋</button><button class="pick" data-a="nick">✏️</button><button class="pick" data-a="held">🎒</button><button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel">방생</button>`; }
+    if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
+    else { const canWith=G.party.length<6; actions=`<button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel" title="놓아주기" aria-label="놓아주기">방생</button>`; }
+    if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<div style="display:flex;gap:4px"><button class="pick" data-a="up" title="위로 옮기기" aria-label="위로 옮기기" ${i>0?"":"disabled"} style="padding:7px 9px" title="위로">▲</button><button class="pick" data-a="down" title="아래로 옮기기" aria-label="아래로 옮기기" ${i<G.party.length-1?"":"disabled"} style="padding:7px 9px" title="아래로">▼</button></div><button class="pick" data-a="sum" title="정령 요약" aria-label="정령 요약">📋</button><button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" data-a="held" title="지닌 물건" aria-label="지닌 물건">🎒</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
+    else { const canWith=G.party.length<6; actions=`<button class="pick" data-a="sum" title="정령 요약" aria-label="정령 요약">📋</button><button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" data-a="held" title="지닌 물건" aria-label="지닌 물건">🎒</button><button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel" title="놓아주기" aria-label="놓아주기">방생</button>`; }
     const nmeta=m.nick?`<span style="font-size:9px;color:var(--muted)"> (${m.name})</span>`:"";
     const heldTag=m.held?` <span style="font-size:9px;color:#ffd98a">${HELD_ITEMS[m.held].em}${HELD_ITEMS[m.held].ko}</span>`:"";
     card.innerHTML=`<div class="em">${m.shiny?'<span class="shtag">✨</span>':""}${creatureVisual(m.id,m.type)}</div><div class="info"><div class="nm">${dispName(m)}${nmeta} <span class="type-tag ${TYPE_CLASS[m.type]}" style="font-size:9px">${tkLabel(m.type)}</span></div>
@@ -6921,7 +7035,7 @@ function serialize(){ return {v:4, ts:_nowMs(), pe:G.playerEmoji, ps:G.styleIdx|
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0} }; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp,tox:m._tox||0}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
   recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; m._tox=p.tox||0; if(p.nick)m.nick=p.nick; return m; }
@@ -6934,7 +7048,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
   if(!s.party.length)return false;
-  if(o.cfg){ CONFIG.difficulty=o.cfg.d||"normal"; CONFIG.textSpeed=o.cfg.t||1; CONFIG.volume=o.cfg.v!=null?o.cfg.v:0.7; CONFIG.reduceMotion=!!o.cfg.m; CONFIG.follower=o.cfg.f||"all"; CONFIG.battleText=o.cfg.bt||"auto"; CONFIG.gridMove=!!o.cfg.gm; Audio.setVolume(CONFIG.volume); }
+  if(o.cfg){ CONFIG.difficulty=o.cfg.d||"normal"; CONFIG.textSpeed=o.cfg.t||1; CONFIG.volume=o.cfg.v!=null?o.cfg.v:0.7; CONFIG.reduceMotion=!!o.cfg.m; CONFIG.follower=o.cfg.f||"all"; CONFIG.battleText=o.cfg.bt||"auto"; CONFIG.gridMove=!!o.cfg.gm; if(o.cfg&&o.cfg.gmini!=null)CONFIG.goalMini=!!o.cfg.gmini; Audio.setVolume(CONFIG.volume); }
   G=s; return true; }
 // ⚠️ 본가처럼 전투 중에는 저장하지 않는다.
 // serialize는 inBattle/foe/trainer를 담지 않으므로, 전투 중 저장이 남아 있으면
@@ -7026,11 +7140,11 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
-try{ $("dexPill").textContent=`도감 0 / ${DEX.length}`; const _dt=$("dexTotal"); if(_dt)_dt.textContent=DEX.length; const _sb=$("spCountBadge"); if(_sb)_sb.textContent=`정령 ${DEX.length}종`; }catch(e){}
+try{ $("dexPill").textContent=`📖 0/${DEX.length}`; const _dt=$("dexTotal"); if(_dt)_dt.textContent=DEX.length; const _sb=$("spCountBadge"); if(_sb)_sb.textContent=`정령 ${DEX.length}종`; }catch(e){}
 if(anySave()) $("continueBtn").style.display="block";
 
 })();
