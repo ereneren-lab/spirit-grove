@@ -533,7 +533,14 @@ const { chromium } = require("playwright"); const path=require("path");
     //    같은 문자다. 이 조건이 없으면 뱃지를 딴 뒤에도 격파한 관장 앞에서 영영 위로 걸었다
     //    (실측: 25분 중 22분을 gym1 관장 앞에서 낭비, 다음 목표로 못 넘어감).
     const gymCleared = /^gym(\d)$/.test(st.indoor||"") && st.badgeKeys.includes(RegExp.$1);
-    if(st.indoor && (/^gym/.test(st.indoor)||st.indoor==="league") && !gymCleared){
+    /* ⚠️ **제단(altar)도 목표 자체다.** 2026-08-04에 목표 트래커 사슬에 숲의 군주를 넣었는데
+       이 목록이 gym*·league뿐이라 봇이 제단에 들어가자마자 아래 탈출 분기로 떨어져 **곧장 걸어 나왔다**
+       — 그 판은 "숲의 군주 미격파 · 챔피언 등극"으로 끝났다(게임은 정상, lord_route_test가 증명).
+       이 저장소가 반복해 겪은 형태다: **게임 배선을 바꾸면 봇 하네스가 조용히 죽는다.**
+       ⚠️ 이미 꺾었으면(G.badge) 나가야 한다 — 안 그러면 격파한 제단 앞에서 영영 위로 걷는다
+          (gym에서 똑같은 사고가 있었다: 25분 중 22분을 gym1 관장 앞에서 낭비). */
+    const lordDone = st.indoor==="altar" && st.lord;
+    if(st.indoor && (/^gym/.test(st.indoor)||st.indoor==="league"||st.indoor==="altar") && !gymCleared && !lordDone){
       tr("field:gymUp",st);
       for(let i=0;i<3;i++){ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(260);
         const q=await p.evaluate(()=>({inB:!!window.SG.G().inBattle,dlg:document.getElementById("dialogBox").classList.contains("show")}));
