@@ -1716,8 +1716,10 @@ const INTERIORS={
 
   shop:{ id:"shop", W:9, H:7, startX:4, startY:5, exitX:4, exitY:6, name:"정령 상점",
     str:["#########","#..N....#","#..SSS..#","#.......#","#.......#","#.......#","####.####"] },
+  /* ⚠️ 머리맡의 P는 **연구소의 편지**다(팻말 아님) — interact가 G.indoor==="house"로 분기한다.
+        아침 시퀀스에서 자동으로 한 번 펼쳐지고, 그 뒤엔 여기서 다시 읽는다. */
   house:{ id:"house", W:9, H:7, startX:4, startY:5, exitX:4, exitY:6, name:"집",
-    str:["#########","#B....N.#","#.......#","#.......#","#.......#","#.......#","####.####"] },
+    str:["#########","#BP...N.#","#.......#","#.......#","#.......#","#.......#","####.####"] },
   // 정령 회관: 숨어 있던 시스템(IV·닉네임·친밀도)을 플레이어에게 여는 창구.
   // p=감정사, n=이름 짓는 사람, s=마사지사 — 셋 다 비보행(부딪혀 대화).
   // ⚠️ 세 NPC(p/n/s) 바로 아래가 뚫려 있어야 부딪혀 말을 걸 수 있다(카운터로 막으면 대화 불가).
@@ -1859,6 +1861,10 @@ function exitInterior(alt){ if(!_owBackup)return; warpFade(()=>_exitInterior(alt
 function _exitInterior(alt){ if(!_owBackup)return;
   W=_owBackup.W; H=_owBackup.H; MAP_STR=_owBackup.str;
   G.pos=(alt&&alt.ox!=null)?{x:alt.ox,y:alt.oy}:{x:_owBackup.pos.x,y:_owBackup.pos.y}; G.indoor=null; _owBackup=null; _justExited=true;
+  /* 조작 튜토리얼은 **집을 나서서 오버월드에 선 순간**에 뜬다 — 아침 시퀀스 위에 겹쳐 쏟아지면
+     서사와 조작 설명이 같은 자리에서 싸운다(그래서 startInHouse는 enterMap(true)로 튜토리얼을 미룬다).
+     maybeTutorial은 localStorage로 자기 자신을 1회로 막으므로 여기서 불러도 반복되지 않는다. */
+  if(typeof maybeTutorial==="function")setTimeout(maybeTutorial,500);
   heldDir=null; stopPath(); _warpLock=performance.now()+320;   // 나올 때도 관성으로 다시 문에 걸어들어가지 않게
   if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"down");
   if(!G.inBattle)Audio.startMusic(regionMusic(region(G.pos.y)));
@@ -2269,6 +2275,18 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         ctx.fillText(HALL_TOOL[t], sx+ts*0.5, sy+ts*0.1); }
       else if(t==="N"){ ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.92,(G.indoor==="center")?NPC_SPR.nurse:NPC_SPR.clerk,"down",now); }
       else if(t==="B"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="#8a6240"; ctx.fillRect(sx+ts*0.14,sy+ts*0.2,ts*0.72,ts*0.68); ctx.fillStyle="#e8e2d8"; ctx.fillRect(sx+ts*0.18,sy+ts*0.24,ts*0.64,ts*0.4); ctx.fillStyle="#d86a6a"; ctx.fillRect(sx+ts*0.18,sy+ts*0.5,ts*0.64,ts*0.34); ctx.fillStyle="#f0eee8"; ctx.fillRect(sx+ts*0.22,sy+ts*0.27,ts*0.34,ts*0.16); ctx.strokeStyle="rgba(40,26,14,.4)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.14,sy+ts*0.2,ts*0.72,ts*0.68); }
+      /* ⚠️ 집 안의 P는 팻말이 아니라 **머리맡의 편지**다 — 침실에 나무 표지판이 서 있으면 어색하다.
+         ⚠️ 이 가지는 반드시 **실내 분기 안**에 있어야 한다 — 실내는 여기서 전부 처리하고 모르는 타일을
+            바닥으로 떨어뜨린 뒤 return한다. 실외 체인에 P 가지를 놓았더니 영영 안 닿았다(실제로 겪음).
+            interact도 같은 조건으로 분기한다 — 둘이 갈라지면 보이는 것과 읽히는 것이 달라진다. */
+      else if(t==="P"&&G.indoor==="house"){ ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb);
+        ctx.fillStyle="rgba(0,0,0,.16)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.82,ts*0.26,ts*0.07,0,0,6.29); ctx.fill();
+        ctx.fillStyle="#6b4f34"; ctx.fillRect(sx+ts*0.16,sy+ts*0.56,ts*0.68,ts*0.22);
+        ctx.fillStyle="#5a4028"; ctx.fillRect(sx+ts*0.16,sy+ts*0.74,ts*0.68,ts*0.06);
+        ctx.fillStyle="#f2ece0"; ctx.fillRect(sx+ts*0.24,sy+ts*0.30,ts*0.52,ts*0.30);
+        ctx.strokeStyle="rgba(60,45,25,.55)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.24,sy+ts*0.30,ts*0.52,ts*0.30);
+        ctx.beginPath(); ctx.moveTo(sx+ts*0.24,sy+ts*0.30); ctx.lineTo(sx+ts*0.50,sy+ts*0.48); ctx.lineTo(sx+ts*0.76,sy+ts*0.30); ctx.stroke();
+        ctx.fillStyle="#c05050"; ctx.beginPath(); ctx.arc(sx+ts*0.50,sy+ts*0.48,ts*0.06,0,6.29); ctx.fill(); }
       else if(t==="5"||t==="6"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx,sy,tb,tb);
         if(typeof G==="undefined"||!G.defeated||!G.defeated.has(t)){ const cx=sx+ts*0.5,cy=sy+ts*0.5,u=ts*0.5; const armor=t==="5"?"#aab4c4":"#6a5a84";
           ctx.fillStyle="rgba(0,0,0,.2)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.42,u*0.32,u*0.1,0,0,6.29); ctx.fill();
@@ -2597,7 +2615,7 @@ function move(dir,auto){ if(G.busy||G.inBattle||!Field.arrived)return; if(_warpL
       if(_rt.id==="hillpath"&&!G.hillSeen){ G.hillSeen=true; setTimeout(()=>{ if(G.indoor==="hillpath")flashHint("🌾 바람이 풀을 눕힌다… 바람 언덕길이다!"); },400); }
       if(_rt.id==="pier"&&!G.pierSeen){ G.pierSeen=true; setTimeout(()=>{ if(G.indoor==="pier")flashHint("🪵 판자가 삐걱인다… 호숫가 잔교다!"); },400); }
       if(_rt.id==="frostpass"&&!G.frostSeen){ G.frostSeen=true; setTimeout(()=>{ if(G.indoor==="frostpass")flashHint("❄️ 발밑이 미끄럽다… 서리 고갯길이다!"); },400); } return; }
-    if(tileAt(x,y)==="D"&&!G.indoor){ enterInterior(INTERIORS.cave); return; } if(tileAt(x,y)==="V"&&!G.indoor){ enterInterior(INTERIORS.lavacave);  return; } if(tileAt(x,y)==="M"&&!G.indoor){ enterInterior(INTERIORS.snowfield);  return; } if(tileAt(x,y)==="J"&&!G.indoor){ enterInterior(INTERIORS.marsh);  return; } if(tileAt(x,y)==="O"&&!G.indoor){ enterInterior(INTERIORS.skyridge);  return; } if(tileAt(x,y)==="z"&&!G.indoor){ enterInterior(INTERIORS.ruins);  return; } if(tileAt(x,y)==="^"&&!G.indoor){ enterInterior(INTERIORS.crater);  return; } if(tileAt(x,y)==="!"&&!G.indoor){ enterInterior(INTERIORS.garden);  return; } if(tileAt(x,y)==="G"&&!G.indoor&&typeof GYM_AT!=="undefined"&&GYM_AT[x+","+y]){ enterInterior(INTERIORS[GYM_AT[x+","+y]]); return; } if(tileAt(x,y)==="W"&&!G.indoor){ enterInterior(INTERIORS.coast); if(!G.coastSeen){ G.coastSeen=true; setTimeout(()=>{ if(G.indoor==="coast")playStory(COAST_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="U"&&!G.indoor){ if(forestBadges()>=4){ enterInterior(INTERIORS.league); if(!G.leagueSeen){ G.leagueSeen=true; setTimeout(()=>{ if(G.indoor==="league")playStory(LEAGUE_INTRO,()=>{}); },420); } } else { showDialog({name:"리그 안내인",text:`정령 리그는 <b>4개의 인장 조각</b>을 모은 자에게만 열립니다. (현재 ${forestBadges()}/4)`}); } return; } if(G.indoor==="hall"&&"pns".indexOf(tileAt(x,y))>=0&&tileAt(x,y)!==""){ stopPath(); hallService(tileAt(x,y)); return; } if(tileAt(x,y)==="N"&&G.indoor==="center"){ stopPath(); nurseHeal(); return; } if(tileAt(x,y)==="N"&&G.indoor==="shrine"){ showDialog(SHRINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="snowfield"){ showDialog(SNOW_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="marsh"){ showDialog(MARSH_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="skyridge"){ showDialog(SKYRIDGE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="pier"){ showDialog(PIER_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="frostpass"){ showDialog(FROST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="hillpath"){ showDialog(HILL_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="mine"){ showDialog(MINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="ruins"){ showDialog(RUINS_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="crater"){ showDialog(CRATER_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="garden"){ showDialog(GARDEN_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="isle"){ showDialog(ISLE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="coast"){ showDialog(COAST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor){ showDialog({name:G.indoor==="shop"?"점원":"집주인",text:(INTERIOR_NPC_MSG[G.indoor]||"...").replace(/^[^:]+:\s*/,"")}); return; } if(tileAt(x,y)==="P"){ showDialog({name:"팻말",text:(SIGN_MSG[x+","+y]||"조심해서 나아가자.").replace(/^🪧\s*/,"")}); return; } return; }
+    if(tileAt(x,y)==="D"&&!G.indoor){ enterInterior(INTERIORS.cave); return; } if(tileAt(x,y)==="V"&&!G.indoor){ enterInterior(INTERIORS.lavacave);  return; } if(tileAt(x,y)==="M"&&!G.indoor){ enterInterior(INTERIORS.snowfield);  return; } if(tileAt(x,y)==="J"&&!G.indoor){ enterInterior(INTERIORS.marsh);  return; } if(tileAt(x,y)==="O"&&!G.indoor){ enterInterior(INTERIORS.skyridge);  return; } if(tileAt(x,y)==="z"&&!G.indoor){ enterInterior(INTERIORS.ruins);  return; } if(tileAt(x,y)==="^"&&!G.indoor){ enterInterior(INTERIORS.crater);  return; } if(tileAt(x,y)==="!"&&!G.indoor){ enterInterior(INTERIORS.garden);  return; } if(tileAt(x,y)==="G"&&!G.indoor&&typeof GYM_AT!=="undefined"&&GYM_AT[x+","+y]){ enterInterior(INTERIORS[GYM_AT[x+","+y]]); return; } if(tileAt(x,y)==="W"&&!G.indoor){ enterInterior(INTERIORS.coast); if(!G.coastSeen){ G.coastSeen=true; setTimeout(()=>{ if(G.indoor==="coast")playStory(COAST_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="U"&&!G.indoor){ if(forestBadges()>=4){ enterInterior(INTERIORS.league); if(!G.leagueSeen){ G.leagueSeen=true; setTimeout(()=>{ if(G.indoor==="league")playStory(LEAGUE_INTRO,()=>{}); },420); } } else { showDialog({name:"리그 안내인",text:`정령 리그는 <b>4개의 인장 조각</b>을 모은 자에게만 열립니다. (현재 ${forestBadges()}/4)`}); } return; } if(G.indoor==="hall"&&"pns".indexOf(tileAt(x,y))>=0&&tileAt(x,y)!==""){ stopPath(); hallService(tileAt(x,y)); return; } if(tileAt(x,y)==="N"&&G.indoor==="center"){ stopPath(); nurseHeal(); return; } if(tileAt(x,y)==="N"&&G.indoor==="shrine"){ showDialog(SHRINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="snowfield"){ showDialog(SNOW_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="marsh"){ showDialog(MARSH_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="skyridge"){ showDialog(SKYRIDGE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="pier"){ showDialog(PIER_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="frostpass"){ showDialog(FROST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="hillpath"){ showDialog(HILL_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="mine"){ showDialog(MINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="ruins"){ showDialog(RUINS_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="crater"){ showDialog(CRATER_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="garden"){ showDialog(GARDEN_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="isle"){ showDialog(ISLE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="coast"){ showDialog(COAST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor){ showDialog({name:G.indoor==="shop"?"점원":"집주인",text:(INTERIOR_NPC_MSG[G.indoor]||"...").replace(/^[^:]+:\s*/,"")}); return; } if(tileAt(x,y)==="P"&&G.indoor==="house"){ G.noteRead=true; showDialog(HOME_LETTER); return; } if(tileAt(x,y)==="P"){ showDialog({name:"팻말",text:(SIGN_MSG[x+","+y]||"조심해서 나아가자.").replace(/^🪧\s*/,"")}); return; } return; }
   // 그리드 이동(opt-in): 방향키를 처음 누르면 제자리 회전만, 계속 누르면(홀드) 걷기 — 포켓몬식.
   if(CONFIG.gridMove && !auto && Field && Field.dir && Field.dir!==dir){
     if(Field.face)Field.face(dir);
@@ -2964,10 +2982,38 @@ function triggerLevelup(lv){ const el=$("levelup"); el.textContent="Lv "+lv+" �
 /* ===================== ENTER MAP (3D or 2D fallback) ===================== */
 const HOME_SENDOFF=[
   {name:"엄마",text:"드디어 떠나는 날이구나. 우리 아이가 정령사가 되어 숲으로 향하다니…"},
-  {name:"엄마",text:"연구소가 보낸 편지랑 첫 동료 정령은 잘 챙겼지? 무리하지 말고, 정령들과 마음을 나누렴."},
+  {name:"엄마",text:"편지는 읽었지? 무리하지 말고, 정령들과 마음을 나누렴."},
   {name:"엄마",text:"자, 문을 열고 나가 보렴. 온 숲이 너를 기다리고 있단다. 💚"}
 ];
-function startInHouse(){ G.pos={x:5,y:48}; enterMap(false); enterInterior(INTERIORS.house); setTimeout(()=>{ if(G.indoor==="house") showDialog(HOME_SENDOFF); }, 620); }
+/* 아침 시퀀스 — 유저 지적("입구 출구도 없이 갑자기 들어가진다")의 도입부 쪽.
+   슬라이드 7장이 끝나면 **이미 집에 서 있었다**. 세계관은 설명됐는데 '나'는 아직 시작하지 않은 상태다.
+   → 눈을 뜨고(암전→깜빡임), 첫 동료가 깨우고, 머리맡 편지로 목적을 손에 쥐고, 엄마의 배웅으로 나간다. */
+const HOME_WAKE=[
+  {name:"",text:"…창으로 아침 햇살이 들어온다. 오늘이 그날이다."},
+  {name:"",text:"머리맡에서 <b>첫 동료 정령</b>이 당신의 소매를 잡아당긴다. 벌써 깨어 있었던 모양이다."}
+];
+/* 편지 = '왜 내가 가는가'. 자동으로 한 번 펼쳐 보이고, 머리맡 P로 다시 읽을 수 있게 남긴다.
+   ⚠️ 목표를 여기서만 말하지 않는다 — 목표 트래커가 늘 같은 것을 가리킨다(중복이 아니라 이중화). */
+const HOME_LETTER=[
+  {name:"연구소의 편지",text:"— <b>정령 연구소</b>가 보냅니다.<br>천 년간 숲을 지켜온 <b>숲의 인장</b>의 빛이 빠르게 옅어지고 있습니다. 무언가가 그 힘을 빨아먹고 있어요."},
+  {name:"연구소의 편지",text:"숲 곳곳의 체육관 관장들이 <b>인장 조각 4개</b>를 나눠 지키고 있습니다. 그들을 꺾어 조각을 모으고, 제단의 <b>숲의 군주</b>에게 닿으세요."},
+  {name:"연구소의 편지",text:"당신과 첫 동료에게 이 일을 맡깁니다. …부디, 살아서 돌아오세요."}
+];
+function startInHouse(){ G.pos={x:5,y:48}; enterMap(true); enterInterior(INTERIORS.house);
+  setTimeout(()=>{ if(G.indoor!=="house")return;
+    /* 침대 옆에서 시작한다 — 재입장 시작칸(문 앞 startX/startY)은 그대로 두고 이 순간만 옮긴다 */
+    G.pos={x:2,y:2}; if(Field.setTarget)Field.setTarget(2,2,"up");
+    wakeUpScene(()=>{ G.noteRead=true;
+      showDialog(HOME_WAKE.concat(HOME_LETTER, HOME_SENDOFF)); });
+  }, 620); }
+/* 눈뜨기 — 검은 화면에서 두 번 깜빡이고 뜬다. reduceMotion이면 통째로 건너뛴다.
+   ⚠️ #warpFade는 canvas-wrap 안이라 맵만 덮는다(상단 HUD는 그대로) — 그게 "눈을 뜬다"에 맞다. */
+function wakeUpScene(done){ const ov=(typeof $!=="undefined")&&$("warpFade");
+  if(CONFIG.reduceMotion||!ov){ done(); return; }
+  G.busy=true; _warpLock=performance.now()+2100;
+  const seq=[[0,1],[430,0.28],[300,0.92],[380,0.10],[300,0.72],[520,0]];
+  let t=0; seq.forEach(([d,op])=>{ t+=d; setTimeout(()=>{ ov.style.transition="opacity .3s ease"; ov.style.opacity=String(op); }, t); });
+  setTimeout(()=>{ G.busy=false; done(); }, t+340); }
 function enterMap(fromLoad){ if(fromLoad){ G.indoor=null; _owBackup=null; } if(!G.indoor){ MAP_STR=OVERWORLD_STR0.slice(); W=25; H=50; } updateDexPill(); updateMoney(); lastRegion=-1;
   $("settingsBtn").style.display="grid"; $("moneyPill").style.display="block"; updateBadgePill(); show("map");
   Field.init(); Field.rebuild();

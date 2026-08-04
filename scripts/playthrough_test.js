@@ -30,11 +30,16 @@ const { chromium } = require("playwright"); const path=require("path"); const os
   // 대화창·스토리 오버레이가 떠 있으면 실제 입력으로 넘긴다.
   // ⚠️ 스토리는 #dialogBox가 아니라 별도 #storyOverlay(storyNext/storySkip)라서
   //    대화창만 처리하면 여기서 영영 막힌다.
+  // ⚠️ **컷신 중에는 대화창이 아직 안 떠 있다** — 예전 이 함수는 "지금 치울 게 없다"를 "끝났다"로
+  //    읽고 즉시 돌아왔고, 호출부는 연출 도중에 방향키를 눌러 "이동 실패"로 오판했다(집 아침 시퀀스의
+  //    눈뜨기 2.1초에서 실제로 겪음 — 게임은 멀쩡했다). 고정 대기를 늘리는 대신 **G.busy 상태**를 본다.
   const clearDialog=async(max=40)=>{ for(let i=0;i<max;i++){
       const st=await p.evaluate(()=>({
         dlg:document.getElementById("dialogBox").classList.contains("show"),
         story:!!document.querySelector("#storyOverlay.active"),
+        busy:!!(window.SG&&window.SG.G()&&window.SG.G().busy),
       }));
+      if(!st.dlg && !st.story && st.busy){ await p.waitForTimeout(220); continue; }   // 연출 진행 중 — 기다린다
       if(!st.dlg && !st.story)return true;
       if(st.story){
         const skipped=await p.evaluate(()=>{ const s=document.getElementById("storySkip"); if(s){s.click();return true;}
