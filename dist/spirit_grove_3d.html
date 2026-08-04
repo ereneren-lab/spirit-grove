@@ -453,6 +453,17 @@
   @keyframes lvl{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}80%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-58%) scale(1)}}
   .toast{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);color:var(--cream);padding:9px 16px;border-radius:11px;font-size:12px;font-weight:600;z-index:50;opacity:0;pointer-events:none;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.4)}
   .toast.go{animation:toast 2.2s ease} @keyframes toast{0%{opacity:0;transform:translate(-50%,8px)}12%{opacity:1;transform:translateX(-50%)}80%{opacity:1}100%{opacity:0}}
+  /* 장소 표찰(placard) — 지역/특수지역/루트에 들어설 때 좌상단에서 밀려 들어온다.
+     ⚠️ 세로에서만 보이던 #mapHint와 달리 가로에서도 떠야 한다(경계를 넘는 감각이 핵심이라). */
+  /* top:84px — 목표 트래커(.goal: top 8 + 높이 67) 바로 아래. 실측으로 잡았다(54px는 21px 겹쳤다). */
+  .placard{position:absolute;left:0;top:84px;z-index:46;opacity:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(36,31,72,.96),rgba(24,20,46,.96));
+    border:1px solid var(--line);border-left:3px solid var(--mint);border-radius:0 12px 12px 0;
+    padding:7px 16px 8px 13px;box-shadow:0 10px 26px rgba(0,0,0,.5)}
+  .placard .pl-nm{font-size:14px;font-weight:800;color:var(--cream);letter-spacing:.5px;white-space:nowrap}
+  .placard .pl-sub{font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;max-width:62vw;overflow:hidden;text-overflow:ellipsis}
+  .placard.go{animation:placard 3.4s cubic-bezier(.22,1,.36,1)}
+  @keyframes placard{0%{opacity:0;transform:translateX(-104%)}9%{opacity:1;transform:translateX(0)}82%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(-104%)}}
   .tap-ping{position:absolute;width:30px;height:30px;border:2.5px solid var(--mint);border-radius:50%;transform:translate(-50%,-50%) scale(.3);opacity:.9;pointer-events:none;z-index:6}
   .tap-ping.go{animation:ping .5s ease-out forwards}
   @keyframes ping{to{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
@@ -658,6 +669,10 @@
             <div class="gnm" id="goalName">—</div>
             <div class="gsub" id="goalSub"></div></span>
         </div>
+        <!-- 장소 표찰: 포켓몬식 "지역에 들어섰다" 신호. 오버레이가 아니라 비상호작용 배너다
+             (닫기 버튼도 Escape도 없으므로 landscape_panel_test 대상이 아니다).
+             ⚠️ **canvas-wrap 안**에 둔다 — 섹션 직계로 두면 가로에서 좌측 액션 버튼 열과 겹친다(실측). -->
+        <div class="placard" id="placeBanner"><div class="pl-nm" id="placeName"></div><div class="pl-sub" id="placeSub"></div></div>
       </div>
       <div class="map-foot">
         <div class="map-actions">
@@ -2321,7 +2336,19 @@ function _enterInterior(map){
   if(Field.init)Field.init(); if(Field.rebuild)Field.rebuild(); if(Field.setTarget)Field.setTarget(G.pos.x,G.pos.y,"up"); if(Field)Field.moveSpeed=(G&&G.running)?11.4:6.8; if(typeof updateRunBtn==="function")updateRunBtn();
   if(!G.inBattle)Audio.startMusic(fieldMusic());
   if(typeof updateGoal==="function")updateGoal();
+  /* 장소 표찰 — 어디에 들어섰는지 매번 알린다(첫 방문 한정이던 flashHint와 달리 재방문도 뜬다).
+     ⚠️ 생활 건물(상점·집·회관·센터)은 제외 — 본가도 가게에 지역명을 띄우지 않는다. */
+  if(PLACARD_SKIP.indexOf(G.indoor)<0 && map.name)showPlace(map.name, PLACE_SUB[G.indoor]||"");
 }
+const PLACARD_SKIP=["shop","house","hall","center"];
+/* 첫 진입 flashHint에 흩어져 있던 분위기 한 줄을 장소 표찰의 부제로 모았다(재방문에도 뜬다). */
+const PLACE_SUB={ mine:"어둠 속에서 물방울이 떨어진다", hillpath:"바람이 언덕을 타고 넘는다", pier:"판자가 발밑에서 삐걱인다",
+  frostpass:"발을 디딜 때마다 얼음이 미끄럽다", mosshollow:"이끼 냄새와 모닥불 연기", fallspath:"물안개가 벼랑을 타고 오른다",
+  fireflyway:"반딧불이 길을 밝힌다", cave:"수정이 은은하게 맥동한다", lavacave:"뜨거운 열기가 밀려온다",
+  snowfield:"차가운 바람이 살을 벤다", marsh:"축축한 안개가 자욱하다", skyridge:"천둥이 우르릉거린다",
+  ruins:"이끼 낀 돌기둥이 늘어서 있다", crater:"발밑이 뜨겁다", garden:"은은한 빛의 꽃이 흔들린다",
+  coast:"파도 소리가 밀려온다", isle:"여명빛이 수면에 부서진다", shrine:"공기가 서늘하게 가라앉는다",
+  altar:"인장이 마지막 빛을 붙들고 있다", league:"네 명의 정점이 기다린다" };
 /* alt를 주면 **오버월드의 다른 지점으로** 나온다(통과형 루트의 반대쪽 출구). 없으면 들어온 자리로. */
 function exitInterior(alt){ if(!_owBackup)return; warpFade(()=>_exitInterior(alt)); }
 function _exitInterior(alt){ if(!_owBackup)return;
@@ -2421,6 +2448,9 @@ const DOOR_TILES="+EHGUSX";
 function walkable(x,y){ if(x<0||y<0||x>=W||y>=H)return false; const t=tileAt(x,y); if(t==="~"&&typeof G!=="undefined"&&G&&G.surfing&&!G.indoor)return true; if(typeof NPC_AT!=="undefined" && !G.indoor && NPC_AT[x+","+y] && npcAvailable(NPC_AT[x+","+y]))return false; if((t==="5"||t==="6"||(t!==""&&"1234".indexOf(t)>=0)||(t!==""&&GUARD_TILES.indexOf(t)>=0))&&G.indoor)return G.defeated.has(t); return t!=="#"&&t!=="~"&&t!=="H"&&t!=="F"&&t!=="P"&&t!=="N"&&t!=="C"&&t!=="o"&&t!=="D"&&t!=="G"&&t!=="W"&&t!=="Y"&&t!=="Z"&&t!=="@"&&t!=="K"&&t!=="L"&&t!=="U"&&t!=="x"&&t!=="%"&&t!=="V"&&t!=="M"&&t!=="&"&&t!=="Q"&&t!=="J"&&t!=="O"&&t!=="z"&&t!=="^"&&t!=="!"&&t!=="+"&&t!=="E"&&t!=="p"&&t!=="n"&&t!=="s"&&(t!=="S"||!!G.indoor)&&(t!=="X"||!!G.indoor)&&t!=="$"; }
 // region bands (bottom->top): 0 town,1 meadow,2 forest,3 deep,4 lake,5 highland,6 arena
 function region(y){ if(y>=47)return 0; if(y>=41)return 1; if(y>=34)return 2; if(y>=27)return 3; if(y>=20)return 4; if(y>=12)return 5; return 6; }
+/* 지역 경계선 — region()이 바뀌는 y. 관문(_gateFx)을 이 행의 위쪽 모서리에 세운다.
+   ⚠️ region()의 임계값과 반드시 같이 움직인다 — 회귀 gate_test가 둘의 일치를 강제한다. */
+const GATE_ROWS=[47,41,34,27,20,12];
 const REGION_NAME=["마을","초원","숲","깊은 숲","수정 호수","고원","군주의 제단"];
 function groundColor(t,y){ const r=region(y);
   if(t==="R")return 0x4a3358; if(t==="S")return 0x5a4a2c; if(t==="X")return 0x3a2c4e;
@@ -2481,6 +2511,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       // 바닥에 놓인 도구(아직 안 주운 것만) — 타일 위에 얹어 그린다
       if(typeof groundItemAt==="function"){ const gi=groundItemAt(x,y); if(gi)this._itemBall(ctx,sx,sy,ts,now,x,y); }   // 실내 볼도 보이게(groundItemAt이 G.indoor로 스코프) — 눌러-받기와 일관
       if(typeof berryAt==="function"){ const bt=berryAt(x,y); if(bt)this._berryTree(ctx,sx,sy,ts,now,berryRipe(bt)); } }
+    this._gateFx(ctx,ox,oy,ts,cw,ch);
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const sx=ox+x*ts,sy=oy+y*ts; if(sx<-ts||sy<-ts||sx>cw||sy>ch)continue;
       const t=tileAt(x,y); let emoji=null, spec=null, sdir="down";
       if(isTrainerTile(t)&&!G.defeated.has(t)){ const _ts=trainerSpr(t); if(_ts)spec=_ts; else emoji=(TRAINERS[t]&&TRAINERS[t].em)||null; }
@@ -2524,6 +2555,38 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     this._grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving);
     if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh"||G.indoor==="skyridge"||G.indoor==="ruins"||G.indoor==="mine"||G.indoor==="hillpath"||G.indoor==="pier"||G.indoor==="mosshollow"||G.indoor==="fallspath"||G.indoor==="crater"||G.indoor==="garden") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; }
     if(typeof owWeather==="function"){ const _wx=owWeather(); if(_wx!=="clear" && typeof drawWeatherFx==="function")drawWeatherFx(ctx,cw,ch,ts,_wx); } },
+  /* 지역 관문 — 마을/초원/숲/… 경계에 나무 기둥과 들보를 세운다. "여기서부터 다른 곳"을 눈으로 보여주는 장치.
+     ⚠️ **맵 문자열을 건드리지 않는다** — 순수 렌더 장식이라 walkable/도달성/게이팅이 전부 불변이다
+        (경계에 실제 타일을 놓으면 reachability_test가 도는 도달 그래프가 바뀐다).
+     ⚠️ 통행 판정이 아니라 **타일 문자**로 열림을 본다 — walkable()은 NPC가 서 있으면 false라
+        지나가는 NPC를 따라 기둥이 춤춘다. */
+  _gateFx(ctx,ox,oy,ts,cw,ch){ if(typeof G==="undefined"||!G||G.indoor)return;
+    const open=(x,y)=>{ const t=tileAt(x,y); return t!=="#"&&t!=="~"&&t!=="x"&&t!=="o"; };
+    for(const gy of GATE_ROWS){ const ly=oy+gy*ts; if(ly<-ts*2||ly>ch+ts)continue;
+      let run=null;
+      for(let x=0;x<=W;x++){ const pass=(x<W)&&open(x,gy)&&open(x,gy-1);
+        if(pass){ if(run===null)run=x; continue; }
+        if(run===null)continue;
+        const a=run, b=x-1; run=null;
+        const x0=ox+a*ts, x1=ox+(b+1)*ts; if(x1<0||x0>cw)continue;
+        /* ⚠️ 꽉 찬 들보로 그렸더니 **울타리로 읽혀** "왜 통과되지?"가 된다(스크린샷으로 확인).
+           → 축 늘어진 금줄 + 매달린 등. 밑으로 지나가는 게 자연스러운 형태여야 한다. */
+        const w=x1-x0, sag=ts*0.13;
+        ctx.strokeStyle="#6b5740"; ctx.lineWidth=Math.max(1.5,ts*0.055); ctx.lineCap="round";
+        ctx.beginPath(); ctx.moveTo(x0-ts*0.04, ly-ts*0.18); ctx.quadraticCurveTo(x0+w/2, ly-ts*0.18+sag, x1-ts*0.02, ly-ts*0.18); ctx.stroke();
+        /* 기둥 2개 — 통로 양 끝 타일 경계에 */
+        for(const px of [x0-ts*0.06, x1-ts*0.10]){
+          ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(px+ts*0.08, ly+ts*0.30, ts*0.14, ts*0.05, 0, 0, 6.29); ctx.fill();
+          ctx.fillStyle="#4a3a2a"; ctx.fillRect(px, ly-ts*0.24, ts*0.16, ts*0.54);
+          ctx.fillStyle="rgba(255,236,190,.13)"; ctx.fillRect(px, ly-ts*0.24, ts*0.05, ts*0.54); }
+        /* 줄에 매단 등 — 폭에 비례해 3~5개. 밤에 경계선이 읽히는 것도 이 등 덕이다. */
+        const lamps=Math.max(2, Math.min(5, Math.round(w/(ts*2.6))));
+        for(let i=1;i<=lamps;i++){ const t=i/(lamps+1), lx=x0+w*t;
+          const ly2=ly-ts*0.18+sag*(4*t*(1-t));                       /* 늘어진 줄 위에 얹는다 */
+          ctx.strokeStyle="#6b5740"; ctx.lineWidth=Math.max(1,ts*0.03);
+          ctx.beginPath(); ctx.moveTo(lx, ly2); ctx.lineTo(lx, ly2+ts*0.12); ctx.stroke();
+          ctx.fillStyle="rgba(255,228,150,.30)"; ctx.beginPath(); ctx.arc(lx, ly2+ts*0.20, ts*0.15, 0, 6.29); ctx.fill();
+          ctx.fillStyle="#e8bf62"; ctx.beginPath(); ctx.ellipse(lx, ly2+ts*0.20, ts*0.068, ts*0.085, 0, 0, 6.29); ctx.fill(); } } } },
   // 풀숲 게임필 3종: (1) 밟은 칸이 술렁임 (2) 풀숲에 서면 하체가 풀에 가림 (3) 달릴 때 발밑 먼지.
   // ⚠️ Map2D는 객체 리터럴이다 — 메서드를 추가할 땐 앞 메서드 끝의 콤마를 확인할 것.
   _grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving){ if(CONFIG.reduceMotion)return;
@@ -3029,7 +3092,7 @@ function move(dir,auto){ if(G.busy||G.inBattle||!Field.arrived)return; if(_warpL
       if(_rt.id==="hillpath"&&!G.hillSeen){ G.hillSeen=true; setTimeout(()=>{ if(G.indoor==="hillpath")flashHint("🌾 바람이 풀을 눕힌다… 바람 언덕길이다!"); },400); }
       if(_rt.id==="pier"&&!G.pierSeen){ G.pierSeen=true; setTimeout(()=>{ if(G.indoor==="pier")flashHint("🪵 판자가 삐걱인다… 호숫가 잔교다!"); },400); }
       if(_rt.id==="frostpass"&&!G.frostSeen){ G.frostSeen=true; setTimeout(()=>{ if(G.indoor==="frostpass")flashHint("❄️ 발밑이 미끄럽다… 서리 고갯길이다!"); },400); } return; }
-    if(tileAt(x,y)==="D"&&!G.indoor){ enterInterior(INTERIORS.cave); return; } if(tileAt(x,y)==="V"&&!G.indoor){ enterInterior(INTERIORS.lavacave); if(!G.lavaSeen){ G.lavaSeen=true; setTimeout(()=>{ if(G.indoor==="lavacave")flashHint("🌋 뜨거운 열기가 밀려온다… 용암 동굴이다!"); },400); } return; } if(tileAt(x,y)==="M"&&!G.indoor){ enterInterior(INTERIORS.snowfield); if(!G.snowSeen){ G.snowSeen=true; setTimeout(()=>{ if(G.indoor==="snowfield")flashHint("❄️ 차가운 바람이 불어온다… 설원 지대다!"); },400); } return; } if(tileAt(x,y)==="J"&&!G.indoor){ enterInterior(INTERIORS.marsh); if(!G.marshSeen){ G.marshSeen=true; setTimeout(()=>{ if(G.indoor==="marsh")flashHint("🌫️ 축축한 안개가 자욱하다… 안개 늪지다!"); },400); } return; } if(tileAt(x,y)==="O"&&!G.indoor){ enterInterior(INTERIORS.skyridge); if(!G.skySeen){ G.skySeen=true; setTimeout(()=>{ if(G.indoor==="skyridge")flashHint("⚡ 천둥이 우르릉거린다… 뇌명 봉우리다!"); },400); } return; } if(tileAt(x,y)==="z"&&!G.indoor){ enterInterior(INTERIORS.ruins); if(!G.ruinsSeen){ G.ruinsSeen=true; setTimeout(()=>{ if(G.indoor==="ruins")flashHint("🏛️ 이끼 낀 돌기둥이 늘어서 있다… 고대 유적이다!"); },400); } return; } if(tileAt(x,y)==="^"&&!G.indoor){ enterInterior(INTERIORS.crater); if(!G.craterSeen){ G.craterSeen=true; setTimeout(()=>{ if(G.indoor==="crater")flashHint("🌋 발밑이 뜨겁다… 불꽃 분화구다!"); },400); } return; } if(tileAt(x,y)==="!"&&!G.indoor){ enterInterior(INTERIORS.garden); if(!G.gardenSeen){ G.gardenSeen=true; setTimeout(()=>{ if(G.indoor==="garden")flashHint("🌸 은은한 빛의 꽃이 흔들린다… 달빛 화원이다!"); },400); } return; } if(tileAt(x,y)==="G"&&!G.indoor&&typeof GYM_AT!=="undefined"&&GYM_AT[x+","+y]){ enterInterior(INTERIORS[GYM_AT[x+","+y]]); return; } if(tileAt(x,y)==="W"&&!G.indoor){ enterInterior(INTERIORS.coast); if(!G.coastSeen){ G.coastSeen=true; setTimeout(()=>{ if(G.indoor==="coast")playStory(COAST_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="U"&&!G.indoor){ if(forestBadges()>=4){ enterInterior(INTERIORS.league); if(!G.leagueSeen){ G.leagueSeen=true; setTimeout(()=>{ if(G.indoor==="league")playStory(LEAGUE_INTRO,()=>{}); },420); } } else { showDialog({name:"리그 안내인",text:`정령 리그는 <b>4개의 인장 조각</b>을 모은 자에게만 열립니다. (현재 ${forestBadges()}/4)`}); } return; } if(G.indoor==="hall"&&"pns".indexOf(tileAt(x,y))>=0&&tileAt(x,y)!==""){ stopPath(); hallService(tileAt(x,y)); return; } if(tileAt(x,y)==="N"&&G.indoor==="center"){ stopPath(); nurseHeal(); return; } if(tileAt(x,y)==="N"&&G.indoor==="shrine"){ showDialog(SHRINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="snowfield"){ showDialog(SNOW_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="marsh"){ showDialog(MARSH_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="skyridge"){ showDialog(SKYRIDGE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="pier"){ showDialog(PIER_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="frostpass"){ showDialog(FROST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="hillpath"){ showDialog(HILL_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="mine"){ showDialog(MINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="ruins"){ showDialog(RUINS_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="crater"){ showDialog(CRATER_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="garden"){ showDialog(GARDEN_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="isle"){ showDialog(ISLE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="coast"){ showDialog(COAST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor){ showDialog({name:G.indoor==="shop"?"점원":"집주인",text:(INTERIOR_NPC_MSG[G.indoor]||"...").replace(/^[^:]+:\s*/,"")}); return; } if(tileAt(x,y)==="P"){ showDialog({name:"팻말",text:(SIGN_MSG[x+","+y]||"조심해서 나아가자.").replace(/^🪧\s*/,"")}); return; } return; }
+    if(tileAt(x,y)==="D"&&!G.indoor){ enterInterior(INTERIORS.cave); return; } if(tileAt(x,y)==="V"&&!G.indoor){ enterInterior(INTERIORS.lavacave);  return; } if(tileAt(x,y)==="M"&&!G.indoor){ enterInterior(INTERIORS.snowfield);  return; } if(tileAt(x,y)==="J"&&!G.indoor){ enterInterior(INTERIORS.marsh);  return; } if(tileAt(x,y)==="O"&&!G.indoor){ enterInterior(INTERIORS.skyridge);  return; } if(tileAt(x,y)==="z"&&!G.indoor){ enterInterior(INTERIORS.ruins);  return; } if(tileAt(x,y)==="^"&&!G.indoor){ enterInterior(INTERIORS.crater);  return; } if(tileAt(x,y)==="!"&&!G.indoor){ enterInterior(INTERIORS.garden);  return; } if(tileAt(x,y)==="G"&&!G.indoor&&typeof GYM_AT!=="undefined"&&GYM_AT[x+","+y]){ enterInterior(INTERIORS[GYM_AT[x+","+y]]); return; } if(tileAt(x,y)==="W"&&!G.indoor){ enterInterior(INTERIORS.coast); if(!G.coastSeen){ G.coastSeen=true; setTimeout(()=>{ if(G.indoor==="coast")playStory(COAST_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="U"&&!G.indoor){ if(forestBadges()>=4){ enterInterior(INTERIORS.league); if(!G.leagueSeen){ G.leagueSeen=true; setTimeout(()=>{ if(G.indoor==="league")playStory(LEAGUE_INTRO,()=>{}); },420); } } else { showDialog({name:"리그 안내인",text:`정령 리그는 <b>4개의 인장 조각</b>을 모은 자에게만 열립니다. (현재 ${forestBadges()}/4)`}); } return; } if(G.indoor==="hall"&&"pns".indexOf(tileAt(x,y))>=0&&tileAt(x,y)!==""){ stopPath(); hallService(tileAt(x,y)); return; } if(tileAt(x,y)==="N"&&G.indoor==="center"){ stopPath(); nurseHeal(); return; } if(tileAt(x,y)==="N"&&G.indoor==="shrine"){ showDialog(SHRINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="snowfield"){ showDialog(SNOW_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="marsh"){ showDialog(MARSH_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="skyridge"){ showDialog(SKYRIDGE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="pier"){ showDialog(PIER_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="frostpass"){ showDialog(FROST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="hillpath"){ showDialog(HILL_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="mine"){ showDialog(MINE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="ruins"){ showDialog(RUINS_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="crater"){ showDialog(CRATER_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="garden"){ showDialog(GARDEN_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="isle"){ showDialog(ISLE_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor==="coast"){ showDialog(COAST_LORE); return; } if(tileAt(x,y)==="N"&&G.indoor){ showDialog({name:G.indoor==="shop"?"점원":"집주인",text:(INTERIOR_NPC_MSG[G.indoor]||"...").replace(/^[^:]+:\s*/,"")}); return; } if(tileAt(x,y)==="P"){ showDialog({name:"팻말",text:(SIGN_MSG[x+","+y]||"조심해서 나아가자.").replace(/^🪧\s*/,"")}); return; } return; }
   // 그리드 이동(opt-in): 방향키를 처음 누르면 제자리 회전만, 계속 누르면(홀드) 걷기 — 포켓몬식.
   if(CONFIG.gridMove && !auto && Field && Field.dir && Field.dir!==dir){
     if(Field.face)Field.face(dir);
@@ -3255,6 +3318,11 @@ function advanceDialog(){ if(!_dlgQueue)return; if(_dlgComplete())return;   // �
   if(_dlgIdx>=_dlgQueue.length){ if(_dlgTimer){clearInterval(_dlgTimer);_dlgTimer=null;} _dlgTyping=false; $("dialogBox").classList.remove("show"); _dlgQueue=null; G.busy=false; const cb=_dlgCb; _dlgCb=null; Audio.sfx&&Audio.sfx("blip"); if(cb)cb(); }
   else { Audio.sfx&&Audio.sfx("blip"); _renderDlgPage(); } }
 function dialogActive(){ return !!_dlgQueue; }
+/* 장소 표찰 — "여기가 어디인가"를 한 번에 알린다. 지역 경계·특수 지역·지선 루트가 전부 이걸 쓴다.
+   ⚠️ flashHint는 가로에서 display:none이라(#mapHint) 장소 안내를 거기 실으면 가로에서 사라진다. */
+function showPlace(name,sub){ const el=$("placeBanner"); if(!el)return;
+  $("placeName").textContent=name; $("placeSub").textContent=sub||"";
+  el.classList.remove("go"); void el.offsetWidth; el.classList.add("go"); }
 function flashHint(txt){ const h=$("mapHint"); h.textContent=txt; clearTimeout(h._t);
   h._t=setTimeout(()=>{h.textContent="풀숲에서 정령 조우 · 모닥불 회복 · 상점 구매 · 위로 갈수록 강함";},2600); }
 /* dpad input + tap-to-path handled in flow module (press-and-hold, pathfinding) */
@@ -3412,9 +3480,11 @@ function maybeTutorial(){ let done=false; try{done=!!localStorage.getItem("sg4_t
 
 /* ===================== MOVEMENT: pathfinding + tap + hold ===================== */
 let gamePath=[]; let heldDir=null; let lastRegion=-1; let encCooldown=0; let _warpLock=0;
-function announceRegion(y){ const r=region(y); if(r===lastRegion)return; lastRegion=r;
+function announceRegion(y){ const r=region(y); if(r===lastRegion)return; const first=lastRegion>=0; lastRegion=r;
   const lore=["고요한 마을. 정비하고 길을 나서자.","초원이 펼쳐진다. 약한 정령들이 뛰논다.","숲이 깊어진다. 정령이 점점 사나워져.","깊은 숲. 빛이 한층 옅어진 곳.","수정 호수. 수면에 검은 그림자가 어른거린다…","고원의 매서운 바람. 제단이 가까워졌다.","군주의 제단. 인장이 마지막 빛을 붙들고 있다."];
-  flashHint(`〔${REGION_NAME[r]}〕 ${lore[r]}`); }
+  showPlace(REGION_NAME[r], lore[r]);
+  /* 첫 진입(맵 로드 직후)이 아니라 실제로 경계를 넘은 때만 문 소리 — 로드할 때마다 울리면 소음이다 */
+  if(first)Audio.sfx("blip"); }
 function continueMovement(){ if(G.busy||G.inBattle)return;
   if(gamePath.length){ pathStep(); return; }
   if(Field.clearDest)Field.clearDest();
@@ -6877,7 +6947,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
