@@ -41,13 +41,23 @@ const { chromium } = require("playwright"); const path=require("path");
     const npcKeys=new Set((F.NPCS||[]).map(n=>n.battleKey).filter(Boolean));
     const special=new Set(["X","SNOW","L","V","T9","T10","T11","T12","T14","T15","T19","T20"]);
     const orphanTrainers=Object.keys(S.TRAINERS||{}).filter(k=>!tiles.has(k)&&!npcKeys.has(k)&&!special.has(k));
-    return {refN:refList.length, nameless, bagN:bag.length, unobtainable, orphanNames, orphanTrainers};
+    /* ⚠️ **키 노출은 nm에서 한 번 고쳤는데 ds에서 재발했다** — 기술머신 13종이 상점·가방에서
+       "fire 정령에게 불티폭발을(를) 가르친다"로 떴다(영문 타입 키 + 깨진 조사). 위 nameless는
+       itemName()만 보므로 설명문을 못 잡는다. → **표시되는 모든 문자열**을 타입 키로 훑는다.
+       코드젠으로 아이템을 대량 추가할 때 이 클래스가 되살아난다. */
+    const tk=["fire","water","grass","elec","normal","flying","rock","ice","poison","ground"];
+    const leaked=[];
+    bag.forEach(it=>{ ["nm","ds"].forEach(f=>{ const v=it[f]; if(typeof v!=="string")return;
+      if(tk.some(t=>new RegExp("(^|[^a-z])"+t+"([^a-z]|$)").test(v)))leaked.push(it.key+"."+f+': "'+v+'"');
+      if(v.indexOf("을(를)")>=0||v.indexOf("이(가)")>=0)leaked.push(it.key+"."+f+"(조사 미처리)"); }); });
+    return {refN:refList.length, nameless, bagN:bag.length, unobtainable, orphanNames, orphanTrainers, leaked};
   });
 
   ok(r.nameless.length===0, `지급되는 아이템 ${r.refN}종이 전부 한글 이름을 낸다 (키 노출: ${r.nameless.join(",")||"없음"})`);
   ok(r.unobtainable.length===0, `가방 아이템 ${r.bagN}종이 전부 획득 가능 (경로 없음: ${r.unobtainable.join(",")||"없음"})`);
   ok(r.orphanNames.length===0, `이름표만 있고 안 주는 아이템 없음 (${r.orphanNames.join(",")||"없음"})`);
   ok(r.orphanTrainers.length===0, `배치 안 된 트레이너 없음 (${r.orphanTrainers.join(",")||"없음"})`);
+  ok(r.leaked.length===0, `가방 표시 문자열에 영문 타입 키·미처리 조사 없음 (${r.leaked.length?r.leaked.slice(0,3).join(" · "):"없음"})`);
 
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 죽은 콘텐츠 감사 통과");

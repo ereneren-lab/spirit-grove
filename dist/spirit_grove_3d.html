@@ -568,7 +568,15 @@
   .pads{position:static}
   .dpad{position:absolute;left:calc(8px + env(safe-area-inset-left));bottom:14px}
   .abpad{position:absolute;right:calc(8px + env(safe-area-inset-right));bottom:14px}
-  #mapHint{display:none}
+  /* ⚠️ 예전엔 `display:none`이었다 — 세로에선 화면 맨 아래 띠인데 가로에선 그 자리가 D패드라 겹쳐서다.
+     그런데 `#mapHint`는 **flashHint 83개 호출 전부의 유일한 출구**다: 도구 줍기 안내·낚시 3단 진행·
+     회복 알림·거절 사유("입구는 건물 정면에 있다")가 가로에선 통째로 침묵했다(전체 감사 F-02).
+     낚시는 1.85초 무반응 뒤 전투가 뜨거나 아무 일도 안 나는 것처럼 보였다.
+     → 숨기지 말고 **자리를 옮긴다**. 세로 레이아웃은 그대로 두고 가로에서만 상단 중앙 알약으로. */
+  /* ⚠️ 상단 중앙에 두면 목표 트래커와 겹친다(실측). 하단 중앙은 D패드(좌)와 A/B(우) 사이가 비어 있다. */
+  #mapHint{bottom:10px;top:auto;left:50%;right:auto;transform:translateX(-50%);
+    max-width:56vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    background:rgba(10,8,20,.74);border:1px solid var(--line);border-radius:999px;padding:5px 13px;z-index:47}
   /* 전투: 세로 스택(아레나340+메뉴184=524)이 가로 높이(~357)에 안 들어가 메뉴가 화면 밖으로 밀렸다
      → 가로에선 아레나 왼쪽·메뉴 오른쪽으로 나란히(포켓몬식 가로 전투). */
   /* 아레나가 화면을 크게 차지하고 메뉴는 우측 슬림 패널(예전 58/42는 '반반'이라 아쉬웠다 → 68/32). */
@@ -6305,19 +6313,19 @@ const BAG_ITEMS=[
   {key:"tm_rockslide",em:"💿",nm:"기술머신: 락슬라이드",ds:"바위 정령에게 락슬라이드를 가르친다",use:"tm",move:"rockslide",where:"map"},
   /* 타입별 공격기 보강(평가 #3)의 기술머신 13종 — ⚠️ **타입 전용**(universal 아님)이라
      그 타입 정령만 배운다. 레벨업 학습셋엔 안 넣으므로 트레이너·야생은 못 쓴다 = 밸런스 불변. */
-  {key:"tm_emberburst",em:"💿",nm:"기술머신: 불티폭발",ds:"fire 정령에게 불티폭발을(를) 가르친다",use:"tm",move:"emberburst",where:"map"},
-  {key:"tm_heatlance",em:"💿",nm:"기술머신: 열창",ds:"fire 정령에게 열창을(를) 가르친다",use:"tm",move:"heatlance",where:"map"},
-  {key:"tm_bubblebeam",em:"💿",nm:"기술머신: 거품광선",ds:"water 정령에게 거품광선을(를) 가르친다",use:"tm",move:"bubblebeam",where:"map"},
-  {key:"tm_whirlpool",em:"💿",nm:"기술머신: 소용돌이",ds:"water 정령에게 소용돌이을(를) 가르친다",use:"tm",move:"whirlpool",where:"map"},
-  {key:"tm_acidspray",em:"💿",nm:"기술머신: 애시드샷",ds:"poison 정령에게 애시드샷을(를) 가르친다",use:"tm",move:"acidspray",where:"map"},
-  {key:"tm_venomfang",em:"💿",nm:"기술머신: 독니",ds:"poison 정령에게 독니을(를) 가르친다",use:"tm",move:"venomfang",where:"map"},
-  {key:"tm_toxicwave",em:"💿",nm:"기술머신: 독의물결",ds:"poison 정령에게 독의물결을(를) 가르친다",use:"tm",move:"toxicwave",where:"map"},
-  {key:"tm_needlerush",em:"💿",nm:"기술머신: 바늘연타",ds:"poison 정령에게 바늘연타을(를) 가르친다",use:"tm",move:"needlerush",where:"map"},
-  {key:"tm_sandblast",em:"💿",nm:"기술머신: 모래폭풍탄",ds:"ground 정령에게 모래폭풍탄을(를) 가르친다",use:"tm",move:"sandblast",where:"map"},
-  {key:"tm_fissure",em:"💿",nm:"기술머신: 땅가르기",ds:"ground 정령에게 땅가르기을(를) 가르친다",use:"tm",move:"fissure",where:"map"},
-  {key:"tm_voltfang",em:"💿",nm:"기술머신: 전격니",ds:"elec 정령에게 전격니을(를) 가르친다",use:"tm",move:"voltfang",where:"map"},
-  {key:"tm_windblade",em:"💿",nm:"기술머신: 질풍참",ds:"flying 정령에게 질풍참을(를) 가르친다",use:"tm",move:"windblade",where:"map"},
-  {key:"tm_frostshard",em:"💿",nm:"기술머신: 서리파편",ds:"ice 정령에게 서리파편을(를) 가르친다",use:"tm",move:"frostshard",where:"map"},
+  {key:"tm_emberburst",em:"💿",nm:"기술머신: 불티폭발",ds:"불 정령에게 불티폭발을 가르친다",use:"tm",move:"emberburst",where:"map"},
+  {key:"tm_heatlance",em:"💿",nm:"기술머신: 열창",ds:"불 정령에게 열창을 가르친다",use:"tm",move:"heatlance",where:"map"},
+  {key:"tm_bubblebeam",em:"💿",nm:"기술머신: 거품광선",ds:"물 정령에게 거품광선을 가르친다",use:"tm",move:"bubblebeam",where:"map"},
+  {key:"tm_whirlpool",em:"💿",nm:"기술머신: 소용돌이",ds:"물 정령에게 소용돌이를 가르친다",use:"tm",move:"whirlpool",where:"map"},
+  {key:"tm_acidspray",em:"💿",nm:"기술머신: 애시드샷",ds:"독 정령에게 애시드샷을 가르친다",use:"tm",move:"acidspray",where:"map"},
+  {key:"tm_venomfang",em:"💿",nm:"기술머신: 독니",ds:"독 정령에게 독니를 가르친다",use:"tm",move:"venomfang",where:"map"},
+  {key:"tm_toxicwave",em:"💿",nm:"기술머신: 독의물결",ds:"독 정령에게 독의물결을 가르친다",use:"tm",move:"toxicwave",where:"map"},
+  {key:"tm_needlerush",em:"💿",nm:"기술머신: 바늘연타",ds:"독 정령에게 바늘연타를 가르친다",use:"tm",move:"needlerush",where:"map"},
+  {key:"tm_sandblast",em:"💿",nm:"기술머신: 모래폭풍탄",ds:"땅 정령에게 모래폭풍탄을 가르친다",use:"tm",move:"sandblast",where:"map"},
+  {key:"tm_fissure",em:"💿",nm:"기술머신: 땅가르기",ds:"땅 정령에게 땅가르기를 가르친다",use:"tm",move:"fissure",where:"map"},
+  {key:"tm_voltfang",em:"💿",nm:"기술머신: 전격니",ds:"전기 정령에게 전격니를 가르친다",use:"tm",move:"voltfang",where:"map"},
+  {key:"tm_windblade",em:"💿",nm:"기술머신: 질풍참",ds:"비행 정령에게 질풍참을 가르친다",use:"tm",move:"windblade",where:"map"},
+  {key:"tm_frostshard",em:"💿",nm:"기술머신: 서리파편",ds:"얼음 정령에게 서리파편을 가르친다",use:"tm",move:"frostshard",where:"map"},
   {key:"tm_hydro",em:"💿",nm:"기술머신: 하이드로",ds:"물 정령에게 하이드로를 가르친다",use:"tm",move:"hydro",where:"map"},
   {key:"tm_twinbolt",em:"💿",nm:"기술머신: 트윈볼트",ds:"전기 정령에게 트윈볼트를 가르친다",use:"tm",move:"twinbolt",where:"map"},
   {key:"tm_skyrush",em:"💿",nm:"기술머신: 스카이러시",ds:"비행 정령에게 스카이러시를 가르친다",use:"tm",move:"skyrush",where:"map"},
