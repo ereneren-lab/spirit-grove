@@ -3414,8 +3414,23 @@ function currentGoal(){
     const alt=findTile("%");
     if(alt)return {name:"호수 제단", sub:"전설 정령을 잡아 리그에 대비하라", x:alt.x, y:alt.y};
   }
+  /* ⚠️ **숲의 군주 단계** — 이 게임엔 완성된 결말이 둘 있는데(플롯: 군주 격파→EPILOGUE 4p→showEnding,
+     메타: 챔피언→LEAGUE_WIN→명예의 전당), 예전 사슬은 4뱃지 → 곧장 리그라 **플롯 결말이 사슬 밖**이었다.
+     그래서 게임이 스스로 약속한 것과 안내하는 것이 어긋나 있었다:
+       · HOME_LETTER("제단의 숲의 군주에게 닿으세요") · STORY_INTRO 6쪽 · 4뱃지 안내("제단과 리그가 열렸다")
+       · 라이벌 카이 4차전 outro("가, 군주를 꺾어. 네가 이 숲을 지킬 자야, 친구.")
+     전부 제단을 가리키는데 트래커만 리그로 보냈다 → **유저 체감 "서사가 얇다"의 근본 원인**
+     (이야기가 없는 게 아니라 이미 쓰인 결말에 도달을 못 시켰다).
+     → 리그보다 **앞에** 군주를 끼운다. 순서: 4뱃지 → (전설) → 숲의 군주 → 정령 리그.
+     ⚠️ 밸런스 불변 — 군주 팀·레벨·학습셋을 하나도 안 건드린다. **가리키는 순서만** 바꾼다.
+        레벨 곡선도 자연스럽다(군주 Lv34~38 → 리그 Lv42~44).
+     ⚠️ 영구 정체 방지: G.badge(격파 시)든 G.defeated(재도전)든 서면 단계가 사라진다 — altarStage()와 같은 조건. */
+  if(!G.badge && !G.defeated.has("X")){
+    const lord=findTile("X");
+    if(lord)return {name:"군주의 제단", sub:"숲의 군주를 만나 인장을 되살려라", x:lord.x, y:lord.y};
+  }
   if(!G.champion)
-    return {name:"정령 리그", sub:"4조각을 모았다 — 챔피언에 도전하라", x:LEAGUE_XY.x, y:LEAGUE_XY.y};
+    return {name:"정령 리그", sub:"인장을 되살렸다 — 이제 정점에 도전하라", x:LEAGUE_XY.x, y:LEAGUE_XY.y};
   return {name:"도감 완성", sub:`${G.caught.size}/${DEX.length}종 수집`, x:null, y:null, done:true};
 }
 function updateGoal(){
@@ -5768,8 +5783,10 @@ const LEAGUE_INTRO=[
 ];
 const LEAGUE_WIN=[
   {art:_leagueSVG,t:"챔피언 아리엘이 무릎을 꿇는다. 홀을 가득 메운 정령들이 일제히 빛을 발한다."},
-  {art:_leagueSVG,t:"<b>새로운 챔피언의 탄생.</b> 그대의 이름이 정령의 숲 역사에 영원히 새겨진다."},
-  {art:_leagueSVG,t:"…허나 모험은 끝나지 않는다. 더 강한 개체를, 더 먼 바다를, 그리고 도감의 마지막 한 칸을 향해."}
+  {art:_leagueSVG,t:"<b>새로운 챔피언의 탄생.</b> 인장을 되살린 손이 이제 정점의 자리에 닿았다."},
+  /* ⚠️ 예전 3쪽은 그림자 플롯을 한 마디도 언급하지 않고 도감·바다로 시선을 돌렸다 — 트래커가
+     리그로만 안내하던 시절의 잔재다. 지금은 군주를 꺾은 뒤에 오므로 그 실을 이어 받는다. */
+  {art:_leagueSVG,t:"…허나 그림자는 아직 완전히 사라지지 않았다. 언젠가 다시 깨어날 그날까지, 더 강한 개체를, 더 먼 바다를, 도감의 마지막 한 칸을 향해."}
 ];
 const _epiSVG="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><rect width='160' height='110' rx='12' fill='#2a2f48'/><circle cx='80' cy='40' r='24' fill='#ffe07a' opacity='.9'/><circle cx='80' cy='40' r='34' fill='#ffe07a' opacity='.25'/><path d='M0 78 q40 -14 80 0 t80 0 v32 H0 Z' fill='#2f5a3a'/><path d='M0 86 q40 -10 80 0 t80 0 v24 H0 Z' fill='#3f7a4a'/><path d='M60 40 l4 -10 4 10 10 2 -8 7 3 10 -9 -6 -9 6 3 -10 -8 -7 z' fill='#fff6d0' opacity='.9'/></svg>";
 const EPILOGUE=[
@@ -5834,6 +5851,7 @@ function showEnding(){ const body=$("endingBody"); const _t=$("endingTitle"); if
       🌳 남은 <b style="color:var(--cream)">${DEX.length-G.caught.size}종</b>을 더 포획해 도감을 완성해보자!</div>
     <div style="font-size:12px;color:var(--muted);line-height:1.8;margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left">
       <div style="color:var(--cream);font-weight:700;margin-bottom:4px">🌟 이야기는 계속됩니다</div>
+      • <b style="color:var(--amber)">정령 리그</b>가 당신을 기다린다 — 인장을 되살린 자만이 정점에 설 자격이 있다<br>
       • 제단의 <b>흑요마</b>·<b>오로르</b>에게 도전 (포스트게임 보스)<br>
       • 마을 동쪽 게이트 → <b>노을 해안</b> → 배로 <b>여명의 섬</b>·<b>하늘 신전</b>으로<br>
       • 신전의 전설 <b>여명룡</b>을 벗으로 삼기<br>

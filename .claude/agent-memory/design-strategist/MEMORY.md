@@ -1,0 +1,2 @@
+- [Spirit Grove 중간 서사 전략](project_spirit-grove-narrative.md) — 목표 트래커가 EPILOGUE(진짜 플롯 결말)를 건너뛰고 리그로만 안내하는 구조적 갭 발견, Bit 0(재배선) 최우선 제안
+- [Spirit Grove 근거 확인 원칙](feedback_spirit-grove-evidence-grounding.md) — 도달성/수치 주장은 grep·코드 판독으로 실측, 미확인 항목은 "미확정 사항"으로 분리
