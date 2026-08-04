@@ -92,6 +92,21 @@ const { chromium } = require("playwright"); const path=require("path"); const os
   const posAfter=await p.evaluate(()=>({...window.SG.G().pos, indoor:window.SG.G().indoor}));
   ok(moved, `방향키로 실제 이동 (${posBefore.indoor||"밖"} ${posBefore.x},${posBefore.y} → ${posAfter.indoor||"밖"} ${posAfter.x},${posAfter.y})`);
 
+  /* ⚠️ 아래 풀숲 걷기는 **집 밖에 서 있는 것**을 전제한다. 예전엔 고정 키 시퀀스(Up×4,Left,…)가
+     집 안을 헤매다 우연히 출구를 밟아 나가는 데 의존했고(시작 칸이 문 바로 위였던 시절의 잔재),
+     아침 시퀀스가 시작 칸을 침대 옆으로 옮기자 400회를 셔플해도 못 나가 "이동 실패"로 잡혔다.
+     게임은 멀쩡하다(침대 옆에서 아래4·오른쪽2면 문 앞) — **우연에 기대던 픽스처가 문제였다.**
+     → 실입력은 그대로 두되, 인테리어의 실제 출구 좌표를 향해 결정적으로 걸어 나간다. */
+  for(let i=0;i<40;i++){
+    const st=await p.evaluate(()=>{ const G=window.SG.G(), F=window.SG.flow;
+      if(!G.indoor)return null; const it=F.INTERIORS[G.indoor];
+      return {x:G.pos.x, y:G.pos.y, ex:it.exitX, ey:it.exitY}; });
+    if(!st)break;
+    await key(st.x<st.ex?"ArrowRight":st.x>st.ex?"ArrowLeft":st.y<st.ey?"ArrowDown":"ArrowUp");
+    await p.waitForTimeout(200);
+  }
+  ok(!(await p.evaluate(()=>window.SG.G().indoor)), "집 밖으로 걸어 나왔다");
+
   /* ── 5. 야생 전투를 실제로 만날 때까지 풀숲을 걷는다 ── */
   // 실내면 먼저 밖으로
   await p.evaluate(async()=>{ const S=window.SG,F=S.flow;
