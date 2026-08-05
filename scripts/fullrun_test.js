@@ -156,6 +156,12 @@ const { chromium } = require("playwright"); const path=require("path");
   let wasBattle=false, lastStep=-1, lastMoney=null, stuck=0, lastKey="", fleeTries=0, healCooldown=0, potionFail=0, finSnapshot=null, lastPartyN=null, restockCd=0;
   let lastOvKey="", ovStuck=0; const stuckOverlays=[];   // 닫히지 않는 오버레이 감시(게임 결함 기록용)
   let bumpKey="", bumpCnt=0;   // 같은 자리 부딪힘 감시(문이 안 열리는 경우 폴백)
+  let bumpRetryAt=0;           // 부딪힘 포기 뒤 재시도 시각(영구 포기 방지)
+  /* 정체 감지: 진행 지문이 STALL_MIN분 그대로면 판을 끊는다(아래 루프 참조) */
+  const STALL_MIN=Number(process.env.STALL_MIN||6);
+  const POS_STALL_MIN=Number(process.env.POS_STALL_MIN||12);
+  let stallFp="", stallAt=Date.now(), stalled=null;
+  let stallPos="", stallPosAt=Date.now();
 
   const mark=(name,st)=>{ if(stats.milestones.some(m=>m.name===name))return;
     stats.milestones.push({name, t:Math.round((Date.now()-t0)/1000), lv:st.lv, battles:stats.battles, party:st.party});
@@ -337,7 +343,10 @@ const { chromium } = require("playwright"); const path=require("path");
         alive:(G.party||[]).filter(m=>m&&!m.isEgg&&m.hp>0).length,
         potion:(G.items.potion||0)+(G.items.hyperpotion||0),
         balls:(G.items.ball||0)+(G.items.greatball||0),
-        foeHp: G.foe?G.foe.hp/G.foe.maxHp:1, money:G.money, pos:G.pos };
+        foeHp: G.foe?G.foe.hp/G.foe.maxHp:1, money:G.money, pos:G.pos,
+        goal:(()=>{ try{ const g=window.SG.flow.currentGoal(); return g?g.name:null; }catch(e){ return null; } })(),
+        goalDist:(()=>{ try{ const g=window.SG.flow.currentGoal();
+          return (g&&g.x!=null)?Math.abs(g.x-G.pos.x)+Math.abs(g.y-G.pos.y):null; }catch(e){ return null; } })() };
     });
 
     // 빨리감기 홀드는 **메시지 대기 중에만** — 메뉴를 누르거나 필드로 나가면 손을 뗀다.
@@ -593,6 +602,11 @@ const { chromium } = require("playwright"); const path=require("path");
       if(bk===bumpKey)bumpCnt++; else { bumpKey=bk; bumpCnt=0; }
       // ⚠️ 같은 자리에서 부딪히기만 하는 상황(정면 칸을 NPC가 막는 등)이 남을 수 있다 →
       //    일정 횟수를 넘기면 목표 탭으로 폴백해 판이 통째로 헛도는 걸 막는다.
+      // ⚠️ **카운터를 영구히 두지 않는다**(2026-08-05): 봇이 군주의 제단 정면(8,9)에서 13회 시도 뒤
+      //    포기하고 **46분을 그 자리에서 그라인딩만 했다**(전투수는 계속 늘어 정체 감지도 안 걸렸다).
+      //    문 앞에서 실패하는 이유는 대개 일시적이다(G.busy·대사·전투 직후) → 주기적으로 다시 시도한다.
+      //    게임은 무혐의다: 같은 좌표·같은 상태로 ArrowUp을 주면 제단에 들어간다(lord_route_test [3]·단독 프로브).
+      if(bumpCnt>12 && Date.now()-bumpRetryAt>45000){ bumpCnt=0; bumpRetryAt=Date.now(); }
       if(bumpCnt<=12){ tr("field:bump",st); await p.keyboard.press(bump); await p.waitForTimeout(800); continue; } }
 
     tr("field:goal",st);
@@ -617,6 +631,31 @@ const { chromium } = require("playwright"); const path=require("path");
     const el=Math.floor((Date.now()-t0)/60000);
     if(el>lastStep){ lastStep=el;
       stats.samples.push({t:el, lv:st.lv, party:st.party, battles:stats.battles, badges:st.badges, pos:`${st.indoor||""}${st.pos.x},${st.pos.y}`}); }
+
+    /* ⚠️ **정체 감지** — 2026-08-05 판이 4뱃지 직후 (8,18)에서 **27분간 한 글자도 안 바뀐 채** 예산을 다 태우고
+       "런타임 에러 0"으로 초록으로 끝났다. 정지는 이 하네스에서 실패로 안 잡히는 유일한 형태다(에러도 없고
+       단정도 없고 "진행이 안 된다"는 사실만 남는다) → **진행 지문이 STALL_MIN분 그대로면 판을 끊는다.**
+       ⚠️ 지문에 좌표를 넣는 게 핵심이다 — 전투수·레벨만 보면 같은 자리를 맴돌며 싸우는 판을 정상으로 읽는다. */
+    /* ⚠️ **"목표 코앞인데 못 들어간다"를 따로 본다** — 2026-08-05 판이 군주의 제단 정면(8,9)에서
+       46분을 보냈다. 아래 지문(전투수·레벨 포함)은 그라인딩 때문에 매번 바뀌어 감지에 실패했고,
+       좌표만 봐도 안 된다(그라인딩은 풀숲을 오가므로 좌표가 계속 변한다).
+       실제 형태는 **"목표가 안 바뀐 채 그 문 앞을 계속 맴돈다"** 다 → 그걸 그대로 잰다.
+       ⚠️ 문 앞 그라인딩 자체는 정상 행동이라(레벨 맞추고 들어간다) 임계값을 넉넉히 둔다. */
+    const nearGoal=(st.goal&&!st.indoor&&st.goalDist!=null&&st.goalDist<=2)?`${st.goal}@near`:"";
+    if(nearGoal!==stallPos){ stallPos=nearGoal; stallPosAt=Date.now(); }
+    else if(nearGoal && Date.now()-stallPosAt>POS_STALL_MIN*60000){
+      stalled={min:POS_STALL_MIN, at:`${st.pos.x},${st.pos.y} — 목표 2칸 이내에서 못 들어감`, goal:st.goal};
+      console.log(`\n  ❌ 문턱 정체 — ${POS_STALL_MIN}분 동안 "${st.goal}" 코앞을 맴돌기만 한다 (${st.pos.x},${st.pos.y})`);
+      console.log(`     목표에 인접했는데 입장이 안 된다. 남은 예산을 태우지 않고 끊는다.`);
+      break; }
+
+    const fp=`${st.indoor||""}${st.pos.x},${st.pos.y}|${stats.battles}|${st.badges}|${st.lv}|${st.party}`;
+    if(fp!==stallFp){ stallFp=fp; stallAt=Date.now(); }
+    else if(Date.now()-stallAt>STALL_MIN*60000){
+      stalled={min:STALL_MIN, at:fp, goal:st.goal||null};
+      console.log(`\n  ❌ 정체 — ${STALL_MIN}분 동안 진행 지문이 그대로다 (${fp})`);
+      console.log(`     목표: ${st.goal||"?"} · 봇이 여기서 더 못 간다. 남은 예산을 태우지 않고 끊는다.`);
+      break; }
    } catch(e){ if(isBrowserDeath(e)){ browserDead=true; break; } throw e; }
   }
   if(browserDead)console.log("  ⚠️ 브라우저가 환경 압박으로 종료됨 — 그때까지의 진행을 보고한다(게임 버그 아님)");
@@ -637,6 +676,11 @@ const { chromium } = require("playwright"); const path=require("path");
     stats.samples.forEach(s=>console.log(`       ${String(s.t).padStart(2)}분  Lv${String(s.lv).padStart(2)} · 파티${s.party} · 전투 ${String(s.battles).padStart(3)}회 · 뱃지 ${s.badges} · ${s.pos}`)); }
   if(!stats.milestones.length)console.log("     ⚠️ 마일스톤 0건 — 예산 안에서 첫 뱃지도 못 얻었다");
   if(stuckOverlays.length){ console.log("     ❌ 닫히지 않는 오버레이(게임 결함):"); stuckOverlays.forEach(n=>console.log("        · "+n)); process.exitCode=1; }
+  /* ⚠️ 정체는 **초록으로 끝나는 실패**였다 — 반드시 요약 맨 앞에 세우고 종료코드를 세운다.
+     2026-08-05 판은 27분을 한 자리에서 보내고도 "런타임 에러 0"만 남겨서, 요약을 끝까지 읽지 않으면 못 봤다. */
+  if(stalled){ console.log(`     ❌ 정체로 조기 종료 — ${stalled.min}분간 진행 없음 @ ${stalled.at}`);
+    console.log(`        그때의 목표: ${stalled.goal||"?"} ← 봇이 이 목표까지 갈 수 없었다는 뜻이다`);
+    process.exitCode=1; }
 
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   ok(stats.battles>0, `전투가 실제로 발생했다 (${stats.battles}회)`);

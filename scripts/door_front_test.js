@@ -51,11 +51,18 @@ const { chromium } = require("playwright"); const path=require("path");
   /* [5] 모든 건물 문 앞에 설 수 있다(정면 칸이 보행 가능) */
   console.log("\n[5] 모든 건물 문의 정면 칸이 열려 있다");
   await place(8,44);
-  const doors=await p.evaluate(()=>{ const F=window.SG.flow; const bad=[];
+  /* ⚠️ walkable()은 **로밍 NPC 점유까지** 본다 — 문 앞은 NPC가 자주 지나는 자리라, 한 번만 재면
+     "지금 누가 서 있다"를 "지도가 막혀 있다"로 읽는다(2026-08-05에 E(13,45)로 실제 오탐이 났다).
+     이 단정이 보려는 건 **지도의 구조**다 → NPC가 움직일 시간을 주고 여러 번 재서
+     **매번 막혀 있는 문만** 남긴다. 진짜로 막힌 문은 NPC와 무관하게 계속 걸린다. */
+  const scan=()=>p.evaluate(()=>{ const F=window.SG.flow; const bad=[];
     for(let y=0;y<50;y++)for(let x=0;x<25;x++){ const t=F.tileAt(x,y)||"";
       if("+EHGUSX".indexOf(t)<0||!t)continue;
       if(!F.walkable(x,y+1))bad.push(t+" ("+x+","+y+")"); }
     return bad; });
+  let doors=await scan();
+  for(let i=0;i<4&&doors.length;i++){ await p.waitForTimeout(800);
+    const again=await scan(); doors=doors.filter(d=>again.includes(d)); }
   ok(doors.length===0, `정면이 막힌 건물 0곳 ${doors.length?JSON.stringify(doors):""}`);
 
   /* [6] NPC가 지형/건물 위에 서 있지 않다 */
