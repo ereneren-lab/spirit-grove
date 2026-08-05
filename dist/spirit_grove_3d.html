@@ -3179,7 +3179,7 @@ function move(dir,auto){ if(G.busy||G.inBattle||!Field.arrived)return; if(_warpL
   if(Field)Field.moveSpeed=(G&&G.running)?11.4:6.8; if(!auto)stopPath();
   let {x,y}=G.pos;
   if(dir==="up")y--;else if(dir==="down")y++;else if(dir==="left")x--;else if(dir==="right")x++;
-  if(!walkable(x,y)){ if(Field.face)Field.face(dir); if(!G.indoor&&DOOR_TILES.indexOf(tileAt(x,y))>=0&&dir!=="up"){ if(!G.busy)flashHint("🚪 입구는 건물 정면(아래쪽)에 있다"); return; } if(tileAt(x,y)==="S"&&!G.indoor){ stopPath(); enterInterior(INTERIORS.shop); return; } if(tileAt(x,y)==="X"&&!G.indoor){ stopPath(); if(!G.badge && forestBadges()<4 && !G.defeated.has("X")){ flashHint(`군주의 제단은 굳게 닫혀 있다 — 인장 조각 ${forestBadges()}/4`); return; } enterInterior(INTERIORS.altar); return; } if(tileAt(x,y)==="~"&&!G.busy&&!G.inBattle){ if(G.hasSurf&&!G.surfing&&!G.indoor){ stopPath(); fieldMoveScene("surf",()=>{ G.surfing=true; flashHint("🌊 파도타기 시작!"); move(dir); }); return; } if(G.hasRod){ stopPath(); startFishing(); return; } } if(tileAt(x,y)==="x"&&G.hasCut&&!G.busy&&!G.indoor){ stopPath(); cutObstacle(x,y); return; } if(tileAt(x,y)==="o"&&G.hasStrength&&!G.busy&&!G.indoor){ stopPath(); pushBoulder(x,y,dir); return; } if(tileAt(x,y)==="Y"&&G.indoor==="coast"){ stopPath(); if(G.hasRod){ if(!G.isleSeen){ G.isleSeen=true; sailToIsle(); setTimeout(()=>{ if(G.indoor==="isle")playStory(ISLE_INTRO,()=>{}); },420); } else { sailToIsle(); } } else { showDialog({name:"뱃사람",text:"배가 아직 준비되지 않았소. 낚싯대라도 챙겨 진짜 뱃사람이 되어 오시게."}); } return; } if(tileAt(x,y)==="Y"&&G.indoor==="isle"){ stopPath(); sailToCoast(); return; } if(tileAt(x,y)==="K"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); openShop(); return; } if(tileAt(x,y)==="H"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); healParty(true); healFx(); markHeal(); flashHint(G.indoor==="snowfield"?"따뜻한 오두막에서 정령들이 푹 쉬었다!":"여관에서 정령들이 푹 쉬었다!"); saveGame(); return; } if(tileAt(x,y)==="L"&&G.indoor==="isle"){ stopPath(); if(!G.defeated.has("L")){ startTrainer("L"); } else { showDialog({name:"여명 관장 하로",text:"또 붙어보고 싶은가? 언제든 환영이다!"}); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="isle"){ stopPath(); sailToShrine(); if(!G.shrineSeen){ G.shrineSeen=true; setTimeout(()=>{ if(G.indoor==="shrine")playStory(SHRINE_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="shrine"){ stopPath(); sailFromShrine(); return; } if(tileAt(x,y)==="@"&&G.indoor==="shrine"){ stopPath(); if(!G.legendDone){ startLegendary(); } else { showDialog({name:"신전",text:"신전은 고요하다. 여명룡은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="@"&&G.indoor==="skyridge"){ stopPath(); if(!G.skyBossDone){ startSkyBoss(); } else { showDialog({name:"봉우리 둥지",text:"봉우리는 고요하다. 천공룡은 이미 둥지를 떠났다."}); } return; } if(tileAt(x,y)==="@"&&G.indoor==="ruins"){ stopPath(); if(!G.ruinsBossDone){ startRuinsBoss(); } else { showDialog({name:"유적 제단",text:"유적은 잠잠하다. 거암왕은 이미 깊은 잠에 들었다."}); } return; } if(tileAt(x,y)==="@"&&G.indoor==="isle"){ stopPath(); if(!G.seaBossDone){ startSeaBoss(); } else { showDialog({name:"조수 제단",text:"바다는 잔잔하다. 해일군주는 이미 깊은 바다로 돌아갔다."}); } return; } if(tileAt(x,y)==="%"&&!G.indoor){ stopPath(); if(!G.lakeDone){ if(!G.lakeSignSeen){ G.lakeSignSeen=true; showDialog([{name:"호수 제단",text:"호수가 낮게 울린다… 이 물속엔 아주 오래된 힘이 잠들어 있다."},{name:"호수 제단",text:"이 힘을 얻어야 제단에서 군주와 나란히 설 수 있어. 각오는 됐나?"}],()=>{ startLakeLegendary(); }); } else { startLakeLegendary(); } } else { showDialog({name:"호수 제단",text:"호수는 잔잔하다. 수룡왕은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="&"&&G.indoor==="snowfield"){ stopPath(); if(!G.snowDone){ startSnowLegendary(); } else { showDialog({name:"빙하 제단",text:"빙하는 잠잠하다. 빙하제는 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="Q"&&G.indoor==="snowfield"){ stopPath(); if(!G.defeated.has("SNOW")){ startTrainer("SNOW"); } else { showDialog({name:"설산의 주인 빙하",text:"또 겨루고 싶은가? 언제든지."}); } return; } if((tileAt(x,y)==="5"||tileAt(x,y)==="6"||"1234".indexOf(tileAt(x,y))>=0||GUARD_TILES.indexOf(tileAt(x,y))>=0)&&G.indoor&&!G.defeated.has(tileAt(x,y))){ stopPath(); startTrainer(tileAt(x,y)); return; } if(tileAt(x,y)==="+"&&!G.indoor){ enterInterior(INTERIORS.center); return; } if(tileAt(x,y)==="E"&&!G.indoor){ enterInterior(INTERIORS.hall); return; } if(tileAt(x,y)==="H"&&!G.indoor){ enterInterior(INTERIORS.house); return; } if(tileAt(x,y)==="$"&&!G.indoor&&ROUTE_AT[x+","+y]){ const _rt=ROUTE_AT[x+","+y]; const _m=INTERIORS[_rt.id];
+  if(!walkable(x,y)){ if(Field.face)Field.face(dir); if(!G.indoor&&DOOR_TILES.indexOf(tileAt(x,y))>=0&&dir!=="up"){ if(!G.busy)flashHint("🚪 입구는 건물 정면(아래쪽)에 있다"); return; } if(tileAt(x,y)==="S"&&!G.indoor){ stopPath(); enterInterior(INTERIORS.shop); return; } if(tileAt(x,y)==="X"&&!G.indoor){ stopPath(); if(!G.badge && forestBadges()<4 && !G.defeated.has("X")){ flashHint(`군주의 제단은 굳게 닫혀 있다 — 인장 조각 ${forestBadges()}/4`); return; } enterInterior(INTERIORS.altar); return; } if(tileAt(x,y)==="~"&&!G.busy&&!G.inBattle){ if(G.hasSurf&&!G.surfing&&!G.indoor){ const _rest=_surfResume; _surfResume=null; stopPath(); fieldMoveScene("surf",()=>{ G.surfing=true; flashHint("🌊 파도타기 시작!"); move(dir); /* 트래커를 따라 물길로 가던 중이었으면 이어서 간다 — 방금 들어선 칸은 뺀다 */ if(_rest&&_rest.length>1){ gamePath=_rest.slice(1); if(Field.setDest){const _l=_rest[_rest.length-1]; Field.setDest(_l.x,_l.y);} if(Field.arrived)pathStep(); } }); return; } if(G.hasRod){ stopPath(); startFishing(); return; } } if(tileAt(x,y)==="x"&&G.hasCut&&!G.busy&&!G.indoor){ stopPath(); cutObstacle(x,y); return; } if(tileAt(x,y)==="o"&&G.hasStrength&&!G.busy&&!G.indoor){ stopPath(); pushBoulder(x,y,dir); return; } if(tileAt(x,y)==="Y"&&G.indoor==="coast"){ stopPath(); if(G.hasRod){ if(!G.isleSeen){ G.isleSeen=true; sailToIsle(); setTimeout(()=>{ if(G.indoor==="isle")playStory(ISLE_INTRO,()=>{}); },420); } else { sailToIsle(); } } else { showDialog({name:"뱃사람",text:"배가 아직 준비되지 않았소. 낚싯대라도 챙겨 진짜 뱃사람이 되어 오시게."}); } return; } if(tileAt(x,y)==="Y"&&G.indoor==="isle"){ stopPath(); sailToCoast(); return; } if(tileAt(x,y)==="K"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); openShop(); return; } if(tileAt(x,y)==="H"&&(G.indoor==="isle"||G.indoor==="snowfield")){ stopPath(); healParty(true); healFx(); markHeal(); flashHint(G.indoor==="snowfield"?"따뜻한 오두막에서 정령들이 푹 쉬었다!":"여관에서 정령들이 푹 쉬었다!"); saveGame(); return; } if(tileAt(x,y)==="L"&&G.indoor==="isle"){ stopPath(); if(!G.defeated.has("L")){ startTrainer("L"); } else { showDialog({name:"여명 관장 하로",text:"또 붙어보고 싶은가? 언제든 환영이다!"}); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="isle"){ stopPath(); sailToShrine(); if(!G.shrineSeen){ G.shrineSeen=true; setTimeout(()=>{ if(G.indoor==="shrine")playStory(SHRINE_INTRO,()=>{}); },420); } return; } if(tileAt(x,y)==="Z"&&G.indoor==="shrine"){ stopPath(); sailFromShrine(); return; } if(tileAt(x,y)==="@"&&G.indoor==="shrine"){ stopPath(); if(!G.legendDone){ startLegendary(); } else { showDialog({name:"신전",text:"신전은 고요하다. 여명룡은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="@"&&G.indoor==="skyridge"){ stopPath(); if(!G.skyBossDone){ startSkyBoss(); } else { showDialog({name:"봉우리 둥지",text:"봉우리는 고요하다. 천공룡은 이미 둥지를 떠났다."}); } return; } if(tileAt(x,y)==="@"&&G.indoor==="ruins"){ stopPath(); if(!G.ruinsBossDone){ startRuinsBoss(); } else { showDialog({name:"유적 제단",text:"유적은 잠잠하다. 거암왕은 이미 깊은 잠에 들었다."}); } return; } if(tileAt(x,y)==="@"&&G.indoor==="isle"){ stopPath(); if(!G.seaBossDone){ startSeaBoss(); } else { showDialog({name:"조수 제단",text:"바다는 잔잔하다. 해일군주는 이미 깊은 바다로 돌아갔다."}); } return; } if(tileAt(x,y)==="%"&&!G.indoor){ stopPath(); if(!G.lakeDone){ if(!G.lakeSignSeen){ G.lakeSignSeen=true; showDialog([{name:"호수 제단",text:"호수가 낮게 울린다… 이 물속엔 아주 오래된 힘이 잠들어 있다."},{name:"호수 제단",text:"이 힘을 얻어야 제단에서 군주와 나란히 설 수 있어. 각오는 됐나?"}],()=>{ startLakeLegendary(); }); } else { startLakeLegendary(); } } else { showDialog({name:"호수 제단",text:"호수는 잔잔하다. 수룡왕은 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="&"&&G.indoor==="snowfield"){ stopPath(); if(!G.snowDone){ startSnowLegendary(); } else { showDialog({name:"빙하 제단",text:"빙하는 잠잠하다. 빙하제는 이미 그대를 인정했다."}); } return; } if(tileAt(x,y)==="Q"&&G.indoor==="snowfield"){ stopPath(); if(!G.defeated.has("SNOW")){ startTrainer("SNOW"); } else { showDialog({name:"설산의 주인 빙하",text:"또 겨루고 싶은가? 언제든지."}); } return; } if((tileAt(x,y)==="5"||tileAt(x,y)==="6"||"1234".indexOf(tileAt(x,y))>=0||GUARD_TILES.indexOf(tileAt(x,y))>=0)&&G.indoor&&!G.defeated.has(tileAt(x,y))){ stopPath(); startTrainer(tileAt(x,y)); return; } if(tileAt(x,y)==="+"&&!G.indoor){ enterInterior(INTERIORS.center); return; } if(tileAt(x,y)==="E"&&!G.indoor){ enterInterior(INTERIORS.hall); return; } if(tileAt(x,y)==="H"&&!G.indoor){ enterInterior(INTERIORS.house); return; } if(tileAt(x,y)==="$"&&!G.indoor&&ROUTE_AT[x+","+y]){ const _rt=ROUTE_AT[x+","+y]; const _m=INTERIORS[_rt.id];
       enterInterior(Object.assign({},_m,{startX:_rt.sx,startY:_rt.sy}));   /* 들어온 쪽 끝에서 시작 — 통과형으로 읽히게 */
       if(_rt.id==="mine"&&!G.mineSeen){ G.mineSeen=true; setTimeout(()=>{ if(G.indoor==="mine")flashHint("⛏️ 낡은 갱목이 삐걱인다… 버려진 갱도다!"); },400); }
       if(_rt.id==="hillpath"&&!G.hillSeen){ G.hillSeen=true; setTimeout(()=>{ if(G.indoor==="hillpath")flashHint("🌾 바람이 풀을 눕힌다… 바람 언덕길이다!"); },400); }
@@ -3459,12 +3459,21 @@ document.addEventListener("keyup",e=>{ const k=e.key.toLowerCase();
 const LEAGUE_XY={x:18,y:9};
 const GYM_ORDER=[["1","8,43"],["2","8,35"],["3","8,26"],["4","8,17"]];
 /* 오버월드에서 특정 타일을 찾는다. ⚠️ 좌표를 상수로 박지 않는 게 이 트래커의 원칙이다 —
-   맵을 고쳐도 목표가 안 어긋난다(GYM_AT·리그 U와 같은 방침). 결과는 캐시한다(맵은 안 바뀐다). */
+   맵을 고쳐도 목표가 안 어긋난다(GYM_AT·리그 U와 같은 방침). 결과는 캐시한다(맵은 안 바뀐다).
+   ⚠️ **반드시 오버월드를 스캔한다.** MAP_STR·W·H는 실내에 들어가면 인테리어 지도로 통째로 바뀐다.
+      이 함수가 찾는 %(호수 제단)·X(군주의 제단)는 오버월드 타일인데, **4번째 뱃지를 따는 자리가
+      체육관 안**이라 최초 스캔이 항상 실내에서 일어났다 → 둘 다 null이 영구 캐시되고,
+      currentGoal의 `if(alt)`·`if(lord)` 가드가 조용히 통과해 **전설 준비 단계와 숲의 군주 단계가
+      사슬에서 통째로 빠졌다**(4뱃지 → 곧장 리그). 2026-08-05 fullrun이 군주를 건너뛰고 챔피언이 된 원인이고,
+      리로드하면 캐시가 비어 사라지므로 손으로는 거의 못 잡는다.
+      → 실내면 _owBackup(오버월드 원본)을 본다. **null은 캐시하지 않는다** — 한 번 잘못 잡으면
+        세션 내내 못 고치는 게 이 사고의 본질이었다(스캔은 25×49라 비용이 없다). */
 const _tileCache={};
 function findTile(ch){
   if(_tileCache[ch]!==undefined)return _tileCache[ch];
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++) if(MAP_STR[y]&&MAP_STR[y][x]===ch)return (_tileCache[ch]={x,y});
-  return (_tileCache[ch]=null);
+  const src=_owBackup?_owBackup.str:MAP_STR, w=_owBackup?_owBackup.W:W, h=_owBackup?_owBackup.H:H;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++) if(src[y]&&src[y][x]===ch)return (_tileCache[ch]={x,y});
+  return null;
 }
 /* 파티와 보관함을 통틀어 전설을 하나라도 가지고 있는가. ⚠️ 도감(seen/caught)이 아니라 **보유** 기준이다 —
    봤거나 놓아준 것은 리그에서 도움이 안 된다. */
@@ -3549,17 +3558,21 @@ if($("goalTrack")) $("goalTrack").addEventListener("click",()=>{
   // ⚠️ 목표가 체육관(G)·리그(U)·제단(X)·센터(+)·회관(E)이면 그 타일 자체는 "부딪혀 들어가는"
   //    비보행 문이다. 거기로 bfsPath를 걸면 항상 null이라 자동 이동이 통째로 먹지 않았다.
   //    → 목표가 비보행이면 인접한 보행 칸 중 가장 가까운 곳까지 안내한다.
-  let p=walkable(g.x,g.y)?bfsPath(G.pos.x,G.pos.y,g.x,g.y):null;
-  if(!p||!p.length){
+  /* ⚠️ **뭍길을 먼저 다 시도하고, 없을 때만 물길을 연다**(surf=true). 순서를 지키는 게 핵심이다 —
+     처음부터 물을 열면 BFS가 최단경로를 고르므로 체육관 가는 길이 호수를 가로지르는 지름길로 조용히 바뀐다.
+     물길이 필요한 곳은 지금 호수 제단(%) 하나뿐이고, 거긴 사방이 물이라 뭍길이 애초에 없다. */
+  const seek=(surf)=>{
+    let p=bfsPath(G.pos.x,G.pos.y,g.x,g.y,surf);
+    if(p&&p.length)return p;
     let best=null;
     for(const d of [[0,1],[0,-1],[1,0],[-1,0]]){
       const nx=g.x+d[0], ny=g.y+d[1];
-      if(!walkable(nx,ny))continue;
-      const q=bfsPath(G.pos.x,G.pos.y,nx,ny);
+      const q=bfsPath(G.pos.x,G.pos.y,nx,ny,surf);
       if(q&&q.length&&(!best||q.length<best.length))best=q;
     }
-    p=best;
-  }
+    return best;
+  };
+  let p=seek(false) || (G.hasSurf?seek(true):null);
   if(!p||!p.length){ flashHint("지금은 그곳까지 가는 길이 막혀 있다."); return; }
   gamePath=p; if(Field.setDest)Field.setDest(g.x,g.y); pathStep();
 });
@@ -3659,16 +3672,33 @@ function continueMovement(){ if(G.busy||G.inBattle)return;
   if(Field.clearDest)Field.clearDest();
   if(heldDir){ move(heldDir,true); } }
 function stopPath(){ gamePath=[]; if(Field&&Field.clearDest)Field.clearDest(); }
+/* 파도타기 연출을 거쳐야 하는 물가 칸을 만났을 때, 연출이 지워버린 나머지 경로를 들고 있는 곳.
+   ⚠️ move()의 물 분기와 fieldMoveScene이 **각각** stopPath()를 부른다 — 그냥 두면 호숫가에서 경로가 끊긴다. */
+let _surfResume=null;
 function pathStep(){ if(!gamePath.length||G.busy||G.inBattle||!Field.arrived)return;
   const next=gamePath[0]; const dx=next.x-G.pos.x, dy=next.y-G.pos.y; let dir=null;
   if(dx===1)dir="right"; else if(dx===-1)dir="left"; else if(dy===1)dir="down"; else if(dy===-1)dir="up";
-  if(!dir||!walkable(next.x,next.y)){ stopPath(); return; }
+  if(!dir){ stopPath(); return; }
+  if(!walkable(next.x,next.y)){
+    /* 물가 — 파도타기로 건널 수 있는 칸이면 여기서 연출이 걸린다(경로가 지워진다) → 나머지를 맡겨두고 들어선다.
+       ⚠️ shift 하지 않는다: 실제 이동은 연출 콜백 안의 move(dir)가 하고, 복원할 때 그 칸을 뺀다. */
+    if(!G.indoor&&G.hasSurf&&!G.surfing&&tileAt(next.x,next.y)==="~"){ _surfResume=gamePath.slice(); move(dir,true); return; }
+    stopPath(); return; }
   gamePath.shift(); move(dir,true); }
-function bfsPath(sx,sy,tx,ty){ if(sx===tx&&sy===ty)return []; if(!walkable(tx,ty))return null;
+/* ⚠️ `surf=true`면 **아직 물에 안 탔어도** 물을 지날 수 있다고 보고 경로를 찾는다(파도타기를 배운 경우).
+   왜: 호수 제단(%)은 사방이 물이라 목표로 삼아도 뭍길이 없어 자동 이동이 통째로 먹지 않았다 —
+   트래커가 "지금은 그곳까지 가는 길이 막혀 있다"를 띄우면서 동시에 그곳을 가리켰다(fullrun 봇이 그 자리에서 27분 정지).
+   ⚠️ **기본값은 false다** — 뭍길이 있으면 예전과 한 칸도 다르지 않게 간다. 물길은 뭍길이 없을 때만 쓴다
+      (안 그러면 체육관 가는 길이 호수를 가로지르는 지름길로 바뀐다 = 조용한 동선 변경).
+   ⚠️ walkable()(충돌 판정)은 절대 안 건드린다 — 거기서 물을 통과시키면 파도타기 연출도 G.surfing도 없이
+      물 위를 걸어버린다. 실제 진입은 move()의 기존 "물에 부딪히면 파도타기 시작" 분기가 그대로 처리한다. */
+function bfsPath(sx,sy,tx,ty,surf){ if(sx===tx&&sy===ty)return [];
+  const pass=(x,y)=>walkable(x,y)||(!!surf&&!G.indoor&&!!G.hasSurf&&tileAt(x,y)==="~");
+  if(!pass(tx,ty))return null;
   const key=(x,y)=>x+","+y; const prev={}; const seen=new Set([key(sx,sy)]); const q=[[sx,sy]];
   const blocked=t=>"RS1234X".includes(t);
   while(q.length){ const [x,y]=q.shift();
-    for(const [dx,dy] of [[0,1],[0,-1],[1,0],[-1,0]]){ const nx=x+dx,ny=y+dy; if(!walkable(nx,ny))continue;
+    for(const [dx,dy] of [[0,1],[0,-1],[1,0],[-1,0]]){ const nx=x+dx,ny=y+dy; if(!pass(nx,ny))continue;
       if(blocked(tileAt(nx,ny)) && !(nx===tx&&ny===ty))continue;
       const k=key(nx,ny); if(seen.has(k))continue; seen.add(k); prev[k]=key(x,y);
       if(nx===tx&&ny===ty){ const path=[]; let c=k; while(c!==key(sx,sy)){ const [px,py]=c.split(",").map(Number); path.unshift({x:px,y:py}); c=prev[c]; if(!c)break; } return path; }

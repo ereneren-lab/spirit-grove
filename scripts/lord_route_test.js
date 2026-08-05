@@ -126,6 +126,73 @@ const { chromium } = require("playwright"); const path=require("path"); const os
   ok(after.name==="정령 리그", `다음 목표: ${after.name}`);
   ok(after.tile==="U", `좌표가 리그 입구 U 타일이다 — "${after.tile}"`);
 
+  console.log("\n[7] 4번째 뱃지를 **체육관 안에서** 딴 직후에도 사슬이 살아 있다");
+  /* ⚠️ 이 저장소가 실제로 밟은 사고다(2026-08-05 fullrun: 군주를 건너뛰고 챔피언 등극).
+     findTile은 결과를 캐시하는데 MAP_STR·W·H는 실내에 들어가면 인테리어 지도로 바뀐다.
+     그리고 currentGoal은 뱃지가 4개 미만이면 **체육관 단계에서 리턴**하므로 %·X는 그전까지 한 번도
+     안 불린다 → 두 문자의 최초 스캔이 **항상 체육관 안**에서 일어나 null이 영구 캐시되고,
+     `if(alt)`·`if(lord)` 가드가 조용히 통과해 호수 제단·군주의 제단이 사슬에서 통째로 빠졌다.
+     ⚠️ **위 [1]~[6]은 이걸 구조적으로 못 잡는다** — 상태를 야외에서 조립해 트래커를 처음 읽기 때문에
+        캐시가 올바른 값으로 채워진다. 그래서 회귀는 반드시 **실내에서 4뱃지가 되는 순간**을 재현해야 한다.
+     ⚠️ 리로드하면 캐시가 비어 증상이 사라진다 → 손으로는 거의 못 잡는다. 이 단정이 유일한 그물이다. */
+  const p2=await b.newPage({viewport:{width:430,height:760}});
+  const errs2=[]; p2.on("pageerror",e=>errs2.push(e.message));
+  await p2.goto("file://"+path.resolve(process.argv[2])); await p2.waitForTimeout(900);
+  const chain=await p2.evaluate(async()=>{ const S=window.SG,F=S.flow,G=S.freshState();
+    G.party=[S.makeMon("foxfire",60),S.makeMon("shellow",1)];   /* 전설 미보유 = 실제 진행 상태 */
+    G.badges=["1","2","3"]; G.hasCut=G.hasStrength=G.hasSurf=true;
+    G.pos={x:8,y:18}; G.repel=999; S.setG(G); F.enterMap(true);
+    const before=F.currentGoal().name;                          /* 체육관 단계 — findTile은 아직 안 불린다 */
+    F.enterInterior(F.INTERIORS.gym4); await new Promise(r=>setTimeout(r,400));
+    S.G().badges=["1","2","3","4"];                             /* 관장 격파 = **실내에서** 4뱃지가 된다 */
+    const inside=F.currentGoal().name;                          /* ← %·X의 최초 스캔이 여기서 일어난다 */
+    F.exitInterior(); await new Promise(r=>setTimeout(r,500));
+    const outside=F.currentGoal().name;
+    const lord=(()=>{ const S2=window.SG.G(); S2.lakeDone=true; return F.currentGoal().name; })();
+    return {before, inside, outside, lord,
+            X:JSON.stringify(F.findTile("X")), pct:JSON.stringify(F.findTile("%"))}; });
+  ok(chain.before==="고원 체육관"||/체육관/.test(chain.before), `3뱃지 · 야외 → ${chain.before}`);
+  ok(chain.inside==="호수 제단", `4뱃지 · 체육관 안 → ${chain.inside} (리그면 캐시 회귀)`);
+  ok(chain.outside==="호수 제단", `4뱃지 · 밖으로 나온 뒤 → ${chain.outside}`);
+  ok(chain.lord==="군주의 제단", `전설 준비를 마치면 → ${chain.lord} (리그면 군주가 또 사슬 밖이다)`);
+  ok(chain.X!=="null"&&chain.pct!=="null", `실내를 거친 뒤에도 두 목표 타일을 찾는다 — X=${chain.X} %=${chain.pct}`);
+  ok(errs2.length===0, `[7] 런타임 에러 0 (${errs2.length})`);
+
+  console.log("\n[8] 물로 둘러싸인 목표(호수 제단)까지 트래커만 따라가서 실제로 갈 수 있다");
+  /* ⚠️ 2026-08-05 fullrun이 4뱃지 직후 (8,18)에서 **27분간 한 칸도 못 움직였다.**
+     호수 제단(%)은 사방이 물인데 트래커의 대체 경로 탐색이 상하좌우 보행칸만 봐서 후보가 0개 →
+     "지금은 그곳까지 가는 길이 막혀 있다"를 띄우면서 **동시에 그곳을 가리켰다.**
+     → bfsPath에 surf 옵션을 넣고(뭍길이 없을 때만) 물가에서 기존 파도타기 연출이 발동하도록 이었다.
+     ⚠️ **뭍길 우선은 단정으로 지킨다**(아래) — 물을 먼저 열면 BFS가 최단거리를 골라
+        체육관 가는 길이 호수를 가로지르는 지름길로 조용히 바뀐다. */
+  const p3=await b.newPage({viewport:{width:430,height:760}});
+  const errs3=[]; p3.on("pageerror",e=>errs3.push(e.message));
+  await p3.goto("file://"+path.resolve(process.argv[2])); await p3.waitForTimeout(900);
+  const lake=await p3.evaluate(async()=>{ const S=window.SG,F=S.flow,G=S.freshState();
+    G.party=[S.makeMon("foxfire",45),S.makeMon("shellow",5)];
+    G.badges=["1","2","3","4"]; G.hasCut=G.hasStrength=G.hasSurf=true;
+    G.pos={x:8,y:18}; G.repel=9999;                          /* 체육관4 문 앞 = 봇이 얼어붙었던 자리 */
+    /* ⚠️ 시야 트레이너를 배제한다 — 안 그러면 도중에 전투가 걸려 **경로가 아니라 전투를 재게 된다**
+       (처음에 그렇게 짜서 "13,20에서 멈췄다"로 오판했다. 범인은 spotTrainer였고 경로는 멀쩡했다). */
+    Object.keys(S.TRAINERS).forEach(k=>G.defeated.add(k));
+    S.setG(G); F.enterMap(true);
+    const L=S.G(); const g=F.currentGoal(); const el=document.getElementById("goalTrack");
+    const near=()=>Math.abs(L.pos.x-g.x)+Math.abs(L.pos.y-g.y);
+    const dl=Date.now()+60000; let taps=0;
+    while(Date.now()<dl){ if(near()<=1)break;
+      if(!F.getPath().length&&!L.busy&&!L.inBattle){ el.click(); taps++; }
+      await new Promise(r=>setTimeout(r,120)); }
+    /* 뭍길 우선 단정: 체육관4는 물을 안 지나는 목표다 — 그 경로에 물이 한 칸도 없어야 한다 */
+    const gymPath=F.bfsPath(8,30,8,18)||[];
+    const gymWater=gymPath.filter(q=>F.tileAt(q.x,q.y)==="~").length;
+    return {goal:g.name, taps, dist:near(), pos:{x:L.pos.x,y:L.pos.y},
+            tile:F.tileAt(L.pos.x,L.pos.y), surfing:!!L.surfing, gymLen:gymPath.length, gymWater}; });
+  ok(lake.goal==="호수 제단", `4뱃지 직후 목표: ${lake.goal}`);
+  soft(lake.dist<=1, `트래커만 따라가 제단 옆에 섰다 — (${lake.pos.x},${lake.pos.y}) 타일"${lake.tile}" 남은거리 ${lake.dist}칸`);
+  soft(lake.surfing, "물가에서 파도타기가 자동으로 발동해 물길을 건넜다");
+  ok(lake.gymLen>0 && lake.gymWater===0, `뭍길 우선: 체육관4 경로 ${lake.gymLen}칸에 물 ${lake.gymWater}칸 (물이 섞이면 동선이 조용히 바뀐 것)`);
+  ok(errs3.length===0, `[8] 런타임 에러 0 (${errs3.length})${errs3.length?": "+errs3.slice(0,2).join(" | "):""}`);
+
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs.slice(0,3).join(" | "):""}`);
   await b.close();
   console.log(fail?"\n❌ lord_route_test 실패":"\n✅ lord_route_test 통과");
