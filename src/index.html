@@ -1646,7 +1646,7 @@ function updateMoney(){ $("moneyPill").textContent="💰 "+G.money; $("shopMoney
 /* expose for tests */
 window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,HELD_ITEMS,byId,makeMon,recalc,damage,stageMul,accMul,newStages,resetStages,effSpd,foeChooseMove,noPP,
   G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary,stripNamePrefix,
-  moveCat,moveCatKo,isSpecMove,MOVE_CAT};
+  moveCat,moveCatKo,isSpecMove,MOVE_CAT,heroDrawSpec};
 /* ===== MAP (17 x 42) ===== */
 let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg##gT#","#gTTggggggTTgEggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT$PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
 let W=25,H=50;
@@ -2133,10 +2133,12 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
           ctx.drawImage(_img, fsx-_sz/2, fsy-_sz/2-_bob, _sz, _sz); ctx.restore(); } } }
     { const _sidx=(typeof G!=="undefined"&&G.styleIdx)||0, _upd=(this.dir||"down")==="up";
       let _hi=_upd?heroImgBack(_sidx):null; const _back=!!(_hi&&_hi.complete&&_hi.naturalWidth); if(!_back){ _hi=heroImg(_sidx); }
-      if(_hi&&_hi.complete&&_hi.naturalWidth){ const hx=pcx, gy=pcy+ts*0.30, S=ts*0.98;
+      if(_hi&&_hi.complete&&_hi.naturalWidth){ const hx=pcx, gy=pcy+ts*0.30;
+        const _spec=heroDrawSpec(_hi.naturalWidth, ts), S=_spec.size;   // 픽셀 스프라이트면 정수배+최근접
         const _hb=moving?Math.abs(Math.sin(now*10))*ts*0.06:Math.sin(now*2.2)*ts*0.012;
         ctx.fillStyle="rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(hx,gy,ts*0.30,ts*0.11,0,0,6.29); ctx.fill();
         ctx.save(); if(!_back&&(this.dir||"down")==="left"){ ctx.translate(hx,0); ctx.scale(-1,1); ctx.translate(-hx,0); }   // ⚠️ 주인공 아트 기본은 **우향**(돋보기가 우측)이다 — 왼쪽 이동 시에만 뒤집어 진행방향을 본다. (예전 주석은 좌향이라 했지만 실제 아트는 우향 — 스크린샷으로 확인)
+        ctx.imageSmoothingEnabled=_spec.smooth;   // 도트는 보간하면 뭉개진다. save/restore 안이라 자동 복원된다
         ctx.drawImage(_hi, hx-S/2, gy-S-_hb, S, S); ctx.restore(); }
       else { this._walker(ctx, pcx, pcy, ts, this.dir||"down", moving, now); } }
     this._grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving);
@@ -3277,7 +3279,10 @@ function charPreview(ch,size){ size=size||72; const cv=document.createElement("c
   else { ctx.fillStyle=hair; rr(cx-u*0.3,cy-u*0.74,u*0.6,u*0.28,u*0.14); ctx.fill(); ctx.stroke(); }
   ctx.fillStyle="#2a2230"; ctx.fillRect(cx-u*0.15,cy-u*0.44,u*0.08,u*0.12); ctx.fillRect(cx+u*0.07,cy-u*0.44,u*0.08,u*0.12);
   const _pidx=(typeof CHARS!=="undefined")?CHARS.indexOf(ch):-1, _purl=(typeof HERO_ART!=="undefined"&&_pidx>=0)?HERO_ART[_pidx]:null;
-  if(_purl){ const _pim=new Image(); _pim.onload=()=>{ ctx.clearRect(0,0,size,size); const _s=size*0.98; ctx.drawImage(_pim,(size-_s)/2,size-_s,_s,_s); }; _pim.src=_purl; }
+  // ⚠️ 필드와 **같은 판단(heroDrawSpec)** 을 쓴다 — 여기만 따로 계산하면 선택 화면과 실제 모습이 갈린다.
+  if(_purl){ const _pim=new Image(); _pim.onload=()=>{ ctx.clearRect(0,0,size,size);
+    const _sp=heroDrawSpec(_pim.naturalWidth, size/0.98), _s=Math.min(size,_sp.size);
+    ctx.imageSmoothingEnabled=_sp.smooth; ctx.drawImage(_pim,(size-_s)/2,size-_s,_s,_s); }; _pim.src=_purl; }
   return cv; }
 let pickedChar=null, pickedStarter=null;
 function buildChar(){ const row=$("charRow"); row.innerHTML=""; pickedChar=null; $("confirmChar").disabled=true;

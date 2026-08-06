@@ -158,6 +158,32 @@ console.log("\n[속도]");
   const up=mk(); up.stages.spd=2; ok(R.effSpd(up)===200, "속도 랭크 +2 → 2배");
 }
 
+console.log("\n[주인공 스프라이트 그리기 규격]");
+/* 왜 있나 — 픽셀 아트로 갈아탈 준비. 캔버스는 기본이 **보간(imageSmoothingEnabled=true)** 이라
+   도트를 그대로 넣으면 뭉개지고, 크기가 32의 정수배가 아니면 격자가 울퉁불퉁해진다.
+   반대로 지금의 고해상도 일러스트는 스무딩을 꺼서 축소하면 거칠어진다.
+   → **원본 크기 하나로 갈리게** 만들었다(플래그 데이 없음). 그 분기를 여기서 고정한다.
+   ⚠️ 실측 타일 크기는 68~83px다(뷰포트 430/390/768 기준) — 그 대역 전체에서 64로 안정돼야 한다. */
+{
+  const big=R.heroDrawSpec(360,77);            // 지금 아트(webp ~360px)
+  ok(big.smooth===true && !big.pixel, "일러스트 원본은 부드럽게 축소한다(현행 유지)");
+  ok(Math.abs(big.size-77*0.98)<1e-9, `일러스트 크기는 예전 그대로 ts*0.98 (${big.size.toFixed(1)})`);
+
+  const px=R.heroDrawSpec(32,77);
+  ok(px.smooth===false && px.pixel, "픽셀 원본은 최근접(스무딩 끔)으로 그린다");
+  ok(px.size%32===0, `픽셀 크기는 32의 정수배다 (${px.size})`);
+
+  // 뷰포트가 흔들려도 크기가 튀지 않아야 한다 — 반올림이면 여기서 64↔96을 오간다.
+  const sizes=[68,77,83].map(ts=>R.heroDrawSpec(32,ts).size);
+  ok(new Set(sizes).size===1 && sizes[0]===64, `실측 타일 대역 68~83에서 크기가 64로 일정하다 (${sizes.join(",")})`);
+  // 스프라이트가 타일을 넘지 않아야 한다(넘으면 이웃 칸을 덮는다)
+  ok([68,77,83].every(ts=>R.heroDrawSpec(32,ts).size<=ts), "픽셀 스프라이트가 타일 크기를 넘지 않는다");
+  // 아주 큰 화면에서는 3배로 올라간다
+  ok(R.heroDrawSpec(32,110).size===96, `타일이 커지면 96으로 올라간다 (${R.heroDrawSpec(32,110).size})`);
+  // 아직 로드 안 된 이미지(naturalWidth 0)는 일러스트 취급 = 지금 동작 유지
+  ok(R.heroDrawSpec(0,77).smooth===true, "원본 크기를 모르면 안전하게 현행(부드럽게) 동작한다");
+}
+
 console.log("\n[기술 설명 — 배우기/잊기/전투 메뉴가 쓰는 한 줄]");
 // 예전엔 jsdom으로 dist를 통째로 띄워 검사했다(movedesc_test.js). moveDesc/moveSummary가
 // 규칙 계층으로 내려온 뒤로는 브라우저가 전혀 필요 없다 — 같은 커버리지를 여기서 즉시 돌린다.
