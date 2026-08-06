@@ -37,7 +37,10 @@ const DEX=[
   {id:"stormhawk",name:"회리매",em:"🦅",type:"flying",type2:"elec",tier:3,base:{hp:77,atk:25,def:16,spd:24,spa:17,spDef:16},moves:["gust","wingatk"],learn:[[8,"thunderwave"],[14,"swordsdance"],[21,"recover"],[26,"skyrush"],[27,"lullaby"],[30,"focusenergy"],[33,"confuse"],[40,"growl"]]},
   {id:"lunarmoth",name:"루나비",em:"🦋",type:"flying",type2:"poison",tier:3,base:{hp:80,atk:22,def:19,spd:19,spa:16,spDef:19},moves:["gust","peck"],learn:[[8,"growl"],[14,"focusenergy"],[21,"confuse"],[26,"wingatk"],[27,"lullaby"],[30,"doubleteam"],[33,"recover"],[40,"swordsdance"]]},
   {id:"nipling",name:"집게공",em:"🦀",type:"water",type2:"rock",tier:1,base:{hp:46,atk:15,def:20,spd:9,spa:7,spDef:13},moves:["tackle","rockthrow"],learn:[[8,"growl"],[12,"crush"],[18,"rockslide"],[19,"doubleteam"],[27,"focusenergy"],[36,"confuse"]],evolveTo:"crablord",evolveLv:28},
-  {id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"rock",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","hydro","boulder"],learn:[[8,"confuse"],[16,"focusenergy"],[23,"growl"],[31,"doubleteam"],[38,"crosschop"],[39,"swordsdance"]]},
+  /* ⚠️ 집게왕은 atk25/spa9인데 기본 기술셋에 하이드로펌프(물 특수)가 들어 있었다 —
+   물 STAB을 spa9로 쏘느라 크로스촙의 1/3밖에 못 때렸다(실측 125 vs 363). 계열이 타입에 묶여 있어
+   생긴 사고다. 기술 단위 계열 도입으로 아쿠아제트가 물리가 됐으므로 그걸로 바꾼다. */
+{id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"rock",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","aquajet","boulder"],learn:[[8,"confuse"],[16,"focusenergy"],[23,"growl"],[31,"doubleteam"],[38,"crosschop"],[39,"swordsdance"]]},
   {id:"gullian",name:"갈매정",em:"🐦",type:"flying",type2:"water",tier:2,base:{hp:58,atk:16,def:12,spd:23,spa:16,spDef:13},moves:["peck","gust","wingatk","splash"],learn:[[8,"nastyplot"],[16,"skyrush"],[18,"batonpass"],[27,"harden"],[36,"agility"]],evolveTo:"glimmertide",evolveLv:32},
   {id:"palmore",name:"야자정",em:"🌴",type:"grass",tier:2,base:{hp:72,atk:18,def:22,spd:8,spa:16,spDef:18},moves:["vine","bloom","slam","absorb"],learn:[[8,"confuse"],[18,"focusenergy"],[20,"megadrain"],[27,"growl"],[36,"doubleteam"]]},
   {id:"jellure",name:"해파리정",em:"🪼",type:"water",type2:"poison",tier:1,base:{hp:54,atk:8,def:12,spd:15,spa:20,spDef:20},moves:["splash","sludge","hydro"],learn:[[8,"roar"],[12,"poisonpowder"],[22,"tsunami"],[26,"amnesia"],[27,"toxic"]],evolveTo:"swampfrog",evolveLv:25},

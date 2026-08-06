@@ -1432,6 +1432,50 @@ const MOVES={
   bite:{name:"물기",type:"normal",power:48,acc:100,pp:20,pri:0,eff:{flinch:0.3}},
   struggle:{name:"발버둥",type:"normal",power:40,acc:100,pp:Infinity,pri:0,recoil:0.25},
 };
+/* ===== 물리/특수 판정 단일 출처 =====
+   ⚠️ 예전엔 `SPEC_TYPES[move.type]`으로 **타입이 계열을 강제**했다(3세대 이전 방식).
+      본가는 4세대부터 기술마다 개별 지정한다. 타입이 강제하면 다음이 구조적으로 불가능하다:
+        · 물리 물 기술(아쿠아제트) · 특수 노말 기술(파괴광선) · 특수 비행 기술(바람일격)
+      게다가 **이중 타입 40종 중 31종**이 두 타입이 물리/특수를 가로질러,
+      그 종들은 STAB 둘 중 하나를 반드시 약한 스탯으로 쏘고 있었다(실측 2026-08-06).
+   `cat`은 **덮어쓰기**다 — 생략하면 타입 기본값(TYPES[t].spec)을 그대로 쓴다.
+   DEFAULT_ABILITY / ABILITY_OVERRIDE와 같은 idiom이라, 타입의 "기본 성격"은 살아 있다.
+   ⚠️ 계열을 읽는 곳은 **반드시 moveCat()을 거친다**(damage · 까칠한피부 · UI).
+      `SPEC_TYPES[move.type]`을 직접 보는 코드가 다시 생기면 병렬 판정이 되살아난다 —
+      회귀 `movecat_test`가 실제 전투 계산으로 이걸 단정한다.
+   ⚠️ **밸런스 불변이 아니다.** 트레이너·야생도 같은 기술을 쓴다 → 표를 건드리면 재측정. */
+/* ⚠️ **"본가와 같게" 맞추는 게 목표가 아니다.** 이 게임의 종족값은 타입이 계열을 강제한다는
+   전제로 짜여 있어서, 본가 기준으로 무턱대고 뒤집으면 그 기술을 배우는 종이 오히려 약해진다
+   (실측: 파괴광선을 특수로 돌리면 배우는 22종의 평균 atk24.0 > spa20.8이라 전부 손해 —
+    덩굴채찍·얼음뭉치·플레어드라이브·와일드볼트·머드샷도 같은 이유로 되돌렸다).
+   그래서 넣는 기준은 둘뿐이다:
+     ① 그 기술을 배우는 종에게 **이득**이고 본가와도 맞는 것
+     ② **TM 전용**(어떤 종도 학습셋에 갖고 있지 않다 = 트레이너·야생이 안 쓴다 = 밸런스 불변)이라
+        없던 선택지를 만드는 것 — 지닌물건·2턴기 확장 때와 같은 원칙이다.
+   ⚠️ 새 항목을 넣기 전에 **그 기술을 배우는 종의 평균 atk/spa를 먼저 재라.** */
+const MOVE_CAT={
+  // ── ① 배우는 종에게 이득 + 본가 일치
+  aquajet:"phys",     // 아쿠아제트 — 본가 Aqua Jet이 물리. 배우는 2종 평균 atk19.5 > spa14.5
+                      //   집게왕(atk25/spa9)의 죽은 물 STAB을 이걸로 대체했다(dex.js 참조)
+  gust:"spec",        // 바람일격 — 본가 Gust가 특수. 배우는 11종 평균 spa18.3 > atk17.5
+                      //   화염나방(fire/flying · atk19/spa27)의 죽은 비행 STAB이 이걸로 풀린다
+  sludge:"spec",      // 오물폭탄 — 본가 Sludge Bomb이 특수. 배우는 2종 평균 spa19.0 > atk10.5
+  // ── ② TM 전용(배우는 종 0) → 그 타입에 없던 계열을 만든다. 트레이너가 안 쓰므로 밸런스 불변.
+  heatlance:"phys",   // 열창 — 불 타입 유일의 물리기가 된다. 마그마룡(fire/ground · atk26)이 살아난다
+  voltfang:"phys",    // 전격니 — 전기 타입 유일의 물리기(무는 기술, 본가 Thunder Fang도 물리)
+  frostshard:"phys",  // 서리파편 — 얼음 타입 유일의 물리기
+  acidspray:"spec",   // 애시드샷 — 독 타입 특수기(본가 Acid Spray도 특수)
+  toxicwave:"spec",   // 독의물결 — 독 타입 특수기
+  sandblast:"spec",   // 모래폭풍탄 — 땅 타입 특수기
+};
+Object.keys(MOVE_CAT).forEach(k=>{ if(MOVES[k])MOVES[k].cat=MOVE_CAT[k]; });
+// 기술 하나의 계열. 이 게임에서 물리/특수를 묻는 곳은 전부 여기를 거친다.
+function moveCat(mv){ if(!mv)return "phys";
+  if(mv.cat==="phys"||mv.cat==="spec")return mv.cat;
+  return SPEC_TYPES[mv.type]?"spec":"phys"; }
+function isSpecMove(mv){ return moveCat(mv)==="spec"; }
+// 화면 표기. 위력이 없으면 계열 자체가 의미 없으므로 "변화"다.
+function moveCatKo(mv){ if(!mv)return ""; if(!(mv.power>0))return "변화"; return moveCat(mv)==="spec"?"특수":"물리"; }
 // 기술 효과를 사람이 읽을 수 있는 한 줄로. 배우기/잊기/재습득 UI에서 "어떤 기술인지" 보여준다.
 function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; const e=mo.eff||{};
   if(mo.power>0)p.push("위력 "+mo.power);
@@ -1463,7 +1507,9 @@ function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; c
   return p.join(" · ");
 }
 function moveSummary(mvKey){ const mo=MOVES[mvKey]; if(!mo)return mvKey; const d=moveDesc(mvKey);
-  return `${TYPE_KO[mo.type]||""} · ${d||"변화"} · PP ${mo.pp}`; }
+  // ⚠️ 계열(물리/특수)을 반드시 보여준다 — 예전엔 어디에도 안 떠서, 같은 위력인데 왜 피해가
+  //    3배 차이 나는지 플레이어가 알 방법이 없었다(집게왕 하이드로펌프 125 vs 크로스촙 363).
+  return `${TYPE_KO[mo.type]||""} · ${moveCatKo(mo)} · ${d||"변화"} · PP ${mo.pp}`; }
 
 // 종 데이터(DEX)와 개체 생성/스탯 계산. **DOM을 쓰지 않는다**(순수 규칙 계층).
 // 브라우저는 build.py가 //@@RULES_DEX@@ 자리에 인라인하고, node는 rules_env.js가 같은 파일을
@@ -1504,7 +1550,10 @@ const DEX=[
   {id:"stormhawk",name:"회리매",em:"🦅",type:"flying",type2:"elec",tier:3,base:{hp:77,atk:25,def:16,spd:24,spa:17,spDef:16},moves:["gust","wingatk"],learn:[[8,"thunderwave"],[14,"swordsdance"],[21,"recover"],[26,"skyrush"],[27,"lullaby"],[30,"focusenergy"],[33,"confuse"],[40,"growl"]]},
   {id:"lunarmoth",name:"루나비",em:"🦋",type:"flying",type2:"poison",tier:3,base:{hp:80,atk:22,def:19,spd:19,spa:16,spDef:19},moves:["gust","peck"],learn:[[8,"growl"],[14,"focusenergy"],[21,"confuse"],[26,"wingatk"],[27,"lullaby"],[30,"doubleteam"],[33,"recover"],[40,"swordsdance"]]},
   {id:"nipling",name:"집게공",em:"🦀",type:"water",type2:"rock",tier:1,base:{hp:46,atk:15,def:20,spd:9,spa:7,spDef:13},moves:["tackle","rockthrow"],learn:[[8,"growl"],[12,"crush"],[18,"rockslide"],[19,"doubleteam"],[27,"focusenergy"],[36,"confuse"]],evolveTo:"crablord",evolveLv:28},
-  {id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"rock",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","hydro","boulder"],learn:[[8,"confuse"],[16,"focusenergy"],[23,"growl"],[31,"doubleteam"],[38,"crosschop"],[39,"swordsdance"]]},
+  /* ⚠️ 집게왕은 atk25/spa9인데 기본 기술셋에 하이드로펌프(물 특수)가 들어 있었다 —
+   물 STAB을 spa9로 쏘느라 크로스촙의 1/3밖에 못 때렸다(실측 125 vs 363). 계열이 타입에 묶여 있어
+   생긴 사고다. 기술 단위 계열 도입으로 아쿠아제트가 물리가 됐으므로 그걸로 바꾼다. */
+{id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"rock",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","aquajet","boulder"],learn:[[8,"confuse"],[16,"focusenergy"],[23,"growl"],[31,"doubleteam"],[38,"crosschop"],[39,"swordsdance"]]},
   {id:"gullian",name:"갈매정",em:"🐦",type:"flying",type2:"water",tier:2,base:{hp:58,atk:16,def:12,spd:23,spa:16,spDef:13},moves:["peck","gust","wingatk","splash"],learn:[[8,"nastyplot"],[16,"skyrush"],[18,"batonpass"],[27,"harden"],[36,"agility"]],evolveTo:"glimmertide",evolveLv:32},
   {id:"palmore",name:"야자정",em:"🌴",type:"grass",tier:2,base:{hp:72,atk:18,def:22,spd:8,spa:16,spDef:18},moves:["vine","bloom","slam","absorb"],learn:[[8,"confuse"],[18,"focusenergy"],[20,"megadrain"],[27,"growl"],[36,"doubleteam"]]},
   {id:"jellure",name:"해파리정",em:"🪼",type:"water",type2:"poison",tier:1,base:{hp:54,atk:8,def:12,spd:15,spa:20,spDef:20},moves:["splash","sludge","hydro"],learn:[[8,"roar"],[12,"poisonpowder"],[22,"tsunami"],[26,"amnesia"],[27,"toxic"]],evolveTo:"swampfrog",evolveLv:25},
@@ -1648,7 +1697,7 @@ function confusionSelfHit(m){
 function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&def.type2!==def.type)eff*=EFF[move.type][def.type2];
   if(def.ability==="levitate" && move.type==="ground")eff=0;   // 부유: 땅 기술 무효
   const burnMul=(att.status==="brn" && att.ability!=="guts")?0.5:1;
-  const isSpec=!!SPEC_TYPES[move.type];   // 얼음도 특수(독·땅은 물리)
+  const isSpec=isSpecMove(move);   // ⚠️ 기술 단위 계열(moves.js의 moveCat). 타입을 직접 보지 말 것
   const A=isSpec?(att.spa||att.atk):att.atk, D=isSpec?(def.spDef||def.def):def.def;
   const aSt=att.stages||{}, dSt=def.stages||{};
   let crit=Math.random()<critChance(att,move)?1.5:1;   // 배율은 6세대 1.5배 유지(밸런스 보존)
@@ -2182,7 +2231,8 @@ function updateMoney(){ $("moneyPill").textContent="💰 "+G.money; $("shopMoney
 
 /* expose for tests */
 window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,HELD_ITEMS,byId,makeMon,recalc,damage,stageMul,accMul,newStages,resetStages,effSpd,foeChooseMove,noPP,
-  G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary,stripNamePrefix};
+  G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary,stripNamePrefix,
+  moveCat,moveCatKo,isSpecMove,MOVE_CAT};
 /* ===== MAP (17 x 42) ===== */
 let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg##gT#","#gTTggggggTTgEggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT$PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
 let W=25,H=50;
@@ -4808,7 +4858,8 @@ function showMoves(){ mainMenu.style.display="none"; moveMenu.style.display="gri
     b.disabled=(mv===me._charging)?false:(pp<=0||(_locked&&mv!==_locked)||(me._taunt>0&&mo.power===0)||(me._disable&&me._disable.turns>0&&mv===me._disable.move));
     let eff=""; if(mo.power>0 && G.foe){ let e=EFF[mo.type][G.foe.type]; if(G.foe.type2&&G.foe.type2!==G.foe.type)e*=EFF[mo.type][G.foe.type2];
       if(e>=4)eff=`<span class="eff-tag eff-good">효과 매우 굉장</span>`; else if(e>1)eff=`<span class="eff-tag eff-good">효과 굉장</span>`; else if(e>0&&e<=0.25)eff=`<span class="eff-tag eff-bad">효과 매우 별로</span>`; else if(e<1)eff=`<span class="eff-tag eff-bad">효과 별로</span>`; }
-    const desc=`${TYPE_KO[mo.type]} · ${moveDesc(mv)||"변화"}`;
+    // PP는 위 줄에 따로 나오므로 moveSummary를 그대로 쓰진 않지만, **계열 표기는 같은 출처(moveCatKo)** 를 쓴다.
+    const desc=`${TYPE_KO[mo.type]} · ${moveCatKo(mo)} · ${moveDesc(mv)||"변화"}`;
     b.innerHTML=`<div class="top"><span>${mo.name}</span><span class="pp">PP ${pp}/${mo.pp}</span></div><span class="mp">${desc}${eff}</span>`;
     b.addEventListener("click",()=>{Audio.sfx("blip");doMove(mv);}); moveMenu.appendChild(b); });
   Coach.onMoves(); battleFocus(0); }
@@ -5410,7 +5461,7 @@ async function performMove(att,def,mvKey,side){ let move=MOVES[mvKey]; let _resu
   if(def.hp>0 && def.ability==="static" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"par",side); }
   if(def.hp>0 && def.ability==="poisonpoint" && !att.status && move.power>0 && (att.type!=="poison"&&att.type2!=="poison") && Math.random()<0.3){ await mw(240); applyStatus(att,"psn",side); }   // 독가시
   if(def.hp>0 && def.ability==="flamebody" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"brn",side); }   // 불꽃몸
-  if(def.hp>0 && att.hp>0 && def.ability==="roughskin" && move.power>0 && !SPEC_TYPES[move.type]){   // 까칠한피부: 물리 접촉 반동
+  if(def.hp>0 && att.hp>0 && def.ability==="roughskin" && move.power>0 && !isSpecMove(move)){   // 까칠한피부: 물리 접촉 반동(계열은 moveCat 단일 출처)
     const r=Math.max(1,Math.floor(att.maxHp/8)); const _b=att.hp; att.hp=Math.max(0,att.hp-r); renderCombatants();
     if(Audio.hpTick)Audio.hpTick(_b/att.maxHp*100, att.hp/att.maxHp*100);
     await mw(240); setMsg(`<b>${dispName(att)}</b>은(는) <b>까칠한피부</b>에 상처를 입었다!`); Audio.sfx("hit"); await mw(420); }

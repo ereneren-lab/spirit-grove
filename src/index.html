@@ -1645,7 +1645,8 @@ function updateMoney(){ $("moneyPill").textContent="💰 "+G.money; $("shopMoney
 
 /* expose for tests */
 window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,HELD_ITEMS,byId,makeMon,recalc,damage,stageMul,accMul,newStages,resetStages,effSpd,foeChooseMove,noPP,
-  G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary,stripNamePrefix};
+  G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary,stripNamePrefix,
+  moveCat,moveCatKo,isSpecMove,MOVE_CAT};
 /* ===== MAP (17 x 42) ===== */
 let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg##gT#","#gTTggggggTTgEggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT$PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
 let W=25,H=50;
@@ -4186,7 +4187,8 @@ function showMoves(){ mainMenu.style.display="none"; moveMenu.style.display="gri
     b.disabled=(mv===me._charging)?false:(pp<=0||(_locked&&mv!==_locked)||(me._taunt>0&&mo.power===0)||(me._disable&&me._disable.turns>0&&mv===me._disable.move));
     let eff=""; if(mo.power>0 && G.foe){ let e=EFF[mo.type][G.foe.type]; if(G.foe.type2&&G.foe.type2!==G.foe.type)e*=EFF[mo.type][G.foe.type2];
       if(e>=4)eff=`<span class="eff-tag eff-good">효과 매우 굉장</span>`; else if(e>1)eff=`<span class="eff-tag eff-good">효과 굉장</span>`; else if(e>0&&e<=0.25)eff=`<span class="eff-tag eff-bad">효과 매우 별로</span>`; else if(e<1)eff=`<span class="eff-tag eff-bad">효과 별로</span>`; }
-    const desc=`${TYPE_KO[mo.type]} · ${moveDesc(mv)||"변화"}`;
+    // PP는 위 줄에 따로 나오므로 moveSummary를 그대로 쓰진 않지만, **계열 표기는 같은 출처(moveCatKo)** 를 쓴다.
+    const desc=`${TYPE_KO[mo.type]} · ${moveCatKo(mo)} · ${moveDesc(mv)||"변화"}`;
     b.innerHTML=`<div class="top"><span>${mo.name}</span><span class="pp">PP ${pp}/${mo.pp}</span></div><span class="mp">${desc}${eff}</span>`;
     b.addEventListener("click",()=>{Audio.sfx("blip");doMove(mv);}); moveMenu.appendChild(b); });
   Coach.onMoves(); battleFocus(0); }
@@ -4788,7 +4790,7 @@ async function performMove(att,def,mvKey,side){ let move=MOVES[mvKey]; let _resu
   if(def.hp>0 && def.ability==="static" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"par",side); }
   if(def.hp>0 && def.ability==="poisonpoint" && !att.status && move.power>0 && (att.type!=="poison"&&att.type2!=="poison") && Math.random()<0.3){ await mw(240); applyStatus(att,"psn",side); }   // 독가시
   if(def.hp>0 && def.ability==="flamebody" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"brn",side); }   // 불꽃몸
-  if(def.hp>0 && att.hp>0 && def.ability==="roughskin" && move.power>0 && !SPEC_TYPES[move.type]){   // 까칠한피부: 물리 접촉 반동
+  if(def.hp>0 && att.hp>0 && def.ability==="roughskin" && move.power>0 && !isSpecMove(move)){   // 까칠한피부: 물리 접촉 반동(계열은 moveCat 단일 출처)
     const r=Math.max(1,Math.floor(att.maxHp/8)); const _b=att.hp; att.hp=Math.max(0,att.hp-r); renderCombatants();
     if(Audio.hpTick)Audio.hpTick(_b/att.maxHp*100, att.hp/att.maxHp*100);
     await mw(240); setMsg(`<b>${dispName(att)}</b>은(는) <b>까칠한피부</b>에 상처를 입었다!`); Audio.sfx("hit"); await mw(420); }

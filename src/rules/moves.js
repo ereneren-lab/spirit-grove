@@ -134,6 +134,50 @@ const MOVES={
   bite:{name:"물기",type:"normal",power:48,acc:100,pp:20,pri:0,eff:{flinch:0.3}},
   struggle:{name:"발버둥",type:"normal",power:40,acc:100,pp:Infinity,pri:0,recoil:0.25},
 };
+/* ===== 물리/특수 판정 단일 출처 =====
+   ⚠️ 예전엔 `SPEC_TYPES[move.type]`으로 **타입이 계열을 강제**했다(3세대 이전 방식).
+      본가는 4세대부터 기술마다 개별 지정한다. 타입이 강제하면 다음이 구조적으로 불가능하다:
+        · 물리 물 기술(아쿠아제트) · 특수 노말 기술(파괴광선) · 특수 비행 기술(바람일격)
+      게다가 **이중 타입 40종 중 31종**이 두 타입이 물리/특수를 가로질러,
+      그 종들은 STAB 둘 중 하나를 반드시 약한 스탯으로 쏘고 있었다(실측 2026-08-06).
+   `cat`은 **덮어쓰기**다 — 생략하면 타입 기본값(TYPES[t].spec)을 그대로 쓴다.
+   DEFAULT_ABILITY / ABILITY_OVERRIDE와 같은 idiom이라, 타입의 "기본 성격"은 살아 있다.
+   ⚠️ 계열을 읽는 곳은 **반드시 moveCat()을 거친다**(damage · 까칠한피부 · UI).
+      `SPEC_TYPES[move.type]`을 직접 보는 코드가 다시 생기면 병렬 판정이 되살아난다 —
+      회귀 `movecat_test`가 실제 전투 계산으로 이걸 단정한다.
+   ⚠️ **밸런스 불변이 아니다.** 트레이너·야생도 같은 기술을 쓴다 → 표를 건드리면 재측정. */
+/* ⚠️ **"본가와 같게" 맞추는 게 목표가 아니다.** 이 게임의 종족값은 타입이 계열을 강제한다는
+   전제로 짜여 있어서, 본가 기준으로 무턱대고 뒤집으면 그 기술을 배우는 종이 오히려 약해진다
+   (실측: 파괴광선을 특수로 돌리면 배우는 22종의 평균 atk24.0 > spa20.8이라 전부 손해 —
+    덩굴채찍·얼음뭉치·플레어드라이브·와일드볼트·머드샷도 같은 이유로 되돌렸다).
+   그래서 넣는 기준은 둘뿐이다:
+     ① 그 기술을 배우는 종에게 **이득**이고 본가와도 맞는 것
+     ② **TM 전용**(어떤 종도 학습셋에 갖고 있지 않다 = 트레이너·야생이 안 쓴다 = 밸런스 불변)이라
+        없던 선택지를 만드는 것 — 지닌물건·2턴기 확장 때와 같은 원칙이다.
+   ⚠️ 새 항목을 넣기 전에 **그 기술을 배우는 종의 평균 atk/spa를 먼저 재라.** */
+const MOVE_CAT={
+  // ── ① 배우는 종에게 이득 + 본가 일치
+  aquajet:"phys",     // 아쿠아제트 — 본가 Aqua Jet이 물리. 배우는 2종 평균 atk19.5 > spa14.5
+                      //   집게왕(atk25/spa9)의 죽은 물 STAB을 이걸로 대체했다(dex.js 참조)
+  gust:"spec",        // 바람일격 — 본가 Gust가 특수. 배우는 11종 평균 spa18.3 > atk17.5
+                      //   화염나방(fire/flying · atk19/spa27)의 죽은 비행 STAB이 이걸로 풀린다
+  sludge:"spec",      // 오물폭탄 — 본가 Sludge Bomb이 특수. 배우는 2종 평균 spa19.0 > atk10.5
+  // ── ② TM 전용(배우는 종 0) → 그 타입에 없던 계열을 만든다. 트레이너가 안 쓰므로 밸런스 불변.
+  heatlance:"phys",   // 열창 — 불 타입 유일의 물리기가 된다. 마그마룡(fire/ground · atk26)이 살아난다
+  voltfang:"phys",    // 전격니 — 전기 타입 유일의 물리기(무는 기술, 본가 Thunder Fang도 물리)
+  frostshard:"phys",  // 서리파편 — 얼음 타입 유일의 물리기
+  acidspray:"spec",   // 애시드샷 — 독 타입 특수기(본가 Acid Spray도 특수)
+  toxicwave:"spec",   // 독의물결 — 독 타입 특수기
+  sandblast:"spec",   // 모래폭풍탄 — 땅 타입 특수기
+};
+Object.keys(MOVE_CAT).forEach(k=>{ if(MOVES[k])MOVES[k].cat=MOVE_CAT[k]; });
+// 기술 하나의 계열. 이 게임에서 물리/특수를 묻는 곳은 전부 여기를 거친다.
+function moveCat(mv){ if(!mv)return "phys";
+  if(mv.cat==="phys"||mv.cat==="spec")return mv.cat;
+  return SPEC_TYPES[mv.type]?"spec":"phys"; }
+function isSpecMove(mv){ return moveCat(mv)==="spec"; }
+// 화면 표기. 위력이 없으면 계열 자체가 의미 없으므로 "변화"다.
+function moveCatKo(mv){ if(!mv)return ""; if(!(mv.power>0))return "변화"; return moveCat(mv)==="spec"?"특수":"물리"; }
 // 기술 효과를 사람이 읽을 수 있는 한 줄로. 배우기/잊기/재습득 UI에서 "어떤 기술인지" 보여준다.
 function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; const e=mo.eff||{};
   if(mo.power>0)p.push("위력 "+mo.power);
@@ -165,4 +209,6 @@ function moveDesc(mvKey){ const mo=MOVES[mvKey]; if(!mo)return ""; const p=[]; c
   return p.join(" · ");
 }
 function moveSummary(mvKey){ const mo=MOVES[mvKey]; if(!mo)return mvKey; const d=moveDesc(mvKey);
-  return `${TYPE_KO[mo.type]||""} · ${d||"변화"} · PP ${mo.pp}`; }
+  // ⚠️ 계열(물리/특수)을 반드시 보여준다 — 예전엔 어디에도 안 떠서, 같은 위력인데 왜 피해가
+  //    3배 차이 나는지 플레이어가 알 방법이 없었다(집게왕 하이드로펌프 125 vs 크로스촙 363).
+  return `${TYPE_KO[mo.type]||""} · ${moveCatKo(mo)} · ${d||"변화"} · PP ${mo.pp}`; }

@@ -34,7 +34,7 @@ function confusionSelfHit(m){
 function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&def.type2!==def.type)eff*=EFF[move.type][def.type2];
   if(def.ability==="levitate" && move.type==="ground")eff=0;   // 부유: 땅 기술 무효
   const burnMul=(att.status==="brn" && att.ability!=="guts")?0.5:1;
-  const isSpec=!!SPEC_TYPES[move.type];   // 얼음도 특수(독·땅은 물리)
+  const isSpec=isSpecMove(move);   // ⚠️ 기술 단위 계열(moves.js의 moveCat). 타입을 직접 보지 말 것
   const A=isSpec?(att.spa||att.atk):att.atk, D=isSpec?(def.spDef||def.def):def.def;
   const aSt=att.stages||{}, dSt=def.stages||{};
   let crit=Math.random()<critChance(att,move)?1.5:1;   // 배율은 6세대 1.5배 유지(밸런스 보존)
