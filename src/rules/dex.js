@@ -96,7 +96,11 @@ const DEX=[
 const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);
 // 야생 정령이 들고 나오는 도구. 예전엔 held:null 고정이라 야생에서 도구를 얻을 길이 없었다.
-// 티어가 높을수록 확률·품질이 오른다. 트레이너/알 정령은 makeMon 이후 별도로 덮어쓴다.
+// 티어가 높을수록 확률·품질이 오른다.
+// ⚠️ **트레이너 정령도 이 풀에서 지닌물건을 받는다.** trainerMon이 makeMon을 그대로 쓰고 held를 덮어쓰지
+//    않는다(실측: 트레이너 정령의 10.8%가 지닌물건을 들고 나온다 — 2026-08-06). 예전 주석은 "덮어쓴다"고
+//    적혀 있었는데 사실이 아니었다. → **WILD_HELD를 건드리면 트레이너가 같이 세진다 = 밸런스 재측정 대상.**
+//    상점에만 파는 지닌물건은 이 풀에 없으므로 플레이어 전용이고 밸런스 불변이다.
 const WILD_HELD={1:["oranberry","cureberry"],2:["oranberry","cureberry","scopelens"],3:["leftovers","powerband","scopelens"]};
 function wildHeld(sp){
   if(!sp||sp.legend)return null;

@@ -67,6 +67,14 @@ const HELD_ITEMS={
   focussash:{ko:"기합의띠",em:"🎽",desc:"풀피일 때 쓰러질 공격을 1HP로 버틴다(1회)",sash:true},
   choiceband:{ko:"구애머리띠",em:"🎗️",desc:"기술 위력 ×1.3 · 대신 처음 쓴 기술만 계속 쓴다",dmg:1.3,lock:true},
   choicescarf:{ko:"구애스카프",em:"🧣",desc:"속도 ×1.5 · 대신 처음 쓴 기술만 계속 쓴다",spdx:1.5,lock:true},
+  /* ⚠️ 아래는 2026-08-06 확장분 — **기존 효과 필드(dmg·spdx·recoil·lock)만 조합**했다.
+     새 수식이 없으므로 전투 코드 변경이 없고, 값도 기존 상한(dmg 1.3 · spdx 1.5) 안에 둔다.
+     ⚠️ 대가 없는 상승은 powerband(×1.1)가 상한이다 — 그보다 크면 반드시 대가를 붙인다. */
+  swiftfeather:{ko:"재빠른깃털",em:"🪶",desc:"속도가 조금 오른다(×1.15)",spdx:1.15},
+  lightwing:{ko:"가벼운날개",em:"🕊️",desc:"속도 ×1.3 · 대신 기술 위력이 조금 준다(×0.9)",spdx:1.3,dmg:0.9},
+  heavycore:{ko:"무게추",em:"🏋️",desc:"기술 위력 ×1.25 · 대신 속도가 크게 준다(×0.8)",dmg:1.25,spdx:0.8},
+  recklessgem:{ko:"무모의보석",em:"🔺",desc:"기술 위력 ×1.2 · 대신 공격할 때마다 최대HP 1/20 반동",dmg:1.2,recoil:0.05},
+  resolvering:{ko:"집념의고리",em:"💍",desc:"위력·속도 ×1.15 · 대신 처음 쓴 기술만 계속 쓴다",dmg:1.15,spdx:1.15,lock:true},
 };
 // 타입별 강화 부적 — TYPES에서 파생(단일 출처). 해당 타입 기술 위력 +20%.
 // ⚠️ 손으로 10개 나열하지 않는다 — 그러면 타입 추가 시 또 하나의 병렬 테이블을 빠뜨린다.
