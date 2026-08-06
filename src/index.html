@@ -4882,7 +4882,7 @@ function dbSideDead(side){ if(side==="foe")return DB.foes.every(f=>!f||f.hp<=0);
 function startDouble(foeSpecs,name,key){
   const p=dbActivePair();
   if(p.out.length<2){ flashHint("듀오 배틀엔 정령 2마리 이상이 필요하다!"); return false; }
-  DB={ allies:p.out, allyIdx:p.idx, foes:[makeMon(foeSpecs[0][0],foeSpecs[0][1]),makeMon(foeSpecs[1][0],foeSpecs[1][1])], bench:foeSpecs.slice(2), name:name||"듀오 트레이너", choices:{}, phase:"choose", part:new Set(p.idx), key:key, _foeLvSum:foeSpecs.reduce((a,f)=>a+(f[1]||10),0) };
+  DB={ allies:p.out, allyIdx:p.idx, foes:[makeMon(foeSpecs[0][0],foeSpecs[0][1],TRAINER_HELD),makeMon(foeSpecs[1][0],foeSpecs[1][1],TRAINER_HELD)], bench:foeSpecs.slice(2), name:name||"듀오 트레이너", choices:{}, phase:"choose", part:new Set(p.idx), key:key, _foeLvSum:foeSpecs.reduce((a,f)=>a+(f[1]||10),0) };
   DB.allies.forEach(m=>{ m.stages=m.stages||newStages(); });
   DB.foes.forEach(f=>{ f.stages=f.stages||newStages(); G.seen.add(f.id); });
   G.inBattle=true; G.double=true; G.busy=false;
@@ -4988,7 +4988,7 @@ async function dbReplace(){
     let ni=-1; for(let i=0;i<G.party.length;i++){ if(G.party[i]&&G.party[i].hp>0&&DB.allyIdx.indexOf(i)<0){ ni=i; break; } }
     if(ni>=0){ DB.allies[s]=G.party[ni]; DB.allyIdx[s]=ni; DB.part.add(ni); DB.allies[s].stages=DB.allies[s].stages||newStages(); dbLog(`가라, <b>${dbName(G.party[ni])}</b>!`); await wait(fxT(420)); } } }
   for(let s=0;s<DB.foes.length;s++){ const f=DB.foes[s]; if(f&&f.hp<=0){ dbLog(`상대 <b>${dbName(f)}</b>이(가) 쓰러졌다!`); await wait(fxT(420));
-    if(DB.bench.length){ const b=DB.bench.shift(); DB.foes[s]=makeMon(b[0],b[1]); DB.foes[s].stages=newStages(); G.seen.add(DB.foes[s].id); dbLog(`상대가 <b>${dbName(DB.foes[s])}</b>을(를) 내보냈다!`); await wait(fxT(420)); } } }
+    if(DB.bench.length){ const b=DB.bench.shift(); DB.foes[s]=makeMon(b[0],b[1],TRAINER_HELD); DB.foes[s].stages=newStages(); G.seen.add(DB.foes[s].id); dbLog(`상대가 <b>${dbName(DB.foes[s])}</b>을(를) 내보냈다!`); await wait(fxT(420)); } } }
   dbRender();
 }
 async function dbWin(){ DB.phase="done"; if(DB.key){ G.defeated.add(DB.key); if(typeof Field!=="undefined"&&Field&&Field.removeNpc)Field.removeNpc(DB.key); } dbLog(`<b>승리!</b> ${DB.name}을(를) 이겼다!`); Audio.sfx&&Audio.sfx("victory");
@@ -5065,7 +5065,8 @@ let _phaseEnded=false;   // 야생을 쫓아냈으면 이번 턴 이후 전투�
 /* ===== 트레이너 교체 AI (본가 트레이너처럼 상성 불리하면 뺀다) ===== */
 // 팀 엔트리를 인스턴스로. 교체해도 HP·랭크·PP가 남아야 하므로 한 번 만들면 캐시한다.
 function trainerMon(i){ const t=G.trainer; if(!t||!t.team[i])return null;
-  t.mons=t.mons||[]; if(!t.mons[i]){ const e=t.team[i]; t.mons[i]=makeMon(e[0],e[1]); }
+  // ⚠️ TRAINER_HELD를 넘긴다 — 트레이너는 야생 풀을 쓰지 않는다(dex.js의 풀 분리 주석 참조).
+  t.mons=t.mons||[]; if(!t.mons[i]){ const e=t.team[i]; t.mons[i]=makeMon(e[0],e[1],TRAINER_HELD); }
   return t.mons[i]; }
 // 아직 안 쓰러진 다음 정령(현재 것 제외). 없으면 -1.
 function trainerNextAlive(){ const t=G.trainer; if(!t)return -1;
@@ -6598,11 +6599,12 @@ window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVi
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.FLAVOR=FLAVOR;
-Object.assign(window.SG,{NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
+Object.assign(window.SG,{NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,TRAINER_HELD,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,sendOutAnim,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
+  getDB:()=>DB, dbReplace,   // 듀오 배틀 상태 + 벤치 교대. held_effect_test [5]가 듀오 상대의 지닌물건 풀을 검사한다.
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
   setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 

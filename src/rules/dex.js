@@ -97,21 +97,38 @@ const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);
 // 야생 정령이 들고 나오는 도구. 예전엔 held:null 고정이라 야생에서 도구를 얻을 길이 없었다.
 // 티어가 높을수록 확률·품질이 오른다.
-// ⚠️ **트레이너 정령도 이 풀에서 지닌물건을 받는다.** trainerMon이 makeMon을 그대로 쓰고 held를 덮어쓰지
-//    않는다(실측: 트레이너 정령의 10.8%가 지닌물건을 들고 나온다 — 2026-08-06). 예전 주석은 "덮어쓴다"고
-//    적혀 있었는데 사실이 아니었다. → **WILD_HELD를 건드리면 트레이너가 같이 세진다 = 밸런스 재측정 대상.**
-//    상점에만 파는 지닌물건은 이 풀에 없으므로 플레이어 전용이고 밸런스 불변이다.
-const WILD_HELD={1:["oranberry","cureberry"],2:["oranberry","cureberry","scopelens"],3:["leftovers","powerband","scopelens"]};
-function wildHeld(sp){
+//
+// ⚠️ **야생 풀과 트레이너 풀은 의도적으로 분리돼 있다** (2026-08-06).
+//    trainerMon은 makeMon을 그대로 쓰고 held를 덮어쓰지 않는다 — 예전엔 한 풀을 공유했고
+//    (실측: 트레이너 정령의 10.8%가 지닌물건을 들고 나온다) 그래서 **야생 풀을 넓히면 트레이너가 같이 세졌다**.
+//    분리 이후로는 **WILD_HELD를 넓혀도 트레이너 정령의 지닌물건 분포는 불변**이다(= 밸런스 재측정 불필요).
+//    트레이너를 세게 하려면 TRAINER_HELD를 고쳐야 하고, 그건 재측정 대상이다.
+//    ⚠️ 트레이너 측 makeMon 호출부는 **반드시 3번째 인자로 TRAINER_HELD를 넘긴다**(현재 3곳:
+//       trainerMon · startDouble의 DB.foes · DB.bench 교대). 빠뜨리면 그 트레이너만 조용히 야생 풀을 쓴다 →
+//       `held_effect_test [5]`가 실제 트레이너 생성 경로를 돌려 이걸 단정한다.
+//    상점에만 파는 지닌물건은 어느 풀에도 없으므로 플레이어 전용이다.
+const WILD_HELD={
+  1:["oranberry","cureberry"],
+  2:["oranberry","cureberry","scopelens","swiftfeather"],
+  3:["leftovers","powerband","scopelens","swiftfeather","lightwing","heavycore","recklessgem","resolvering"]};
+// 트레이너 전용 풀 — **분리 시점의 옛 WILD_HELD 값 그대로 동결**했다. 손대면 트레이너가 세지거나 약해진다.
+const TRAINER_HELD={
+  1:["oranberry","cureberry"],
+  2:["oranberry","cureberry","scopelens"],
+  3:["leftovers","powerband","scopelens"]};
+// 휴대율은 분리 전과 같다(5% / 9% / 14%) — 이번에 바꾼 건 "무엇을 드느냐"뿐이다.
+function wildHeld(sp,pools){
   if(!sp||sp.legend)return null;
   const rate=sp.tier>=3?0.14:sp.tier===2?0.09:0.05;
   if(Math.random()>=rate)return null;
-  const pool=WILD_HELD[sp.tier]||WILD_HELD[1];
+  pools=pools||WILD_HELD;
+  const pool=pools[sp.tier]||pools[1];
   return pool[ri(0,pool.length-1)]; }
-function makeMon(speciesId,level){ const sp=byId(speciesId); level=Math.max(1,Math.floor(level||1));   // 레벨은 항상 정수(avgLevel 등 float가 새어들어와 소수점 레벨 방지)
+// heldPool: 지닌물건을 뽑을 풀. 생략하면 WILD_HELD(야생·플레이어). 트레이너 측은 TRAINER_HELD를 넘긴다.
+function makeMon(speciesId,level,heldPool){ const sp=byId(speciesId); level=Math.max(1,Math.floor(level||1));   // 레벨은 항상 정수(avgLevel 등 float가 새어들어와 소수점 레벨 방지)
   const m={id:speciesId,name:sp.name,em:sp.em,type:sp.type, type2:sp.type2||null,level:level,moves:sp.moves.slice(),xp:0,
     status:null,stages:newStages(),pp:{},ability:sp.ability||ABILITY_OVERRIDE[speciesId]||DEFAULT_ABILITY[sp.type]||"guts",
-    nature:NATURES[ri(0,NATURES.length-1)].k, shiny:Math.random()<(SHINY_RATE*((typeof G!=="undefined"&&G&&G.dexMaster)?3:1)*((typeof G!=="undefined"&&G&&G.shinyCharm)?2:1)), held:wildHeld(sp), friendship:0, ivs:{hp:ri(0,31),atk:ri(0,31),def:ri(0,31),spa:ri(0,31),spDef:ri(0,31),spd:ri(0,31)}, evs:{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}, gender:(sp.secret||sp.genderless)?"N":(Math.random()<0.5?"M":"F")};
+    nature:NATURES[ri(0,NATURES.length-1)].k, shiny:Math.random()<(SHINY_RATE*((typeof G!=="undefined"&&G&&G.dexMaster)?3:1)*((typeof G!=="undefined"&&G&&G.shinyCharm)?2:1)), held:wildHeld(sp,heldPool), friendship:0, ivs:{hp:ri(0,31),atk:ri(0,31),def:ri(0,31),spa:ri(0,31),spDef:ri(0,31),spd:ri(0,31)}, evs:{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}, gender:(sp.secret||sp.genderless)?"N":(Math.random()<0.5?"M":"F")};
   if(sp.learn)sp.learn.forEach(([lv,mv])=>{if(level>=lv)addMove(m,mv);});
   m.moves.forEach(mv=>{m.pp[mv]=MOVES[mv].pp;});
   recalc(m,sp,true); return m; }

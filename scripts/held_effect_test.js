@@ -100,6 +100,75 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(reach.missing.length===0, `지닌물건 ${reach.all}종 전부 획득 경로가 있다 (없음: ${reach.missing.join(",")||"—"})`);
   console.log(`     참고: 야생이 들고 나오는 종류는 ${reach.wildN}가지다(나머지는 상점·보상 경로).`);
 
+  console.log("\n[5] 야생 풀과 트레이너 풀이 실제로 분리돼 있다");
+  /* 왜 있나 — 예전엔 두 풀이 하나였다. trainerMon이 makeMon을 그대로 쓰기 때문에
+     "야생 풀을 넓혔더니 트레이너가 같이 세지는" 사고가 조용히 일어난다(실측 10.8%가 지닌물건을 든다).
+     2026-08-06에 TRAINER_HELD로 분리했고, 이 단정이 그 분리를 고정한다.
+     ⚠️ 표를 비교하는 게 아니라 **실제 트레이너 생성 경로(F.trainerMon)를 돌려서** 잰다 —
+        makeMon 호출부 하나가 TRAINER_HELD 인자를 빠뜨리면 그 트레이너만 야생 풀을 쓰는데,
+        표만 보면 그걸 절대 못 잡는다. */
+  const sep=await p.evaluate(()=>{ const S=window.SG,F=S.flow;
+    const flat=o=>{ const s=new Set(); Object.keys(o||{}).forEach(t=>(o[t]||[]).forEach(k=>s.add(k))); return s; };
+    const wildSet=flat(S.WILD_HELD), trSet=flat(S.TRAINER_HELD);
+    const wildOnly=[...wildSet].filter(k=>!trSet.has(k));   // 야생에서만 나와야 하는 것
+    S.setG(S.freshState()); const G=S.G();
+    // ── 트레이너 경로: 실제 팀 데이터를 실제 생성 함수로 만든다
+    const teams=Object.values(S.TRAINERS||{}).filter(t=>Array.isArray(t.team)&&t.team.length);
+    const trHeld={}; let nTr=0,heldTr=0;
+    for(let rep=0;rep<30;rep++) for(const t of teams){
+      G.trainer={key:"_t",name:"x",em:"🧑",team:t.team,idx:0,reward:null,money:0,
+                 boss:false,rematch:false,mons:[],fainted:new Set(),switches:0};
+      for(let i=0;i<t.team.length;i++){ const m=F.trainerMon(i); if(!m)continue;
+        nTr++; if(m.held){ heldTr++; trHeld[m.held]=(trHeld[m.held]||0)+1; } } }
+    // ── 야생 경로: makeMon 기본값(=WILD_HELD)
+    const wHeld={}; let nW=0,heldW=0;
+    const species=(S.DEX||[]).filter(d=>!d.legend);
+    for(let rep=0;rep<30;rep++) for(const sp of species){ const m=S.makeMon(sp.id,30);
+      nW++; if(m.held){ heldW++; wHeld[m.held]=(wHeld[m.held]||0)+1; } }
+    return { wildOnly, leak:Object.keys(trHeld).filter(k=>wildOnly.includes(k)),
+             unreached:wildOnly.filter(k=>!wHeld[k]),
+             nTr,heldTr,nW,heldW, trKinds:Object.keys(trHeld).length }; });
+  ok(sep.wildOnly.length>0, `야생 전용 지닌물건이 ${sep.wildOnly.length}종 있다 — 분리가 유명무실하지 않다`);
+  ok(sep.leak.length===0,
+     `트레이너 정령 ${sep.nTr}마리 중 야생 전용 아이템을 든 개체가 0이다` +
+     (sep.leak.length?` — 샜다: ${sep.leak.join(",")} (makeMon 호출부가 TRAINER_HELD를 빠뜨렸다)`:""));
+  ok(sep.unreached.length===0,
+     `야생 전용 ${sep.wildOnly.length}종이 전부 야생 생성에서 실제로 나온다` +
+     (sep.unreached.length?` — 안 나옴: ${sep.unreached.join(",")}`:""));
+  console.log(`     휴대율: 트레이너 ${(sep.heldTr/sep.nTr*100).toFixed(1)}% (${sep.trKinds}종) · ` +
+              `야생 ${(sep.heldW/sep.nW*100).toFixed(1)}%`);
+
+  /* ⚠️ 듀오 트레이너는 **trainerMon을 안 거친다** — startDouble이 상대 2마리를 직접 만들고
+     dbReplace가 벤치 교대분을 또 만든다. makeMon 호출부가 셋이라 위 단정만으론 두 곳이 사각지대다.
+     여기서도 게임 함수를 그대로 부른다(같은 로직을 테스트에 재구현하면 인자 누락을 못 잡는다). */
+  const duo=await p.evaluate(async()=>{ const S=window.SG,F=S.flow;
+    const flat=o=>{ const s=new Set(); Object.keys(o||{}).forEach(t=>(o[t]||[]).forEach(k=>s.add(k))); return s; };
+    const wildOnly=[...flat(S.WILD_HELD)].filter(k=>!flat(S.TRAINER_HELD).has(k));
+    S.CONFIG.reduceMotion=true; S.CONFIG.textSpeed=0.01;   // dbReplace의 연출 대기를 0에 가깝게
+    // 휴대율이 가장 높은 tier3에서 뽑아 표본을 아낀다(14%)
+    const t3=(S.DEX||[]).filter(d=>!d.legend&&d.tier>=3).map(d=>d.id);
+    const held={}; let n=0,nHeld=0;
+    for(let rep=0;rep<60;rep++){
+      S.setG(S.freshState()); const G=S.G();
+      G.party=[S.makeMon("racoonmon",30),S.makeMon("dewdrop",30)];
+      G.party.forEach(m=>{ m.hp=m.maxHp; });
+      const pick=()=>[t3[Math.floor(Math.random()*t3.length)],40];
+      if(!F.startDouble([pick(),pick(),pick(),pick()],"테스트 듀오",null))continue;   // 뒤 2마리는 벤치
+      const DB=F.getDB(); if(!DB)continue;
+      const tally=m=>{ if(!m)return; n++; if(m.held){ nHeld++; held[m.held]=(held[m.held]||0)+1; } };
+      DB.foes.forEach(tally);
+      DB.foes.forEach(f=>{ if(f)f.hp=0; });   // 둘 다 쓰러뜨려 벤치 교대를 강제한다
+      await F.dbReplace();
+      DB.foes.forEach(tally);
+      G.inBattle=false; G.double=false;
+    }
+    return { wildOnly, leak:Object.keys(held).filter(k=>wildOnly.includes(k)), n, nHeld,
+             kinds:Object.keys(held).length }; });
+  ok(duo.n>0, `듀오 트레이너 경로가 실제로 돌았다 (상대 ${duo.n}마리 생성)`);
+  ok(duo.leak.length===0,
+     `듀오 상대 ${duo.n}마리(지닌물건 ${duo.nHeld}개) 중 야생 전용 아이템 0` +
+     (duo.leak.length?` — 샜다: ${duo.leak.join(",")} (startDouble/dbReplace가 TRAINER_HELD를 빠뜨렸다)`:""));
+
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs.slice(0,2).join(" | "):""}`);
   await b.close();
   console.log(fail?"\n❌ held_effect_test 실패":"\n🎉 지닌물건 효과 감사 통과");
