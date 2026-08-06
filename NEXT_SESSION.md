@@ -5,6 +5,45 @@
 
 ---
 
+# ▶ 지금 바로 이어서 할 것
+
+**사용자가 "이어서 해"라고 하면 아래를 순서대로 실행한다. 되묻지 말 것 — 확인이 필요한 지점은 ③에 명시돼 있다.**
+
+### ① 상태 확인 (30초)
+```bash
+cd ~/Desktop/_보관/게임프로젝트/spirit-grove
+git log --oneline -1        # 기대: 50ec1b0 (또는 그 이후) · 워킹 트리 clean
+git status --short          # 비어 있어야 정상
+pkill -f headless_shell     # 고아 프로세스 정리(습관)
+uptime                      # 코어당 1.0 넘으면 무거운 테스트는 미룬다
+```
+직전 작업은 **포켓몬 갭 묶음 A·B·C 완료 + 커밋**까지다(§3). **모두 검증 통과, 워킹 트리 clean.**
+
+### ② 배포 — 묶음 C가 아직 라이브에 없다
+A·B는 배포됐고 **C만 미배포**다. 커밋·검증이 이미 끝났으므로 남은 건 실행뿐이다.
+```bash
+python3 scripts/build.py && git status --short   # dist 변화 없어야 정상(= 커밋된 코드 그대로)
+bash scripts/deploy.sh
+git push origin main:history                     # ⚠️ deploy는 원격 main을 force-push로 덮는다 — 이력은 따로 남긴다
+gh run list --limit 1                            # Actions 완료까지 대기 후 success 확인
+```
+**배포 후 라이브에서 직접 확인할 것**(오늘 두 번 다 이렇게 검증했다):
+```bash
+curl -s https://ereneren-lab.github.io/spirit-grove/ | grep -o 'ko:"무모의보석"\|ko:"집념의고리"' | sort -u
+```
+⚠️ 실행 전 사용자에게 **한 줄로 알리고** 시작할 것(외부로 나가는 작업이다). 되묻는 게 아니라 통보면 된다 —
+오늘 같은 절차로 두 번 승인받았다.
+
+### ③ 🔴 사용자 판단이 필요한 것 — 야생 지닌물건 풀 확장
+전략의 **"야생 사냥 유인이 약하다"** 는 아직 안 건드렸다. 신규 5종은 **상점 전용**이라 야생에서 안 나온다.
+- 현재 야생 풀(`WILD_HELD`, `src/rules/dex.js`)은 **5종뿐**이다: tier1 오랭·정화 / tier2 +초점렌즈 / tier3 먹다남은음식·힘의띠·초점렌즈. 휴대율 5% / 9% / 14%.
+- ⚠️ **풀을 넓히면 트레이너가 같이 세진다** — `trainerMon`이 `makeMon`을 그대로 써서 **트레이너 정령의 10.8%가 이 풀에서 지닌물건을 든다**(실측). 즉 밸런스 재측정 대상이다.
+- 그래서 이건 사용자에게 물어야 한다: **야생 풀을 넓힐 것인가**(재측정 감수) **vs 상점 전용으로 둘 것인가**(현 상태 유지).
+
+②를 끝내고 ③을 물어보면 된다. ③에 답이 없으면 §6 「그 외 대기 중인 것」으로 넘어가도 좋다.
+
+---
+
 ## 0. 저장소 위치 (매 세션 확인할 것)
 
 실제 위치는 **`~/Desktop/_보관/게임프로젝트/spirit-grove`** 다.
@@ -14,14 +53,15 @@
 
 ---
 
-## 1. 지금 상태 (전부 초록, 배포됨)
+## 1. 지금 상태 (전부 초록 · ⚠️ 묶음 C만 미배포)
 
 | 항목 | 상태 |
 |---|---|
-| 로컬 `main` | `7f3d628` · 워킹 트리 clean |
-| 원격 `main` | `aa81726` (배포 스냅샷 — orphan 1개, 이력 없음) |
-| 원격 `history` | `7f3d628` (커밋 이력 보존용) |
-| 라이브 | https://ereneren-lab.github.io/spirit-grove/ — **오늘 수정 반영 확인됨**(Actions success + 라이브 HTML에서 직접 grep) |
+| 로컬 `main` | `50ec1b0` · 워킹 트리 clean |
+| 원격 `history` | 로컬과 동일(커밋 이력 보존용) |
+| 원격 `main` | 배포 스냅샷 — orphan 1개, 이력 없음. **묶음 A·B까지만 들어 있다** |
+| 라이브 | https://ereneren-lab.github.io/spirit-grove/ — **묶음 A·B 반영 확인됨**(Actions success + 라이브 HTML grep) |
+| | ⚠️ **묶음 C(지닌물건 5종·반동 일반화)는 아직 라이브에 없다** → 위 「▶ 지금 바로 이어서 할 것」 ② |
 | `verify.sh` | 4구간 전부 통과 (`1-22` · `23-45` · `46-58` · `59+`) |
 
 ⚠️ **배포는 `scripts/deploy.sh`가 원격 main을 force-push로 덮는다.** 이력을 남기려면

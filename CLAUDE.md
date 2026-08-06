@@ -190,3 +190,8 @@ YYYY-MM-DD_project-name_document-type.md
 게임 작업(빌드·회귀·배포·아트 파이프라인)의 지침은 위 디자인 운영 규칙과 별개이며
 **[`docs/SPIRIT_GROVE_GUIDE.md`](docs/SPIRIT_GROVE_GUIDE.md)** 에 그대로 보존돼 있다.
 게임 코드를 다룰 때는 그 문서와 [`WORKLOG.md`](WORKLOG.md)를 먼저 읽을 것.
+
+> ### ▶ 세션을 새로 시작했다면
+> **[`NEXT_SESSION.md`](NEXT_SESSION.md) 를 가장 먼저 읽어라.** 지금 어디까지 됐고 다음에 뭘 하면 되는지가 거기 있다.
+> 사용자가 **"이어서 해"** 라고만 말하면 → 그 문서 최상단 **「▶ 지금 바로 이어서 할 것」** 절을 그대로 실행한다.
+> 되묻지 말고 그 절의 순서대로 진행할 것(그 안에 사용자 확인이 필요한 지점이 명시돼 있다).
