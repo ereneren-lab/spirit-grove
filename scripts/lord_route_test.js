@@ -182,15 +182,25 @@ const { chromium } = require("playwright"); const path=require("path"); const os
     while(Date.now()<dl){ if(near()<=1)break;
       if(!F.getPath().length&&!L.busy&&!L.inBattle){ el.click(); taps++; }
       await new Promise(r=>setTimeout(r,120)); }
-    /* 뭍길 우선 단정: 체육관4는 물을 안 지나는 목표다 — 그 경로에 물이 한 칸도 없어야 한다 */
-    const gymPath=F.bfsPath(8,30,8,18)||[];
+    /* 뭍길 우선 단정: 체육관4처럼 물을 안 지나도 되는 목표는 물길로 새지 않아야 한다.
+       ⚠️ **반드시 `surfing=false`로 놓고 재라.** 위 이동으로 봇은 물 위에 있고, `walkable`은
+          파도타기 중이면 물을 통행 가능으로 돌려준다 → 그대로 재면 "물 위에서 잰 경로"가 나온다.
+          게다가 `walkable`은 로밍 NPC 점유까지 보므로 뭍길이 막힌 순간 BFS가 물로 우회해
+          **NPC 위치에 따라 결과가 흔들린다**(2026-08-06에 실제로 이 조합으로 오탐이 났다).
+       ⚠️ 이 단정이 무는 지점: 코드가 `seek(false)`보다 `seek(true)`를 먼저 부르게 바뀌면,
+          뭍에 선 상태에서도 BFS가 **더 짧은 물길 지름길**을 골라 여기 물이 섞여 든다. */
+    const surfedOnce=!!L.surfing;   /* 물을 실제로 건넜는지는 초기화 전에 붙잡아 둔다 */
+    L.surfing=false;
+    const gymPath=F.bfsPath(8,30,8,18,false)||[];
     const gymWater=gymPath.filter(q=>F.tileAt(q.x,q.y)==="~").length;
+    const surfAlt=F.bfsPath(8,30,8,18,true)||[];   /* 물길을 허용하면 더 짧아지는가(=유혹이 실재하는가) */
     return {goal:g.name, taps, dist:near(), pos:{x:L.pos.x,y:L.pos.y},
-            tile:F.tileAt(L.pos.x,L.pos.y), surfing:!!L.surfing, gymLen:gymPath.length, gymWater}; });
+            tile:F.tileAt(L.pos.x,L.pos.y), surfing:surfedOnce, gymLen:gymPath.length, gymWater,
+            shortcut:(surfAlt.length&&surfAlt.length<gymPath.length)?surfAlt.length:0}; });
   ok(lake.goal==="호수 제단", `4뱃지 직후 목표: ${lake.goal}`);
   soft(lake.dist<=1, `트래커만 따라가 제단 옆에 섰다 — (${lake.pos.x},${lake.pos.y}) 타일"${lake.tile}" 남은거리 ${lake.dist}칸`);
   soft(lake.surfing, "물가에서 파도타기가 자동으로 발동해 물길을 건넜다");
-  ok(lake.gymLen>0 && lake.gymWater===0, `뭍길 우선: 체육관4 경로 ${lake.gymLen}칸에 물 ${lake.gymWater}칸 (물이 섞이면 동선이 조용히 바뀐 것)`);
+  ok(lake.gymLen>0 && lake.gymWater===0, `뭍길 우선: 체육관4 경로 ${lake.gymLen}칸에 물 ${lake.gymWater}칸${lake.shortcut?` (물길이면 ${lake.shortcut}칸으로 짧아지는데 안 골랐다)`:""}`);
   ok(errs3.length===0, `[8] 런타임 에러 0 (${errs3.length})${errs3.length?": "+errs3.slice(0,2).join(" | "):""}`);
 
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs.slice(0,3).join(" | "):""}`);
