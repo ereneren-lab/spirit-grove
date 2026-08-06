@@ -242,6 +242,47 @@ console.log("\n[기술 획득 경로 — 죽은 기술 감지]");
   ok(dead.length===0, `모든 기술에 획득 경로가 있다 — 학습셋 ${learnable.size} + TM ${tms.size} (죽은 기술: ${dead.join(",")||"없음"})`);
 }
 
+console.log("\n[성격 테이블 위생 — 물리/특수 나침반]");
+/* ⚠️ 이 게임은 타입을 SPEC_TYPES로 **물리 5 : 특수 5**로 정확히 이등분해 물리/특수 판정을 걸어뒀고
+   크리처에 spa·spDef 스탯도 있다. 그런데 성격 보정은 오랫동안 atk·def·spd에만 걸려 있었다 →
+   **주 타입이 특수인 62/86종(72%)에게 성격이 사실상 무의미**했다(2026-08-06 실측).
+   더 나쁜 건, spa가 테이블에 없다 보니 본가에서 spa를 깎는 성격 둘이 **다른 스탯으로 대체돼
+   기존 성격과 완전 중복**이 됐다는 것이다(고집있는=외로운, 명랑한=겁쟁이 → 10개인데 고유 효과 7개).
+   이건 "포켓몬에 있으니 넣자"가 아니라 **이미 설계해둔 물리/특수 분리를 성격이 절반만 따라간 배선 누락**이다.
+   ⚠️ recalc는 `m[nat.up]*=1.1` 형태라 스탯 이름에 무관하게 동작한다 → 테이블만 고치면 된다. */
+{
+  const STATS=["atk","def","spa","spDef","spd"];
+  const nats=R.NATURES;
+  const bad=nats.filter(n=>(n.up&&!STATS.includes(n.up))||(n.down&&!STATS.includes(n.down)));
+  ok(bad.length===0, `성격 보정 스탯이 전부 실존 (${bad.map(n=>n.k).join(",")||"이상 없음"})`);
+
+  const halfNeutral=nats.filter(n=>(!n.up)!==(!n.down));
+  ok(halfNeutral.length===0, `중립 성격은 up·down이 둘 다 없다 (${halfNeutral.map(n=>n.k).join(",")||"이상 없음"})`);
+
+  // ⚠️ 핵심 단정: 다섯 스탯이 **전부** 오르는 성격과 내리는 성격을 하나씩은 가진다.
+  //    하나라도 빠지면 그 스탯을 주력으로 쓰는 종에게 성격이라는 시스템이 통째로 없는 것과 같다.
+  const ups=new Set(nats.map(n=>n.up).filter(Boolean));
+  const downs=new Set(nats.map(n=>n.down).filter(Boolean));
+  const noUp=STATS.filter(s=>!ups.has(s)), noDown=STATS.filter(s=>!downs.has(s));
+  ok(noUp.length===0, `다섯 스탯 모두 올려주는 성격이 있다 (없는 스탯: ${noUp.join(",")||"없음"})`);
+  ok(noDown.length===0, `다섯 스탯 모두 내리는 성격이 있다 (없는 스탯: ${noDown.join(",")||"없음"})`);
+
+  // ⚠️ 중복 = 이름만 다르고 효과가 같은 성격. 뽑는 재미가 그만큼 묽어진다.
+  const seen=new Map(), dup=[];
+  nats.filter(n=>n.up).forEach(n=>{ const sig=n.up+">"+n.down;
+    if(seen.has(sig))dup.push(`${n.k}=${seen.get(sig)}`); else seen.set(sig,n.k); });
+  ok(dup.length===0, `효과가 겹치는 성격 없음 (${dup.join(" · ")||"이상 없음"})`);
+
+  // 실제로 스탯에 반영되는가 — recalc가 스탯 이름 무관하게 도는지까지 본다(테이블만 고치면 되는 근거).
+  const spaUp=nats.find(n=>n.up==="spa");
+  if(spaUp){
+    const base=R.makeMon("foxfire",50); base.nature="hardy"; R.recalc(base,null,true);
+    const buff=R.makeMon("foxfire",50); buff.ivs=base.ivs; buff.evs=base.evs;
+    buff.nature=spaUp.k; R.recalc(buff,null,true);
+    ok(buff.spa>base.spa, `spa 상승 성격이 실제로 특수공격을 올린다 (${base.spa} → ${buff.spa})`);
+  } else ok(false, "spa를 올리는 성격이 없어 반영 여부를 잴 수 없다");
+}
+
 console.log("\n[순수성]");
 // 규칙 계층이 DOM/브라우저 API를 직접 참조하면 이 환경에서 터진다. 소스에도 흔적이 없어야 한다.
 {

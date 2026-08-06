@@ -1189,12 +1189,25 @@ const DEFAULT_ABILITY=_derive(TYPES,t=>t.ab);
 // ⚠️ 특성을 추가하면 ABILITY_KO·ABILITY_DESC 둘 다 채울 것(회귀가 강제).
 const ABILITY_KO={blaze:"맹화",torrent:"급류",overgrow:"신록",static:"정전기",intimidate:"위협",sturdy:"옹골참",thickfat:"두꺼운지방",guts:"근성",levitate:"부유",poisonpoint:"독가시",icebody:"얼음몸",flamebody:"불꽃몸",roughskin:"까칠한피부",swiftswim:"쓸비늘",chlorophyll:"엽록소",insomnia:"불면",immunity:"면역",waterveil:"수의베일",sniper:"스나이퍼",naturalcure:"자연회복",hugepower:"순수한힘"};
 const ABILITY_DESC={blaze:"HP가 낮으면 불 기술 위력 ↑",torrent:"HP가 낮으면 물 기술 위력 ↑",overgrow:"HP가 낮으면 풀 기술 위력 ↑",static:"맞으면 30% 확률로 상대 마비",intimidate:"등장 시 상대 공격 1 ↓",sturdy:"풀피일 때 한 방에 안 쓰러짐",thickfat:"불 기술 피해 절반",guts:"상태이상이면 공격 ↑",levitate:"땅 타입 기술 무효",poisonpoint:"맞으면 30% 확률로 상대 중독",icebody:"싸라기눈일 때 매턴 회복",flamebody:"맞으면 30% 확률로 상대 화상",roughskin:"물리 기술로 맞으면 상대도 깎인다",swiftswim:"비가 오면 속도 2배",chlorophyll:"햇살이 강하면 속도 2배",insomnia:"잠들지 않는다",immunity:"독에 걸리지 않는다",waterveil:"화상을 입지 않는다",sniper:"급소에 맞히면 위력이 더 오른다",naturalcure:"교체하면 상태이상이 낫는다",hugepower:"물리 기술 위력이 크게 오른다"};
+/* ⚠️ **다섯 스탯이 전부 up·down에 등장해야 한다**(회귀 `rules_unit_test` 「성격 테이블 위생」이 강제).
+   이 게임은 타입을 `SPEC_TYPES`로 물리 5 : 특수 5로 이등분해 물리/특수 판정을 걸어뒀는데,
+   성격 보정은 오랫동안 atk·def·spd에만 있었다 → **주 타입이 특수인 62/86종(72%)에게 성격이 무의미**했다.
+   게다가 spa가 없다 보니 본가에서 spa를 깎는 adamant·jolly가 **다른 스탯으로 대체돼 기존 성격과 완전 중복**이었다
+   (고집있는=외로운, 명랑한=겁쟁이 → 10개인데 고유 효과 7개). 2026-08-06에 본가 정의로 바로잡고 6개를 더했다.
+   ⚠️ `recalc`는 `m[nat.up]*=1.1` 형태라 스탯 이름에 무관하게 동작한다 — 여기만 고치면 반영된다.
+   ⚠️ **밸런스 불변이 아니다.** `makeMon`은 야생·트레이너·알이 전부 공유하므로 새 성격은
+      트레이너 로스터 생성에도 섞인다 → 표를 건드리면 `balance_test`·`league_test` 재측정. */
 const NATURES=[
   {k:"hardy",ko:"노력하는",up:null,down:null},{k:"docile",ko:"온순한",up:null,down:null},
   {k:"lonely",ko:"외로운",up:"atk",down:"def"},{k:"brave",ko:"용감한",up:"atk",down:"spd"},
   {k:"bold",ko:"대담한",up:"def",down:"atk"},{k:"relaxed",ko:"무사태평",up:"def",down:"spd"},
   {k:"timid",ko:"겁쟁이",up:"spd",down:"atk"},{k:"hasty",ko:"성급한",up:"spd",down:"def"},
-  {k:"adamant",ko:"고집있는",up:"atk",down:"def"},{k:"jolly",ko:"명랑한",up:"spd",down:"atk"},
+  {k:"adamant",ko:"고집있는",up:"atk",down:"spa"},{k:"jolly",ko:"명랑한",up:"spd",down:"spa"},
+  /* ↑ 이 둘은 본가 정의(atk↑spa↓ · spd↑spa↓)로 되돌린 것이다 — 물리 어태커·스윗퍼 전용 성격이 된다. */
+  {k:"naughty",ko:"장난꾸러기",up:"atk",down:"spDef"},
+  {k:"modest",ko:"조심스러운",up:"spa",down:"atk"},{k:"mild",ko:"의젓한",up:"spa",down:"def"},
+  {k:"quiet",ko:"냉정한",up:"spa",down:"spd"},
+  {k:"calm",ko:"차분한",up:"spDef",down:"atk"},{k:"sassy",ko:"건방진",up:"spDef",down:"spd"},
 ];
 const NATURE_BY_K={}; NATURES.forEach(n=>NATURE_BY_K[n.k]=n);
 const STAT_KO={atk:"공격",def:"방어",spd:"속도",spa:"특수공격",spDef:"특수방어",acc:"명중률",eva:"회피율"};
@@ -6081,7 +6094,7 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
     healParty(true); G.trainer=null; endBattle(); blackout(); } }
 
 /* ===================== CATCH / RUN ===================== */
-const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",ultraball:"울트라볼",duskball:"다크볼",netball:"네트볼",quickball:"퀵볼",healball:"힐볼",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프",protein:"단백질",iron:"철분",calcium:"칼슘",zinc:"아연",carbos:"카르본",hpup:"맥스업",mint_adamant:"고집 민트",mint_bold:"대담 민트",mint_timid:"겁쟁이 민트",mint_brave:"용감 민트",mint_relaxed:"무사 민트",bottlecap:"황금 병뚜껑",goodrod:"좋은 낚싯대",superrod:"초 낚싯대"};
+const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",ultraball:"울트라볼",duskball:"다크볼",netball:"네트볼",quickball:"퀵볼",healball:"힐볼",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프",protein:"단백질",iron:"철분",calcium:"칼슘",zinc:"아연",carbos:"카르본",hpup:"맥스업",mint_adamant:"고집 민트",mint_bold:"대담 민트",mint_timid:"겁쟁이 민트",mint_brave:"용감 민트",mint_relaxed:"무사 민트",mint_modest:"조심 민트",mint_calm:"차분 민트",bottlecap:"황금 병뚜껑",goodrod:"좋은 낚싯대",superrod:"초 낚싯대"};
 // 아이템 표시명 단일 조회. ⚠️ ITEM_KO만 보면 안 된다 — TM·기력·엘릭서·볼·지닌물건은
 // 각자 다른 테이블(BAG_ITEMS.nm / BALLS.ko / HELD_ITEMS.ko)에 이름이 있어서,
 // 예전엔 바닥에서 기력을 주우면 "ether을(를) 주웠다!"처럼 **키가 그대로 노출**됐다.
@@ -6432,11 +6445,13 @@ const BAG_ITEMS=[
   {key:"zinc",em:"💊",nm:"아연",ds:"선두 정령 특방 노력치 +10",use:"ev",stat:"spDef",amt:10,where:"map"},
   {key:"carbos",em:"💊",nm:"카르본",ds:"선두 정령 속도 노력치 +10",use:"ev",stat:"spd",amt:10,where:"map"},
   {key:"hpup",em:"💊",nm:"맥스업",ds:"선두 정령 체력 노력치 +10",use:"ev",stat:"hp",amt:10,where:"map"},
-  {key:"mint_adamant",em:"🌿",nm:"고집 민트",ds:"선두 정령을 고집있는 성격(공↑방↓)으로",use:"mint",nature:"adamant",where:"map"},
+  {key:"mint_adamant",em:"🌿",nm:"고집 민트",ds:"선두 정령을 고집있는 성격(공↑특공↓)으로",use:"mint",nature:"adamant",where:"map"},
   {key:"mint_bold",em:"🌿",nm:"대담 민트",ds:"선두 정령을 대담한 성격(방↑공↓)으로",use:"mint",nature:"bold",where:"map"},
   {key:"mint_timid",em:"🌿",nm:"겁쟁이 민트",ds:"선두 정령을 겁쟁이 성격(속↑공↓)으로",use:"mint",nature:"timid",where:"map"},
   {key:"mint_brave",em:"🌿",nm:"용감 민트",ds:"선두 정령을 용감한 성격(공↑속↓)으로",use:"mint",nature:"brave",where:"map"},
   {key:"mint_relaxed",em:"🌿",nm:"무사 민트",ds:"선두 정령을 무사태평 성격(방↑속↓)으로",use:"mint",nature:"relaxed",where:"map"},
+  {key:"mint_modest",em:"🌿",nm:"조심 민트",ds:"선두 정령을 조심스러운 성격(특공↑공↓)으로",use:"mint",nature:"modest",where:"map"},
+  {key:"mint_calm",em:"🌿",nm:"차분 민트",ds:"선두 정령을 차분한 성격(특방↑공↓)으로",use:"mint",nature:"calm",where:"map"},
   {key:"bottlecap",em:"🔩",nm:"황금 병뚜껑",ds:"선두 정령의 개체값을 모두 최고로",use:"bottlecap",where:"map"},
   {key:"goodrod",em:"🎣",nm:"좋은 낚싯대",ds:"대물이 더 자주 걸린다",use:"rodup",tier:2,where:"map"},
   {key:"superrod",em:"🎣",nm:"초 낚싯대",ds:"대물이 가장 자주 걸린다",use:"rodup",tier:3,where:"map"},
@@ -6763,11 +6778,13 @@ const PREMIUM=[
   {key:"thunderstone",em:"⚡",nm:"천둥의 돌",ds:"특정 정령을 진화시킨다",price:2500},
   {key:"waterstone",em:"💧",nm:"물의 돌",ds:"특정 정령을 진화시킨다",price:2500},
   {key:"firestone",em:"🔥",nm:"불의 돌",ds:"특정 정령을 진화시킨다",price:2500},
-  {key:"mint_adamant",em:"🌿",nm:"고집 민트",ds:"선두 정령 성격을 고집있는(공↑방↓)으로",price:4000,held:false},
+  {key:"mint_adamant",em:"🌿",nm:"고집 민트",ds:"선두 정령 성격을 고집있는(공↑특공↓)으로",price:4000,held:false},
   {key:"mint_bold",em:"🌿",nm:"대담 민트",ds:"선두 정령 성격을 대담한(방↑공↓)으로",price:4000,held:false},
   {key:"mint_timid",em:"🌿",nm:"겁쟁이 민트",ds:"선두 정령 성격을 겁쟁이(속↑공↓)으로",price:4000,held:false},
   {key:"mint_brave",em:"🌿",nm:"용감 민트",ds:"선두 정령 성격을 용감한(공↑속↓)으로",price:4000,held:false},
   {key:"mint_relaxed",em:"🌿",nm:"무사 민트",ds:"선두 정령 성격을 무사태평(방↑속↓)으로",price:4000,held:false},
+  {key:"mint_modest",em:"🌿",nm:"조심 민트",ds:"선두 정령 성격을 조심스러운(특공↑공↓)으로",price:4000,held:false},
+  {key:"mint_calm",em:"🌿",nm:"차분 민트",ds:"선두 정령 성격을 차분한(특방↑공↓)으로",price:4000,held:false},
   {key:"bottlecap",em:"🔩",nm:"황금 병뚜껑",ds:"선두 정령의 개체값을 모두 최고로",price:9000,held:false},
   {key:"shinycharm",em:"✨",nm:"반짝임의 부적",ds:"샤이니(이로치) 정령 출현 확률 ↑ (1회 구매)",price:12000,unique:true},
 ];
@@ -7164,7 +7181,7 @@ window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVi
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.FLAVOR=FLAVOR;
-Object.assign(window.SG,{EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
+Object.assign(window.SG,{NATURES,NATURE_BY_K,STAT_KO,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,sendOutAnim,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,

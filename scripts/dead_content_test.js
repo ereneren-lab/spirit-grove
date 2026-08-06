@@ -50,7 +50,26 @@ const { chromium } = require("playwright"); const path=require("path");
     bag.forEach(it=>{ ["nm","ds"].forEach(f=>{ const v=it[f]; if(typeof v!=="string")return;
       if(tk.some(t=>new RegExp("(^|[^a-z])"+t+"([^a-z]|$)").test(v)))leaked.push(it.key+"."+f+': "'+v+'"');
       if(v.indexOf("을(를)")>=0||v.indexOf("이(가)")>=0)leaked.push(it.key+"."+f+"(조사 미처리)"); }); });
-    return {refN:refList.length, nameless, bagN:bag.length, unobtainable, orphanNames, orphanTrainers, leaked};
+    /* ⚠️ **성격이 닿는가** — 2026-08-06에 spa·spDef 보정 성격을 추가했다. 성격은 makeMon이 무작위로
+       굴리므로, 민트가 없는 스탯은 **뽑기 운에만 기대야 한다**(선두 정령에게 원하는 성격을 줄 방법이 없다).
+       실제로 그전까지 민트 5종이 atk↑·def↑·spd↑만 덮고 있었다. → 다섯 스탯 각각에 대해
+       "그 스탯을 올려주는 성격 중 최소 하나는 민트로 얻을 수 있다"를 단정한다.
+       (성격 전부에 민트를 강요하지는 않는다 — 좁은 화면에 상점 목록만 길어진다.) */
+    const NAT=S.NATURES||[];
+    const mintNat=new Set((F.BAG_ITEMS||[]).filter(x=>x.use==="mint"&&x.nature).map(x=>x.nature));
+    const upBuyable=new Set(NAT.filter(n=>n.up&&mintNat.has(n.k)).map(n=>n.up));
+    const noMint=["atk","def","spa","spDef","spd"].filter(st=>!upBuyable.has(st));
+    /* ⚠️ **민트 설명이 성격 표와 어긋나면 그것도 죽은 정보다.** 실제로 `고집 민트`가 (공↑방↓)이라고
+       적혀 있었는데 표에서는 atk↑spa↓였다 — 병렬 테이블이 조용히 갈라진 전형이다. */
+    const SK={atk:"공",def:"방",spa:"특공",spDef:"특방",spd:"속"};
+    const mintDesc=[];
+    (F.BAG_ITEMS||[]).filter(x=>x.use==="mint"&&x.nature).forEach(x=>{
+      const n=NAT.find(v=>v.k===x.nature); if(!n||!n.up)return;
+      const want=`(${SK[n.up]}↑${SK[n.down]}↓)`;
+      if((x.ds||"").indexOf(want)<0)mintDesc.push(`${x.key}: 표는 ${want} · 설명은 "${x.ds}"`);
+    });
+    return {refN:refList.length, nameless, bagN:bag.length, unobtainable, orphanNames, orphanTrainers, leaked,
+            natN:NAT.length, mintN:mintNat.size, noMint, mintDesc};
   });
 
   ok(r.nameless.length===0, `지급되는 아이템 ${r.refN}종이 전부 한글 이름을 낸다 (키 노출: ${r.nameless.join(",")||"없음"})`);
@@ -58,6 +77,8 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(r.orphanNames.length===0, `이름표만 있고 안 주는 아이템 없음 (${r.orphanNames.join(",")||"없음"})`);
   ok(r.orphanTrainers.length===0, `배치 안 된 트레이너 없음 (${r.orphanTrainers.join(",")||"없음"})`);
   ok(r.leaked.length===0, `가방 표시 문자열에 영문 타입 키·미처리 조사 없음 (${r.leaked.length?r.leaked.slice(0,3).join(" · "):"없음"})`);
+  ok(r.noMint.length===0, `다섯 스탯 모두 민트로 올릴 수 있다 — 성격 ${r.natN}종·민트 ${r.mintN}종 (민트 없는 스탯: ${r.noMint.join(",")||"없음"})`);
+  ok(r.mintDesc.length===0, `민트 설명이 성격 표와 일치 (${r.mintDesc.join(" · ")||"이상 없음"})`);
 
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 죽은 콘텐츠 감사 통과");

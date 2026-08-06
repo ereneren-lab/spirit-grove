@@ -30,12 +30,25 @@ const DEFAULT_ABILITY=_derive(TYPES,t=>t.ab);
 // ⚠️ 특성을 추가하면 ABILITY_KO·ABILITY_DESC 둘 다 채울 것(회귀가 강제).
 const ABILITY_KO={blaze:"맹화",torrent:"급류",overgrow:"신록",static:"정전기",intimidate:"위협",sturdy:"옹골참",thickfat:"두꺼운지방",guts:"근성",levitate:"부유",poisonpoint:"독가시",icebody:"얼음몸",flamebody:"불꽃몸",roughskin:"까칠한피부",swiftswim:"쓸비늘",chlorophyll:"엽록소",insomnia:"불면",immunity:"면역",waterveil:"수의베일",sniper:"스나이퍼",naturalcure:"자연회복",hugepower:"순수한힘"};
 const ABILITY_DESC={blaze:"HP가 낮으면 불 기술 위력 ↑",torrent:"HP가 낮으면 물 기술 위력 ↑",overgrow:"HP가 낮으면 풀 기술 위력 ↑",static:"맞으면 30% 확률로 상대 마비",intimidate:"등장 시 상대 공격 1 ↓",sturdy:"풀피일 때 한 방에 안 쓰러짐",thickfat:"불 기술 피해 절반",guts:"상태이상이면 공격 ↑",levitate:"땅 타입 기술 무효",poisonpoint:"맞으면 30% 확률로 상대 중독",icebody:"싸라기눈일 때 매턴 회복",flamebody:"맞으면 30% 확률로 상대 화상",roughskin:"물리 기술로 맞으면 상대도 깎인다",swiftswim:"비가 오면 속도 2배",chlorophyll:"햇살이 강하면 속도 2배",insomnia:"잠들지 않는다",immunity:"독에 걸리지 않는다",waterveil:"화상을 입지 않는다",sniper:"급소에 맞히면 위력이 더 오른다",naturalcure:"교체하면 상태이상이 낫는다",hugepower:"물리 기술 위력이 크게 오른다"};
+/* ⚠️ **다섯 스탯이 전부 up·down에 등장해야 한다**(회귀 `rules_unit_test` 「성격 테이블 위생」이 강제).
+   이 게임은 타입을 `SPEC_TYPES`로 물리 5 : 특수 5로 이등분해 물리/특수 판정을 걸어뒀는데,
+   성격 보정은 오랫동안 atk·def·spd에만 있었다 → **주 타입이 특수인 62/86종(72%)에게 성격이 무의미**했다.
+   게다가 spa가 없다 보니 본가에서 spa를 깎는 adamant·jolly가 **다른 스탯으로 대체돼 기존 성격과 완전 중복**이었다
+   (고집있는=외로운, 명랑한=겁쟁이 → 10개인데 고유 효과 7개). 2026-08-06에 본가 정의로 바로잡고 6개를 더했다.
+   ⚠️ `recalc`는 `m[nat.up]*=1.1` 형태라 스탯 이름에 무관하게 동작한다 — 여기만 고치면 반영된다.
+   ⚠️ **밸런스 불변이 아니다.** `makeMon`은 야생·트레이너·알이 전부 공유하므로 새 성격은
+      트레이너 로스터 생성에도 섞인다 → 표를 건드리면 `balance_test`·`league_test` 재측정. */
 const NATURES=[
   {k:"hardy",ko:"노력하는",up:null,down:null},{k:"docile",ko:"온순한",up:null,down:null},
   {k:"lonely",ko:"외로운",up:"atk",down:"def"},{k:"brave",ko:"용감한",up:"atk",down:"spd"},
   {k:"bold",ko:"대담한",up:"def",down:"atk"},{k:"relaxed",ko:"무사태평",up:"def",down:"spd"},
   {k:"timid",ko:"겁쟁이",up:"spd",down:"atk"},{k:"hasty",ko:"성급한",up:"spd",down:"def"},
-  {k:"adamant",ko:"고집있는",up:"atk",down:"def"},{k:"jolly",ko:"명랑한",up:"spd",down:"atk"},
+  {k:"adamant",ko:"고집있는",up:"atk",down:"spa"},{k:"jolly",ko:"명랑한",up:"spd",down:"spa"},
+  /* ↑ 이 둘은 본가 정의(atk↑spa↓ · spd↑spa↓)로 되돌린 것이다 — 물리 어태커·스윗퍼 전용 성격이 된다. */
+  {k:"naughty",ko:"장난꾸러기",up:"atk",down:"spDef"},
+  {k:"modest",ko:"조심스러운",up:"spa",down:"atk"},{k:"mild",ko:"의젓한",up:"spa",down:"def"},
+  {k:"quiet",ko:"냉정한",up:"spa",down:"spd"},
+  {k:"calm",ko:"차분한",up:"spDef",down:"atk"},{k:"sassy",ko:"건방진",up:"spDef",down:"spd"},
 ];
 const NATURE_BY_K={}; NATURES.forEach(n=>NATURE_BY_K[n.k]=n);
 const STAT_KO={atk:"공격",def:"방어",spd:"속도",spa:"특수공격",spDef:"특수방어",acc:"명중률",eva:"회피율"};
