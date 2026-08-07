@@ -2176,7 +2176,56 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       else { this._walker(ctx, pcx, pcy, ts, _dir, moving, now); } } }
     this._grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving);
     if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh"||G.indoor==="skyridge"||G.indoor==="ruins"||G.indoor==="mine"||G.indoor==="hillpath"||G.indoor==="pier"||G.indoor==="mosshollow"||G.indoor==="fallspath"||G.indoor==="crater"||G.indoor==="garden") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; }
-    if(typeof owWeather==="function"){ const _wx=owWeather(); if(_wx!=="clear" && typeof drawWeatherFx==="function")drawWeatherFx(ctx,cw,ch,ts,_wx); } },
+    if(typeof owWeather==="function"){ const _wx=owWeather(); if(_wx!=="clear" && typeof drawWeatherFx==="function")drawWeatherFx(ctx,cw,ch,ts,_wx); }
+    this._goalFx(ctx,ox,oy,ts,cw,ch,now); },
+  /* ===== 목표 표시 =====
+     유저: "길이 안 보인다." 트래커 박스엔 이름·방향·거리가 뜨지만 **지도 위에는 아무 표시도 없었다** —
+     읽고 나서 머릿속으로 방향을 옮겨야 했다. 화면에 직접 그린다:
+       · 목표가 화면 안이면 → 그 칸에 고리 + 핀
+       · 화면 밖이면       → 가장자리에 화살표 + 남은 칸수
+     ⚠️ `currentGoal()`은 타일 탐색을 하므로 **매 프레임 부르지 않는다**(0.4초 캐시).
+     ⚠️ 실내·전투 중엔 그리지 않는다. 실내에서 목표를 처음 조회하면 `findTile`이 인테리어 지도를 훑어
+        null을 세션 내내 캐시하는 사고가 있었다(2026-08-05, `goal_reach_test [4]`가 지킨다).
+        여기서도 그 경로를 건드리지 않도록 실외에서만 조회한다. */
+  _goalFx(ctx,ox,oy,ts,cw,ch,now){
+    if(typeof G==="undefined"||!G||G.indoor||G.inBattle)return;
+    if(typeof currentGoal!=="function")return;
+    const t=now||0;
+    if(!this._gc || t-this._gc.at>0.4){ let g=null; try{ g=currentGoal(); }catch(e){ g=null; } this._gc={at:t,g}; }
+    const g=this._gc.g; if(!g||g.x==null||g.done)return;
+    const gx=ox+g.x*ts+ts/2, gy=oy+g.y*ts+ts/2;
+    const pl=0.5+0.5*Math.sin(t*3.0);
+    // 가장자리 여백 — 화살표 아래에 칸수 칩까지 들어가야 한다(0.55로 뒀더니 칩이 잘렸다)
+    const M=ts*0.92;
+    if(gx>M&&gx<cw-M&&gy>M&&gy<ch-M){
+      // 화면 안 — 목표 칸에 고리와 핀
+      ctx.strokeStyle="rgba(120,240,190,"+(0.45+pl*0.4).toFixed(2)+")";
+      ctx.lineWidth=Math.max(2,ts*0.055);
+      ctx.beginPath(); ctx.ellipse(gx,gy+ts*0.30,ts*(0.30+pl*0.06),ts*(0.15+pl*0.03),0,0,6.29); ctx.stroke();
+      const py=gy-ts*(0.55+pl*0.06);
+      ctx.fillStyle="rgba(120,240,190,.92)";
+      ctx.beginPath(); ctx.moveTo(gx,py+ts*0.26); ctx.lineTo(gx-ts*0.13,py); ctx.lineTo(gx+ts*0.13,py); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.arc(gx,py-ts*0.06,ts*0.135,0,6.29); ctx.fill();
+      ctx.fillStyle="#12302a"; ctx.beginPath(); ctx.arc(gx,py-ts*0.06,ts*0.055,0,6.29); ctx.fill();
+    }else{
+      // 화면 밖 — 가장자리에서 방향을 가리킨다
+      const cx=cw/2, cy=ch/2, ang=Math.atan2(gy-cy,gx-cx);
+      const ex=Math.max(M,Math.min(cw-M, cx+Math.cos(ang)*cw)), ey=Math.max(M,Math.min(ch-M, cy+Math.sin(ang)*ch));
+      const px=Math.max(M,Math.min(cw-M,ex)), py=Math.max(M,Math.min(ch-M,ey));
+      ctx.save(); ctx.translate(px,py); ctx.rotate(ang);
+      ctx.fillStyle="rgba(120,240,190,"+(0.55+pl*0.35).toFixed(2)+")";
+      const a=ts*0.30;
+      ctx.beginPath(); ctx.moveTo(a*0.9,0); ctx.lineTo(-a*0.5,-a*0.62); ctx.lineTo(-a*0.18,0); ctx.lineTo(-a*0.5,a*0.62); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      const d=Math.abs(g.x-G.pos.x)+Math.abs(g.y-G.pos.y);
+      ctx.font=`600 ${Math.round(ts*0.26)}px system-ui,sans-serif`;
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(8,20,16,.72)";
+      const tw=ctx.measureText(d+"칸").width+ts*0.16;
+      ctx.beginPath(); ctx.roundRect(px-tw/2, py+ts*0.30, tw, ts*0.30, ts*0.12); ctx.fill();
+      ctx.fillStyle="rgba(180,255,225,.95)"; ctx.fillText(d+"칸", px, py+ts*0.455);
+    }
+  },
   /* ===== 출입구 표시 =====
      유저 제보(여러 번): **"출입구가 안 보인다."**
      원인은 규칙과 안내가 어긋난 것이다 — 2026-07-28에 건물을 **정면(아래) 진입만** 가능하게 바꿔놓고
