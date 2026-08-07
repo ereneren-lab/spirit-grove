@@ -72,6 +72,24 @@ const { chromium } = require("playwright"); const path=require("path");
     return bad; });
   ok(onSolid.length===0, `건물·지형 위에 선 NPC 0명 ${onSolid.length?JSON.stringify(onSolid):""}`);
 
+  /* [7] 들어갈 수 있는 타일은 **전부 화면에 표시**된다.
+     ⚠️ 유저 제보로 드러난 구멍: 지선 루트 입구(`$`)가 DOOR_TILES에도 NATURE_ENTRY에도 없어서
+        **표시가 통째로 빠져 있었다** — 집 옆에서 왼쪽으로 가다 아무 예고 없이 안으로 들어가졌다.
+        입구 종류를 늘릴 때 표시 등록을 잊는 건 이 저장소의 단골 사고(병렬 목록)라 자동으로 잡는다.
+     오버월드에서 실제로 입장을 일으키는 타일을 맵에서 훑어, 두 목록 중 어디에도 없으면 걸린다. */
+  console.log("\n[7] 들어갈 수 있는 타일은 전부 표시 대상이다");
+  const unmarked=await p.evaluate(()=>{ const S=window.SG,F=S.flow;
+    const marked=(S.DOOR_TILES||"")+(S.NATURE_ENTRY||"");
+    const ENTERABLE="+EHGUSXDVMJOz^!W$";     // 오버월드에서 부딪히면 안으로 들어가는 타일
+    const seen=new Set(), bad=[];
+    for(let y=0;y<50;y++)for(let x=0;x<25;x++){ const t=F.tileAt(x,y)||"";
+      if(ENTERABLE.indexOf(t)<0||!t||seen.has(t))continue; seen.add(t);
+      if(marked.indexOf(t)<0)bad.push(t+" (예: "+x+","+y+")"); }
+    return {bad, kinds:[...seen].join(""), marked}; });
+  ok(unmarked.bad.length===0,
+     `맵에 있는 입구 ${unmarked.kinds.length}종 전부 표시 대상이다` +
+     (unmarked.bad.length?` — 빠짐: ${unmarked.bad.join(", ")}`:""));
+
   ok(errs.length===0, `런타임 에러 0 (${errs.length}${errs.length?": "+errs[0]:""})`);
   console.log(fail?"\n❌ 실패":"\n🎉 포켓몬식 출입구 통과");
   await b.close(); process.exit(fail);
