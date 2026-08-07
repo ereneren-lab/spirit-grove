@@ -2033,6 +2033,10 @@ const isTrainerTile=t=>t==="1"||t==="2"||t==="3"||t==="4"||t==="5"||t==="6"||t==
    ⚠️ 자연 입구(동굴 D·용암 V·설원 M·늪지 J·봉우리 O·유적 z·분화구 ^·화원 !·해안 W)는 절벽에 난 구멍이라 방향을 안 가린다 —
       이들은 문이 아니고, 정면 칸이 없는 곳도 있어(지도상 8곳) 정면 규칙을 걸면 도달 불가가 된다. */
 const DOOR_TILES="+EHGUSX";
+/* 자연 입구 — 동굴·용암굴·설원·늪·봉우리·유적·분화구·화원·해안.
+   ⚠️ 건물 문(DOOR_TILES)과 달리 **방향 제약이 없다**(옆에서도 들어가진다 — door_front_test [4]).
+      그래서 표시도 다르게 준다: 발판·화살표가 아니라 입구 빛만(_doorFx). */
+const NATURE_ENTRY="DVMJOz^!W";
 /* ⚠️ **지형과 점유를 나눠 둔다.** 예전엔 한 함수가 둘을 섞어서, "지도가 여기 뚫려 있나"를 물으려던 곳이
    "지금 NPC가 서 있나"까지 같이 읽었다 — 관문 기둥이 지나가는 NPC를 따라 춤췄고(_gateFx),
    `door_front_test [5]`는 문 앞을 지나는 NPC 때문에 간헐적으로 빨개졌다(재스캔 4회로도 안 잡혔다.
@@ -2202,6 +2206,28 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       ctx.beginPath(); ctx.arc(sx+ts*0.5, dy-ts*0.10, ts*0.075,0,6.29); ctx.fill();
       ctx.fillStyle="rgba(255,236,190,.95)";
       ctx.beginPath(); ctx.arc(sx+ts*0.5, dy-ts*0.10, ts*0.032,0,6.29); ctx.fill();
+    }
+    /* 자연 입구(동굴·늪·봉우리…)는 **방향을 안 가린다** → 발판·화살표를 주면 거짓말이 된다.
+       "여기 들어갈 수 있다"만 알려주면 되므로 입구에 은은한 빛과 알갱이만 얹는다.
+       ⚠️ 건물 문과 **다른 신호**를 쓰는 게 핵심이다 — 같은 표시를 주면 여기도 정면으로만
+          들어가는 줄 알게 된다(실제로는 옆에서도 들어가진다. `door_front_test [4]`가 그걸 단정한다). */
+    if(typeof NATURE_ENTRY!=="undefined" && typeof here==="string" && here.length===1 && NATURE_ENTRY.indexOf(here)>=0){
+      const pl=0.5+0.5*Math.sin(t*1.7+x*0.9+y*0.6);
+      const cx=sx+ts*0.5, cy=sy+ts*0.62;
+      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,ts*0.46);
+      g.addColorStop(0,"rgba(255,226,150,"+(0.26+pl*0.22).toFixed(2)+")");
+      g.addColorStop(1,"rgba(255,226,150,0)");
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,ts*0.46,0,6.29); ctx.fill();
+      // 빛만으론 지형에 묻힌다 → 입구 둘레에 얇은 고리를 둬서 "구멍"으로 읽히게
+      ctx.strokeStyle="rgba(255,236,180,"+(0.30+pl*0.28).toFixed(2)+")";
+      ctx.lineWidth=Math.max(1,ts*0.035);
+      ctx.beginPath(); ctx.ellipse(cx,cy+ts*0.06,ts*0.30,ts*0.22,0,0,6.29); ctx.stroke();
+      for(let i=0;i<3;i++){                                  // 입구에서 피어오르는 알갱이
+        const ph=(t*0.7+i*0.33+((x*7+y*13)%10)*0.1)%1;
+        const px2=cx+Math.sin(ph*6.28+i*2)*ts*0.16, py2=cy-ph*ts*0.42;
+        ctx.fillStyle="rgba(255,238,190,"+((1-ph)*0.5).toFixed(2)+")";
+        ctx.beginPath(); ctx.arc(px2,py2,Math.max(1,ts*0.028),0,6.29); ctx.fill();
+      }
     }
     if(isDoor(above)){
       // 정면 칸 발판 — "여기 서서 위로" 를 미리 알려준다
@@ -2502,6 +2528,19 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(dn(0,-1))ctx.fillRect(sx,sy,tb,ts*0.14); if(dn(0,1))ctx.fillRect(sx,sy+ts*0.86,tb,ts*0.14);
       if(dn(-1,0))ctx.fillRect(sx,sy,ts*0.14,tb); if(dn(1,0))ctx.fillRect(sx+ts*0.86,sy,ts*0.14,tb); ctx.restore(); return; }
     const rp=REGIONPAL[region(y)], _gb=this._gcol(y), _gv=((h>>3)&3)-1; ctx.fillStyle=`rgb(${_gb[0]+_gv*6},${_gb[1]+_gv*6},${_gb[2]+_gv*5})`; ctx.fillRect(sx,sy,tb,tb);
+    /* ===== 건물을 타일에 꽉 차게 =====
+       유저 제보: 체육관도 집도 같은 크기의 작은 아이콘이라 **랜드마크로 안 읽힌다.**
+       실측 건물 크기는 타일의 가로 72% · 세로 54%뿐이었다.
+       ⚠️ **위로 늘려서 키우면 안 된다.** 건물 문 20곳 중 **16곳은 바로 위 칸이 걸을 수 있는 풀밭**이라
+          (실측) 위를 덮으면 "갈 수 있는데 막힌 것처럼" 보인다 — 지금 문제를 다른 문제로 바꾸는 셈이다.
+       → **접지선(발밑)을 고정한 채 좌표계만 확대**한다. 세로는 타일 안에 딱 들어가고 가로만 4% 넘친다.
+       ⚠️ 바닥을 칠한 **다음**에 바꾼다(바닥까지 커지면 옆 타일을 덮는다). 아래 블록들은 전부
+          `sx+ts*비율` 꼴이라 이 한 줄로 7종이 같이 커진다 — 블록마다 좌표를 고치면 또 병렬 수정이 된다.
+       ⚠️ `tb`(바닥 전용)를 쓰는 건물 블록이 없다는 걸 확인하고 넣었다. */
+    if(typeof DOOR_TILES!=="undefined" && t && DOOR_TILES.indexOf(t)>=0){
+      const _k=1.45, _bs=ts*_k, _gy=0.90;                    // _gy = 그림자(접지) 위치
+      sx = sx + ts*0.5 - _bs*0.5; sy = sy + _gy*(ts-_bs); ts = _bs;
+    }
     ctx.fillStyle="rgba(120,185,115,.13)"; ctx.beginPath(); ctx.arc(sx+rnd(0)*ts,sy+rnd(1)*ts,ts*0.5,0,6.29); ctx.fill();
     ctx.fillStyle="rgba(40,110,60,.09)"; ctx.beginPath(); ctx.arc(sx+rnd(2)*ts+ts*0.3,sy+rnd(3)*ts+ts*0.3,ts*0.4,0,6.29); ctx.fill();
     if(((h>>4)&3)===0){ ctx.fillStyle="rgba(40,110,60,.3)"; const dx=sx+rnd(0)*ts*0.7+ts*0.15, dy=sy+rnd(1)*ts*0.7+ts*0.15; ctx.fillRect(dx,dy,ts*0.06,ts*0.06); ctx.fillRect(dx+ts*0.07,dy+ts*0.04,ts*0.05,ts*0.05); }
