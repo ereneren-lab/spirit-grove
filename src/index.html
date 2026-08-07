@@ -3295,11 +3295,18 @@ function charPreview(ch,size){ size=size||72; const cv=document.createElement("c
   else if(cap==="hood"){ ctx.fillStyle=hatc; rr(cx-u*0.33,cy-u*0.8,u*0.66,u*0.66,u*0.24); ctx.fill(); ctx.stroke(); ctx.fillStyle=skin; rr(cx-u*0.22,cy-u*0.56,u*0.44,u*0.44,u*0.16); ctx.fill(); }
   else { ctx.fillStyle=hair; rr(cx-u*0.3,cy-u*0.74,u*0.6,u*0.28,u*0.14); ctx.fill(); ctx.stroke(); }
   ctx.fillStyle="#2a2230"; ctx.fillRect(cx-u*0.15,cy-u*0.44,u*0.08,u*0.12); ctx.fillRect(cx+u*0.07,cy-u*0.44,u*0.08,u*0.12);
-  const _pidx=(typeof CHARS!=="undefined")?CHARS.indexOf(ch):-1, _purl=(typeof HERO_ART!=="undefined"&&_pidx>=0)?HERO_ART[_pidx]:null;
-  // ⚠️ 필드와 **같은 판단(heroDrawSpec)** 을 쓴다 — 여기만 따로 계산하면 선택 화면과 실제 모습이 갈린다.
+  const _pidx=(typeof CHARS!=="undefined")?CHARS.indexOf(ch):-1;
+  // ⚠️ 필드와 **같은 우선순위**를 쓴다: 걷기 시트(0행 0열=정면 정지) → 옛 정지 이미지.
+  //    여기만 옛 아트를 보면 **선택 화면과 실제 주인공이 다른 그림**이 된다(실제로 그랬다).
+  const _sheetUrl=(typeof HERO_SHEET!=="undefined"&&_pidx>=0)?HERO_SHEET[_pidx]:null;
+  const _purl=_sheetUrl||((typeof HERO_ART!=="undefined"&&_pidx>=0)?HERO_ART[_pidx]:null);
+  // ⚠️ 그리기 규격도 **같은 판단(heroDrawSpec)** 을 쓴다. 따로 계산하면 또 갈린다.
   if(_purl){ const _pim=new Image(); _pim.onload=()=>{ ctx.clearRect(0,0,size,size);
-    const _sp=heroDrawSpec(_pim.naturalWidth, size/0.98), _s=Math.min(size,_sp.size);
-    ctx.imageSmoothingEnabled=_sp.smooth; ctx.drawImage(_pim,(size-_s)/2,size-_s,_s,_s); }; _pim.src=_purl; }
+    const _cell=_sheetUrl?heroSheetCell(_pim.naturalWidth,_pim.naturalHeight):null;
+    const _sp=heroDrawSpec(_cell||_pim.naturalWidth, size/0.98), _s=Math.min(size,_sp.size);
+    ctx.imageSmoothingEnabled=_sp.smooth;
+    if(_cell)ctx.drawImage(_pim, 0,0,_cell,_cell, (size-_s)/2, size-_s, _s,_s);
+    else ctx.drawImage(_pim,(size-_s)/2,size-_s,_s,_s); }; _pim.src=_purl; }
   return cv; }
 let pickedChar=null, pickedStarter=null;
 function buildChar(){ const row=$("charRow"); row.innerHTML=""; pickedChar=null; $("confirmChar").disabled=true;

@@ -20,8 +20,50 @@
    64면 화면에 1:1(가장 또렷), 32면 2배. 실측상 이 아트의 디테일은 32칸에 안 들어간다 → 기본 64.
 """
 import argparse, re, sys
-from PIL import Image
+from PIL import Image, ImageDraw
 import numpy as np
+
+
+def strip_background(im, thresh=45):
+    """배경이 **색으로 채워진** 그림에서 배경만 지운다(이미 투명하면 그대로 둔다).
+
+    ⚠️ 색 거리로 일괄 제거하면 **캐릭터 안의 같은 색까지 지워진다** — 토리의 갈색 배낭이
+       배경 갈색과 거의 같다. 그래서 테두리에서 시작하는 flood fill로 **바깥과 연결된 것만** 지운다.
+    ⚠️ 배경이 그라디언트라 시드가 하나면 다 못 덮는다 → 테두리 여러 점에서 시작한다.
+    """
+    if im.getchannel("A").getextrema()[0] < 255:
+        return im
+    rgb = im.convert("RGB")
+    w, h = rgb.size
+    SENT = (255, 0, 255)
+    seeds = [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1),
+             (w // 2, 0), (w // 2, h - 1), (0, h // 2), (w - 1, h // 2),
+             (w // 4, 2), (w * 3 // 4, h - 3)]
+    for p in seeds:
+        ImageDraw.floodfill(rgb, p, SENT, thresh=thresh)
+    a = np.array(rgb)
+    mask = (a[:, :, 0] == 255) & (a[:, :, 1] == 0) & (a[:, :, 2] == 255)
+    out = np.array(im)
+    out[:, :, 3] = np.where(mask, 0, 255)
+    print(f"  배경 제거: {mask.mean()*100:.0f}% 를 투명 처리")
+    return Image.fromarray(out)
+
+
+def drop_soft_alpha(im, cut=200):
+    """**구워진 그림자**를 지운다. 게임이 타원 그림자를 따로 그리므로 아트에 있으면 이중이 된다.
+
+    ⚠️ 색이 아니라 **알파**로 가른다 — 실측상 그림자는 알파 100~140의 반투명이고 캐릭터 몸은 255다.
+       색으로 지우려 하면 갈색 부츠·배낭과 구분이 안 된다.
+    ⚠️ 반드시 **축소 전(원본 해상도)** 에 한다. 이때 반투명한 건 그림자와 1~2px 안티에일리어싱 가장자리뿐이고,
+       가장자리는 어차피 7배 축소되며 사라진다. 축소 후에 걸면 몸통 가장자리가 통째로 깎인다.
+    """
+    a = np.array(im)
+    soft = (a[:, :, 3] > 0) & (a[:, :, 3] < cut)
+    if not soft.any():
+        return im
+    a[:, :, 3] = np.where(soft, 0, a[:, :, 3])
+    print(f"  구워진 그림자/반투명 제거: {soft.sum()}px")
+    return Image.fromarray(a)
 
 
 def detect_grid(im, thr=16, minlen=8):
@@ -94,9 +136,10 @@ def main():
     ap.add_argument("--colors", type=int, default=22)
     ap.add_argument("--bob", type=int, default=1)
     ap.add_argument("--sway", type=int, default=1)
+    ap.add_argument("--bgthresh", type=int, default=45, help="배경 flood fill 허용 오차")
     a = ap.parse_args()
 
-    im = Image.open(a.src).convert("RGBA")
+    im = drop_soft_alpha(strip_background(Image.open(a.src).convert("RGBA"), a.bgthresh))
     cols, rows = detect_grid(im)
     print(f"격자 감지: {len(rows)}행 × {len(cols)}열")
 
