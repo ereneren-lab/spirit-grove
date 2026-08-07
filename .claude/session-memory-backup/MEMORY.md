@@ -1,0 +1,3 @@
+- [WORKLOG 인수인계](worklog-handoff.md) — 정령의 숲 진행상황은 WORKLOG.md에 기록. 세션 시작 시 읽고, 커밋마다 갱신.
+- [저장소 경로 이동](spirit-grove-path.md) — 저장소는 `~/Desktop/_보관/게임프로젝트/spirit-grove`. 옛 경로는 빈 껍데기라 git이 상위 저장소를 건드린다.
+- [디자인팀 자동 위임](design-team-delegation.md) — 디자인 작업은 자동 위임. 목표만 받고 Orchestrator가 리서치→전략→제작을 알아서 돌린다.
