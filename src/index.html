@@ -1646,7 +1646,8 @@ function updateMoney(){ $("moneyPill").textContent="💰 "+G.money; $("shopMoney
 /* expose for tests */
 window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,HELD_ITEMS,byId,makeMon,recalc,damage,stageMul,accMul,newStages,resetStages,effSpd,foeChooseMove,noPP,
   G:()=>G,setG:s=>{G=s;},freshState,Audio,moveDesc,moveSummary,stripNamePrefix,
-  moveCat,moveCatKo,isSpecMove,MOVE_CAT,heroDrawSpec};
+  moveCat,moveCatKo,isSpecMove,MOVE_CAT,heroDrawSpec,heroSheetFrame,heroSheetCell,HERO_ANIM_FPS,HERO_FRAME_ORDER,
+  get HERO_SHEET(){return typeof HERO_SHEET!=="undefined"?HERO_SHEET:null;}};
 /* ===== MAP (17 x 42) ===== */
 let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg##gT#","#gTTggggggTTgEggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT$PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
 let W=25,H=50;
@@ -2132,6 +2133,21 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
           ctx.save(); if(fol.facing>0){ ctx.translate(fsx,0); ctx.scale(-1,1); ctx.translate(-fsx,0); }   // 크리처 아트는 기본이 좌향 — 오른쪽 이동 시 뒤집어 진행방향을 본다
           ctx.drawImage(_img, fsx-_sz/2, fsy-_sz/2-_bob, _sz, _sz); ctx.restore(); } } }
     { const _sidx=(typeof G!=="undefined"&&G.styleIdx)||0, _upd=(this.dir||"down")==="up";
+      const _dir=this.dir||"down";
+      /* ① 걷기 스프라이트 시트가 있으면 그걸 쓴다(4방향 + 걸음 애니). 없으면 ② 정지 이미지, 그것도 없으면 ③ 절차적 워커.
+         ⚠️ 폴백이 세 단인 이유는 아트 교체가 한 번에 안 끝나기 때문이다 — 어느 단계에서도 게임이 돈다. */
+      const _sh=heroSheet(_sidx), _cell=_sh&&_sh.complete&&_sh.naturalWidth?heroSheetCell(_sh.naturalWidth,_sh.naturalHeight):null;
+      if(_cell){ const hx=pcx, gy=pcy+ts*0.30;
+        const _spec=heroDrawSpec(_cell, ts), S=_spec.size;
+        const _fr=heroSheetFrame(_dir, moving, now);
+        // ⚠️ 시트가 걸음을 그리므로 위아래 흔들림(bob)은 **정지 중에만** 준다 — 둘 다 주면 두 번 튄다.
+        const _hb=moving?0:Math.sin(now*2.2)*ts*0.012;
+        ctx.fillStyle="rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(hx,gy,ts*0.30,ts*0.11,0,0,6.29); ctx.fill();
+        ctx.save(); if(_fr.flip){ ctx.translate(hx,0); ctx.scale(-1,1); ctx.translate(-hx,0); }
+        ctx.imageSmoothingEnabled=_spec.smooth;
+        ctx.drawImage(_sh, _fr.col*_cell, _fr.row*_cell, _cell, _cell, hx-S/2, gy-S-_hb, S, S);
+        ctx.restore(); }
+      else {
       let _hi=_upd?heroImgBack(_sidx):null; const _back=!!(_hi&&_hi.complete&&_hi.naturalWidth); if(!_back){ _hi=heroImg(_sidx); }
       if(_hi&&_hi.complete&&_hi.naturalWidth){ const hx=pcx, gy=pcy+ts*0.30;
         const _spec=heroDrawSpec(_hi.naturalWidth, ts), S=_spec.size;   // 픽셀 스프라이트면 정수배+최근접
@@ -2140,7 +2156,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         ctx.save(); if(!_back&&(this.dir||"down")==="left"){ ctx.translate(hx,0); ctx.scale(-1,1); ctx.translate(-hx,0); }   // ⚠️ 주인공 아트 기본은 **우향**(돋보기가 우측)이다 — 왼쪽 이동 시에만 뒤집어 진행방향을 본다. (예전 주석은 좌향이라 했지만 실제 아트는 우향 — 스크린샷으로 확인)
         ctx.imageSmoothingEnabled=_spec.smooth;   // 도트는 보간하면 뭉개진다. save/restore 안이라 자동 복원된다
         ctx.drawImage(_hi, hx-S/2, gy-S-_hb, S, S); ctx.restore(); }
-      else { this._walker(ctx, pcx, pcy, ts, this.dir||"down", moving, now); } }
+      else { this._walker(ctx, pcx, pcy, ts, _dir, moving, now); } } }
     this._grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving);
     if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh"||G.indoor==="skyridge"||G.indoor==="ruins"||G.indoor==="mine"||G.indoor==="hillpath"||G.indoor==="pier"||G.indoor==="mosshollow"||G.indoor==="fallspath"||G.indoor==="crater"||G.indoor==="garden") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; }
     if(typeof owWeather==="function"){ const _wx=owWeather(); if(_wx!=="clear" && typeof drawWeatherFx==="function")drawWeatherFx(ctx,cw,ch,ts,_wx); } },
@@ -3257,6 +3273,7 @@ $("storySkip").addEventListener("click",()=>{ Audio.sfx("blip"); _storyEnd(); })
 /* ===================== CHARACTER / STARTER SELECT ===================== */
 //@@HERO_ART@@
 //@@HERO_ART_BACK@@
+//@@HERO_SHEET@@
 const CHARS=[
   {em:"🧑‍🔬",nm:"연구원 리오",skin:0xe8b88a,hair:0x2a2a33,hat:0x4a6f8a,cloak:0x3d6e8a,pack:0x6e4a32,boot:0x2c3a4a,cap:"hood"},
   {em:"👩‍🦰",nm:"여행자 미나",skin:0xf0c49a,hair:0x9a3b2a,hat:0xe14b4b,cloak:0x355a8a,pack:0x5a3c28,boot:0x33405a,cap:"cap"},
@@ -4114,6 +4131,14 @@ const _heroImgCache={};
 function heroImg(idx){ if(typeof Image==="undefined")return null; if(_heroImgCache[idx])return _heroImgCache[idx]; const url=(typeof HERO_ART!=="undefined")&&HERO_ART[idx]; if(!url)return null; const img=new Image(); img.src=url; _heroImgCache[idx]=img; return img; }
 const _heroBackCache={};
 function heroImgBack(idx){ if(typeof Image==="undefined")return null; if(_heroBackCache[idx])return _heroBackCache[idx]; const url=(typeof HERO_ART_BACK!=="undefined")&&HERO_ART_BACK[idx]; if(!url)return null; const img=new Image(); img.src=url; _heroBackCache[idx]=img; return img; }
+const _heroSheetCache={};
+// 걷기 시트. 없으면 null → 호출부가 정지 이미지 → 절차적 워커 순으로 폴백한다.
+// ⚠️ **없음(null)은 캐시하지 않는다.** 캐시해버리면 시트를 나중에 끼워 넣어도 영영 안 읽는다
+//    (회귀가 런타임에 시트를 주입해 그리기 경로를 검사한다). 성공한 Image만 캐시한다.
+function heroSheet(idx){ if(typeof Image==="undefined")return null;
+  const url=(typeof HERO_SHEET!=="undefined")&&HERO_SHEET[idx]; if(!url)return null;
+  if(_heroSheetCache[idx]&&_heroSheetCache[idx].src===url)return _heroSheetCache[idx];
+  const img=new Image(); img.src=url; _heroSheetCache[idx]=img; return img; }
 function leadFollowMon(){ if(typeof G==="undefined"||!G||!G.party)return null; for(const m of G.party){ if(m&&!m.isEgg)return m; } return null; }
 const FOLLOWER_OUTDOOR=new Set(["coast","isle","shrine","snowfield"]);
 function followerVisible(){ if(typeof G==="undefined"||!G)return false; if(CONFIG.follower==="off")return false; if(G.running)return false; if(CONFIG.follower==="out"){ if(G.indoor && !FOLLOWER_OUTDOOR.has(G.indoor))return false; } return true; }

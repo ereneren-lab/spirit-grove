@@ -36,6 +36,13 @@ hero = "const HERO_ART={%s};" % ",".join(
 back = "const HERO_ART_BACK={%s};" % ",".join(
     f'"{k}":"{url("assets/art/hero_back/" + k + ".webp")}"' for k in man["hero_back"])
 
+# 걷기 스프라이트 시트(3x3: 정지/걸음A/걸음B × 아래/위/옆). manifest에 "hero_sheet"가 있을 때만 실린다.
+# ⚠️ 선택 사항이다 — 없으면 빈 객체가 나가고 게임은 지금처럼 정지 이미지 → 절차적 워커 순으로 폴백한다.
+#    그래서 아트가 도착하기 전에도 빌드가 깨지지 않는다.
+sheets = man.get("hero_sheet") or []
+sheet = "const HERO_SHEET={%s};" % ",".join(
+    f'"{k}":"{url("assets/art/hero_sheet/" + k + ".webp")}"' for k in sheets)
+
 # 순수 규칙(src/rules/*.js)을 마커 자리에 그대로 끼워 넣는다.
 # 브라우저는 이 인라인 결과를, node 단위 테스트(scripts/rules_env.js)는 같은 파일들을
 # 같은 순서로 이어붙여 평가한다 — 즉 양쪽이 문자 그대로 동일한 코드를 돈다.
@@ -50,6 +57,7 @@ repl = {
     "//@@RULES_BATTLE@@": rules("battle"),
     "//@@HERO_ART@@": hero,
     "//@@HERO_ART_BACK@@": back,
+    "//@@HERO_SHEET@@": sheet,
     "//@@PAINT_ART@@": paint,
 }
 for marker, body in repl.items():

@@ -15,3 +15,28 @@ function heroDrawSpec(srcW, ts){
   if(!(srcW>0) || srcW>PIXEL_SRC_MAX) return {size:fit, smooth:true, pixel:false};
   return {size:32*Math.max(2,Math.floor(fit/32)), smooth:false, pixel:true};
 }
+
+/* ===== 주인공 걷기 스프라이트 시트 =====
+   시트 한 장 = 한 캐릭터 전부. **3열 × 3행**, 칸은 정사각(칸 크기는 이미지 폭/3으로 잰다).
+     열 = 0 정지 · 1 걸음A · 2 걸음B          행 = 0 아래(정면) · 1 위(뒷모습) · 2 옆
+   ⚠️ 옆모습은 **오른쪽을 본다.** 왼쪽 이동은 좌우 반전이다(정지 이미지 시절과 같은 규약).
+   ⚠️ 재생 순서는 [정지, A, 정지, B]다 — 걸음 사이에 정지가 끼어야 걷는 것처럼 보인다.
+      이 박자(초당 8위상)는 **절차적 워커 `_walker`가 이미 쓰던 것과 같은 값**이다.
+      아트가 없을 때 워커로 폴백해도 걸음 속도가 안 바뀐다 — 두 경로가 한 규약을 공유한다.
+   ⚠️ 이 함수는 DOM을 모른다 — `rules_unit_test`가 브라우저 없이 직접 잰다. */
+const HERO_ANIM_FPS=8;
+const HERO_SHEET_COLS=3, HERO_SHEET_ROWS=3;
+const HERO_FRAME_ORDER=[0,1,0,2];              // 위상 → 열
+const HERO_DIR_ROW={down:0,up:1,left:2,right:2};
+function heroSheetFrame(dir, moving, now){
+  const row=HERO_DIR_ROW[dir]!=null?HERO_DIR_ROW[dir]:0;
+  const col=moving?HERO_FRAME_ORDER[Math.floor(now*HERO_ANIM_FPS)%HERO_FRAME_ORDER.length]:0;
+  return {col, row, flip:dir==="left"};
+}
+// 시트 이미지의 칸 크기. 3×3이 아니면(=정사각 칸이 안 나오면) null → 호출부가 시트로 안 쓴다.
+function heroSheetCell(srcW, srcH){
+  if(!(srcW>0)||!(srcH>0))return null;
+  if(srcW%HERO_SHEET_COLS||srcH%HERO_SHEET_ROWS)return null;
+  const cw=srcW/HERO_SHEET_COLS, chh=srcH/HERO_SHEET_ROWS;
+  return cw===chh?cw:null;
+}
