@@ -2,7 +2,10 @@
 //
 // 예전 도입부는 슬라이드 7장이 끝나면 **이미 집에 서 있었다**. 세계관은 설명됐는데
 // '나'는 아직 시작하지 않은 상태라 게임 안으로 던져지는 느낌이었다.
-// 지금은: 눈뜨기(암전→깜빡임) → 첫 동료가 깨움 → 머리맡 편지(= 왜 내가 가는가) → 엄마의 배웅.
+// 지금은: 눈뜨기(암전→깜빡임) → 첫 동료가 깨움 → 머리맡의 읽을 것(= 왜 내가 가는가) → 배웅.
+// ⚠️ 2026-08-07부터 **캐릭터마다 출신지·화자가 다르다.** 문구를 그대로 단정하면 캐릭터를 바꿀 때마다 빨개진다
+//    → **역할**을 단정한다(장소 묘사인가 · 첫 동료가 나오는가 · 목적을 말하는가 · 배웅인가).
+//    이 테스트는 첫 카드(리오) 기준이고, 넷 전수는 `origin_test`가 본다.
 //
 // ⚠️ 이 테스트는 **실입력으로 타이틀부터 판다** — 상태를 조립해서 확인하면
 //    "새 게임 버튼에서 여기까지 실제로 이어지는가"를 못 본다(이 저장소가 반복해 밟은 함정:
@@ -39,28 +42,40 @@ const { chromium } = require("playwright"); const path=require("path");
                                       text:document.getElementById("storyText").textContent }));
   ok(story.open && story.text.length>10, `오프닝 슬라이드가 떴다 — "${story.text.slice(0,24)}…"`);
 
-  console.log("\n[2] 슬라이드를 건너뛰면 집에서 눈을 뜬다 (침대 옆, 문 앞이 아니라)");
+  console.log("\n[2] 슬라이드를 건너뛰면 출신지에서 눈을 뜬다 (침대 옆, 문 앞이 아니라)");
+  /* ⚠️ 2026-08-07부터 **캐릭터마다 출신지가 다르다**(연구소/야영지/농가/빈터).
+     예전엔 넷 다 `house`였다 — 여기를 "house"로 못 박아 두면 캐릭터를 바꿀 때마다 빨개진다.
+     이 테스트는 첫 카드(리오)를 고르므로 `home_rio`가 맞고, 넷 전수는 `origin_test`가 따로 본다. */
   await p.click("#storySkip");
-  await p.waitForFunction(()=>window.SG.G().indoor==="house",null,{timeout:6000});
+  await p.waitForFunction(()=>{ const i=window.SG.G().indoor;
+    return i && (i==="house" || i.indexOf("home_")===0); },null,{timeout:8000});
   await p.waitForTimeout(900);
   const wake=await p.evaluate(()=>({ pos:window.SG.G().pos, indoor:window.SG.G().indoor,
     fade:Number(getComputedStyle(document.getElementById("warpFade")).opacity) }));
-  ok(wake.indoor==="house", "집 안에서 시작한다");
+  ok(wake.indoor==="home_rio", `출신지에서 시작한다 (indoor=${wake.indoor})`);
   ok(wake.pos.x===2 && wake.pos.y===2, `침대 옆(2,2)에서 눈을 뜬다 — 실제 (${wake.pos.x},${wake.pos.y})`);
   ok(wake.fade>0.05, `눈뜨기 연출이 진행 중이다(화면이 아직 덮여 있다) — 불투명도 ${wake.fade.toFixed(2)}`);
 
   console.log("\n[3] 눈뜨기가 끝나면 대사가 순서대로 온다: 깨어남 → 편지 → 엄마");
   await p.waitForFunction(()=>document.getElementById("dialogBox").classList.contains("show"),null,{timeout:8000});
-  const d1=await dlg(); ok(/아침 햇살/.test(d1.text), `① 깨어남 — "${d1.text.slice(0,20)}…"`);
+  const d1=await dlg(); ok(d1.name==="" && d1.text.length>12, `① 장소 묘사로 깨어난다 — "${d1.text.slice(0,20)}…"`);
   await nextPage();
   const d2=await dlg(); ok(/첫 동료/.test(d2.text), `② 첫 동료가 깨운다 — "${d2.text.slice(0,20)}…"`);
   await nextPage();
-  const d3=await dlg(); ok(d3.name==="연구소의 편지", `③ 편지가 펼쳐진다 — 화자 "${d3.name}"`);
+  /* ⚠️ 리오는 편지를 **받는 쪽이 아니라 쓴 쪽**이라 "연구소의 편지"가 아니라 "관측 기록"이다. */
+  const d3=await dlg(); ok(d3.name==="관측 기록", `③ 관측 기록이 펼쳐진다 — 화자 "${d3.name}"`);
   ok(/인장/.test(d3.text), `   편지가 목적을 말한다(인장) — "${d3.text.slice(0,26)}…"`);
-  await nextPage(); await nextPage();
-  const d5=await dlg(); ok(/조각 4개|인장 조각/.test(d5.text)||d5.name==="연구소의 편지", `④ 편지가 '무엇을 하면 되는가'까지 간다 — "${d5.text.slice(0,26)}…"`);
-  for(let i=0;i<3&&!(await dlg()).name.includes("엄마");i++)await nextPage();
-  const dm=await dlg(); ok(dm.name==="엄마", `⑤ 엄마의 배웅으로 닫는다 — 화자 "${dm.name}"`);
+  /* ④ 읽을 것이 **무엇을 하면 되는가**까지 간다.
+     ⚠️ 어느 쪽에 나오는지는 캐릭터마다 다르다 → 읽을 것 전체를 넘기며 **모아서** 본다.
+        한 쪽만 집어 단정하면 문구를 손댈 때마다 빨개진다. */
+  let noteAll=d3.text, sender=null;
+  for(let i=0;i<6;i++){ await nextPage(); const d=await dlg();
+    if(d.name===d3.name){ noteAll+=d.text; continue; }
+    sender=d; break; }
+  ok(/조각 4개|인장 조각|조각은 넷|체육관/.test(noteAll), `④ 목적(조각 4개/체육관)까지 말한다`);
+  /* ⑤ 배웅 — 화자는 캐릭터마다 다르다(소장/동행 상인/할아버지/숲의 목소리).
+     읽을 것과 **다른 화자**가 나와 보내주면 된다. */
+  ok(!!(sender&&sender.name)&&sender.name!==d3.name, `⑤ 배웅으로 닫는다 — 화자 "${sender?sender.name:"(없음)"}"`);
 
   console.log("\n[4] 조작 튜토리얼은 집 안에서 뜨지 않는다 (서사와 안 싸운다)");
   const hintInHouse=await p.evaluate(()=>document.getElementById("mapHint").textContent);

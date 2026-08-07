@@ -13,14 +13,20 @@ const { chromium } = require("playwright"); const path=require("path");
   await p.goto("file://"+path.resolve(process.argv[2])); await p.waitForTimeout(800);
   const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)process.exitCode=1; };
 
-  // 1) 폴백: 한 번도 회복한 적 없으면 시작 마을로
+  /* 1) 폴백: 한 번도 회복한 적 없으면 **자기 출신지 앞**으로.
+     ⚠️ 2026-08-07부터 캐릭터마다 출신지가 다르다(유저 결정). 예전엔 넷 다 STARTPOS(마을) 한 곳이었는데
+        그러면 엘·토리는 전멸할 때마다 낯선 곳에서 깨어난다 → HOME_POS[styleIdx]로 바뀌었다.
+     ⚠️ 좌표를 박아 두지 않고 **게임이 들고 있는 HOME_POS와 대조**한다 — 출신지를 옮겨도 안 깨진다. */
   const fresh=await p.evaluate(async()=>{
     const S=window.SG, F=S.flow; S.setG(S.freshState()); S.CONFIG.reduceMotion=true; F.enterMap(true);
-    const G=S.G(); G.pos={x:9,y:22};            // 수정 호수 부근 — 시작 마을에서 멀리
+    const G=S.G(); G.styleIdx=2;                 // 토리(언덕 농가) — 마을이 아닌 출신지로 확인
+    G.pos={x:9,y:22};                           // 수정 호수 부근 — 출신지에서 멀리
     F.blackout(); await new Promise(r=>setTimeout(r,300));
-    const g=S.G(); return { x:g.pos.x, y:g.pos.y, sx:F.STARTPOS.x, sy:F.STARTPOS.y, indoor:g.indoor };
+    const g=S.G(), hp=F.HOME_POS?F.HOME_POS[2]:null;
+    return { x:g.pos.x, y:g.pos.y, hx:hp&&hp.x, hy:hp&&hp.y, indoor:g.indoor };
   });
-  ok(fresh.x===fresh.sx&&fresh.y===fresh.sy, `회복 기록이 없으면 시작 마을로 (${fresh.x},${fresh.y})`);
+  ok(fresh.hx!=null && fresh.x===fresh.hx && fresh.y===fresh.hy,
+     `회복 기록이 없으면 자기 출신지 앞으로 (${fresh.x},${fresh.y} · 기대 ${fresh.hx},${fresh.hy})`);
 
   // 2) 정령센터에서 회복 → 먼 곳에서 전멸 → 그 센터 '안'에서 눈뜬다
   const center=await p.evaluate(async()=>{
