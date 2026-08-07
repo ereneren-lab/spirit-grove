@@ -2033,7 +2033,19 @@ const isTrainerTile=t=>t==="1"||t==="2"||t==="3"||t==="4"||t==="5"||t==="6"||t==
    ⚠️ 자연 입구(동굴 D·용암 V·설원 M·늪지 J·봉우리 O·유적 z·분화구 ^·화원 !·해안 W)는 절벽에 난 구멍이라 방향을 안 가린다 —
       이들은 문이 아니고, 정면 칸이 없는 곳도 있어(지도상 8곳) 정면 규칙을 걸면 도달 불가가 된다. */
 const DOOR_TILES="+EHGUSX";
-function walkable(x,y){ if(x<0||y<0||x>=W||y>=H)return false; const t=tileAt(x,y); if(t==="~"&&typeof G!=="undefined"&&G&&G.surfing&&!G.indoor)return true; if(typeof NPC_AT!=="undefined" && !G.indoor && NPC_AT[x+","+y] && npcAvailable(NPC_AT[x+","+y]))return false; if((t==="5"||t==="6"||(t!==""&&"1234".indexOf(t)>=0)||(t!==""&&GUARD_TILES.indexOf(t)>=0))&&G.indoor)return G.defeated.has(t); return t!=="#"&&t!=="~"&&t!=="H"&&t!=="F"&&t!=="P"&&t!=="N"&&t!=="C"&&t!=="o"&&t!=="D"&&t!=="G"&&t!=="W"&&t!=="Y"&&t!=="Z"&&t!=="@"&&t!=="K"&&t!=="L"&&t!=="U"&&t!=="x"&&t!=="%"&&t!=="V"&&t!=="M"&&t!=="&"&&t!=="Q"&&t!=="J"&&t!=="O"&&t!=="z"&&t!=="^"&&t!=="!"&&t!=="+"&&t!=="E"&&t!=="p"&&t!=="n"&&t!=="s"&&(t!=="S"||!!G.indoor)&&(t!=="X"||!!G.indoor)&&t!=="$"; }
+/* ⚠️ **지형과 점유를 나눠 둔다.** 예전엔 한 함수가 둘을 섞어서, "지도가 여기 뚫려 있나"를 물으려던 곳이
+   "지금 NPC가 서 있나"까지 같이 읽었다 — 관문 기둥이 지나가는 NPC를 따라 춤췄고(_gateFx),
+   `door_front_test [5]`는 문 앞을 지나는 NPC 때문에 간헐적으로 빨개졌다(재스캔 4회로도 안 잡혔다.
+   NPC가 45% 확률로 제자리에 머물러 3초를 버틴다). 구조를 묻는 곳은 terrainWalkable을 쓸 것.
+   - terrainWalkable: **지도만** 본다(타일 문자 + 실내 트레이너 격파 여부).
+   - walkable: 거기에 **로밍 NPC 점유**를 더한다. 실제 이동 판정은 이쪽. */
+function terrainWalkable(x,y){ if(x<0||y<0||x>=W||y>=H)return false; const t=tileAt(x,y);
+  if(t==="~"&&typeof G!=="undefined"&&G&&G.surfing&&!G.indoor)return true;
+  if((t==="5"||t==="6"||(t!==""&&"1234".indexOf(t)>=0)||(t!==""&&GUARD_TILES.indexOf(t)>=0))&&G.indoor)return G.defeated.has(t);
+  return t!=="#"&&t!=="~"&&t!=="H"&&t!=="F"&&t!=="P"&&t!=="N"&&t!=="C"&&t!=="o"&&t!=="D"&&t!=="G"&&t!=="W"&&t!=="Y"&&t!=="Z"&&t!=="@"&&t!=="K"&&t!=="L"&&t!=="U"&&t!=="x"&&t!=="%"&&t!=="V"&&t!=="M"&&t!=="&"&&t!=="Q"&&t!=="J"&&t!=="O"&&t!=="z"&&t!=="^"&&t!=="!"&&t!=="+"&&t!=="E"&&t!=="p"&&t!=="n"&&t!=="s"&&(t!=="S"||!!G.indoor)&&(t!=="X"||!!G.indoor)&&t!=="$"; }
+function walkable(x,y){
+  if(typeof NPC_AT!=="undefined" && !G.indoor && NPC_AT[x+","+y] && npcAvailable(NPC_AT[x+","+y]))return false;
+  return terrainWalkable(x,y); }
 // region bands (bottom->top): 0 town,1 meadow,2 forest,3 deep,4 lake,5 highland,6 arena
 function region(y){ if(y>=47)return 0; if(y>=41)return 1; if(y>=34)return 2; if(y>=27)return 3; if(y>=20)return 4; if(y>=12)return 5; return 6; }
 /* 지역 경계선 — region()이 바뀌는 y. 관문(_gateFx)을 이 행의 위쪽 모서리에 세운다.
@@ -2096,6 +2108,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     this._cam={ox,oy,ts};                       // 탭-이동 역변환용
     const pcx=ox+px*ts+ts/2, pcy=oy+py*ts+ts/2; // 플레이어 실제 화면 중심
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const sx=ox+x*ts,sy=oy+y*ts; if(sx<-ts||sy<-ts||sx>cw||sy>ch)continue; this._tile(ctx,tileAt(x,y),sx,sy,ts,x,y,now);
+      this._doorFx(ctx,sx,sy,ts,x,y,now,tileAt(x,y));   // 출입구 표시(문 강조 + 정면 칸 발판) — 순수 렌더
       // 바닥에 놓인 도구(아직 안 주운 것만) — 타일 위에 얹어 그린다
       if(typeof groundItemAt==="function"){ const gi=groundItemAt(x,y); if(gi)this._itemBall(ctx,sx,sy,ts,now,x,y); }   // 실내 볼도 보이게(groundItemAt이 G.indoor로 스코프) — 눌러-받기와 일관
       if(typeof berryAt==="function"){ const bt=berryAt(x,y); if(bt)this._berryTree(ctx,sx,sy,ts,now,berryRipe(bt)); } }
@@ -2160,6 +2173,51 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     this._grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving);
     if(typeof G!=="undefined" && (!G.indoor||G.indoor==="coast"||G.indoor==="isle"||G.indoor==="shrine"||G.indoor==="snowfield"||G.indoor==="marsh"||G.indoor==="skyridge"||G.indoor==="ruins"||G.indoor==="mine"||G.indoor==="hillpath"||G.indoor==="pier"||G.indoor==="mosshollow"||G.indoor==="fallspath"||G.indoor==="crater"||G.indoor==="garden") && typeof dayTintRGBA==="function"){ const _dt=dayTintRGBA(); if(_dt[3]>0.004){ ctx.fillStyle="rgba("+_dt[0]+","+_dt[1]+","+_dt[2]+","+_dt[3].toFixed(3)+")"; ctx.fillRect(0,0,cw,ch); } const _ph=dayPhase(); const _em=_ph==="day"?"☀️":_ph==="dusk"?"🌇":_ph==="night"?"🌙":"🌅"; ctx.globalAlpha=0.9; ctx.font=Math.floor(ts*0.5)+"px sans-serif"; ctx.textAlign="right"; ctx.textBaseline="top"; ctx.fillText(_em, cw-6, 6); ctx.globalAlpha=1; }
     if(typeof owWeather==="function"){ const _wx=owWeather(); if(_wx!=="clear" && typeof drawWeatherFx==="function")drawWeatherFx(ctx,cw,ch,ts,_wx); } },
+  /* ===== 출입구 표시 =====
+     유저 제보(여러 번): **"출입구가 안 보인다."**
+     원인은 규칙과 안내가 어긋난 것이다 — 2026-07-28에 건물을 **정면(아래) 진입만** 가능하게 바꿔놓고
+     (`da923b6`), **어느 칸이 정면인지 알려주는 시각 신호는 안 넣었다.** 지금까지 있던 안내는
+     틀린 방향으로 부딪혔을 때 뜨는 텍스트 힌트 하나뿐이라 **실패한 뒤에야** 알 수 있었다.
+     게다가 문 자체가 타일의 20%×32%(실측 약 15×25px)라 눈에 안 띈다.
+     → ① 문 위에 등을 달고 문틀을 둘러 **문을 문처럼** 보이게 하고
+       ② 문 **바로 아래 칸(=정면)** 에 발판을 깔아 "여기 서라"를 미리 보여준다.
+     ⚠️ **맵 문자열도 walkable도 안 건드린다.** 순수 렌더라 도달성·게이팅·회귀가 전부 불변이다.
+     ⚠️ 판정은 `walkable()`이 아니라 **타일 문자**로 한다 — walkable은 NPC 점유까지 보므로
+        지나가는 NPC를 따라 발판이 깜빡인다(관문 기둥에서 이미 겪은 함정). */
+  _doorFx(ctx,sx,sy,ts,x,y,now,here){
+    if(typeof G==="undefined"||!G||G.indoor)return;
+    if(typeof DOOR_TILES==="undefined"||typeof tileAt!=="function")return;
+    const above=tileAt(x,y-1);
+    const isDoor=t=>typeof t==="string"&&t.length===1&&DOOR_TILES.indexOf(t)>=0;
+    const t=(now||0);
+    if(isDoor(here)){
+      // 문틀 + 상단 등 — 건물 그림 위에 얹는다(각 타일 그림은 안 고친다)
+      const dw=ts*0.30, dh=ts*0.34, dx=sx+ts*0.5-dw/2, dy=sy+ts*0.90-dh;
+      ctx.fillStyle="#2b2018"; ctx.fillRect(dx-ts*0.035, dy-ts*0.035, dw+ts*0.07, dh+ts*0.035);
+      ctx.fillStyle="#6b4a2c"; ctx.fillRect(dx,dy,dw,dh);
+      ctx.fillStyle="rgba(255,224,160,.22)"; ctx.fillRect(dx,dy,dw,dh*0.22);      // 문 안쪽 빛
+      ctx.fillStyle="#d8b878"; ctx.beginPath(); ctx.arc(dx+dw*0.80, dy+dh*0.55, Math.max(1,ts*0.022),0,6.29); ctx.fill();  // 손잡이
+      const gl=0.55+0.45*Math.sin(t*2.0+x*0.7+y*0.3);
+      ctx.fillStyle="rgba(255,206,120,"+(0.30+gl*0.30).toFixed(2)+")";            // 문등
+      ctx.beginPath(); ctx.arc(sx+ts*0.5, dy-ts*0.10, ts*0.075,0,6.29); ctx.fill();
+      ctx.fillStyle="rgba(255,236,190,.95)";
+      ctx.beginPath(); ctx.arc(sx+ts*0.5, dy-ts*0.10, ts*0.032,0,6.29); ctx.fill();
+    }
+    if(isDoor(above)){
+      // 정면 칸 발판 — "여기 서서 위로" 를 미리 알려준다
+      const bw=ts*0.56, bh=ts*0.26, bx=sx+ts*0.5-bw/2, by=sy+ts*0.5-bh/2;
+      ctx.fillStyle="rgba(60,44,30,.30)";
+      ctx.beginPath(); ctx.ellipse(sx+ts*0.5, by+bh*0.62, bw*0.55, bh*0.62, 0,0,6.29); ctx.fill();
+      ctx.fillStyle="#c9b083"; ctx.fillRect(bx,by,bw,bh);
+      ctx.fillStyle="#a8905f"; ctx.fillRect(bx,by+bh*0.62,bw,bh*0.38);
+      ctx.strokeStyle="rgba(60,44,30,.45)"; ctx.lineWidth=Math.max(1,ts*0.018); ctx.strokeRect(bx,by,bw,bh);
+      // 위를 가리키는 삼각형(깜빡임) — 방향까지 알려준다
+      const ar=0.5+0.5*Math.sin(t*2.6+x*0.5);
+      ctx.fillStyle="rgba(255,236,180,"+(0.35+ar*0.45).toFixed(2)+")";
+      const ay=by-ts*0.05-ar*ts*0.03, aw=ts*0.10;
+      ctx.beginPath(); ctx.moveTo(sx+ts*0.5, ay-aw*0.8); ctx.lineTo(sx+ts*0.5-aw, ay+aw*0.4); ctx.lineTo(sx+ts*0.5+aw, ay+aw*0.4); ctx.closePath(); ctx.fill();
+    }
+  },
   /* 지역 관문 — 마을/초원/숲/… 경계에 나무 기둥과 들보를 세운다. "여기서부터 다른 곳"을 눈으로 보여주는 장치.
      ⚠️ **맵 문자열을 건드리지 않는다** — 순수 렌더 장식이라 walkable/도달성/게이팅이 전부 불변이다
         (경계에 실제 타일을 놓으면 reachability_test가 도는 도달 그래프가 바뀐다).
@@ -6645,7 +6703,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   getCooldown:()=>encCooldown,
   getDB:()=>DB, dbReplace,   // 듀오 배틀 상태 + 벤치 교대. held_effect_test [5]가 듀오 상대의 지닌물건 풀을 검사한다.
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, terrainWalkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
