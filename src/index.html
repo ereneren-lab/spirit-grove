@@ -1652,7 +1652,7 @@ window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,HELD_ITEMS,byId,makeMon,recalc,damage,
   moveCat,moveCatKo,isSpecMove,MOVE_CAT,heroDrawSpec,heroSheetFrame,heroSheetCell,HERO_ANIM_FPS,HERO_FRAME_ORDER,
   get HERO_SHEET(){return typeof HERO_SHEET!=="undefined"?HERO_SHEET:null;}};
 /* ===== MAP (17 x 42) ===== */
-let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg##gT#","#gTTggggggTTgEggg#gg+ggg#","#ggTgggTgTgTggTTgTTTgg###","#gT$PHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
+let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTgggg#gg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gTgTgggGwwwTTggT#gT#ggg#","#Tg#TTggggTTP#gTgggg#$gT#","#gTTggggggTTgEggg#gg+ggg#","#ggggggTgTgTggTTgTTTgg###","#gggPHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
 let W=25,H=50;
 const OVERWORLD_STR0=MAP_STR.slice();
 const tileAt=(x,y)=>(MAP_STR[y]&&MAP_STR[y][x])||"#";
@@ -1687,7 +1687,10 @@ const ROUTE_AT={
   /* 일곱째 — 반딧불 오솔길: **마을 ↔ 초원**. 초반 2지역이 체육관·센터·상점뿐이라
      이탈이 가장 많은 구간이 가장 비어 있었다(평가 #6) → 처음 만나는 지선을 여기 둔다.
      도보 25칸을 건너뛴다(route_probe 실측 — 초반 후보 중 최장). */
-  "3,47": {id:"fireflyway", sx:2,  sy:9},
+  /* ⚠️ 원래 이 입구는 집 바로 옆(3,47)이었다 — 집에서 두 칸이라 **무심코 들어가진다**는 제보.
+     정령센터 옆(21,44)으로 옮겼다. 벽(#) 타일이라 통행성은 그대로고, 착지 칸 (21,45)는 원래 걸어갈 수 있던 풀밭이다.
+     초반에 지선을 하나 두려던 원래 의도(마을↔초원)는 유지된다 — 여전히 마을 안이다. */
+  "21,44": {id:"fireflyway", sx:2,  sy:9},
   "23,42":{id:"fireflyway", sx:14, sy:1},
   "4,24": {id:"fallspath",  sx:2,  sy:11},
   "4,13": {id:"fallspath",  sx:10, sy:1} };
@@ -1722,7 +1725,7 @@ const INTERIORS={
   /* 반딧불 오솔길 — 마을(3,47) ↔ 초원(23,42). **플레이어가 처음 만나는 지선**이라
      조우 레벨을 스타터 대역(4~18)으로 낮게 잡고 바닥 도구를 넉넉히 뒀다. */
   fireflyway:{ id:"fireflyway", W:17, H:11, startX:2, startY:9, exitX:1, exitY:9, name:"반딧불 오솔길",
-    exits:[{x:1,y:9,ox:3,oy:48},{x:15,y:1,ox:23,oy:43}],
+    exits:[{x:1,y:9,ox:21,oy:45},{x:15,y:1,ox:23,oy:43}],
     str:["#################",
          "############g.g.#",
          "############.####",
@@ -2848,7 +2851,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
 let Field=Map2D;
 
 /* ===== MOVEMENT ===== */
-const SIGN_MSG={"12,44":"🪧 초원 — 정령 회관에서 자질을 감정받을 수 있다. 바닥에 떨어진 도구도 잊지 말 것!","18,16":"🪧 고원 — 여기서부터 바람이 거세다. 회복약을 넉넉히 챙겼는가?","13,12":"🪧 군주의 제단이 가깝다. 숲의 인장이 흐려진 곳 — 되돌아갈 각오 없이는 들어서지 마라.","4,47":"🪧 시작의 마을 — 위로 갈수록 강한 정령이 산다. 조심히!","10,40":"🪧 이 앞은 깊은 숲. 풀숲에서 야생 정령이 자주 나온다.","6,27":"🪧 수정 호수가 가깝다 — 강한 정령이 많으니 준비를 단단히!"};
+const SIGN_MSG={"12,44":"🪧 초원 — 정령 회관에서 자질을 감정받을 수 있다. 바닥에 떨어진 도구도 잊지 말 것!","18,16":"🪧 고원 — 여기서부터 바람이 거세다. 회복약을 넉넉히 챙겼는가?","13,12":"🪧 군주의 제단이 가깝다. 숲의 인장이 흐려진 곳 — 되돌아갈 각오 없이는 들어서지 마라.","4,47":"🪧 시작의 마을 — 진한 풀숲에 들어서면 야생 정령이 튀어나온다. 마을 안은 안전하니 먼저 상점과 정령센터부터 들러라. 위로 갈수록 강한 정령이 산다!","10,40":"🪧 이 앞은 깊은 숲. 풀숲에서 야생 정령이 자주 나온다.","6,27":"🪧 수정 호수가 가깝다 — 강한 정령이 많으니 준비를 단단히!"};
 function move(dir,auto){ if(G.busy||G.inBattle||!Field.arrived)return; if(_warpLock&&performance.now()<_warpLock)return;   // 워프 직후 짧은 입력 잠금: 눌린 키 관성이 출구로 걸어나가는 것 방지
   if(Field)Field.moveSpeed=(G&&G.running)?11.4:6.8; if(!auto)stopPath();
   let {x,y}=G.pos;
