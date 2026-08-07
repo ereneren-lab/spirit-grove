@@ -180,6 +180,15 @@ console.log("\n[주인공 스프라이트 그리기 규격]");
   ok([68,77,83].every(ts=>R.heroDrawSpec(32,ts).size<=ts), "픽셀 스프라이트가 타일 크기를 넘지 않는다");
   // 아주 큰 화면에서는 3배로 올라간다
   ok(R.heroDrawSpec(32,110).size===96, `타일이 커지면 96으로 올라간다 (${R.heroDrawSpec(32,110).size})`);
+
+  /* ⚠️ 32 말고 다른 칸 크기도 **원본의 정수배**여야 한다. 32 배수로 고정하면 48·64 원본에서
+     1.33배 같은 소수배가 나와 도트가 울퉁불퉁해진다(원본 디테일이 32칸에 안 들어가 48~64를 쓸 참이다). */
+  for(const src of [32,48,64]){
+    const sp=R.heroDrawSpec(src,77);
+    ok(sp.size%src===0 && sp.size>0, `칸 ${src}px → 그리기 ${sp.size}px = 정수배(${sp.size/src}배)`);
+    ok(sp.size<=77, `칸 ${src}px → 타일(77)을 안 넘는다 (${sp.size})`);
+  }
+  ok(R.heroDrawSpec(64,77).size===64, `64px 칸은 1:1로 그려진다 — 가장 또렷하다 (${R.heroDrawSpec(64,77).size})`);
   // 아직 로드 안 된 이미지(naturalWidth 0)는 일러스트 취급 = 지금 동작 유지
   ok(R.heroDrawSpec(0,77).smooth===true, "원본 크기를 모르면 안전하게 현행(부드럽게) 동작한다");
 }

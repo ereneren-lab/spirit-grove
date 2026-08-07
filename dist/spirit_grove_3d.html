@@ -1001,7 +1001,11 @@ const PIXEL_SRC_MAX=64;
 function heroDrawSpec(srcW, ts){
   const fit=ts*0.98;
   if(!(srcW>0) || srcW>PIXEL_SRC_MAX) return {size:fit, smooth:true, pixel:false};
-  return {size:32*Math.max(2,Math.floor(fit/32)), smooth:false, pixel:true};
+  /* ⚠️ **원본 크기의 정수배**로 내린다(예전엔 32 배수로 고정이었다).
+     32 원본이면 그대로 64(2배)라 결과가 같지만, 48·64 원본에선 32 배수가 정수배가 아니라
+     도트가 울퉁불퉁해졌다 — 실측상 원본 디테일이 32칸에 안 들어가 48~64칸을 쓸 참이므로 일반화한다.
+     내림이라 스프라이트가 타일을 절대 안 넘고, 뷰포트가 흔들려도 크기가 안 튄다. */
+  return {size:srcW*Math.max(1,Math.floor(fit/srcW)), smooth:false, pixel:true};
 }
 
 /* ===== 주인공 걷기 스프라이트 시트 =====
