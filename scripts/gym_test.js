@@ -8,7 +8,12 @@ const { chromium } = require("playwright"); const path=require("path");
   const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)process.exitCode=1; };
 
   await p.evaluate(()=>{ const SG=window.SG, G=SG.freshState(); G.party=[SG.makeMon("emberwolf",30)];
-    G.pos={x:8,y:44}; G.defeated=new Set(["7","a"]);   // gym1 입구 아래 + 가드 미리 격파
+    /* ⚠️ **좌표를 박지 않는다 — GYM_AT에서 gym1 자리를 찾아 그 아래 칸에 선다.**
+       원래 {x:8,y:44}로 박아뒀는데 체육관을 옮기자 게임은 멀쩡한데 이 테스트만
+       "체육관 입장 (indoor=null)"으로 빨개졌다. 테스트가 든 상수도 병렬 테이블이다. */
+    const k=Object.keys(SG.GYM_AT||{}).find(k=>SG.GYM_AT[k]==="gym1")||"8,43";
+    const [gx,gy]=k.split(",").map(Number);
+    G.pos={x:gx,y:gy+1}; G.defeated=new Set(["7","a"]);   // gym1 입구 아래 + 가드 미리 격파
     SG.setG(G); SG.flow.enterMap(true); });
   const press=async()=>{ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(360); };
 

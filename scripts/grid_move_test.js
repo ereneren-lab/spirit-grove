@@ -2,7 +2,12 @@
 const { chromium } = require("playwright"); const path=require("path");
 async function enterGym(p, grid){
   await p.evaluate((g)=>{ const SG=window.SG; SG.CONFIG.gridMove=g;
-    const G=SG.freshState(); G.party=[SG.makeMon("emberwolf",30)]; G.pos={x:8,y:44};
+    /* ⚠️ 좌표를 박지 않는다 — GYM_AT에서 gym1을 찾아 그 문 앞에 선다.
+       (8,44)로 박아뒀다가 체육관을 옮기자 위로 눌러도 실내로 안 들어가
+       "부드럽게: 1칸 이동 (43→43)"으로 빨개졌다. 이동 로직은 멀쩡했다. */
+    const k=Object.keys(SG.GYM_AT||{}).find(k=>SG.GYM_AT[k]==="gym1")||"8,43";
+    const [gx,gy]=k.split(",").map(Number);
+    const G=SG.freshState(); G.party=[SG.makeMon("emberwolf",30)]; G.pos={x:gx,y:gy+1};
     G.defeated=new Set(["7","a","1"]); SG.setG(G); SG.flow.enterMap(true); },grid);
   await p.keyboard.press("ArrowUp"); await p.waitForTimeout(600);   // 체육관 입장 → (4,9)
 }

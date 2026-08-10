@@ -8,7 +8,10 @@ const { chromium } = require("playwright"); const path=require("path");
   const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)process.exitCode=1; };
 
   await p.evaluate(()=>{ const SG=window.SG,G=SG.freshState(); G.party=[SG.makeMon("emberwolf",30)];
-    G.pos={x:8,y:44}; G.defeated=new Set(["7","a","1"]); SG.setG(G); SG.flow.enterMap(true); });
+    /* ⚠️ 좌표를 박지 않는다 — GYM_AT에서 gym1을 찾아 그 문 앞에 선다(gym_test와 같은 이유). */
+    const k=Object.keys(SG.GYM_AT||{}).find(k=>SG.GYM_AT[k]==="gym1")||"8,43";
+    const [gx,gy]=k.split(",").map(Number);
+    G.pos={x:gx,y:gy+1}; G.defeated=new Set(["7","a","1"]); SG.setG(G); SG.flow.enterMap(true); });
   await p.keyboard.press("ArrowUp"); await p.waitForTimeout(600);   // 체육관 입장
   const indoor = await p.evaluate(()=>window.SG.G().indoor);
   ok(indoor==="gym1", `체육관 입장 (indoor=${indoor})`);
