@@ -1897,12 +1897,55 @@ TRAINERS.V2={key:"V2",rival:true,name:"라이벌 카이",em:"🧑‍🎤",team:[
 TRAINERS.V3={key:"V3",rival:true,name:"라이벌 카이",em:"🧑‍🎤",team:[["voltrat",21],["thunderowl",22],["harelord",22]],reward:{greatball:3,hyperpotion:2,revive:1},money:1700,intro:"라이벌 카이: 너 정말 빨리 강해지네… 나도 질 수 없지!",outro:"…인정할게. 넌 진짜 강해. 근데 마지막은 내가 이긴다."};
 TRAINERS.V4={key:"V4",rival:true,name:"라이벌 카이",em:"🧑‍🎤",team:[["thunderowl",29],["voltrat",28],["harelord",30],["stormhawk",30]],reward:{greatball:5,hyperpotion:3,revive:2,candy:1},money:2800,intro:"라이벌 카이: 여기까지 왔구나. 군주께 닿기 전에 — 내 전부를 받아!",outro:"…졌다. 완전히. 가, 군주를 꺾어. 네가 이 숲을 지킬 자야. 친구."};
 const NPCS=[
+  /* ⚠️ **출신지 출구 2칸 안엔 전투 트레이너를 두지 않는다.** 출신지를 4곳으로 늘리면서
+     기존 트레이너 둘(벌레소년 메아 · 물놀이 소년 하리)이 새 출구 바로 옆에 놓여
+     "문 열자마자 배틀"이 됐다 → 각각 2칸씩 물렸다. 회귀 `onboarding_test [3]`이 이걸 단정한다.
+     새 트레이너를 놓을 때도 출구에서 4칸은 띄울 것. */
+  /* ===== 출신지 안내인 4명 =====
+     유저: "나오자마자 배틀하는 게 별로다. 포켓몬처럼 차근차근 갔으면."
+     ⚠️ 출신지가 넷이라 **한 곳에만 세우면 셋은 그대로다.** 실측상 미나·토리·엘은 문 열자마자
+        1~2칸 앞이 풀숲이었고(리오만 4칸) 게다가 초원(Lv7)이라 리오보다 센 야생을 만났다.
+        → 넷 다 완충을 4칸 이상으로 넓히고, 각 출구 옆에 **그 출신지에 맞는 안내인**을 세운다.
+     ⚠️ 말투와 조언이 캐릭터마다 다르다 — 같은 문구를 네 번 쓰면 "다른 시작"이 무너진다.
+        `chat`은 반복 대사, `lines`는 처음 말 걸 때 순서대로 나오는 안내다. */
+  {id:"guide_rio",x:4,y:48,em:"🧪",name:"연구소 조수 하린",
+    spr:{outfit:"#eef0f2",accent:"#4cae9b",skin:"#e8c39a",hair:"#3a3a44",boots:"#6a6f78",extra:"glasses"},
+    lines:["연구소 조수 하린: 소장님이 나가셨다고요? 그럼 이건 제가 전할게요.",
+           "저기 <b>진한 풀숲</b>에 들어서면 야생 정령이 나와요. 마을 안은 안전하니 <b>먼저 상점</b>에서 정령구부터 챙기세요.",
+           "야생을 만나면 <b>공격으로 체력을 깎고</b> 정령구를 던지는 게 기본이에요. 지치면 <b>모닥불 🔥</b>에 닿으면 회복돼요."],
+    chat:["하린: 기록은 제가 이어서 쓰고 있어요. 뭐든 보시면 알려주세요!",
+          "하린: 정령구는 상대 체력이 적을수록 잘 들어가요.",
+          "하린: 도감이 차면 연구소가 보상을 준대요."]},
+  {id:"guide_mina",x:16,y:44,em:"🎒",name:"봇짐장수 두식",
+    spr:{outfit:"#c07a3a",accent:"#e8c86a",skin:"#e0b088",hair:"#4a3a26",hat:"straw",hatc:"#d8c078",boots:"#5a4632"},
+    lines:["봇짐장수 두식: 어이, 천막에서 나온 아이로구만. 길 위에선 인사가 먼저지.",
+           "여기서부터는 <b>초원</b>이야. <b>진한 풀숲</b>을 밟으면 야생 정령이 튀어나온다네.",
+           "겁낼 것 없어. <b>도망</b>도 방법이고, 정 급하면 <b>모닥불 🔥</b>로 가면 정령이 회복돼."],
+    chat:["두식: 길에서 만난 인연이 제일 오래 가는 법이지.",
+          "두식: 남쪽 마을에 상점이 있네. 정령구는 넉넉히 챙겨두게.",
+          "두식: 서두르지 말게. 길은 어디로도 이어져 있으니."]},
+  {id:"guide_tori",x:9,y:42,em:"🌾",name:"이웃 아주머니 복순",
+    spr:{outfit:"#8aa85a",accent:"#e8d860",skin:"#e8c39a",hair:"#6b4a2e",boots:"#5a5a3a"},
+    lines:["이웃 아주머니 복순: 아이고, 할아버지 대신 나섰다며? 기특하기도 하지.",
+           "밭 너머 <b>진한 풀숲</b>엔 야생 정령이 산다. 밟으면 튀어나오니 마음 단단히 먹으렴.",
+           "정령이 지치면 <b>모닥불 🔥</b>에 닿으면 낫는단다. 무리하지 말고."],
+    chat:["복순: 밭일은 우리가 봐줄 테니 걱정 말고.",
+          "복순: 풀숲에 들어가기 전엔 정령 체력을 꼭 보렴.",
+          "복순: 조심히 다녀오너라."]},
+  {id:"guide_el",x:4,y:45,em:"🍃",name:"숲지기 노인",
+    spr:{outfit:"#4a7a5a",accent:"#a8d490",skin:"#d8c0a0",hair:"#8a8a7a",hat:"hood",hatc:"#3a6a4a",boots:"#2c4a3a"},
+    lines:["숲지기 노인: …숲이 너를 내보냈구나. 인간의 땅은 처음이겠지.",
+           "저 <b>진한 풀숲</b>엔 아직 야생인 정령들이 있다. 밟으면 나온다 — 놀라지 마라.",
+           "다치면 <b>모닥불 🔥</b>을 찾아라. 인간들이 피워둔 불이지만, 정령도 거기서 쉰다."],
+    chat:["숲지기 노인: 서두르는 자가 가장 늦게 닿는 법이다.",
+          "숲지기 노인: 남쪽으로 내려가면 인간의 마을이 있다.",
+          "숲지기 노인: 숲은 너를 지켜본다."]},
   {id:"mina",x:14,y:48,chat:["미나: 도감은 채울수록 연구소가 보상을 준대. 부지런히 모아봐!","미나: 긴 풀숲엔 정령이 많이 숨어 있어. 나와도 놀라지 말고!","미나: 특수형 정령은 특공으로 싸우는 게 유리해. 도감 봤지?","미나: 힘내! 네가 인장을 되살릴 유일한 희망이야."],em:"🧑‍🔬",name:"조수 미나",spr:{outfit:"#eef0f2",accent:"#4cae9b",skin:"#e8c39a",hair:"#6b4a2e",boots:"#6a6f78",extra:"glasses"},
     lines:["연구소 조수 미나: 위로 갈수록 정령이 강해져. 진한 풀숲일수록 조우 확률이 높으니 조심해!","모닥불 🔥 에 닿으면 정령이 모두 회복돼. 한 번 발견한 모닥불은 언제든 워프로 돌아올 수 있어.","참! 정령마다 물리형·특수형이 있어. 불·물·풀·전기·얼음 기술은 특수공격, 그 밖의 기술은 물리공격으로 피해가 계산돼. 도감에서 특공·특방을 확인해봐!"]},
   {id:"rival",x:16,y:41,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V",spr:{outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
     lines:["라이벌 카이: 어이! 너도 정령 연구소에서 왔다며?","실은 스승님을 찾으러 이 숲에 들어왔어. 인장이 옅어진 뒤로 소식이 끊기셨거든. 누가 더 센지, 한 판 가려보자!"],
     linesAfter:["라이벌 카이: 큭… 이번엔 운이 좋았어. 그래도 스승님 흔적 쪽엔 나도 가까워지고 있어. 위에서 다시 붙자!"]},
-  {id:"t1",x:4,y:44,em:"🪲",name:"벌레소년 메아",battleKey:"T1",spr:{outfit:"#6aa84f",accent:"#3a6b2e",skin:"#e8c39a",hair:"#3a2c22",hat:"cap",hatc:"#7a9a3a",boots:"#4a5a2c",extra:"net"},
+  {id:"t1",x:6,y:44,em:"🪲",name:"벌레소년 메아",battleKey:"T1",spr:{outfit:"#6aa84f",accent:"#3a6b2e",skin:"#e8c39a",hair:"#3a2c22",hat:"cap",hatc:"#7a9a3a",boots:"#4a5a2c",extra:"net"},
     lines:["벌레소년 메아: 내 정령들 좀 봐줄래? 한 판 하자!"], linesAfter:["벌레소년 메아: 너 진짜 잘한다… 나도 더 강해질래!"]},
   {id:"elder",x:16,y:34,chat:["장로: 이 숲은 천 년을 살아왔지. 그 숨결을 느껴보게.","장로: 서두르지 말게. 정령과의 신뢰가 힘보다 먼저라네.","장로: 깊은 숲엔 늙은 나조차 길을 잃는다네. 표식을 잘 보게."],em:"🧓",name:"숲의 노인",spr:{outfit:"#7d7a86",accent:"#5a5560",skin:"#e0bd96",hair:"#d8d4cc",boots:"#4a4550",extra:"beard"},
     lines:["숲의 노인: 예전엔 이 길이 곧게 뻗어 있었지. 인장의 빛이 옅어지자 길마저 뒤틀려 미궁이 됐어.","정령은 상성이 중요하다네. 불은 풀에, 물은 불에, 풀은 물에 강하지. 기술 선택을 잘 하게.","어떤 정령은 두 가지 속성을 함께 지녔다네. 약점이 겹치면 4배의 피해를 입기도 하지 — 상대의 속성을 잘 살피게."]},
@@ -1943,7 +1986,7 @@ const NPCS=[
   {id:"t16",x:4,y:41,em:"🌸",name:"풀숲 소녀 미나",battleKey:"T16",spr:{outfit:"#e08ab0",accent:"#c05a8a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["풀숲 소녀 미나: 풀 정령의 끈기를 보여줄게!"],linesAfter:["풀숲 소녀 미나: 끈질기게 잘 버텼네."]},
   {id:"t17",x:4,y:35,em:"🌲",name:"숲지기 도윤",battleKey:"T17",spr:{outfit:"#4a7a4a",accent:"#2a5a2a",skin:"#e3b07e",hair:"#2a2416",hat:"cap",hatc:"#3a6a3a",boots:"#2a3a1a"},lines:["숲지기 도윤: 이 숲을 지나려면 날 이겨야 해."],linesAfter:["숲지기 도윤: …통과다. 조심히 가."]},
   {id:"t18",x:3,y:27,em:"🐉",name:"용 수련생 하늘",battleKey:"T18",spr:{outfit:"#6a5aa0",accent:"#4a3a80",skin:"#e0bd96",hair:"#2a2c4a",hat:"none",boots:"#3a2c5a"},lines:["용 수련생 하늘: 언젠가 천공룡을 키울 거야!"],linesAfter:["용 수련생 하늘: 아직 멀었나… 더 강해질게."]},
-  {id:"t19",x:18,y:43,em:"💧",name:"물놀이 소년 하리",battleKey:"T19",spr:{outfit:"#5aa0c0",accent:"#3a7a9a",skin:"#e8c39a",hair:"#3a4a5a",hat:"none",boots:"#3a5a6a"},lines:["물놀이 소년 하리: 물 정령은 시원해! 붙어보자!"],linesAfter:["물놀이 소년 하리: 헉, 실력이 대단해!"]},
+  {id:"t19",x:20,y:42,em:"💧",name:"물놀이 소년 하리",battleKey:"T19",spr:{outfit:"#5aa0c0",accent:"#3a7a9a",skin:"#e8c39a",hair:"#3a4a5a",hat:"none",boots:"#3a5a6a"},lines:["물놀이 소년 하리: 물 정령은 시원해! 붙어보자!"],linesAfter:["물놀이 소년 하리: 헉, 실력이 대단해!"]},
   {id:"t20",x:19,y:37,em:"🌷",name:"꽃밭 소녀 채원",battleKey:"T20",spr:{outfit:"#e0709a",accent:"#c04a7a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["꽃밭 소녀 채원: 예쁜 정령이 강하기도 하다구!"],linesAfter:["꽃밭 소녀 채원: 졌지만 즐거웠어!"]},
   {id:"t21",x:15,y:31,em:"🏹",name:"숲의 사냥꾼 강",battleKey:"T21",spr:{outfit:"#5a6a3a",accent:"#3a4a22",skin:"#e3b07e",hair:"#2a2416",hat:"cap",hatc:"#4a5a2a",boots:"#2a3a1a"},lines:["숲의 사냥꾼 강: 이 숲의 규칙은 강함이다."],linesAfter:["숲의 사냥꾼 강: …네가 더 강했다."]},
   {id:"altar_pilgrim",x:5,y:10,em:"🧎",name:"제단의 순례자",spr:{outfit:"#6a5a7a",accent:"#a898c0",skin:"#e0bd96",hair:"#3a3446",hat:"none",boots:"#4a4258"},lines:["제단의 순례자: 여기까지 왔군요… 군주는 홀로 그림자를 막아내고 있습니다.","제단의 순례자: 인장 조각을 모두 모았다면, 리그로 가세요. 챔피언만이 군주를 도울 수 있습니다."]},
@@ -2280,7 +2323,7 @@ window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,HELD_ITEMS,byId,makeMon,recalc,damage,
   moveCat,moveCatKo,isSpecMove,MOVE_CAT,heroDrawSpec,heroSheetFrame,heroSheetCell,HERO_ANIM_FPS,HERO_FRAME_ORDER,
   get HERO_SHEET(){return typeof HERO_SHEET!=="undefined"?HERO_SHEET:null;}};
 /* ===== MAP (17 x 42) ===== */
-let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTggggHgg~~~gTgg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gTgTgggGwwwTTggTHgT#ggg#","#TgHTTggggTTP#gTgggg#$gT#","#gTgggggggTTgEggg#gg+ggg#","#ggggggTgTgTggTTgTTTgg###","#gggPHggggggggTwgTTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
+let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTggggHgg~~~gggg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gggggggGwwwgTgggHgg#ggg#","#ggHggggggggP#gggggg#$gT#","#ggggggggggTgEggg#gg+ggg#","#ggggggTgTgTggTTgggTgg###","#gggPHggggggggTwggTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
 let W=25,H=50;
 const OVERWORLD_STR0=MAP_STR.slice();
 const tileAt=(x,y)=>(MAP_STR[y]&&MAP_STR[y][x])||"#";
