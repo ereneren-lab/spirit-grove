@@ -49,6 +49,26 @@ const { chromium } = require("playwright"); const path=require("path");
     ok(gate[id].every(e=>e.near), `${id}: **두 입구 모두 비전기술 없이 접근 가능** — 게이팅 불변`);
   });
 
+  /* [1-c] 지선은 **서로 다른 지역**을 이어야 한다.
+     ⚠️ 실제로 겪은 사고: 출신지를 넣으면서 반딧불 오솔길 입구를 마을(3,47)에서 초원(21,44)으로 옮겼는데,
+        반대편도 초원(23,42)이라 **양쪽이 같은 지역**이 됐다 — 지역을 잇는 지름길이 아니라 초원 안에서
+        도는 통로가 됐다. 각 입구만 따로 보면 멀쩡해서(둘 다 도달 가능·타일 $) 기존 단정은 다 통과했다.
+        → 두 입구의 `region()`을 **대조**한다. */
+  const spans=await p.evaluate(()=>{ const F=window.SG.flow; const out={};
+    Object.keys(F.ROUTE_AT).forEach(k=>{ const r=F.ROUTE_AT[k]; const y=Number(k.split(",")[1]);
+      (out[r.id]=out[r.id]||[]).push({k, reg:F.region(y)}); });
+    return out; });
+  /* ⚠️ `pier`(호숫가 잔교)는 **의도적으로 한 지역 안**이다 — 물 위 판자길이라 호수 안에서만 돈다
+     (WORKLOG의 지선 목록: 언덕길 1↔2 · 갱도 2↔3 · 골짜기 3↔4 · **잔교 4 내부** · 벼랑길 4↔5 · 고갯길 5↔6).
+     임계값이 아니라 **예외 집합을 고정**한다 — 새 지선이 실수로 한 지역 안에 갇히면 걸린다. */
+  const INTRA_OK=["pier"];
+  Object.keys(spans).forEach(id=>{
+    const e=spans[id], same=(e.length===2 && e[0].reg===e[1].reg);
+    const label=e.map(x=>x.k+"=지역"+x.reg).join(" ↔ ");
+    if(INTRA_OK.includes(id)) ok(same, `${id}: 한 지역 안이다(의도) — ${label}`);
+    else ok(e.length===2 && !same, `${id}: 서로 다른 지역을 잇는다 — ${label}`);
+  });
+
   console.log("\n[1-b] 시작 칸이 출구 칸과 겹치지 않는다");
   // ⚠️ 겹치면 들어가자마자 출구를 밟아 **도로 튕겨 나온다**(실제로 겪음 — pier·frostpass 둘 다).
   const startOk=await p.evaluate(()=>{ const F=window.SG.flow; const bad=[];

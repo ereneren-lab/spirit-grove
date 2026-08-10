@@ -2323,7 +2323,7 @@ window.SG={CONFIG,DIFF,MOVES,DEX,TRAINERS,HELD_ITEMS,byId,makeMon,recalc,damage,
   moveCat,moveCatKo,isSpecMove,MOVE_CAT,heroDrawSpec,heroSheetFrame,heroSheetCell,HERO_ANIM_FPS,HERO_FRAME_ORDER,
   get HERO_SHEET(){return typeof HERO_SHEET!=="undefined"?HERO_SHEET:null;}};
 /* ===== MAP (17 x 42) ===== */
-let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgGgggSg####gT~~~T#","#gTgggggggggggoggg#T~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","###g~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSgggGg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTT#gggTgTg#ggT#","#gggg#ggGggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTggggHgg~~~gggg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gggggggGwwwgTgggHgg#ggg#","#ggHggggggggP#gggggg#$gT#","#ggggggggggTgEggg#gg+ggg#","#ggggggTgTgTggTTgggTgg###","#gggPHggggggggTwggTFFFT##","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
+let MAP_STR=["#########################","#TTTggggggTggggTgOggg#g##","#ggggTggggT#TTTC#g~~~#gg#","#TgT#gggggg##gTgCT~~~ggg#","#gTTgg#gggggg#gggg~~~CTg#","#ggCgg#ggggTTCgTgTgggT#T#","#TT#g#ggggTgggT##TgT###g#","##ggTg#gggC#g#gggTTgg#gT#","########X#######gggggggg#","#######...######ggUggg+g#","#gggMgCgggCggg#T#gTTg$gg#","##gg#gggggT#C#TTgTgTgggg#","##gggggggggTgPgggg##og^g#","#TTT$goggg+g$TgogogTgT#T#","#gg#ggT#gTggTT###Tg####T#","#gTggT~~ggTgTgTTgTTEg#gT#","#ggTgT~ggggggggDTTPgT#g##","##gTTgTgggggSg####gT~~~T#","#gTgggggggggggogggGT~~~##","#TTggTTgggggTggggggo~~~T#","#g$#gTJgRgTggTTCTx##C~~##","##TgggTggggC#C~~~~~~TCT##","#Tgg~~~Tg+g~~~~~~~~~~~CT#","##Gg~~~ggg~~~~~~%~~~~~~##","#gTg$gggggx~~~~~~~~~~~g$#","#Tggggggggggg~~~~~~CCg#T#","#gggSggggg$gggggCg##TggT#","#gggggPgggg#g#zgTgg#gggT#","#TggggT#gTgTTggmg#ggT#T##","#gTgTggggm~~~mgTTTgg$Tg##","#TggggETgT~~~gTT#TTggg#V#","#gggTgggggg$#g#ggT##g+Tg#","#gTm#TggRg#gTT#gTgg#TgTT#","#gg~~~ggmggggTgT#gg#TTg##","##g~~~ggggTTEgggTgTgGggT#","#gggg#gggggTgggggmT#gTgT#","#ggg!gggggTgmggTTg##T$gg#","#ggggg#gggT#gggg#g+ggg#T#","##g$g~~~gTTgTTgg#gg#ggT##","#gggg~~~gg#~~~Tg#ggTg####","#TgggggTmgP~~~gTTTT#TTT##","#ggggTggggHgg~~~gggg#TgT#","#ggggg$gggggg~~~#g#gggT$#","#gggggggGwwwgTgggHgg#ggg#","#ggHggggggggP#gggggg#ggT#","#ggggggggggTggggg#gg+ggg#","#ggggggTgTgTggTTgggTgg###","#gggPHggggggggTwggTFFFT$#","#gggggRg.gSg+ggwwggggggg#","#######....#.###ggggWggg#"];
 let W=25,H=50;
 const OVERWORLD_STR0=MAP_STR.slice();
 const tileAt=(x,y)=>(MAP_STR[y]&&MAP_STR[y][x])||"#";
@@ -2361,7 +2361,7 @@ const ROUTE_AT={
   /* ⚠️ 원래 이 입구는 집 바로 옆(3,47)이었다 — 집에서 두 칸이라 **무심코 들어가진다**는 제보.
      정령센터 옆(21,44)으로 옮겼다. 벽(#) 타일이라 통행성은 그대로고, 착지 칸 (21,45)는 원래 걸어갈 수 있던 풀밭이다.
      초반에 지선을 하나 두려던 원래 의도(마을↔초원)는 유지된다 — 여전히 마을 안이다. */
-  "21,44": {id:"fireflyway", sx:2,  sy:9},
+  "23,47": {id:"fireflyway", sx:2,  sy:9},
   "23,42":{id:"fireflyway", sx:14, sy:1},
   "4,24": {id:"fallspath",  sx:2,  sy:11},
   "4,13": {id:"fallspath",  sx:10, sy:1} };
@@ -2396,7 +2396,7 @@ const INTERIORS={
   /* 반딧불 오솔길 — 마을(3,47) ↔ 초원(23,42). **플레이어가 처음 만나는 지선**이라
      조우 레벨을 스타터 대역(4~18)으로 낮게 잡고 바닥 도구를 넉넉히 뒀다. */
   fireflyway:{ id:"fireflyway", W:17, H:11, startX:2, startY:9, exitX:1, exitY:9, name:"반딧불 오솔길",
-    exits:[{x:1,y:9,ox:21,oy:45},{x:15,y:1,ox:23,oy:43}],
+    exits:[{x:1,y:9,ox:23,oy:48},{x:15,y:1,ox:23,oy:43}],
     str:["#################",
          "############g.g.#",
          "############.####",
@@ -2578,7 +2578,7 @@ const INTERIORS={
   league:{ id:"league", W:9,H:17, startX:4,startY:15, exitX:4,exitY:16, name:"정령 리그",
     str:["#########","#...q...#","#.C...C.#","####l####","#.......#","#.C...C.#","####k####","#.......#","#.C...C.#","####j####","#.......#","#.C...C.#","####i####","#.......#","#.C...C.#","#.......#","####.####"] }
 };
-const GYM_AT={"8,43":"gym1","8,35":"gym2","8,26":"gym3","8,17":"gym4"};
+const GYM_AT={"8,43":"gym1","20,34":"gym2","2,23":"gym3","18,18":"gym4"};
 const INTERIOR_NPC_MSG={hall:"회관 직원: 감정사·이름 짓는 사람·마사지사가 있어요. 선두 정령을 데리고 말을 걸어보세요!", center:"간호사 조이: 어서 오세요, 정령센터입니다! 카운터로 오시면 정령들을 회복시켜 드릴게요 💗", shop:"점원: 어서 오세요! 카운터에서 좋은 물건들을 팔고 있어요. 진화의 돌도 있답니다 ✨", house:"엄마: 잘 다녀왔니? 지친 정령들은 침대에서 쉬게 해주렴 😊",
   /* 출신지 4곳의 사람 — 도입에서 배웅한 그 인물이 그대로 남아 있다(ORIGIN_STORY의 send와 같은 화자).
      ⚠️ 형식은 반드시 "이름: 본문" — 화자 이름을 이 앞부분에서 잘라 쓴다(단일 출처).
@@ -3843,7 +3843,13 @@ document.addEventListener("keyup",e=>{ const k=e.key.toLowerCase();
    "지금 뭘 해야 하지?"를 화면에 붙박아 둔다. 진행 사슬: 체육관 4곳 → 정령 리그 → 챔피언 → 도감.
    좌표는 실제 게이트 타일에서 가져온다(GYM_AT / 리그 U 타일). 탭하면 그 지점까지 자동 이동. */
 const LEAGUE_XY={x:18,y:9};
-const GYM_ORDER=[["1","8,43"],["2","8,35"],["3","8,26"],["4","8,17"]];
+/* ⚠️ **GYM_AT에서 파생한다 — 좌표를 여기 또 적지 않는다.**
+   바로 위 주석이 "좌표를 상수로 박지 않는 게 이 트래커의 원칙"이라고 해놓고 정작 여기가 박고 있었다.
+   그래서 2026-08-10에 체육관을 가로로 흩었을 때 **트래커만 옛 자리를 가리켰다**
+   (goal_reach_test가 "목표 좌표 (8,35)의 타일이 G — 실제 g"로 잡았다). 전형적인 병렬 테이블. */
+const GYM_ORDER=Object.entries(GYM_AT)
+  .map(([xy,id])=>[String(id).replace(/^gym/,""), xy])
+  .sort((a,b)=>Number(a[0])-Number(b[0]));
 /* 오버월드에서 특정 타일을 찾는다. ⚠️ 좌표를 상수로 박지 않는 게 이 트래커의 원칙이다 —
    맵을 고쳐도 목표가 안 어긋난다(GYM_AT·리그 U와 같은 방침). 결과는 캐시한다(맵은 안 바뀐다).
    ⚠️ **반드시 오버월드를 스캔한다.** MAP_STR·W·H는 실내에 들어가면 인테리어 지도로 통째로 바뀐다.

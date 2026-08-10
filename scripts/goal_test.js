@@ -27,15 +27,28 @@ setTimeout(() => {
   ok(nm() === "초원 체육관", "목표: " + nm());
   ok(sub().includes("0/4"), "인장 진행도 표시: " + sub());
   ok(/\d+칸/.test(sub()), "목표까지 거리 표시됨");
+  /* ⚠️ **좌표를 여기 적지 않는다 — GYM_AT에서 가져온다.**
+     원래는 (8,43)/(8,35)/(8,26)/(8,17)을 그대로 박아뒀는데, 체육관을 가로로 흩자
+     지도·트래커는 멀쩡한데 **이 테스트만** 옛 자리를 요구하며 빨갛게 떴다.
+     테스트가 상수를 들고 있으면 그 자체가 병렬 테이블이다. */
+  const GA = SG.GYM_AT || {};
+  const gymXY = n => { const k = Object.keys(GA).find(k => GA[k] === "gym" + n);
+                       const [x, y] = (k || "0,0").split(",").map(Number); return {x, y}; };
+  const x1 = gymXY(1);
+  ok(Object.keys(GA).length === 4, `GYM_AT에 체육관 4곳이 있다 (${Object.keys(GA).length})`);
   const g1 = F.currentGoal();
-  ok(g1.x === 8 && g1.y === 43, "좌표가 실제 체육관 타일(8,43)과 일치");
+  ok(g1.x === x1.x && g1.y === x1.y, `좌표가 실제 체육관 타일(${x1.x},${x1.y})과 일치`);
+  ok(F.tileAt(x1.x, x1.y) === "G", `그 좌표가 진짜 체육관 G 타일이다`);
 
   console.log("[2] 뱃지를 하나씩 획득 — 다음 체육관으로 넘어가는가");
-  const expect = [["1", "숲 체육관", 35], ["2", "수정 호수 체육관", 26], ["3", "고원 체육관", 17]];
-  for (const [badge, name, y] of expect) {
+  const expect = [["1", "숲 체육관", 2], ["2", "수정 호수 체육관", 3], ["3", "고원 체육관", 4]];
+  for (const [badge, name, n] of expect) {
     G.badges.push(badge);
-    const g = F.currentGoal();
-    ok(g.name === name && g.y === y, `뱃지 ${G.badges.length}개 → ${g.name} (8,${g.y})`);
+    const g = F.currentGoal(), want = gymXY(n);
+    ok(g.name === name, `뱃지 ${G.badges.length}개 → ${g.name}`);
+    ok(g.x === want.x && g.y === want.y, `  좌표가 GYM_AT의 gym${n}(${want.x},${want.y})과 일치 — 실제 (${g.x},${g.y})`);
+    /* 📌 이름이 지역을 말하는데 실제로 다른 지역에 서 있으면 안 된다 — 옮길 때 조용히 어긋나는 자리 */
+    ok(F.tileAt(want.x, want.y) === "G", `  그 좌표가 진짜 G 타일이다`);
   }
 
   console.log("[3] 인장 4조각 — 전설 준비 → 숲의 군주 → 리그");
