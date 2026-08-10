@@ -2859,7 +2859,11 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     else if(hat==="straw"){ ctx.fillStyle=hair; this._rr(ctx,cx-u*0.28,cy-u*0.64,u*0.56,u*0.18,u*0.1); ctx.fill(); ctx.fillStyle=hatc; ctx.beginPath(); ctx.ellipse(cx,cy-u*0.66,u*0.5,u*0.15,0,0,6.29); ctx.fill(); ctx.stroke(); this._rr(ctx,cx-u*0.2,cy-u*0.84,u*0.4,u*0.2,u*0.09); ctx.fill(); ctx.stroke(); }
     else if(hat==="hood"){ ctx.fillStyle=hatc; this._rr(ctx,cx-u*0.33,cy-u*0.82,u*0.66,u*0.66,u*0.24); ctx.fill(); ctx.stroke(); if(dir!=="up"){ ctx.fillStyle=skin; this._rr(ctx,cx-u*0.22,cy-u*0.58,u*0.44,u*0.44,u*0.16); ctx.fill(); } }
     else { ctx.fillStyle=hair; this._rr(ctx,cx-u*0.3,cy-u*0.74,u*0.6,(dir==="up"?u*0.48:u*0.27),u*0.13); ctx.fill(); ctx.stroke();
-      if(spec.spiky){ ctx.beginPath(); for(let i=0;i<4;i++){ const bx=cx-u*0.24+i*u*0.16; ctx.moveTo(bx,cy-u*0.72); ctx.lineTo(bx+u*0.08,cy-u*0.9); ctx.lineTo(bx+u*0.16,cy-u*0.72); } ctx.fill(); ctx.stroke(); } }
+      /* 더벅머리. 예전엔 **뾰족한 삼각형 4개 + 외곽선**이라 머리카락이 아니라 뿔·왕관으로 읽혔다(유저 제보:
+         "npc 마주쳐서 배틀하는데 머리가 이상한 경우"). → 높이가 제각각인 **둥근 덩어리**로 바꾼다.
+         ⚠️ 외곽선을 치지 않는다 — 머리 본체에 이미 선이 있어서, 덩어리마다 선을 그으면 다시 뿔이 된다. */
+      if(spec.spiky){ const lob=[[-0.23,0.105],[-0.07,0.135],[0.09,0.115],[0.23,0.09]];
+        lob.forEach(([ox,r])=>{ ctx.beginPath(); ctx.arc(cx+u*ox, cy-u*0.78, u*r, 0, 6.29); ctx.fill(); }); } }
     if(spec.extra==="beard"){ ctx.fillStyle="#d8d4cc"; this._rr(ctx,cx-u*0.2,cy-u*0.3,u*0.4,u*0.22,u*0.08); ctx.fill(); }
     if(dir!=="up"){ ctx.fillStyle="#2a2230";
       // 가끔 눈 깜빡임 — 스프라이트별 위상(spec._bseed)으로 제각각, 짧게 감았다 뜬다. reduceMotion이면 생략.
