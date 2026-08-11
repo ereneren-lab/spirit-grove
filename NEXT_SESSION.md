@@ -55,19 +55,17 @@ python3 scripts/make_npc_sheet.py --src art_inbox/npc/_split --out assets/art/np
 **그림 추가 없이** 기존 원형에 붙었다(beard→`elder_m` · scroll→`scholar` · straw+rod→`angler` ·
 hood+staff→`mystic`). id가 원형 이름과 겹쳐서(`elder`·`scholar`) 배정된 걸로 읽혔던 자리다.
 
-**(A-4) 🔴 3차 발주안 §8 — 프롬프트까지 다 짜뒀다. 그림만 오면 된다.**
-`outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md` **§8**. 대조표 **두 장**으로 나눴다
-(한 장에 15명을 몰면 화풍이 흔들린다 — 1차 12장이 상한선에 가까웠다).
+**(A-4) 3차 발주 A(실내·특수 8장) — ✅ 2026-08-11에 들어왔다. 끝났다.**
+`nurse`·`clerk`·`lore`·`p`·`n`·`s`·`snowMaster`·`isleLeader` 투입 완료. 시트 **17 → 25종**.
+→ **게임의 모든 인물이 픽셀 시트다**(야외 47/47 + 실내·특수 8/8).
+⚠️ 이들은 `NPC_ARCH`가 아니라 **`NPC_SPR`의 각 항목에 `sheet:`** 를 넣는다 — `NPCS` 배열에 없고
+   지도 타일이 직접 그린다. **색 지정은 지우지 말 것**(디코드 전엔 절차적으로 폴백하는데 회색 인형이 된다).
 
-| | 무엇 | 왜 |
-|---|---|---|
-| **A (1순위)** | 실내·특수 **8장** — `nurse`·`clerk`·`lore`·`p`·`n`·`s`·`snowMaster`·`isleLeader` | 간호사·점원은 **가장 자주 보는 인물인데 아직 유일하게 절차적**이다 |
-| **B (2순위)** | 겹침 해소 **7장** — `angler2`·`mystic2`·`kid2`·`guard_f`·`youth_f2`·`scholar2`·`elder2` | 14쌍 → (라이벌 카이 2쌍 제외) **0쌍** |
-
-⚠️ **A는 `NPC_ARCH`가 아니라 `NPC_SPR`에 `sheet:`를 넣는다** — 이들은 `NPCS` 배열에 없고
-   지도 타일이 직접 그린다(`_char(…, NPC_SPR.nurse, …)`). B는 `NPC_ARCH`다.
-✅ 보스 오라 함정은 **없앴다** — `_bossAura`를 두 경로가 공유한다. 시트를 줘도 오라가 살아 있고
-   `npc_sheet_test [6]`이 그 동작을 단정한다. `snowMaster`·`isleLeader`를 마음 놓고 시트로 옮겨도 된다.
+**(A-5) 🔴 남은 것 — 3차 발주 B (겹침 해소 7장)**
+`outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md` **§8-B**에 프롬프트·옮길 NPC 표가 있다.
+`angler2`·`mystic2`·`kid2`·`guard_f`·`youth_f2`·`scholar2`·`elder2` → 겹침 **14쌍 → 0쌍**
+(라이벌 카이 2쌍 제외). **1순위는 `angler2`** — 호수 어부(7,22)·낚시꾼 도윤(8,22)이 바로 옆 칸이다.
+이건 폴리시다 — 급하지 않다.
 
 **(B) 신규 정령 4종 그림 4장**
 데이터·진화 연결·프롬프트 전부 확정. **페인터리로 받을 것**(픽셀로 직접 뽑지 말 것).
@@ -299,6 +297,12 @@ node scripts/lord_route_test.js dist/spirit_grove_3d.html    # 몇 분이면 돈
   "지금 NPC가 서 있다"를 "지도가 막혔다"로 읽는다(`door_front_test`가 그랬다).
 - ⚠️ **부하 오탐 구분법**: 걷기가 목적지 **한 칸 앞**에서 멈추면 대개 환경이다(코어당 load 확인).
   단독으로 다시 돌려보면 통과한다. 이 맥은 Chrome·Slack만 떠 있어도 load 4~5다.
+  📌 **2026-08-11 하루에 세 번 났다** — `dexnew_test`(메시지 미출현) · `route_test [3-b]`(한 칸 앞 멈춤) ·
+     `mobile_controls_test`(A 버튼 "not visible" 타임아웃). **셋 다 단정 실패가 아니라 타이밍**이고
+     단독 재실행은 전부 통과했다. 코어당 0.6~0.8을 달고 있으면 98개를 한 번에 끝까지 돌기 어렵다.
+     → **처음부터 구간을 나눠 돌리는 게 빠르다**: `PW_FROM=1 PW_TO=49` · `PW_FROM=50`.
+     ⚠️ 실패한 테스트의 **번호를 먼저 확인**할 것(`awk '/^  pw /{n++; print n": "$2}' scripts/verify.sh`).
+        `set -e`라 그 뒤는 아예 안 돌았으므로 **거기서부터 이어 돌려야** 초록이 진짜 초록이다.
   📌 **실측 사례(2026-08-11)**: `route_test [3-b]` 「모닥불 칸에 도착했다」가 **(8,5) 기대인데 (7,5)** 로 멈췄다.
      같은 빌드로 **실패 2회(load 5~6) · 통과 5회(load ≲4.5)**. 뒤이은 4단정(회복·상태이상·부활 지점·
      공중날기 등록)은 전부 **여기서 연쇄된 것**이라 원인은 하나다. 5건을 따로 조사하지 말 것.

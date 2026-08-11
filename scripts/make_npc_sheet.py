@@ -30,7 +30,9 @@ from make_hero_sheet import (strip_background, drop_soft_alpha, detect_grid,
 ARCHETYPES = ["kid", "bugkid", "youth_f", "youth_m", "hunter", "angler",
               "miner", "scholar", "mystic", "guard", "merchant", "elder",
               # 2차(2026-08-11) — 같은 원형끼리 쌍둥이가 되던 것 + 역할과 그림이 어긋난 자리. §7
-              "kid_f", "scholar_f", "elder_m", "woodcutter", "falconer"]
+              "kid_f", "scholar_f", "elder_m", "woodcutter", "falconer",
+              # 3차-A(2026-08-11) — NPC_SPR 쪽. 이들은 NPC_ARCH가 아니라 NPC_SPR에 sheet를 넣는다. §8-A
+              "nurse", "clerk", "lore", "p", "n", "s", "snowMaster", "isleLeader"]
 
 
 def convert(src: Path, out: Path, C=64, colors=22, bob=1, sway=1, bgthresh=45):

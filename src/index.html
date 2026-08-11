@@ -2092,15 +2092,21 @@ const GUARD_TILES="789abcdef0ijklqruvyh*?";   // y = 뇌명 봉우리 폭풍지�
    ⚠️ 예전엔 간호사·회관 3인·여명 관장·설산 주인이 **각자 따로** 그려져(원·사각형 조합)
       오버월드 NPC만 개선하면 실내 사람들은 그대로 남았다(유저 제보). 이제 전부 여기를 지난다.
    ⚠️ 상수로 두는 이유: `_char`이 눈 깜빡임 위상(_bseed)을 spec에 캐시한다 — 매 프레임 새 객체면 캐시가 무의미해진다. */
+/* 지도 타일이 직접 그리는 인물들. **`NPCS` 배열에 없다** — 그래서 `NPC_ARCH`가 아니라
+   여기 각 항목에 `sheet`를 직접 넣는다(3차-A, 2026-08-11).
+   ⚠️ 색 지정은 **지우지 않는다.** 시트가 없거나 아직 디코드 전이면 `_char`가 절차적으로 폴백하는데,
+      그때 색이 비어 있으면 회색 인형이 된다.
+   📌 `isleLeader`·`snowMaster`는 `boss:true`다 — 예전엔 시트를 주면 오라가 사라졌지만
+      `_bossAura`를 두 경로가 공유하도록 고쳐서 지금은 안전하다(`npc_sheet_test [6]`이 고정). */
 const NPC_SPR={
-  nurse:{outfit:"#f2f2f4",accent:"#f0b0c8",skin:"#e8c39a",hair:"#f08fb0",hat:"nurse",hatc:"#ffffff",boots:"#d8d8e0"},
-  clerk:{outfit:"#5a7db0",accent:"#8ab0d8",skin:"#e8c39a",hair:"#4a3728",boots:"#3a4a5a"},
-  lore :{outfit:"#3a6a9a",accent:"#6a9ac8",skin:"#e8c39a",hair:"#cfd8e0",boots:"#2c3a4a"},
-  p:{outfit:"#5a6a9a",accent:"#8a9ac0",skin:"#e8c39a",hair:"#3a3a4a",boots:"#33405a",extra:"glasses"},
-  n:{outfit:"#8a6aa0",accent:"#c0a0d0",skin:"#f0d0b0",hair:"#4a3a4a",boots:"#4a3a58"},
-  s:{outfit:"#6aa08a",accent:"#a0d0c0",skin:"#e8c39a",hair:"#3a4a42",boots:"#3a5a4a"},
-  isleLeader:{outfit:"#2f7aa0",accent:"#4fd0e0",skin:"#e8c39a",hair:"#3a2a1a",spiky:true,boots:"#24506a",boss:true},
-  snowMaster:{outfit:"#5a7a9a",accent:"#9fc0e0",skin:"#e8d0b0",hair:"#dff0ff",spiky:true,boots:"#3a5a7a",boss:true} };
+  nurse:{sheet:"nurse",outfit:"#f2f2f4",accent:"#f0b0c8",skin:"#e8c39a",hair:"#f08fb0",hat:"nurse",hatc:"#ffffff",boots:"#d8d8e0"},
+  clerk:{sheet:"clerk",outfit:"#5a7db0",accent:"#8ab0d8",skin:"#e8c39a",hair:"#4a3728",boots:"#3a4a5a"},
+  lore :{sheet:"lore",outfit:"#3a6a9a",accent:"#6a9ac8",skin:"#e8c39a",hair:"#cfd8e0",boots:"#2c3a4a"},
+  p:{sheet:"p",outfit:"#5a6a9a",accent:"#8a9ac0",skin:"#e8c39a",hair:"#3a3a4a",boots:"#33405a",extra:"glasses"},
+  n:{sheet:"n",outfit:"#8a6aa0",accent:"#c0a0d0",skin:"#f0d0b0",hair:"#4a3a4a",boots:"#4a3a58"},
+  s:{sheet:"s",outfit:"#6aa08a",accent:"#a0d0c0",skin:"#e8c39a",hair:"#3a4a42",boots:"#3a5a4a"},
+  isleLeader:{sheet:"isleLeader",outfit:"#2f7aa0",accent:"#4fd0e0",skin:"#e8c39a",hair:"#3a2a1a",spiky:true,boots:"#24506a",boss:true},
+  snowMaster:{sheet:"snowMaster",outfit:"#5a7a9a",accent:"#9fc0e0",skin:"#e8d0b0",hair:"#dff0ff",spiky:true,boots:"#3a5a7a",boss:true} };
 const HALL_TOOL={p:"🔍",n:"✒️",s:"💆"};
 const GYM_THEME={ gym1:{fl:"#bcd0a0",wl:"#7a9a5a"}, gym2:{fl:"#9ab88a",wl:"#4f7a4a"}, gym3:{fl:"#a6c8cc",wl:"#4a8a8a"}, gym4:{fl:"#c8bfa0",wl:"#8a7a5a"}, league:{fl:"#39344f",wl:"#6a5a8a"},
   center:{fl:"#eef1f4",wl:"#d4514c",wt:"#b83f3c",gr:"rgba(150,170,190,.42)"},
