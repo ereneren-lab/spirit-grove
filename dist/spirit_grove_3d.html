@@ -5215,7 +5215,13 @@ const NPC_ARCH={
   t24:"guard", t11:"guard", towerkeeper:"guard",
   guide_mina:"merchant", broker:"merchant",
   guide_tori:"elder", daycare:"elder",
-  guide_el:"elder_m" };                                     // 숲지기 노인 — 셋 중 유일하게 긴머리가 아니다
+  guide_el:"elder_m",                                       // 숲지기 노인 — 셋 중 유일하게 긴머리가 아니다
+  /* 📌 1·2차에서 통째로 빠져 있던 야외 4명. 문서엔 "나머지 4명은 실내 인물"이라 적혀 있었는데
+        **실제로는 지도 위에 서 있는 야외 NPC**였다(숲의 노인·떠돌이 학자·호수 어부·순례자).
+        id가 원형 이름(`elder`·`scholar`)과 겹쳐서 이미 배정된 걸로 읽혔던 자리다.
+        넷 다 **기존 원형에 그대로 맞는다** — 그림을 더 받을 필요가 없었다.
+        근거는 각자의 `spr`이다: beard / scroll / straw+rod / hood+staff. */
+  elder:"elder_m", scholar:"scholar", fisher:"angler", pilgrim:"mystic" };
 /* 원형을 각 NPC의 spr에 붙인다 — 렌더러(`_char`)는 spec만 받으므로 여기서 한 번에 꽂는다.
    ⚠️ NPC_ARCH에 없는 id는 그냥 절차적으로 남는다(실내 간호사·상점원 등). 그게 정상 동작이다. */
 if(typeof NPCS!=="undefined")NPCS.forEach(n=>{ if(n&&n.spr&&NPC_ARCH[n.id])n.spr.sheet=NPC_ARCH[n.id]; });
@@ -7727,6 +7733,9 @@ if($("artClear")) $("artClear").addEventListener("click",async()=>{ if(!confirm(
 artLoadAll().then(()=>{ _artRefresh(); });
 window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVisual=creatureVisual; window.SG.ART=ART;
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
+/* NPC_SPR도 같이 내보낸다 — 회귀가 "보스 오라를 가진 spec에 시트를 붙이지 않았는가"를 재기 위해서다.
+   시트 경로는 그림을 그리고 바로 return하므로 `spec.boss`의 오라를 **그리지 않는다**(실측: 그라디언트 3 → 0). */
+window.SG.NPC_SPR=NPC_SPR;
 
 window.SG.FLAVOR=FLAVOR;
 Object.assign(window.SG,{NPC_ARCH,NPC_SHEET_ART,npcSheet,NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,TRAINER_HELD,DOOR_TILES,NATURE_ENTRY,CHAR_HOME,ORIGIN_STORY,INTERIOR_NPC_MSG,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});

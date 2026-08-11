@@ -43,7 +43,10 @@ const DOC = "outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md";
   /* 📌 오타로 없는 id를 적으면 그 NPC만 조용히 폴백한다 — 화면을 안 보면 절대 모른다. */
   ok(m.ghost.length===0, `매핑이 실존하는 NPC만 가리킨다 (유령 ${m.ghost.length}건: ${m.ghost.join(",")||"없음"})`);
   ok(m.sprHas===m.mappedCount, `매핑된 ${m.mappedCount}명 전원의 spr에 원형이 붙었다 (실제 ${m.sprHas}명)`);
-  console.log(`     · NPC ${m.npcCount}명 중 ${m.sprHas}명이 원형을 갖는다 (나머지는 실내 인물 등, 절차적으로 남는다)`);
+  /* 📌 08-11 3차에 야외는 47/47이 됐다. 남은 절차적 인물은 NPCS가 아니라 `NPC_SPR`에 있다
+        (간호사·상점원·회관 3인·설원 사범·섬 지도자) — 그쪽은 지도 타일이 직접 그린다. */
+  console.log(`     · 야외 NPC ${m.npcCount}명 중 ${m.sprHas}명이 원형을 갖는다`
+              + (m.sprHas===m.npcCount ? " — 전원" : " (나머지는 절차적으로 남는다)"));
 
   console.log("\n[2] 아트가 없으면 절차적 스프라이트로 폴백한다");
   /* 드로우 콜을 가로채 분류한다(npc_sprite_test와 같은 기법).
@@ -151,6 +154,26 @@ const DOC = "outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md";
   ok(real.archs>0, `매니페스트에 실린 시트 ${real.archs}종 (0이면 이 블록이 공허하다)`);
   ok(real.bad.length===0, `전부 디코드되고 3×3 정사각이며 실제로 그려진다 (문제 ${real.bad.length}건: ${real.bad.join(",")||"없음"})`);
   ok(Object.keys(real.cells).length<=1, `칸 크기가 한 값으로 통일돼 있다 (${JSON.stringify(real.cells)})`);
+
+  console.log("\n[6] 보스 오라를 가진 인물에게 시트를 붙이지 않았다");
+  /* 왜 있나
+       `_char`의 시트 분기는 그림을 그리고 **바로 return**한다 → `spec.boss`의 붉은 오라를
+       그리는 코드까지 못 간다. 실측: 시트가 로드된 상태로 `{sheet, boss:true}`를 그리면
+       그라디언트 호출이 **3 → 0**이 된다(절차적 경로는 평범 2 · 보스 3).
+       지금은 해당 인물이 없지만, 남은 절차적 인물(간호사·상점원·회관 3인·설원 사범·섬 지도자)을
+       시트로 옮길 때 **섬 지도자·설원 사범이 정확히 이 함정**이다 — 둘 다 boss:true다.
+       오라가 조용히 사라지면 "왜 저 사람만 안 빛나지"를 아무도 못 찾는다. */
+  const bossChk=await p.evaluate(()=>{
+    const S=window.SG, F=S.flow;
+    const specs=[...(F.NPCS||[]).map(n=>[n.id, n.spr||{}]),
+                 ...Object.entries(S.NPC_SPR||{})];
+    return { total:specs.length,
+             bad:specs.filter(([,s])=>s&&s.boss&&s.sheet).map(([k])=>k),
+             bosses:specs.filter(([,s])=>s&&s.boss).map(([k])=>k) };
+  });
+  ok(bossChk.total>0, `검사한 spec ${bossChk.total}개 (0이면 이 블록이 공허하다)`);
+  ok(bossChk.bosses.length>0, `보스 오라를 쓰는 spec이 실재한다 — ${bossChk.bosses.join(",")||"없음"}`);
+  ok(bossChk.bad.length===0, `그중 시트를 붙인 것은 없다 (위반 ${bossChk.bad.length}건: ${bossChk.bad.join(",")||"없음"})`);
 
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs[0].slice(0,70):""}`);
   await b.close();

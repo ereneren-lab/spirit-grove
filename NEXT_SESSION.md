@@ -49,9 +49,23 @@ python3 scripts/make_npc_sheet.py --src art_inbox/npc/_split --out assets/art/np
 ⚠️ **아트가 없는 원형 id를 `NPC_ARCH`에 먼저 적지 말 것** — 그 NPC만 절차적 스프라이트로 폴백해서
    한 화면에 픽셀 시트와 절차적이 섞인다.
 
-📌 **아직 남은 겹침 (다음에 더 받을 거리 · 우선순위 순)**
-   `kid` 2쌍 · `guard` 2쌍 · `mystic` 1쌍 · `youth_f` 1쌍 · `scholar` 1쌍 · `elder` 1쌍 · `angler` 1쌍.
+**(A-3) 야외 NPC 47/47 완료 — ✅ 2026-08-11.**
+문서가 *"나머지 4명은 실내 인물이라 범위 밖"* 이라 적어뒀는데 **틀린 말이었다.**
+넷 다 야외 NPC였고(숲의 노인·떠돌이 학자·호수 어부·순례자), `spr`이 이미 답을 갖고 있어
+**그림 추가 없이** 기존 원형에 붙었다(beard→`elder_m` · scroll→`scholar` · straw+rod→`angler` ·
+hood+staff→`mystic`). id가 원형 이름과 겹쳐서(`elder`·`scholar`) 배정된 걸로 읽혔던 자리다.
+
+📌 **다음 발주 (우선순위 순) — 겹침 14쌍**
+   1. **`angler2` ← 1순위.** 호수 어부(7,22)·호수 낚시꾼 도윤(8,22)이 **바로 옆 칸**이라 쌍둥이가 눈에 띈다.
+   2. `mystic2` 2쌍 · `kid` 2쌍(→ `kid` 계열 하나 더) · `guard2` 2쌍
+   3. `youth_f2` · `scholar` · `elder` · `angler` 나머지 각 1쌍
    숫자는 `outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md` §7-5 표에 있다.
+
+📌 **그다음: `NPC_SPR` (지도 타일이 직접 그리는 인물들)**
+   간호사 · 상점 점원 · 회관 3인(`p`·`n`·`s`) · 설원 사범 · 섬 지도자. **여기는 새 그림이 필요하다.**
+   ⚠️ **`isleLeader`·`snowMaster`에 시트를 붙이면 보스 오라가 조용히 사라진다** —
+      시트 분기가 그림을 그리고 바로 `return`하기 때문이다(실측: 그라디언트 3 → 0).
+      `npc_sheet_test [6]`이 이제 이걸 잡는다.
 
 **(B) 신규 정령 4종 그림 4장**
 데이터·진화 연결·프롬프트 전부 확정. **페인터리로 받을 것**(픽셀로 직접 뽑지 말 것).
