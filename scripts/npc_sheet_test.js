@@ -191,6 +191,29 @@ const DOC = "outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md";
   ok(bossChk.procBoss.grad===bossChk.procPlain.grad+1,
      `절차적 경로도 그대로다 (${bossChk.procPlain.grad} → ${bossChk.procBoss.grad})`);
 
+  console.log("\n[7] NPC_ARCH에 중복 키가 없다 (뒤 키가 앞 키를 조용히 덮는다)");
+  /* 왜 있나
+       3차-B(2026-08-11)에 `fisher:"angler2"`·`pilgrim:"mystic2"`를 표 위쪽에 넣었는데,
+       아래에 남아 있던 옛 줄 `fisher:"angler", pilgrim:"mystic"`이 **조용히 되돌려놨다.**
+       객체 리터럴은 **뒤 키가 이긴다** — 화면에도 로그에도 아무 흔적이 없다.
+     ⚠️ 런타임에서는 못 잡는다. 파서가 이미 중복을 지운 뒤라 `NPC_ARCH`엔 승자만 남는다.
+        → **빌드 산출물의 소스 텍스트**를 직접 훑는다.
+     ⚠️ 페이지 안에서 `fetch(location.href)`로 읽으면 `file://`에서 막힌다(실제로 겪었다).
+        Node에서 파일을 그대로 읽는다. */
+  const dupes=(()=>{
+    const src=require("fs").readFileSync(process.argv[2],"utf8");
+    const m=src.match(/const NPC_ARCH=\{([\s\S]*?)\};/);   // 첫 };까지 (비탐욕)
+    if(!m) return {found:false};
+    const body=m[1].replace(/\/\*[\s\S]*?\*\//g,"").replace(/\/\/[^\n]*/g,"");
+    const keys=[...body.matchAll(/([A-Za-z_][A-Za-z0-9_]*)\s*:/g)].map(x=>x[1]);
+    const seen=new Set(), dup=[];
+    for(const k of keys){ if(seen.has(k))dup.push(k); seen.add(k); }
+    return { found:true, total:keys.length, dup:[...new Set(dup)] };
+  })();
+  ok(dupes.found, `빌드에서 NPC_ARCH 소스를 찾았다 (못 찾으면 이 블록이 공허하다)`);
+  ok(dupes.total>20, `키 ${dupes.total}개를 훑었다`);
+  ok(dupes.dup.length===0, `중복 키 없음 (${dupes.dup.length}건: ${dupes.dup.join(",")||"없음"})`);
+
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs[0].slice(0,70):""}`);
   await b.close();
   console.log(fail?"\n❌ npc_sheet_test 실패":"\n🎉 NPC 원형 시트 통과");

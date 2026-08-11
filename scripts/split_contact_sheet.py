@@ -139,12 +139,43 @@ def group_by_gaps(row, per_group):
     return out
 
 
+def transpose_groups(rows, npose):
+    """**열이 인물, 행이 자세**인 대조표를 인물별로 묶는다.
+
+    ⚠️ 이 레이아웃은 3차-B(2026-08-11)에 실제로 왔다. 같은 프롬프트를 줬는데도 생성기가
+       7명 × 3자세를 **7열 × 3행**(1행 정면 · 2행 뒷모습 · 3행 옆모습)으로 깔았다.
+       가로 배열을 전제한 `group_by_gaps`는 "한 행의 자세가 7개 — 3의 배수가 아니다"로 멈춘다.
+       → 레이아웃을 강요하지 말고 **읽는 쪽에서 받아준다.**
+    ⚠️ 행마다 인물 수가 같아야 하고, 같은 인물의 자세끼리 **x가 겹쳐야** 한다.
+       인덱스로만 짝지으면 한 행에서 자세 하나가 성분 분리로 빠졌을 때 전부 한 칸씩 밀린다 —
+       조용히 틀린 시트가 나오는 최악의 실패다. 그래서 x 겹침을 확인하고 안 겹치면 멈춘다.
+    """
+    if len(rows) != npose:
+        sys.exit(f"❌ --layout cols 인데 행이 {len(rows)}개다 (자세 수 {npose}와 같아야 한다).")
+    n = len(rows[0])
+    for i, r in enumerate(rows):
+        if len(r) != n:
+            sys.exit(f"❌ 행마다 인물 수가 다르다: {[len(x) for x in rows]}. 자세가 붙어 한 성분으로 읽혔을 수 있다.")
+    out = []
+    for i in range(n):
+        g = [r[i] for r in rows]
+        for k in range(1, npose):
+            (x0, _, x1, _), (y0, _, y1, _) = g[0][1], g[k][1]
+            if x1 < y0 or y1 < x0:
+                sys.exit(f"❌ {i+1}번째 인물의 자세가 x축에서 안 겹친다 "
+                         f"(1행 {x0}~{x1} vs {k+1}행 {y0}~{y1}). 열 정렬이 어긋났다.")
+        out.append(g)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("src")
     ap.add_argument("--out", required=True)
     ap.add_argument("--cols", type=int, default=3, help="한 원형이 가진 자세 수 (기본 3: 정면·뒤·오른쪽옆)")
     ap.add_argument("--names", required=True, help="읽는 순서(왼→오, 위→아래)대로 원형 id, 쉼표 구분")
+    ap.add_argument("--layout", choices=["rows", "cols"], default="rows",
+                    help="rows(기본): 한 인물의 3자세가 가로로 나란히 · cols: 열이 인물이고 행이 자세")
     a = ap.parse_args()
 
     names = [s.strip() for s in a.names.split(",") if s.strip()]
@@ -153,7 +184,10 @@ def main():
     poses = [(r, b) for r, b in box.items() if b[3] - b[1] + 1 >= MIN_H]
     extras = [(r, b) for r, b in box.items() if b[3] - b[1] + 1 < MIN_H]
     rows = band_rows(poses)
-    groups = [g for r in rows for g in group_by_gaps(r, a.cols)]
+    if a.layout == "cols":
+        groups = transpose_groups(rows, a.cols)
+    else:
+        groups = [g for r in rows for g in group_by_gaps(r, a.cols)]
     print(f"자세 {len(poses)}개 · 작은 성분 {len(extras)}개(부속/라벨) · {len(rows)}행 · 원형 {len(groups)}개")
     if len(groups) != len(names):
         sys.exit(f"❌ 검출된 원형 {len(groups)}개 ≠ 준 이름 {len(names)}개. --names 를 맞출 것.")

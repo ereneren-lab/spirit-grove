@@ -4504,29 +4504,38 @@ function heroImgBack(idx){ if(typeof Image==="undefined")return null; if(_heroBa
    ⚠️ `youth_m`에는 변형을 주지 않는다 — 6명 중 4명이 **같은 사람**(라이벌 카이)이라
       변형을 주면 같은 인물이 장소마다 다르게 생긴다. 인원 수 1위인데 손대면 안 되는 자리다. */
 const NPC_ARCH={
-  t3:"kid", t15:"kid", t19:"kid", t12:"kid",
+  t3:"kid", t19:"kid",
+  t12:"kid2", t15:"kid2",                                   // 새싹 채집가 이든 · 초보 정령사 준
   t2:"kid_f", duo:"kid_f",                                  // 풀잎소녀 도윤 · 쌍둥이 나나·리리
   t1:"bugkid", t9:"bugkid",
-  t16:"youth_f", t20:"youth_f", trade1:"youth_f", t8:"youth_f",
+  t16:"youth_f", t20:"youth_f", t8:"youth_f",
+  trade1:"youth_f2",                                        // 교환하는 소녀 하늘
   rival:"youth_m", rival2:"youth_m", rival3:"youth_m", rival4:"youth_m", trade2:"youth_m", t13:"youth_m",
   t21:"hunter", t10:"hunter", t17:"hunter",
   t4:"falconer",                                            // 매잡이 세진 — 활이 아니라 매를 든다
   t22:"angler", t6:"angler",
+  fisher:"angler2",                                         // 호수 어부 — 낚시꾼 도윤(8,22)과 바로 옆 칸이었다
   t14:"miner", t7:"miner",
   woodsman:"woodcutter",                                    // 나무꾼 바우 — 광부 헬멧이 아니라 도끼
-  guide_rio:"scholar", movexpert:"scholar",
+  guide_rio:"scholar", scholar:"scholar",
+  movexpert:"scholar2",                                     // 기술 전문가
   mina:"scholar_f", t23:"scholar_f",                        // 조수 미나 · 수정 연구가 예린
-  t5:"mystic", altar_pilgrim:"mystic", altar_watcher:"mystic", t18:"mystic",
-  t24:"guard", t11:"guard", towerkeeper:"guard",
+  t5:"mystic", altar_pilgrim:"mystic", altar_watcher:"mystic",
+  t18:"mystic2", pilgrim:"mystic2",                         // 용 수련생 하늘 · 순례자
+  t24:"guard", t11:"guard",
+  towerkeeper:"guard_f",                                    // 도장의 관장 세라 — 여성 이름인데 남성 갑주였다
   guide_mina:"merchant", broker:"merchant",
-  guide_tori:"elder", daycare:"elder",
+  guide_tori:"elder",
+  daycare:"elder2",                                         // 육아방 관리인 — 아기를 안은 그림
   guide_el:"elder_m",                                       // 숲지기 노인 — 셋 중 유일하게 긴머리가 아니다
   /* 📌 1·2차에서 통째로 빠져 있던 야외 4명. 문서엔 "나머지 4명은 실내 인물"이라 적혀 있었는데
         **실제로는 지도 위에 서 있는 야외 NPC**였다(숲의 노인·떠돌이 학자·호수 어부·순례자).
         id가 원형 이름(`elder`·`scholar`)과 겹쳐서 이미 배정된 걸로 읽혔던 자리다.
-        넷 다 **기존 원형에 그대로 맞는다** — 그림을 더 받을 필요가 없었다.
-        근거는 각자의 `spr`이다: beard / scroll / straw+rod / hood+staff. */
-  elder:"elder_m", scholar:"scholar", fisher:"angler", pilgrim:"mystic" };
+        ⚠️ **여기서 한 번 사고가 났다** — 3차-B에서 위쪽에 `fisher:"angler2"`·`pilgrim:"mystic2"`를
+           넣었는데 이 줄이 아래에 남아 **조용히 되돌려놨다**(객체 리터럴은 뒤 키가 이긴다).
+           `scholar`·`fisher`·`pilgrim`은 위에서 배정하므로 여기엔 `elder`만 남긴다.
+           `npc_sheet_test [7]`이 이제 중복 키를 자동으로 잡는다. */
+  elder:"elder_m" };
 /* 원형을 각 NPC의 spr에 붙인다 — 렌더러(`_char`)는 spec만 받으므로 여기서 한 번에 꽂는다.
    ⚠️ NPC_ARCH에 없는 id는 그냥 절차적으로 남는다(실내 간호사·상점원 등). 그게 정상 동작이다. */
 if(typeof NPCS!=="undefined")NPCS.forEach(n=>{ if(n&&n.spr&&NPC_ARCH[n.id])n.spr.sheet=NPC_ARCH[n.id]; });
