@@ -66,15 +66,22 @@ python3 scripts/make_terrain_art.py --src art_inbox/terrain/_split --out assets/
    각각 아트 도착 직후 무너졌다. **아트를 그 자리에서 떼고 재고 되돌리는** 방식으로 짠다.
 
 
-### ⑤ 배포 절차 (2026-08-11에만 여덟 번 썼다)
+### ⑤ 배포 절차
 ```bash
 python3 scripts/build.py && git status --short   # dist 변화 없어야 정상(= 커밋된 코드 그대로)
-bash scripts/deploy.sh
-git push origin main:history                     # ⚠️ deploy는 원격 main을 force-push로 덮는다 — 이력은 따로 남긴다
+bash scripts/deploy.sh                            # main push → Actions가 서버에서 빌드 → Pages
 gh run watch $(gh run list --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
 curl -s https://ereneren-lab.github.io/spirit-grove/ | grep -c 'HOME_AT'   # 라이브 확증(0이면 안 올라간 것)
 ```
 ⚠️ 실행 전 사용자에게 **한 줄로 알리고** 시작할 것(외부로 나가는 작업이다). 되묻는 게 아니라 통보면 된다.
+
+📌 **2026-08-11에 배포 구조를 바꿨다 — 원격 `main` = 전체 이력이다.**
+예전엔 `deploy.sh`가 orphan 스냅샷 1개로 **force-push해 덮었다**(`.git`이 479MB이던 시절의 잔재).
+바꾼 이유는 **유저가 핸드폰 Claude 앱을 이 저장소에 연결**하기 때문이다 — 앱은 기본 브랜치를 받는데
+그게 스냅샷이면 이력이 안 보이고, ⚠️ **앱이 main에 커밋해도 다음 배포가 통째로 지운다.**
+→ orphan 방식을 버렸다. **되돌리지 말 것.** `git push origin main:history`도 이제 불필요하다
+(`history`는 옛 구조의 백업으로 남겨둔다).
+📌 Pages는 브랜치가 아니라 **Actions 아티팩트**로 나간다 — 워크플로가 소스에서 `build.py`를 돌린다.
 
 ---
 
