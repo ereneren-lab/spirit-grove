@@ -4479,19 +4479,30 @@ function heroImgBack(idx){ if(typeof Image==="undefined")return null; if(_heroBa
       (정령 86종·주인공 4명이 쓰는 방식과 같다).
    ⚠️ 매핑을 여기 한 곳에만 둔다. NPC 정의마다 원형을 적으면 47군데로 흩어져
       새 NPC를 넣을 때 조용히 빠진다(이 저장소가 병렬 테이블로 여러 번 당했다). */
+/* ⚠️ 변형 원형(2026-08-11 2차)을 고를 때 **이름으로 성별을 짐작하지 않는다** —
+      `spr.hairlen==="long"` 이 이 저장소가 실제로 쓰는 신호다(도윤·나나리리·예린·복순·육아방).
+      처음엔 이름을 보고 `새싹 채집가 이든`을 여자아이로 옮기려 했는데, 그 NPC의 spr은
+      긴머리 없이 `hat:"cap"`이라 그림과 데이터가 어긋났을 것이다. 데이터를 따랐다.
+   ⚠️ `youth_m`에는 변형을 주지 않는다 — 6명 중 4명이 **같은 사람**(라이벌 카이)이라
+      변형을 주면 같은 인물이 장소마다 다르게 생긴다. 인원 수 1위인데 손대면 안 되는 자리다. */
 const NPC_ARCH={
-  t3:"kid", t15:"kid", t19:"kid", t12:"kid", t2:"kid", duo:"kid",
+  t3:"kid", t15:"kid", t19:"kid", t12:"kid",
+  t2:"kid_f", duo:"kid_f",                                  // 풀잎소녀 도윤 · 쌍둥이 나나·리리
   t1:"bugkid", t9:"bugkid",
   t16:"youth_f", t20:"youth_f", trade1:"youth_f", t8:"youth_f",
   rival:"youth_m", rival2:"youth_m", rival3:"youth_m", rival4:"youth_m", trade2:"youth_m", t13:"youth_m",
-  t4:"hunter", t21:"hunter", t10:"hunter", t17:"hunter",
+  t21:"hunter", t10:"hunter", t17:"hunter",
+  t4:"falconer",                                            // 매잡이 세진 — 활이 아니라 매를 든다
   t22:"angler", t6:"angler",
-  t14:"miner", t7:"miner", woodsman:"miner",
-  t23:"scholar", guide_rio:"scholar", mina:"scholar", movexpert:"scholar",
+  t14:"miner", t7:"miner",
+  woodsman:"woodcutter",                                    // 나무꾼 바우 — 광부 헬멧이 아니라 도끼
+  guide_rio:"scholar", movexpert:"scholar",
+  mina:"scholar_f", t23:"scholar_f",                        // 조수 미나 · 수정 연구가 예린
   t5:"mystic", altar_pilgrim:"mystic", altar_watcher:"mystic", t18:"mystic",
   t24:"guard", t11:"guard", towerkeeper:"guard",
   guide_mina:"merchant", broker:"merchant",
-  guide_el:"elder", guide_tori:"elder", daycare:"elder" };
+  guide_tori:"elder", daycare:"elder",
+  guide_el:"elder_m" };                                     // 숲지기 노인 — 셋 중 유일하게 긴머리가 아니다
 /* 원형을 각 NPC의 spr에 붙인다 — 렌더러(`_char`)는 spec만 받으므로 여기서 한 번에 꽂는다.
    ⚠️ NPC_ARCH에 없는 id는 그냥 절차적으로 남는다(실내 간호사·상점원 등). 그게 정상 동작이다. */
 if(typeof NPCS!=="undefined")NPCS.forEach(n=>{ if(n&&n.spr&&NPC_ARCH[n.id])n.spr.sheet=NPC_ARCH[n.id]; });

@@ -28,7 +28,9 @@ from make_hero_sheet import (strip_background, drop_soft_alpha, detect_grid,
 # §1의 원형 12종. 여기 없는 파일 이름이 오면 경고하고 넘어간다 —
 # 오타로 만든 원형이 조용히 매니페스트에 들어가면 게임에선 폴백만 보고 원인을 못 찾는다.
 ARCHETYPES = ["kid", "bugkid", "youth_f", "youth_m", "hunter", "angler",
-              "miner", "scholar", "mystic", "guard", "merchant", "elder"]
+              "miner", "scholar", "mystic", "guard", "merchant", "elder",
+              # 2차(2026-08-11) — 같은 원형끼리 쌍둥이가 되던 것 + 역할과 그림이 어긋난 자리. §7
+              "kid_f", "scholar_f", "elder_m", "woodcutter", "falconer"]
 
 
 def convert(src: Path, out: Path, C=64, colors=22, bob=1, sway=1, bgthresh=45):
