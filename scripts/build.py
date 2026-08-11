@@ -43,6 +43,13 @@ sheets = man.get("hero_sheet") or []
 sheet = "const HERO_SHEET={%s};" % ",".join(
     f'"{k}":"{url("assets/art/hero_sheet/" + k + ".webp")}"' for k in sheets)
 
+# NPC 원형 시트(같은 3x3 규격). 역시 manifest에 "npc_sheet"가 있을 때만 실린다.
+# ⚠️ 원형 id는 outputs/production/2026-08-11_…_npc-sheet-prompts.md §1이 출처다.
+#    없는 원형은 게임에서 절차적 스프라이트로 폴백한다 — 12장을 한 번에 안 받아도 된다.
+npcsheets = man.get("npc_sheet") or []
+npcsheet = "const NPC_SHEET_ART={%s};" % ",".join(
+    f'"{k}":"{url("assets/art/npc_sheet/" + k + ".webp")}"' for k in npcsheets)
+
 # 순수 규칙(src/rules/*.js)을 마커 자리에 그대로 끼워 넣는다.
 # 브라우저는 이 인라인 결과를, node 단위 테스트(scripts/rules_env.js)는 같은 파일들을
 # 같은 순서로 이어붙여 평가한다 — 즉 양쪽이 문자 그대로 동일한 코드를 돈다.
@@ -58,6 +65,7 @@ repl = {
     "//@@HERO_ART@@": hero,
     "//@@HERO_ART_BACK@@": back,
     "//@@HERO_SHEET@@": sheet,
+    "//@@NPC_SHEET@@": npcsheet,
     "//@@PAINT_ART@@": paint,
 }
 for marker, body in repl.items():

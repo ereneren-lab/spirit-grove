@@ -163,6 +163,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw map_autotile_test.js
   pw battle_hud_test.js
   pw npc_sprite_test.js
+  pw npc_sheet_test.js
   pw save_slot_test.js
   pw fly_test.js
   pw route_test.js

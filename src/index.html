@@ -2857,6 +2857,22 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       else if(dir==="right"){ ctx.fillRect(cx+u*0.06,cy-u*0.46,u*0.1,u*0.13); }
       else { ctx.fillRect(cx-u*0.17,cy-u*0.46,u*0.09,u*0.13); ctx.fillRect(cx+u*0.08,cy-u*0.46,u*0.09,u*0.13); } } },
   _char(ctx,cx,cy,s,spec,dir,now,moving){ spec=spec||{}; dir=dir||"down";
+    /* ① 원형 시트가 있으면 그걸 그린다. 없으면 아래 절차적 스프라이트로 그대로 내려간다.
+       ⚠️ **여기 한 곳에만 둔다** — `_char` 호출부가 7군데(오버월드 NPC·실내 N 타일·관장 등)라
+          호출부마다 분기를 넣으면 한 곳을 빠뜨렸을 때 "어떤 사람만 옛 그림"이 된다.
+       ⚠️ 주인공과 **같은 규격·같은 함수**를 쓴다(heroSheetCell/heroSheetFrame/heroDrawSpec).
+          NPC용으로 따로 계산하면 칸 크기 판정이 두 벌이 되어 갈라진다. */
+    if(spec.sheet && typeof npcSheet==="function"){
+      const _sh=npcSheet(spec.sheet);
+      const _c=_sh&&_sh.complete&&_sh.naturalWidth?heroSheetCell(_sh.naturalWidth,_sh.naturalHeight):null;
+      if(_c){ const _ds=heroDrawSpec(_c, s), S=_ds.size, _fr=heroSheetFrame(dir, moving, now);
+        const _hb=moving?0:(now?Math.sin(now*2.2+cx*0.5)*s*0.012:0);
+        ctx.fillStyle="rgba(0,0,0,.28)"; ctx.beginPath();
+        ctx.ellipse(cx,cy+s*0.32,s*0.30,s*0.11,0,0,6.29); ctx.fill();
+        ctx.save(); if(_fr.flip){ ctx.translate(cx,0); ctx.scale(-1,1); ctx.translate(-cx,0); }
+        ctx.imageSmoothingEnabled=_ds.smooth;
+        ctx.drawImage(_sh, _fr.col*_c, _fr.row*_c, _c, _c, cx-S/2, cy+s*0.32-S-_hb, S, S);
+        ctx.restore(); return; } }
     const col=(v,d)=>v==null?d:(typeof v==="number"?"#"+("000000"+(v>>>0).toString(16)).slice(-6):v);
     const skin=col(spec.skin,"#e8c39a"), hair=col(spec.hair,"#3a2f24"), outfit=col(spec.outfit||spec.body,"#5a6f8a"), accent=col(spec.accent,"#8aa0c0"), boots=col(spec.boots,"#3a2f24"), hatc=col(spec.hatc,"#444a55");
     /* 체형 — **실루엣을 실제로 가르는 축**. 유저: "npc 외형도 좀 개선해".
@@ -3590,6 +3606,7 @@ $("storySkip").addEventListener("click",()=>{ Audio.sfx("blip"); _storyEnd(); })
 //@@HERO_ART@@
 //@@HERO_ART_BACK@@
 //@@HERO_SHEET@@
+//@@NPC_SHEET@@
 const CHARS=[
   {em:"🧑‍🔬",nm:"연구원 리오",skin:0xe8b88a,hair:0x2a2a33,hat:0x4a6f8a,cloak:0x3d6e8a,pack:0x6e4a32,boot:0x2c3a4a,cap:"hood"},
   {em:"👩‍🦰",nm:"여행자 미나",skin:0xf0c49a,hair:0x9a3b2a,hat:0xe14b4b,cloak:0x355a8a,pack:0x5a3c28,boot:0x33405a,cap:"cap"},
@@ -4454,6 +4471,37 @@ const _heroImgCache={};
 function heroImg(idx){ if(typeof Image==="undefined")return null; if(_heroImgCache[idx])return _heroImgCache[idx]; const url=(typeof HERO_ART!=="undefined")&&HERO_ART[idx]; if(!url)return null; const img=new Image(); img.src=url; _heroImgCache[idx]=img; return img; }
 const _heroBackCache={};
 function heroImgBack(idx){ if(typeof Image==="undefined")return null; if(_heroBackCache[idx])return _heroBackCache[idx]; const url=(typeof HERO_ART_BACK!=="undefined")&&HERO_ART_BACK[idx]; if(!url)return null; const img=new Image(); img.src=url; _heroBackCache[idx]=img; return img; }
+/* ===== NPC 원형 시트 =====
+   유저: "차라리 프롬프트 짜서 여러 간단한 npc들 만드는 게 낫겠다."
+   NPC는 47명인데 원형은 12종이면 충분하다 — 같은 원형끼리는 기존 색 지정(spr.outfit/accent/hair)이
+   달라서 서로 다르게 보인다. 그래서 그림 12장으로 47명을 덮는다.
+   ⚠️ **아트가 없으면 절차적 스프라이트로 그대로 폴백한다.** 한 장씩 들어올 때마다 그 원형만 바뀐다
+      (정령 86종·주인공 4명이 쓰는 방식과 같다).
+   ⚠️ 매핑을 여기 한 곳에만 둔다. NPC 정의마다 원형을 적으면 47군데로 흩어져
+      새 NPC를 넣을 때 조용히 빠진다(이 저장소가 병렬 테이블로 여러 번 당했다). */
+const NPC_ARCH={
+  t3:"kid", t15:"kid", t19:"kid", t12:"kid", t2:"kid", duo:"kid",
+  t1:"bugkid", t9:"bugkid",
+  t16:"youth_f", t20:"youth_f", trade1:"youth_f", t8:"youth_f",
+  rival:"youth_m", rival2:"youth_m", rival3:"youth_m", rival4:"youth_m", trade2:"youth_m", t13:"youth_m",
+  t4:"hunter", t21:"hunter", t10:"hunter", t17:"hunter",
+  t22:"angler", t6:"angler",
+  t14:"miner", t7:"miner", woodsman:"miner",
+  t23:"scholar", guide_rio:"scholar", mina:"scholar", movexpert:"scholar",
+  t5:"mystic", altar_pilgrim:"mystic", altar_watcher:"mystic", t18:"mystic",
+  t24:"guard", t11:"guard", towerkeeper:"guard",
+  guide_mina:"merchant", broker:"merchant",
+  guide_el:"elder", guide_tori:"elder", daycare:"elder" };
+/* 원형을 각 NPC의 spr에 붙인다 — 렌더러(`_char`)는 spec만 받으므로 여기서 한 번에 꽂는다.
+   ⚠️ NPC_ARCH에 없는 id는 그냥 절차적으로 남는다(실내 간호사·상점원 등). 그게 정상 동작이다. */
+if(typeof NPCS!=="undefined")NPCS.forEach(n=>{ if(n&&n.spr&&NPC_ARCH[n.id])n.spr.sheet=NPC_ARCH[n.id]; });
+const _npcSheetCache={};
+/* ⚠️ 없음(null)은 캐시하지 않는다 — 캐시하면 나중에 시트를 끼워 넣어도 영영 안 읽는다
+   (heroSheet가 같은 이유로 그렇게 돼 있고, 회귀가 런타임 주입으로 그리기 경로를 검사한다). */
+function npcSheet(arch){ if(typeof Image==="undefined"||!arch)return null;
+  const url=(typeof NPC_SHEET_ART!=="undefined")&&NPC_SHEET_ART[arch]; if(!url)return null;
+  if(_npcSheetCache[arch]&&_npcSheetCache[arch].src===url)return _npcSheetCache[arch];
+  const img=new Image(); img.src=url; _npcSheetCache[arch]=img; return img; }
 const _heroSheetCache={};
 // 걷기 시트. 없으면 null → 호출부가 정지 이미지 → 절차적 워커 순으로 폴백한다.
 // ⚠️ **없음(null)은 캐시하지 않는다.** 캐시해버리면 시트를 나중에 끼워 넣어도 영영 안 읽는다
@@ -6957,7 +7005,7 @@ window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVi
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 
 window.SG.FLAVOR=FLAVOR;
-Object.assign(window.SG,{NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,TRAINER_HELD,DOOR_TILES,NATURE_ENTRY,CHAR_HOME,ORIGIN_STORY,INTERIOR_NPC_MSG,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
+Object.assign(window.SG,{NPC_ARCH,NPC_SHEET_ART,npcSheet,NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,TRAINER_HELD,DOOR_TILES,NATURE_ENTRY,CHAR_HOME,ORIGIN_STORY,INTERIOR_NPC_MSG,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,sendOutAnim,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
