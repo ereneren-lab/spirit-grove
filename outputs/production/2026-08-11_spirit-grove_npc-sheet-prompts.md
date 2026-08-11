@@ -249,8 +249,121 @@ bash scripts/verify.sh
 
 ## 6. 미확정 · 유저가 정할 것
 
-1. **12종 전부 받을지, 초반에 보이는 것부터 받을지.** 초반 우선이면 `kid` · `bugkid` · `youth_m` ·
-   `scholar` · `elder` 다섯 장이면 마을~초원이 덮인다.
+1. ~~12종 전부 받을지~~ → **12종 전부 받았다(2026-08-11).**
 2. **실내 인물(간호사·상점원·회관 3인)을 포함할지.** 지금은 범위 밖으로 뒀다.
 3. **로밍 NPC의 걷기.** 지금 절차적 스프라이트는 걷기 사이클이 있다. 시트도 3열이라 그대로 돈다 —
    추가 작업은 없지만, 걸음 A/B가 부실하면 로밍할 때 티가 난다.
+
+---
+
+# 7. 변형 원형 — 2차 발주안 (2026-08-11 · 유저 선택 「인원 많은 원형만 변형 추가」)
+
+## 7-1. 왜 필요한가
+
+시트가 들어가면서 **43명이 12가지 외모**가 됐다(틴트가 코드에 없다 — 문서 머리말 참조).
+그런데 실측해 보니 **"인원 수"만으로 고르면 틀린다.** 두 가지를 같이 봐야 한다.
+
+**게임을 띄워 실제로 센 값** (`NPC_ARCH` + `NPCS` 좌표. 겹침 = 같은 원형 둘이 ±8칸 안에 있는 쌍)
+
+| 원형 | 인원 | 겹침 | 실제로 다른 사람 | 비고 |
+|---|---|---|---|---|
+| `youth_m` | 6 | 2쌍 | **3명** | ⛔ 4명이 **같은 사람**(라이벌 카이가 4곳에 배치) |
+| `kid` | 6 | **3쌍** | 6명 | 최다 겹침 |
+| `scholar` | 4 | 2쌍 | 4명 | 연구소 앞(y47~48)에 3명이 몰려 있다 |
+| `hunter` | 4 | 1쌍 | 4명 | |
+| `mystic` | 4 | 1쌍 | 4명 | |
+| `youth_f` | 4 | 1쌍 | 4명 | |
+| `elder` | 3 | 2쌍 | 3명 | 인원 대비 겹침이 가장 높다 |
+| `miner` | 3 | 2쌍 | 3명 | |
+| `guard` | 3 | 2쌍 | 3명 | |
+| `merchant`·`bugkid`·`angler` | 2 | 0~1쌍 | 2명 | 손댈 필요 없다 |
+
+⛔ **`youth_m`에는 변형을 주면 안 된다.** 6명 중 4명이 라이벌 카이 한 사람이다 —
+변형을 주면 **같은 인물이 장소마다 다르게 생기는** 더 나쁜 버그가 된다.
+📌 인원 수 1위인데 발주에서 빠지는 이유가 이것이다. **표만 보고 고르면 여기서 틀린다.**
+
+## 7-2. 겹침보다 큰 문제 — **역할과 그림이 어긋난 자리**
+
+변형을 "옷만 다른 두 번째 사람"으로 뽑으면 절반만 버는 것이다. 지금 **틀린 그림**이 있다.
+
+| 지금 | 무엇이 어긋났나 |
+|---|---|
+| `miner` = 헬멧+곡괭이 | **나무꾼 바우**가 광부 헬멧을 쓰고 있다 (도끼여야 한다) |
+| `elder` = 할머니(바구니) | **숲지기 노인**도 같은 할머니다 |
+| `kid` = 남자아이 | **풀잎소녀 도윤**·**쌍둥이 나나·리리**가 남자아이 그림이다 |
+| `scholar` = 남성 연구자 | **조수 미나**·**수정 연구가 예린**이 같은 남자다 |
+| `hunter` = 활 멘 사냥꾼 | **매잡이 세진**에게 매가 없다 |
+
+→ **변형 5장이 겹침과 불일치를 동시에 푼다.** 아래가 그 5장이다.
+
+## 7-3. 발주 — 변형 5장 (우선순위 순)
+
+공통 프리픽스·네거티브·규격은 **§2·§3과 완전히 동일하다**. 대조표 한 장에 몰아 뽑을 것
+(§4-0의 `split_contact_sheet.py`가 쪼갠다). 자세 사이 여백을 넉넉히.
+
+### ① `kid_f` — 여자아이 *(겹침 3쌍 → 1쌍)*
+```
+[공통 프리픽스]
+A small girl trainer, big head and short limbs, hair in two short braids,
+a simple pinafore dress over leggings, a flower tucked behind one ear. Cheerful posture.
+```
+
+### ② `scholar_f` — 여성 연구자 *(겹침 2쌍 → 0쌍)*
+```
+[공통 프리픽스]
+A young woman researcher with hair tied in a low bun, round glasses,
+a long open lab coat over simple clothes, a clipboard held against the chest. Attentive posture.
+```
+
+### ③ `elder_m` — 남성 노인 *(겹침 2쌍 → 0쌍)*
+```
+[공통 프리픽스]
+An elderly man with a slightly bent back, a short white beard and bald crown,
+a worn work vest, holding a long walking stick. Slow, steady posture.
+```
+
+### ④ `woodcutter` — 나무꾼 *(겹침 2쌍 → 1쌍 · 역할 불일치 해소)*
+```
+[공통 프리픽스]
+A broad-shouldered woodcutter with a cloth headband, rolled-up sleeves,
+a wide axe resting on one shoulder, a bundle of logs strapped to the back. Sturdy stance.
+```
+
+### ⑤ `falconer` — 매잡이 *(역할 불일치 해소)*
+```
+[공통 프리픽스]
+A hunter with a thick leather gauntlet on one arm and a hawk perched on it,
+a short hooded cloak, a bandana around the neck. Alert, upright posture.
+```
+
+📌 **`guard`(3명 2쌍)는 뺐다.** 셋 다 투구를 써서 얼굴이 안 보이고, 서 있는 자리가
+고원·제단·도장으로 지역이 갈려 실제로 나란히 보이는 일이 드물다. 6번째로 받을 만하지만 우선순위는 낮다.
+
+## 7-4. ⚠️ 받기 **전에** `NPC_ARCH`를 고치지 말 것
+
+원형 id를 먼저 바꿔놓으면 그 NPC들은 **아트가 없어 절차적 스프라이트로 폴백한다** →
+한 화면에 픽셀 시트와 절차적 스프라이트가 섞여, 지금보다 더 튄다.
+**그림이 도착한 뒤에 매핑과 매니페스트를 같이 바꾼다.** 순서는 이렇다.
+
+```bash
+python3 scripts/split_contact_sheet.py <대조표.png> --out art_inbox/npc/_split \
+        --names kid_f,scholar_f,elder_m,woodcutter,falconer
+python3 scripts/make_npc_sheet.py --src art_inbox/npc/_split --out assets/art/npc_sheet
+# ⚠️ make_npc_sheet.py 의 ARCHETYPES 목록에 새 id 5개를 추가해야 경고 없이 지나간다
+# 그다음 ① assets/manifest.json "npc_sheet" 에 5개 추가
+#        ② src/index.html 의 NPC_ARCH 에서 아래 NPC들을 새 원형으로 옮긴다
+python3 scripts/build.py && node scripts/npc_sheet_test.js dist/spirit_grove_3d.html
+```
+
+**옮길 NPC (실측 이름 그대로)**
+
+| 새 원형 | 옮길 NPC |
+|---|---|
+| `kid_f` | 풀잎소녀 도윤 · 쌍둥이 나나·리리 · 새싹 채집가 이든 |
+| `scholar_f` | 조수 미나 · 수정 연구가 예린 |
+| `elder_m` | 숲지기 노인 |
+| `woodcutter` | 나무꾼 바우 |
+| `falconer` | 매잡이 세진 |
+
+⚠️ `NPC_ARCH`는 **id**로 매핑한다 — 위 표는 사람 이름이다. 실제 id는 코드에서 확인할 것
+(`npc_sheet_test [1]`이 없는 id를 가리키는 매핑을 자동으로 잡는다 — 08-11에 실제로 한 건 잡았다).
