@@ -85,7 +85,7 @@ const { chromium } = require("playwright"); const path=require("path");
   const stepTo=async(key,test,max=12)=>{ for(let i=0;i<max;i++){ if(test(await pos()))return true;
       await p.keyboard.press(key); await p.waitForTimeout(200); } return test(await pos()); };
   // 걷는 동안 표본을 뜬다 → 관측된 행/열 집합과 표식 위치
-  const walk=async(key,ticks=14)=>{ const rows=new Set(), cols=new Set(); let mark=null;
+  const walk=async(key,ticks=40)=>{ const rows=new Set(), cols=new Set(); let mark=null;
     await p.keyboard.down(key);
     for(let i=0;i<ticks;i++){ const s=await sample();
       (s&&s.cells||[]).forEach(k=>{ rows.add(k.split(",")[0]); cols.add(k.split(",")[1]); });
@@ -102,8 +102,14 @@ const { chromium } = require("playwright"); const path=require("path");
   const down=await walk("ArrowDown",12);
   const after=await pos();
   ok(after.y>before.y, `아래로 실제로 이동했다 (${before.y} → ${after.y}) — 안 움직이면 아래 단정이 무의미하다`);
-  ok(down.cols.size>=2, `걷는 동안 프레임이 바뀐다 (관측된 열: ${[...down.cols].sort().join(",")||"없음"})`);
   ok(down.rows.has("0"), `아래로 걸으면 0행(정면)을 쓴다 (관측된 행: ${[...down.rows].sort().join(",")})`);
+  /* ⚠️ **열(프레임) 판정은 여기서 하지 않는다 — 세로로 걸을 공간이 한 칸뿐이다.**
+     출신지 실내는 세로가 짧아 아래로 한 칸 가면 곧 벽이다. 그 뒤로는 `moving`이 false라
+     정지 프레임(0열)만 계속 나온다 → **무작위로 빨개졌다**(같은 빌드에서 3/3 통과 ↔ 2/2 실패).
+     프레임 순서 [정지,A,정지,B] 중 절반이 0열이라 짧은 표본은 특히 잘 속는다.
+     → 열 판정은 **가로 열린 줄(x=1~7, 6칸)** 에서 한다([3]). `heroSheetFrame`의 열 계산은
+        방향과 무관한 공통 로직이라(HERO_FRAME_ORDER 하나를 공유) 단정이 약해지지 않는다.
+        방향별로 다른 건 **행**이고, 그건 여기서 그대로 확인한다. */
   const openRow=after.y;
 
   console.log("\n[3] 방향이 바뀌면 행이 바뀐다");
@@ -113,9 +119,11 @@ const { chromium } = require("playwright"); const path=require("path");
   await stepTo("ArrowDown", q=>q.y>=openRow);
   await stepTo("ArrowLeft", q=>q.x<=2);
   const xb=(await pos()).x;
-  const right=await walk("ArrowRight",12);
+  const right=await walk("ArrowRight",24);
   const xa=(await pos()).x;
-  ok(xa>xb, `오른쪽으로 실제로 이동했다 (${xb} → ${xa})`);
+  /* 📌 열 판정의 전제 — **여러 칸을 실제로 걸었는가.** 한 칸만 가고 멈추면
+     나머지 표본이 전부 정지 프레임이라 [2]와 같은 플레이크가 여기로 옮겨온다. */
+  ok(xa-xb>=3, `오른쪽으로 여러 칸 걸었다 (${xb} → ${xa}, ${xa-xb}칸 · 기준 3칸 이상)`);
   ok(right.rows.has("2"), `옆으로 걸으면 2행(옆모습)을 쓴다 (${[...right.rows].sort().join(",")})`);
   ok(right.cols.size>=2, `옆으로 걸을 때도 프레임이 바뀐다 (관측된 열: ${[...right.cols].sort().join(",")||"없음"})`);
 

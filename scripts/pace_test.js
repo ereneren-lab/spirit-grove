@@ -17,6 +17,14 @@
 //   [2] 체육관 사이 도보거리 (한 줄에 몰리면 짧아진다)
 //   [3] 체육관 x좌표가 가로로 흩어져 있는가 (폭을 쓰는가)
 //   [4] 첫 체육관에 **풀숲을 안 밟고** 들어갈 수 없는가 (야생 한 번은 만나고 들어가야 한다)
+//   [5] 그 길에 **트레이너가 실제로 서 있는가**, 그리고 **너무 일찍 걸지 않는가**
+//
+//   ⚠️ [5]는 체육관을 동쪽으로 옮기고 나서 생긴 구멍이다. 거리는 늘렸는데 트레이너는
+//      옛 체육관 자리(서쪽)에 그대로 있어서, 미나·토리는 **0명**을 만나고 도착했다.
+//      거리만 늘리면 "차근차근"이 아니라 그냥 빈 들판이 길어진 것이다.
+//   ⚠️ 트레이너 전투는 **시야(dir + range 2)** 로 걸린다 → 재야 하는 건 트레이너가 선 칸이 아니라
+//      **그가 보고 있는 칸**이다. onboarding_test가 트레이너 칸만 보다가
+//      "리오가 2보째에 전투"를 놓쳤다(준의 시야가 리오 출구 1칸 앞까지 닿았다).
 //
 // ⚠️ 좌표를 이 파일에 적지 않는다 — 전부 GYM_AT / HOME_POS에서 가져온다.
 //    (goal_test가 좌표를 박아뒀다가 체육관을 옮기자 테스트만 빨개진 적이 있다. 그것도 병렬 테이블이다.)
@@ -25,6 +33,8 @@ const { chromium } = require("playwright"); const path=require("path");
 const MIN_TO_GYM1  = 7;    // 출신지 → 첫 체육관 최소 도보
 const MIN_GYM_GAP  = 15;   // 체육관 사이 최소 도보
 const MIN_X_SPREAD = 12;   // 체육관 x좌표 최대-최소 (지도 폭 25 중 절반 가까이)
+const MIN_TRAINERS = 2;    // 첫 체육관까지 길목에서 만나는 트레이너 수
+const MIN_FIRST_FIGHT = 5; // 첫 전투는 최소 이 보 이후 (나오자마자 배틀 금지)
 
 (async()=>{
   const b=await chromium.launch();
@@ -58,10 +68,28 @@ const MIN_X_SPREAD = 12;   // 체육관 x좌표 최대-최소 (지도 폭 25 중
       .sort((a,b)=>a.n-b.n);
     const g1=gyms[0];
     const nm=["리오","미나","토리","엘"];
+    /* 시야 전투 트레이너 → 그가 **보고 있는 칸**들. 벽에 막히면 거기서 끊긴다(게임과 같은 규칙). */
+    const DIR={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+    const seers=(F.NPCS||[]).filter(n=>n.battleKey&&n.dir&&n.x!=null).map(n=>{
+      const d=DIR[n.dir]||[0,1], cells=[];
+      for(let s=1;s<=(n.range||2);s++){ const cx=n.x+d[0]*s, cy=n.y+d[1]*s;
+        if(!F.terrainWalkable(cx,cy))break; cells.push([cx,cy]); }
+      return {name:n.name, cells};
+    });
+    const toGym=bfs(g1.f.x,g1.f.y,false);
     const homes=(F.HOME_POS||S.HOME_POS||[]).map((h,i)=>{
       const d=bfs(h.x,h.y,false), dg=bfs(h.x,h.y,true);
-      return { name:nm[i]||("#"+i), x:h.x, y:h.y,
-               toG1:d[g1.f.x+","+g1.f.y], toG1NoGrass:dg[g1.f.x+","+g1.f.y] };
+      const direct=d[g1.f.x+","+g1.f.y];
+      /* 길목 판정: 출신지→시야칸→체육관1 이 최단보다 2보 이내로 더 드는가.
+         (트레이너가 선 칸이 아니라 시야 칸으로 재는 게 핵심이다) */
+      const fights=[];
+      seers.forEach(t=>{ let best=null;
+        t.cells.forEach(([cx,cy])=>{ const a=d[cx+","+cy], c=toGym[cx+","+cy];
+          if(a==null||c==null||direct==null)return;
+          const det=a+c-direct; if(best==null||det<best.det)best={det,step:a}; });
+        if(best&&best.det<=2)fights.push({name:t.name, step:best.step, det:best.det}); });
+      return { name:nm[i]||("#"+i), x:h.x, y:h.y, toG1:direct,
+               toG1NoGrass:dg[g1.f.x+","+g1.f.y], fights };
     });
     const gaps=[];
     for(let i=0;i+1<gyms.length;i++){
@@ -96,6 +124,18 @@ const MIN_X_SPREAD = 12;   // 체육관 x좌표 최대-최소 (지도 폭 25 중
   ok(r.g1FrontTile==="T", `문 앞 칸이 풀숲이다 — 실제 "${r.g1FrontTile}"`);
   r.homes.forEach(h=>ok(h.toG1NoGrass==null || h.toG1NoGrass>h.toG1,
     `${h.name} — 풀숲을 피하면 더 멀어진다 (${h.toG1}보 → ${h.toG1NoGrass==null?"불가":h.toG1NoGrass+"보"})`));
+
+  console.log("\n[5] 그 길에 트레이너가 있고, 너무 일찍 걸지 않는다");
+  r.homes.forEach(h=>{
+    ok(h.fights.length>=MIN_TRAINERS,
+      `${h.name} — 길목 트레이너 ${h.fights.length}명 (기준 ${MIN_TRAINERS}명 이상): ${h.fights.map(f=>`${f.name}@${f.step}보`).join(" · ")||"없음"}`);
+    /* ⚠️ 트레이너가 0명일 때 "첫 전투 없음"을 초록으로 넘기면 **공허한 통과**다
+       (이 저장소에서 이미 두 번 겪었다 — 빈 배열을 돌며 전부 초록이 뜬 적이 있다).
+       0명은 여기서도 실패로 친다. */
+    const first=h.fights.length?Math.min(...h.fights.map(f=>f.step)):null;
+    ok(first!=null && first>=MIN_FIRST_FIGHT,
+      `  첫 전투가 ${first==null?"없음(트레이너 0명 — 공허한 통과 방지로 실패 처리)":first+"보째"} (기준 ${MIN_FIRST_FIGHT}보 이후)`);
+  });
 
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs[0].slice(0,70):""}`);
   await b.close();

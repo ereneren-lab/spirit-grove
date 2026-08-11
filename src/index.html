@@ -1297,7 +1297,7 @@ const NPCS=[
           "두식: 남쪽 마을에 상점이 있네. 정령구는 넉넉히 챙겨두게.",
           "두식: 서두르지 말게. 길은 어디로도 이어져 있으니."]},
   {id:"guide_tori",x:9,y:42,em:"🌾",name:"이웃 아주머니 복순",
-    spr:{outfit:"#8aa85a",accent:"#e8d860",skin:"#e8c39a",hair:"#6b4a2e",boots:"#5a5a3a"},
+    spr:{build:"stout",hairlen:"long",extra:"basket",outfit:"#8aa85a",accent:"#e8d860",skin:"#e8c39a",hair:"#6b4a2e",boots:"#5a5a3a"},
     lines:["이웃 아주머니 복순: 아이고, 할아버지 대신 나섰다며? 기특하기도 하지.",
            "밭 너머 <b>진한 풀숲</b>엔 야생 정령이 산다. 밟으면 튀어나오니 마음 단단히 먹으렴.",
            "정령이 지치면 <b>모닥불 🔥</b>에 닿으면 낫는단다. 무리하지 말고."],
@@ -1314,65 +1314,65 @@ const NPCS=[
           "숲지기 노인: 숲은 너를 지켜본다."]},
   {id:"mina",x:14,y:48,chat:["미나: 도감은 채울수록 연구소가 보상을 준대. 부지런히 모아봐!","미나: 긴 풀숲엔 정령이 많이 숨어 있어. 나와도 놀라지 말고!","미나: 특수형 정령은 특공으로 싸우는 게 유리해. 도감 봤지?","미나: 힘내! 네가 인장을 되살릴 유일한 희망이야."],em:"🧑‍🔬",name:"조수 미나",spr:{outfit:"#eef0f2",accent:"#4cae9b",skin:"#e8c39a",hair:"#6b4a2e",boots:"#6a6f78",extra:"glasses"},
     lines:["연구소 조수 미나: 위로 갈수록 정령이 강해져. 진한 풀숲일수록 조우 확률이 높으니 조심해!","모닥불 🔥 에 닿으면 정령이 모두 회복돼. 한 번 발견한 모닥불은 언제든 워프로 돌아올 수 있어.","참! 정령마다 물리형·특수형이 있어. 불·물·풀·전기·얼음 기술은 특수공격, 그 밖의 기술은 물리공격으로 피해가 계산돼. 도감에서 특공·특방을 확인해봐!"]},
-  {id:"rival",x:16,y:41,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V",spr:{outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
+  {id:"rival",x:16,y:41,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V",spr:{extra:"bag",outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
     lines:["라이벌 카이: 어이! 너도 정령 연구소에서 왔다며?","실은 스승님을 찾으러 이 숲에 들어왔어. 인장이 옅어진 뒤로 소식이 끊기셨거든. 누가 더 센지, 한 판 가려보자!"],
     linesAfter:["라이벌 카이: 큭… 이번엔 운이 좋았어. 그래도 스승님 흔적 쪽엔 나도 가까워지고 있어. 위에서 다시 붙자!"]},
-  {id:"t1",x:6,y:44,em:"🪲",name:"벌레소년 메아",battleKey:"T1",spr:{outfit:"#6aa84f",accent:"#3a6b2e",skin:"#e8c39a",hair:"#3a2c22",hat:"cap",hatc:"#7a9a3a",boots:"#4a5a2c",extra:"net"},
+  {id:"t1",x:18,y:47,em:"🪲",name:"벌레소년 메아",battleKey:"T1",spr:{outfit:"#6aa84f",accent:"#3a6b2e",skin:"#e8c39a",hair:"#3a2c22",hat:"cap",hatc:"#7a9a3a",boots:"#4a5a2c",extra:"net"},
     lines:["벌레소년 메아: 내 정령들 좀 봐줄래? 한 판 하자!"], linesAfter:["벌레소년 메아: 너 진짜 잘한다… 나도 더 강해질래!"]},
   {id:"elder",x:16,y:34,chat:["장로: 이 숲은 천 년을 살아왔지. 그 숨결을 느껴보게.","장로: 서두르지 말게. 정령과의 신뢰가 힘보다 먼저라네.","장로: 깊은 숲엔 늙은 나조차 길을 잃는다네. 표식을 잘 보게."],em:"🧓",name:"숲의 노인",spr:{outfit:"#7d7a86",accent:"#5a5560",skin:"#e0bd96",hair:"#d8d4cc",boots:"#4a4550",extra:"beard"},
     lines:["숲의 노인: 예전엔 이 길이 곧게 뻗어 있었지. 인장의 빛이 옅어지자 길마저 뒤틀려 미궁이 됐어.","정령은 상성이 중요하다네. 불은 풀에, 물은 불에, 풀은 물에 강하지. 기술 선택을 잘 하게.","어떤 정령은 두 가지 속성을 함께 지녔다네. 약점이 겹치면 4배의 피해를 입기도 하지 — 상대의 속성을 잘 살피게."]},
-  {id:"t2",x:12,y:38,em:"🌿",name:"풀잎소녀 도윤",battleKey:"T2",spr:{outfit:"#5aa86a",accent:"#e8d860",skin:"#e8c39a",hair:"#4a3a26",boots:"#4a5a3a"},
+  {id:"t2",x:12,y:38,em:"🌿",name:"풀잎소녀 도윤",battleKey:"T2",spr:{build:"child",hairlen:"long",outfit:"#5aa86a",accent:"#e8d860",skin:"#e8c39a",hair:"#4a3a26",boots:"#4a5a3a"},
     lines:["풀잎소녀 도윤: 숲의 정령은 끈질겨! 받아낼 수 있어?"], linesAfter:["풀잎소녀 도윤: 더 단련해야겠어…"]},
-  {id:"t3",x:4,y:39,em:"🦝",name:"개구쟁이 하린",battleKey:"T3",spr:{outfit:"#c87a3a",accent:"#8a4a22",skin:"#e8b88a",hair:"#2a2a33",hat:"cap",hatc:"#c84a3a",boots:"#5a3a22"},
+  {id:"t3",x:4,y:39,em:"🦝",name:"개구쟁이 하린",battleKey:"T3",spr:{build:"child",outfit:"#c87a3a",accent:"#8a4a22",skin:"#e8b88a",hair:"#2a2a33",hat:"cap",hatc:"#c84a3a",boots:"#5a3a22"},
     lines:["개구쟁이 하린: 잡기 놀이 한판?"], linesAfter:["개구쟁이 하린: 으아, 졌다! 다음엔 안 봐줘~"]},
   {id:"scholar",x:15,y:29,chat:["학자: 인장의 빛… 누군가 그 힘을 빨아먹고 있어. 틀림없네.","학자: 수정 호수의 수면을 보게. 진실의 조각이 비친다더군.","학자: 고대 문헌엔 '숲의 군주'가 홀로 봉인을 지킨다 적혀 있었네.","학자: 사소한 단서가 열쇠가 될지니, 본 것을 기록해 두게."],em:"📜",name:"떠돌이 학자",spr:{outfit:"#9c7b4e",accent:"#c8a060",skin:"#e8c39a",hair:"#3a2c22",boots:"#5a4632",extra:"scroll"},
     lines:["떠돌이 학자: 인장의 빛은 그냥 꺼지는 게 아닐세. 무언가가 그 힘을 *빨아먹고* 있어.","수정 호수의 수면을 잘 보게. 진실의 일부가 거기 비친다 하더군."]},
-  {id:"t4",x:13,y:32,em:"🪶",name:"매잡이 세진",battleKey:"T4",spr:{outfit:"#5a7a9a",accent:"#cfd8dd",skin:"#e3b07e",hair:"#2a2a33",boots:"#3a4a5a"},
+  {id:"t4",x:13,y:32,em:"🪶",name:"매잡이 세진",battleKey:"T4",spr:{build:"tall",hat:"bandana",hatc:"#8a5a3a",outfit:"#5a7a9a",accent:"#cfd8dd",skin:"#e3b07e",hair:"#2a2a33",boots:"#3a4a5a"},
     lines:["매잡이 세진: 바람을 가르는 내 정령을 막아봐!"], linesAfter:["매잡이 세진: 하늘의 정령도 너 앞에선 무력하군…"]},
   {id:"t5",x:3,y:30,em:"🐍",name:"주술견습 유나",battleKey:"T5",spr:{outfit:"#7a5a9a",accent:"#b07fd1",skin:"#e8c39a",hair:"#2a2230",hat:"hood",hatc:"#5a4478",boots:"#3a3548",extra:"staff"},
     lines:["주술견습 유나: 독과 덩굴, 견딜 수 있겠어?"], linesAfter:["주술견습 유나: …내 독이 통하지 않다니. 대단해."]},
   {id:"fisher",x:7,y:22,chat:["낚시꾼: 물가는 마음이 편해져. 자네도 좀 쉬었다 가.","낚시꾼: 수정 호수의 정령들은 물빛을 닮았지. 아름답다니까.","낚시꾼: 오늘은 입질이 없구먼… 정령들도 어디 숨었나."],em:"🎣",name:"호수 어부",spr:{outfit:"#3f7a8a",accent:"#f0c060",skin:"#e3b07e",hair:"#2a2a33",hat:"straw",hatc:"#c8a85a",boots:"#355560",extra:"rod"},
     lines:["호수 어부: 요즘 물 정령들이 안절부절못해. 제단 쪽으로 검은 그림자가 번지고 있거든.","숲의 군주가 홀로 그걸 막느라 상처투성이라더군. 우리에겐 시간이 없어."]},
-  {id:"t6",x:3,y:25,em:"🌊",name:"호수지기 리오",battleKey:"T6",spr:{outfit:"#3a6f9a",accent:"#7fc7e0",skin:"#e3b07e",hair:"#2a3a4a",boots:"#2a4a5a"},
+  {id:"t6",x:3,y:25,em:"🌊",name:"호수지기 리오",battleKey:"T6",spr:{build:"stout",hat:"bandana",hatc:"#3a7a9a",outfit:"#3a6f9a",accent:"#7fc7e0",skin:"#e3b07e",hair:"#2a3a4a",boots:"#2a4a5a"},
     lines:["호수지기 리오: 물결은 결코 멈추지 않아!"], linesAfter:["호수지기 리오: 이 깊은 물도 너를 막지 못하는구나."]},
   {id:"pilgrim",x:16,y:16,chat:["순례자: 나는 제단으로 향하는 길이라오. 군주께 기도드리러.","순례자: 고원의 바람은 차갑지만, 마음은 뜨겁다오.","순례자: 인장이 무너지면 이 세계도 무너지오. 부디 서둘러 주게."],em:"🧎",name:"순례자",spr:{outfit:"#6a6478",skin:"#e0bd96",hair:"#3a3548",hat:"hood",hatc:"#4a4458",boots:"#3a3548",extra:"staff"},
     lines:["순례자: 여기서부턴 군주의 영역이야. 마음 단단히 먹게.","그분은 인장을 지키려 모든 걸 쏟고 있어. …부디 그분을 도울 수 있는 자이길."]},
-  {id:"t7",x:13,y:18,em:"⛰️",name:"등반가 강우",battleKey:"T7",spr:{outfit:"#9a6a3a",accent:"#c2a878",skin:"#e3b07e",hair:"#2a2c22",hat:"cap",hatc:"#c87a2a",boots:"#5a4632"},
+  {id:"t7",x:13,y:18,em:"⛰️",name:"등반가 강우",battleKey:"T7",spr:{build:"stout",extra:"bag",outfit:"#9a6a3a",accent:"#c2a878",skin:"#e3b07e",hair:"#2a2c22",hat:"cap",hatc:"#c87a2a",boots:"#5a4632"},
     lines:["등반가 강우: 고원의 바위는 단단하다!"], linesAfter:["등반가 강우: 바위도 너의 의지엔 못 당하는군."]},
-  {id:"t8",x:4,y:15,em:"🔥",name:"불새지기 소연",battleKey:"T8",spr:{outfit:"#d8603a",accent:"#f0a85d",skin:"#e8b88a",hair:"#3a2030",boots:"#5a3030"},
+  {id:"t8",x:4,y:15,em:"🔥",name:"불새지기 소연",battleKey:"T8",spr:{hairlen:"long",hat:"bandana",hatc:"#c05a3a",outfit:"#d8603a",accent:"#f0a85d",skin:"#e8b88a",hair:"#3a2030",boots:"#5a3030"},
     lines:["불새지기 소연: 군주의 제단이 가까워. 마지막 시험이야!"], linesAfter:["불새지기 소연: 불꽃과 바람을 모두 넘다니… 군주께 닿을 자격이 있어."]},
-  {id:"rival2",x:20,y:37,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V2",requires:"V",spr:{outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
+  {id:"rival2",x:20,y:37,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V2",requires:"V",spr:{extra:"bag",outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
     lines:["라이벌 카이: 또 만났네! 이번엔 내 정령들도 한층 강해졌어."], linesAfter:["라이벌 카이: 쳇, 아직도 한 끗 차이야. 위에서 또 보자."]},
-  {id:"rival3",x:21,y:29,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V3",requires:"V2",spr:{outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
+  {id:"rival3",x:21,y:29,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V3",requires:"V2",spr:{extra:"bag",outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
     lines:["라이벌 카이: 너 정말 빨리 강해지네… 나도 질 수 없지!"], linesAfter:["라이벌 카이: …인정할게. 넌 진짜 강해. 근데 마지막은 내가 이긴다."]},
-  {id:"rival4",x:19,y:13,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V4",requires:"V3",spr:{outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
+  {id:"rival4",x:19,y:13,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V4",requires:"V3",spr:{extra:"bag",outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
     lines:["라이벌 카이: 여기까지 왔구나. 군주께 닿기 전에 — 내 전부를 받아!"], linesAfter:["라이벌 카이: …졌다. 가, 군주를 꺾어. 네가 이 숲을 지킬 자야. 친구."]},
   {id:"t9",x:9,y:15,em:"🌿",name:"곤충채집가 나린",battleKey:"T9",spr:{outfit:"#6a9a4a",accent:"#3a6b2e",skin:"#e8c39a",hair:"#4a3320",hat:"cap",hatc:"#8aaa4a",boots:"#4a5a2c",extra:"net"},lines:["곤충채집가 나린: 고원에도 새 정령이 나타났어! 내 채집 실력을 봐!"],linesAfter:["곤충채집가 나린: 역시 강하네."]},
   {id:"t10",x:13,y:15,em:"❄️",name:"설원 사냥꾼 하린",battleKey:"T10",spr:{outfit:"#5a7a9a",accent:"#a0c8e0",skin:"#e0bd96",hair:"#3a4a5a",hat:"hood",hatc:"#4a6a8a",boots:"#3a4a5a"},lines:["설원 사냥꾼 하린: 차가운 바람 속에서 단련된 정령들이다."],linesAfter:["설원 사냥꾼 하린: 훌륭해."]},
   {id:"t11",x:20,y:15,em:"⚡",name:"고원 무사 태오",battleKey:"T11",spr:{outfit:"#6a5a4a",accent:"#c2a060",skin:"#e3b07e",hair:"#2a2c22",hat:"cap",hatc:"#8a6a3a",boots:"#5a4632",extra:"staff"},lines:["고원 무사 태오: 그 각오, 내가 시험하지!"],linesAfter:["고원 무사 태오: …번개처럼 빠르군."]},
-  {id:"duo",x:11,y:15,em:"👯",name:"쌍둥이 나나·리리",battleKey:"DUO",double:true,dir:"down",range:2,duoTeam:[["voltsnake",26],["seedbean",26],["emberfly",27],["frostpup",27]],spr:{outfit:"#c06a9a",accent:"#e0a0c8",skin:"#e8c39a",hair:"#5a3a6a",hat:"none",boots:"#7a4a6a"},lines:["쌍둥이 나나·리리: 우리 둘을 동시에 상대할 수 있겠어?"],linesAfter:["쌍둥이 나나·리리: 완벽한 콤비였어!"]},
-  {id:"t12",x:3,y:40,em:"🌿",name:"새싹 채집가 이든",battleKey:"T12",spr:{outfit:"#7aaa5a",accent:"#4a7a3a",skin:"#e8c39a",hair:"#5a4020",hat:"cap",hatc:"#6a9a4a",boots:"#4a5a2c"},lines:["새싹 채집가 이든: 초원의 친구들을 소개하지!"],linesAfter:["새싹 채집가 이든: 우와, 강하다!"]},
-  {id:"t13",x:6,y:33,em:"🐤",name:"들새 관찰자 소라",battleKey:"T13",spr:{outfit:"#6a9ac0",accent:"#a0d0e8",skin:"#e0bd96",hair:"#4a5a6a",hat:"cap",hatc:"#5a8ab0",boots:"#3a5a6a"},lines:["들새 관찰자 소라: 하늘의 정령은 빠르다구!"],linesAfter:["들새 관찰자 소라: 잘 나는 만큼 잘 싸우네."]},
+  {id:"duo",x:11,y:15,em:"👯",name:"쌍둥이 나나·리리",battleKey:"DUO",double:true,dir:"down",range:2,duoTeam:[["voltsnake",26],["seedbean",26],["emberfly",27],["frostpup",27]],spr:{build:"child",hairlen:"long",outfit:"#c06a9a",accent:"#e0a0c8",skin:"#e8c39a",hair:"#5a3a6a",hat:"none",boots:"#7a4a6a"},lines:["쌍둥이 나나·리리: 우리 둘을 동시에 상대할 수 있겠어?"],linesAfter:["쌍둥이 나나·리리: 완벽한 콤비였어!"]},
+  {id:"t12",x:3,y:40,em:"🌿",name:"새싹 채집가 이든",battleKey:"T12",spr:{build:"child",extra:"basket",outfit:"#7aaa5a",accent:"#4a7a3a",skin:"#e8c39a",hair:"#5a4020",hat:"cap",hatc:"#6a9a4a",boots:"#4a5a2c"},lines:["새싹 채집가 이든: 초원의 친구들을 소개하지!"],linesAfter:["새싹 채집가 이든: 우와, 강하다!"]},
+  {id:"t13",x:6,y:33,em:"🐤",name:"들새 관찰자 소라",battleKey:"T13",spr:{hairlen:"long",outfit:"#6a9ac0",accent:"#a0d0e8",skin:"#e0bd96",hair:"#4a5a6a",hat:"cap",hatc:"#5a8ab0",boots:"#3a5a6a"},lines:["들새 관찰자 소라: 하늘의 정령은 빠르다구!"],linesAfter:["들새 관찰자 소라: 잘 나는 만큼 잘 싸우네."]},
   {id:"t14",x:3,y:27,em:"🪨",name:"동굴 탐사가 바위",battleKey:"T14",spr:{outfit:"#8a7a5a",accent:"#5a4a32",skin:"#e3b07e",hair:"#3a2c1a",hat:"cap",hatc:"#6a5a3a",boots:"#4a3a22",extra:"pick"},lines:["동굴 탐사가 바위: 단단함이 뭔지 보여주마!"],linesAfter:["동굴 탐사가 바위: 내 바위벽을 뚫다니…"]},
-  {id:"t15",x:6,y:46,em:"🧒",name:"초보 정령사 준",battleKey:"T15",spr:{outfit:"#d09a4a",accent:"#a06a2a",skin:"#e8c39a",hair:"#3a2c1a",hat:"cap",hatc:"#e0b050",boots:"#5a4020"},lines:["초보 정령사 준: 나도 이제 정령사야! 한 판 붙자!"],linesAfter:["초보 정령사 준: 역시 넌 대단해…"]},
-  {id:"t16",x:4,y:41,em:"🌸",name:"풀숲 소녀 미나",battleKey:"T16",spr:{outfit:"#e08ab0",accent:"#c05a8a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["풀숲 소녀 미나: 풀 정령의 끈기를 보여줄게!"],linesAfter:["풀숲 소녀 미나: 끈질기게 잘 버텼네."]},
-  {id:"t17",x:4,y:35,em:"🌲",name:"숲지기 도윤",battleKey:"T17",spr:{outfit:"#4a7a4a",accent:"#2a5a2a",skin:"#e3b07e",hair:"#2a2416",hat:"cap",hatc:"#3a6a3a",boots:"#2a3a1a"},lines:["숲지기 도윤: 이 숲을 지나려면 날 이겨야 해."],linesAfter:["숲지기 도윤: …통과다. 조심히 가."]},
-  {id:"t18",x:3,y:27,em:"🐉",name:"용 수련생 하늘",battleKey:"T18",spr:{outfit:"#6a5aa0",accent:"#4a3a80",skin:"#e0bd96",hair:"#2a2c4a",hat:"none",boots:"#3a2c5a"},lines:["용 수련생 하늘: 언젠가 천공룡을 키울 거야!"],linesAfter:["용 수련생 하늘: 아직 멀었나… 더 강해질게."]},
-  {id:"t19",x:20,y:42,em:"💧",name:"물놀이 소년 하리",battleKey:"T19",spr:{outfit:"#5aa0c0",accent:"#3a7a9a",skin:"#e8c39a",hair:"#3a4a5a",hat:"none",boots:"#3a5a6a"},lines:["물놀이 소년 하리: 물 정령은 시원해! 붙어보자!"],linesAfter:["물놀이 소년 하리: 헉, 실력이 대단해!"]},
-  {id:"t20",x:19,y:37,em:"🌷",name:"꽃밭 소녀 채원",battleKey:"T20",spr:{outfit:"#e0709a",accent:"#c04a7a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["꽃밭 소녀 채원: 예쁜 정령이 강하기도 하다구!"],linesAfter:["꽃밭 소녀 채원: 졌지만 즐거웠어!"]},
-  {id:"t21",x:15,y:31,em:"🏹",name:"숲의 사냥꾼 강",battleKey:"T21",spr:{outfit:"#5a6a3a",accent:"#3a4a22",skin:"#e3b07e",hair:"#2a2416",hat:"cap",hatc:"#4a5a2a",boots:"#2a3a1a"},lines:["숲의 사냥꾼 강: 이 숲의 규칙은 강함이다."],linesAfter:["숲의 사냥꾼 강: …네가 더 강했다."]},
-  {id:"altar_pilgrim",x:5,y:10,em:"🧎",name:"제단의 순례자",spr:{outfit:"#6a5a7a",accent:"#a898c0",skin:"#e0bd96",hair:"#3a3446",hat:"none",boots:"#4a4258"},lines:["제단의 순례자: 여기까지 왔군요… 군주는 홀로 그림자를 막아내고 있습니다.","제단의 순례자: 인장 조각을 모두 모았다면, 리그로 가세요. 챔피언만이 군주를 도울 수 있습니다."]},
-  {id:"altar_watcher",x:20,y:11,em:"🔭",name:"제단 감시인",spr:{outfit:"#4a5a6a",accent:"#8a9aaa",skin:"#e8c39a",hair:"#2a3440",hat:"cap",hatc:"#3a4a5a",boots:"#2a3440"},lines:["제단 감시인: 밤이 길어졌어. 인장의 빛이 약해진 탓이지.","제단 감시인: 이 근방엔 아직 아무도 줍지 않은 물건이 남아 있을 거야. 잘 둘러봐."]},
-  {id:"trade1",x:9,y:45,em:"🔄",name:"교환하는 소녀 하늘",trade:"tr_forest",spr:{outfit:"#e0a0c0",accent:"#c07a9a",skin:"#e8c39a",hair:"#6a4a5a",hat:"none",boots:"#8a5a7a"},lines:["교환하는 소녀 하늘: 정령 교환, 관심 있어?"]},
-  {id:"trade2",x:10,y:21,em:"🔄",name:"교환하는 청년 재하",trade:"tr_lake",spr:{outfit:"#7a9ac0",accent:"#4a6a9a",skin:"#e0bd96",hair:"#3a3a4a",hat:"none",boots:"#3a4a6a"},lines:["교환하는 청년 재하: 교환할 정령 있어?"]},
-  {id:"t22",x:8,y:22,em:"🎣",name:"호수 낚시꾼 도윤",battleKey:"T22",spr:{outfit:"#4a7a9a",accent:"#2a5a7a",skin:"#e0bd96",hair:"#3a3a2a",hat:"cap",hatc:"#2a5a7a",boots:"#2a4a5a"},lines:["호수 낚시꾼 도윤: 이 호수의 물 정령은 내가 제일 잘 알지!"],linesAfter:["호수 낚시꾼 도윤: …내 낚싯대가 부끄럽구먼."]},
-  {id:"t23",x:12,y:25,em:"🔬",name:"수정 연구가 예린",battleKey:"T23",spr:{outfit:"#d8d8e8",accent:"#8a8ab0",skin:"#e8c39a",hair:"#4a4a6a",hat:"none",boots:"#6a6a8a"},lines:["수정 연구가 예린: 수정의 공명을 데이터로 남기는 중이야."],linesAfter:["수정 연구가 예린: 훌륭한 데이터였어. 고마워!"]},
-  {id:"t24",x:9,y:11,em:"⚔️",name:"제단 파수꾼 무진",battleKey:"T24",spr:{outfit:"#5a4a5a",accent:"#a08a70",skin:"#d8ab7e",hair:"#2a2422",hat:"none",boots:"#3a3030"},lines:["제단 파수꾼 무진: 제단에 다가서려는 자여, 자격을 보여라."],linesAfter:["제단 파수꾼 무진: …통과하라. 군주가 기다린다."]},
-  {id:"daycare",x:13,y:47,em:"🏡",name:"육아방 관리인",daycare:true,spr:{outfit:"#8a6a4a",accent:"#c0a070",skin:"#e3b07e",hair:"#5a4a3a",hat:"none",boots:"#5a4636"},lines:["육아방 관리인: 정령을 맡겨보시겠어요?"]},
-  {id:"movexpert",x:9,y:47,em:"📖",name:"기술 전문가",moveExpert:true,spr:{outfit:"#5a5a8a",accent:"#a0a0d0",skin:"#e3b07e",hair:"#3a3a5a",hat:"none",boots:"#3a3a5a"},lines:["기술 전문가: 잊은 기술을 되살리거나, 필요 없는 기술을 지워드립니다."]},
-  {id:"broker",x:20,y:9,em:"💱",name:"교환상인 로엔",exchange:true,spr:{outfit:"#b8862c",accent:"#f0d85a",skin:"#e3b07e",hair:"#3a2c22",hat:"none",boots:"#5a4632"},lines:["교환상인 로엔: 코인으로 희귀한 물건을 바꿔주지. 챔피언쯤 되면 쓸 데가 필요할 테니 말이야."]},
-  {id:"woodsman",x:9,y:24,em:"🪓",name:"나무꾼 바우",spr:{outfit:"#7a5a3a",accent:"#a0784a",skin:"#e3b07e",hair:"#3a2c22",hat:"cap",hatc:"#5a4028",boots:"#4a3420"},chat:["나무꾼 바우: 앞을 막은 작은 나무 보이지? 체육관 인장을 얻으면 '자르기'로 벨 수 있게 돼.","나무꾼 바우: 큰 바위는 '괴력'으로 밀고, 넓은 물은 '파도타기'로 건너지. 다 인장의 힘이라네.","나무꾼 바우: 길이 막혔다고 포기 말게. 인장을 모을수록 새 길이 열리는 법이야."]},
-  {id:"towerkeeper",x:16,y:9,em:"🗼",name:"도장의 관장 세라",tower:true,spr:{outfit:"#3a3a5a",accent:"#c04a6a",skin:"#e3b07e",hair:"#2a2436",hat:"none",boots:"#2a2a44"},lines:["도장의 관장 세라: 여긴 연전 도장. 강자들이 회복 없이 연이어 겨루는 곳이지."]},
+  {id:"t15",x:16,y:47,em:"🧒",name:"초보 정령사 준",battleKey:"T15",spr:{build:"child",outfit:"#d09a4a",accent:"#a06a2a",skin:"#e8c39a",hair:"#3a2c1a",hat:"cap",hatc:"#e0b050",boots:"#5a4020"},lines:["초보 정령사 준: 나도 이제 정령사야! 한 판 붙자!"],linesAfter:["초보 정령사 준: 역시 넌 대단해…"]},
+  {id:"t16",x:4,y:41,em:"🌸",name:"풀숲 소녀 미나",battleKey:"T16",spr:{hairlen:"long",extra:"basket",outfit:"#e08ab0",accent:"#c05a8a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["풀숲 소녀 미나: 풀 정령의 끈기를 보여줄게!"],linesAfter:["풀숲 소녀 미나: 끈질기게 잘 버텼네."]},
+  {id:"t17",x:4,y:35,em:"🌲",name:"숲지기 도윤",battleKey:"T17",spr:{build:"tall",outfit:"#4a7a4a",accent:"#2a5a2a",skin:"#e3b07e",hair:"#2a2416",hat:"cap",hatc:"#3a6a3a",boots:"#2a3a1a"},lines:["숲지기 도윤: 이 숲을 지나려면 날 이겨야 해."],linesAfter:["숲지기 도윤: …통과다. 조심히 가."]},
+  {id:"t18",x:3,y:27,em:"🐉",name:"용 수련생 하늘",battleKey:"T18",spr:{build:"tall",hat:"bandana",hatc:"#6a4a8a",outfit:"#6a5aa0",accent:"#4a3a80",skin:"#e0bd96",hair:"#2a2c4a",boots:"#3a2c5a"},lines:["용 수련생 하늘: 언젠가 천공룡을 키울 거야!"],linesAfter:["용 수련생 하늘: 아직 멀었나… 더 강해질게."]},
+  {id:"t19",x:21,y:49,em:"💧",name:"물놀이 소년 하리",battleKey:"T19",dir:"up",spr:{build:"child",outfit:"#5aa0c0",accent:"#3a7a9a",skin:"#e8c39a",hair:"#3a4a5a",hat:"none",boots:"#3a5a6a"},lines:["물놀이 소년 하리: 물 정령은 시원해! 붙어보자!"],linesAfter:["물놀이 소년 하리: 헉, 실력이 대단해!"]},
+  {id:"t20",x:19,y:37,em:"🌷",name:"꽃밭 소녀 채원",battleKey:"T20",spr:{hairlen:"long",extra:"basket",outfit:"#e0709a",accent:"#c04a7a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["꽃밭 소녀 채원: 예쁜 정령이 강하기도 하다구!"],linesAfter:["꽃밭 소녀 채원: 졌지만 즐거웠어!"]},
+  {id:"t21",x:15,y:31,em:"🏹",name:"숲의 사냥꾼 강",battleKey:"T21",spr:{build:"tall",hat:"bandana",hatc:"#5a6a3a",outfit:"#5a6a3a",accent:"#3a4a22",skin:"#e3b07e",hair:"#2a2416",boots:"#2a3a1a"},lines:["숲의 사냥꾼 강: 이 숲의 규칙은 강함이다."],linesAfter:["숲의 사냥꾼 강: …네가 더 강했다."]},
+  {id:"altar_pilgrim",x:5,y:10,em:"🧎",name:"제단의 순례자",spr:{build:"tall",extra:"bag",outfit:"#6a5a7a",accent:"#a898c0",skin:"#e0bd96",hair:"#3a3446",hat:"none",boots:"#4a4258"},lines:["제단의 순례자: 여기까지 왔군요… 군주는 홀로 그림자를 막아내고 있습니다.","제단의 순례자: 인장 조각을 모두 모았다면, 리그로 가세요. 챔피언만이 군주를 도울 수 있습니다."]},
+  {id:"altar_watcher",x:20,y:11,em:"🔭",name:"제단 감시인",spr:{hat:"beanie",hatc:"#3a4a5a",outfit:"#4a5a6a",accent:"#8a9aaa",skin:"#e8c39a",hair:"#2a3440",boots:"#2a3440"},lines:["제단 감시인: 밤이 길어졌어. 인장의 빛이 약해진 탓이지.","제단 감시인: 이 근방엔 아직 아무도 줍지 않은 물건이 남아 있을 거야. 잘 둘러봐."]},
+  {id:"trade1",x:9,y:45,em:"🔄",name:"교환하는 소녀 하늘",trade:"tr_forest",spr:{hairlen:"long",extra:"bag",outfit:"#e0a0c0",accent:"#c07a9a",skin:"#e8c39a",hair:"#6a4a5a",hat:"none",boots:"#8a5a7a"},lines:["교환하는 소녀 하늘: 정령 교환, 관심 있어?"]},
+  {id:"trade2",x:10,y:21,em:"🔄",name:"교환하는 청년 재하",trade:"tr_lake",spr:{extra:"bag",outfit:"#7a9ac0",accent:"#4a6a9a",skin:"#e0bd96",hair:"#3a3a4a",hat:"none",boots:"#3a4a6a"},lines:["교환하는 청년 재하: 교환할 정령 있어?"]},
+  {id:"t22",x:8,y:22,em:"🎣",name:"호수 낚시꾼 도윤",battleKey:"T22",spr:{build:"stout",extra:"bag",outfit:"#4a7a9a",accent:"#2a5a7a",skin:"#e0bd96",hair:"#3a3a2a",hat:"cap",hatc:"#2a5a7a",boots:"#2a4a5a"},lines:["호수 낚시꾼 도윤: 이 호수의 물 정령은 내가 제일 잘 알지!"],linesAfter:["호수 낚시꾼 도윤: …내 낚싯대가 부끄럽구먼."]},
+  {id:"t23",x:12,y:25,em:"🔬",name:"수정 연구가 예린",battleKey:"T23",spr:{hairlen:"long",extra:"glasses",outfit:"#d8d8e8",accent:"#8a8ab0",skin:"#e8c39a",hair:"#4a4a6a",hat:"none",boots:"#6a6a8a"},lines:["수정 연구가 예린: 수정의 공명을 데이터로 남기는 중이야."],linesAfter:["수정 연구가 예린: 훌륭한 데이터였어. 고마워!"]},
+  {id:"t24",x:9,y:11,em:"⚔️",name:"제단 파수꾼 무진",battleKey:"T24",spr:{build:"stout",hat:"beanie",hatc:"#4a4458",outfit:"#5a4a5a",accent:"#a08a70",skin:"#d8ab7e",hair:"#2a2422",boots:"#3a3030"},lines:["제단 파수꾼 무진: 제단에 다가서려는 자여, 자격을 보여라."],linesAfter:["제단 파수꾼 무진: …통과하라. 군주가 기다린다."]},
+  {id:"daycare",x:13,y:47,em:"🏡",name:"육아방 관리인",daycare:true,spr:{build:"stout",hairlen:"long",outfit:"#8a6a4a",accent:"#c0a070",skin:"#e3b07e",hair:"#5a4a3a",hat:"none",boots:"#5a4636"},lines:["육아방 관리인: 정령을 맡겨보시겠어요?"]},
+  {id:"movexpert",x:9,y:47,em:"📖",name:"기술 전문가",moveExpert:true,spr:{build:"tall",extra:"glasses",outfit:"#5a5a8a",accent:"#a0a0d0",skin:"#e3b07e",hair:"#3a3a5a",hat:"none",boots:"#3a3a5a"},lines:["기술 전문가: 잊은 기술을 되살리거나, 필요 없는 기술을 지워드립니다."]},
+  {id:"broker",x:20,y:9,em:"💱",name:"교환상인 로엔",exchange:true,spr:{build:"stout",extra:"bag",outfit:"#b8862c",accent:"#f0d85a",skin:"#e3b07e",hair:"#3a2c22",hat:"none",boots:"#5a4632"},lines:["교환상인 로엔: 코인으로 희귀한 물건을 바꿔주지. 챔피언쯤 되면 쓸 데가 필요할 테니 말이야."]},
+  {id:"woodsman",x:9,y:24,em:"🪓",name:"나무꾼 바우",spr:{build:"stout",extra:"basket",outfit:"#7a5a3a",accent:"#a0784a",skin:"#e3b07e",hair:"#3a2c22",hat:"cap",hatc:"#5a4028",boots:"#4a3420"},chat:["나무꾼 바우: 앞을 막은 작은 나무 보이지? 체육관 인장을 얻으면 '자르기'로 벨 수 있게 돼.","나무꾼 바우: 큰 바위는 '괴력'으로 밀고, 넓은 물은 '파도타기'로 건너지. 다 인장의 힘이라네.","나무꾼 바우: 길이 막혔다고 포기 말게. 인장을 모을수록 새 길이 열리는 법이야."]},
+  {id:"towerkeeper",x:16,y:9,em:"🗼",name:"도장의 관장 세라",tower:true,spr:{build:"tall",hairlen:"long",outfit:"#3a3a5a",accent:"#c04a6a",skin:"#e3b07e",hair:"#2a2436",hat:"none",boots:"#2a2a44"},lines:["도장의 관장 세라: 여긴 연전 도장. 강자들이 회복 없이 연이어 겨루는 곳이지."]},
 ];
 const NPC_AT={}; NPCS.forEach(n=>{ NPC_AT[n.x+","+n.y]=n; });
 function npcAvailable(n){ if(!n)return false; if(n.battleKey&&G.defeated.has(n.battleKey)){ if(n.dir&&G.rematchWanted&&G.rematchWanted.has(n.battleKey))return true; return false; } if(n.requires&&!G.defeated.has(n.requires))return false; return true; }
@@ -1399,7 +1399,11 @@ function npcRoamTick(){
 }
 setInterval(npcRoamTick, 820);
 setInterval(()=>{ try{ if(typeof G!=="undefined"&&G&&document.getElementById("map")&&document.getElementById("map").classList.contains("active")&&!G.inBattle)G.playSec=(G.playSec||0)+1; }catch(e){} }, 1000);
-["t1","t2","t3","t4","t5","t6","t7","t8","t9","t10","t11","t12","t13","t14","t15","t16","t17","t18","t19","t20","t21"].forEach(id=>{ const n=NPCS.find(z=>z.id===id); if(n){ n.dir="down"; n.range=2; } });
+/* 시야 전투(포켓몬식 "발견했다!")를 t1~t21에 일괄로 붙인다. 기본은 아래를 본다.
+   ⚠️ **`n.dir||`로 둘 것 — 예전엔 무조건 덮어써서 개별 방향을 줄 수가 없었다.**
+      (21,49)의 물놀이 소년처럼 **위쪽 통로를 지켜야 하는 자리**가 생기면서 드러났다.
+      정의에 dir을 적어도 조용히 "down"이 되던 상태였다. */
+["t1","t2","t3","t4","t5","t6","t7","t8","t9","t10","t11","t12","t13","t14","t15","t16","t17","t18","t19","t20","t21"].forEach(id=>{ const n=NPCS.find(z=>z.id===id); if(n){ n.dir=n.dir||"down"; n.range=n.range||2; } });
 // 바닥에 놓인 도구(포켓몬의 필드 몬스터볼). 걸어 들어가면 줍는다.
 // 숨겨진 아이템(HIDDEN)과 달리 눈에 보여서 "가볼 이유"가 된다. G.found로 1회성.
 const GROUND_ITEMS=[
@@ -2855,7 +2859,15 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
   _char(ctx,cx,cy,s,spec,dir,now,moving){ spec=spec||{}; dir=dir||"down";
     const col=(v,d)=>v==null?d:(typeof v==="number"?"#"+("000000"+(v>>>0).toString(16)).slice(-6):v);
     const skin=col(spec.skin,"#e8c39a"), hair=col(spec.hair,"#3a2f24"), outfit=col(spec.outfit||spec.body,"#5a6f8a"), accent=col(spec.accent,"#8aa0c0"), boots=col(spec.boots,"#3a2f24"), hatc=col(spec.hatc,"#444a55");
-    const u=s*0.5; const ol="rgba(18,14,22,.6)", olw=Math.max(1.2,u*0.05);
+    /* 체형 — **실루엣을 실제로 가르는 축**. 유저: "npc 외형도 좀 개선해".
+       그전엔 47명 중 33명이 `모자없음`/`캡만`이라 **실루엣이 똑같고 옷 색만 달랐다**.
+       모자·소품을 늘려도 덩치가 같으면 멀리서 다 같은 사람으로 읽힌다 → 크기와 몸통 폭부터 가른다.
+       ⚠️ 얼굴 부품(눈·입)은 u에 비례해 같이 줄고 늘어난다. 머리 비율은 안 건드린다 —
+          머리만 키우면 눈 위치가 따로 놀아서 오히려 망가진다. */
+    const BUILD={ adult:{u:1,    tw:1    }, child:{u:0.84, tw:1.02},
+                  stout:{u:1.02, tw:1.3  }, tall :{u:1.1,  tw:0.9 } };
+    const _B=BUILD[spec.build]||BUILD.adult;
+    const u=s*0.5*_B.u; const ol="rgba(18,14,22,.6)", olw=Math.max(1.2,u*0.05);
     if(spec.boss){ const g=ctx.createRadialGradient(cx,cy,u*0.3,cx,cy,u*1.35); g.addColorStop(0,"rgba(255,110,150,.4)"); g.addColorStop(1,"rgba(255,110,150,0)"); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,u*1.35,0,6.29); ctx.fill(); }
     ctx.fillStyle="rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.64,u*0.42,u*0.15,0,0,6.29); ctx.fill();
     // 걸을 땐 걸음 사이클(다리 번갈아+살짝 통통), 멈추면 은은한 아이들 바운스(몸통만, 그림자는 땅 고정).
@@ -2865,7 +2877,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     ctx.save(); ctx.translate(0,-_bob);
     ctx.strokeStyle=ol; ctx.lineWidth=olw;
     // 옆을 볼 땐 몸이 얇아 보이고 다리도 모인다(포켓몬 NPC의 측면 실루엣). 정면/뒷면은 넓게.
-    const _sv=(dir==="left"||dir==="right"), _tw=_sv?u*0.48:u*0.6, _tx=cx-_tw/2, _lsp=_sv?u*0.13:u*0.22;
+    const _sv=(dir==="left"||dir==="right"), _tw=(_sv?u*0.48:u*0.6)*_B.tw, _tx=cx-_tw/2, _lsp=_sv?u*0.13:u*0.22;
     ctx.fillStyle=boots; this._rr(ctx,cx-_lsp,cy+u*0.2+_lo,u*0.16,u*0.34,u*0.05); ctx.fill(); ctx.stroke();
     this._rr(ctx,cx+_lsp-u*0.16,cy+u*0.2+_ro,u*0.16,u*0.34,u*0.05); ctx.fill(); ctx.stroke();
     { ctx.fillStyle=this._tint(boots,0.18);   // 신발 끝 — 다리 기둥 두 개로 안 보이게 발을 구분
@@ -2883,9 +2895,23 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(dir!=="right"){ this._rr(ctx,_tx-_aw*0.46,_ay+(_cyc===1?_sw:-_sw),_aw,_ah,u*0.065); ctx.fill(); ctx.stroke(); }
       if(dir!=="left"){ this._rr(ctx,_tx+_tw-_aw*0.54,_ay+(_cyc===3?_sw:-_sw),_aw,_ah,u*0.065); ctx.fill(); ctx.stroke(); } }
     if(!_sv)ctx.fillStyle=accent, ctx.fillRect(cx-u*0.05,cy-u*0.16,u*0.1,u*0.46);
+    if(spec.extra==="bag"){    // 등짐 — 옆·뒤에서 실루엣이 확 달라진다(여행자·행상)
+      ctx.fillStyle=this._tint(accent,-0.22);
+      this._rr(ctx,cx-u*0.4,cy-u*0.14,u*0.24,u*0.36,u*0.09); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle=this._tint(accent,-0.35); ctx.lineWidth=Math.max(1,u*0.05);
+      ctx.beginPath(); ctx.moveTo(cx-u*0.22,cy-u*0.16); ctx.lineTo(cx-u*0.02,cy+u*0.06); ctx.stroke();
+      ctx.strokeStyle=ol; ctx.lineWidth=olw; }
+    if(spec.extra==="basket"){ // 바구니 — 손에 든 채 아래로 처진다(농가·채집)
+      ctx.fillStyle="#b98a4a"; this._rr(ctx,cx+u*0.24,cy+u*0.06,u*0.28,u*0.22,u*0.06); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle="#8a6432"; ctx.lineWidth=Math.max(1,u*0.045);
+      ctx.beginPath(); ctx.arc(cx+u*0.38,cy+u*0.06,u*0.13,3.14,6.28); ctx.stroke();
+      ctx.strokeStyle=ol; ctx.lineWidth=olw; }
     if(spec.extra==="scroll"){ ctx.fillStyle="#e8dcc0"; this._rr(ctx,cx-u*0.42,cy+u*0.02,u*0.2,u*0.26,u*0.04); ctx.fill(); ctx.stroke(); }
     if(spec.extra==="staff"||spec.extra==="rod"||spec.extra==="net"){ ctx.strokeStyle="#7a5a32"; ctx.lineWidth=Math.max(1,u*0.06); ctx.beginPath(); ctx.moveTo(cx+u*0.34,cy-u*0.5); ctx.lineTo(cx+u*0.34,cy+u*0.42); ctx.stroke();
       if(spec.extra==="net"){ ctx.strokeStyle="#cfcfd6"; ctx.lineWidth=Math.max(1,u*0.04); ctx.beginPath(); ctx.arc(cx+u*0.34,cy-u*0.56,u*0.14,0,6.29); ctx.stroke(); } ctx.strokeStyle=ol; ctx.lineWidth=olw; }
+    /* 긴 머리 — 머리 본체보다 **먼저** 그려서 뒤로 깔린다. 뒤통수(dir==="up")에서도 그대로 보인다. */
+    if(spec.hairlen==="long"){ ctx.fillStyle=this._grad(ctx,hair,cy-u*0.68,cy+u*0.14);
+      this._rr(ctx,cx-u*0.36,cy-u*0.66,u*0.72,u*0.86,u*0.26); ctx.fill(); ctx.stroke(); }
     { const sg=ctx.createRadialGradient(cx-u*0.12,cy-u*0.6,u*0.08,cx+u*0.05,cy-u*0.4,u*0.55); sg.addColorStop(0,this._tint(skin,0.16)); sg.addColorStop(1,this._tint(skin,-0.1)); ctx.fillStyle=sg; }
     this._rr(ctx,cx-u*0.28,cy-u*0.7,u*0.56,u*0.56,u*0.2); ctx.fill(); ctx.stroke();
     // 뒤에서 보면 **뒤통수**다 — 예전엔 머리 뒤에도 피부색 얼굴이 넓게 드러났다(특히 챙 모자).
@@ -2901,6 +2927,14 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       ctx.fillStyle="#e0403c"; ctx.fillRect(cx-u*0.035,cy-u*0.83,u*0.07,u*0.14); ctx.fillRect(cx-u*0.09,cy-u*0.795,u*0.18,u*0.07); }
     else if(hat==="straw"){ ctx.fillStyle=hair; this._rr(ctx,cx-u*0.28,cy-u*0.64,u*0.56,u*0.18,u*0.1); ctx.fill(); ctx.fillStyle=hatc; ctx.beginPath(); ctx.ellipse(cx,cy-u*0.66,u*0.5,u*0.15,0,0,6.29); ctx.fill(); ctx.stroke(); this._rr(ctx,cx-u*0.2,cy-u*0.84,u*0.4,u*0.2,u*0.09); ctx.fill(); ctx.stroke(); }
     else if(hat==="hood"){ ctx.fillStyle=hatc; this._rr(ctx,cx-u*0.33,cy-u*0.82,u*0.66,u*0.66,u*0.24); ctx.fill(); ctx.stroke(); if(dir!=="up"){ ctx.fillStyle=skin; this._rr(ctx,cx-u*0.22,cy-u*0.58,u*0.44,u*0.44,u*0.16); ctx.fill(); } }
+    else if(hat==="bandana"){   // 두건 — 이마를 가로지르는 띠 + 뒤로 뻗은 매듭 꼬리
+      ctx.fillStyle=hair; this._rr(ctx,cx-u*0.3,cy-u*0.74,u*0.6,u*0.24,u*0.12); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=hatc; this._rr(ctx,cx-u*0.3,cy-u*0.72,u*0.6,u*0.17,u*0.06); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-u*0.28,cy-u*0.68); ctx.lineTo(cx-u*0.46,cy-u*0.5); ctx.lineTo(cx-u*0.26,cy-u*0.54); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    else if(hat==="beanie"){    // 비니 — 머리 위를 통째로 덮는 둥근 덩어리 + 접힘단
+      ctx.fillStyle=hatc; this._rr(ctx,cx-u*0.31,cy-u*0.84,u*0.62,u*0.42,u*0.2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=this._tint(hatc,-0.16); this._rr(ctx,cx-u*0.32,cy-u*0.56,u*0.64,u*0.13,u*0.05); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=this._tint(hatc,0.2); ctx.beginPath(); ctx.arc(cx,cy-u*0.88,u*0.08,0,6.29); ctx.fill(); }
     else { ctx.fillStyle=hair; this._rr(ctx,cx-u*0.3,cy-u*0.74,u*0.6,(dir==="up"?u*0.48:u*0.27),u*0.13); ctx.fill(); ctx.stroke();
       /* 더벅머리. 예전엔 **뾰족한 삼각형 4개 + 외곽선**이라 머리카락이 아니라 뿔·왕관으로 읽혔다(유저 제보:
          "npc 마주쳐서 배틀하는데 머리가 이상한 경우"). → 높이가 제각각인 **둥근 덩어리**로 바꾼다.

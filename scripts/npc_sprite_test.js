@@ -145,6 +145,32 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(done.gone, "정령이 나온 뒤 트레이너는 물러난다");
   ok(done.inB && done.menu==="grid", "인트로 후 전투 메뉴가 정상 표시된다(흐름이 멈추지 않는다)");
 
+  /* ── 실루엣 다양성 ──────────────────────────────────────────────
+     유저: "npc 외형도 좀 개선해" / 앞서 "npc 마주쳐서 배틀하는데 머리가 이상한 경우도 제거하고".
+     머리 모양은 고쳤지만 그때 **실루엣은 손대지 않았다** — 재보니 47명 중 33명이
+     `모자없음+소품없음` 아니면 `캡만`이라 **덩치·윤곽이 전부 같고 옷 색만 달랐다.**
+     멀리서 보면 다 같은 사람으로 읽힌다. 색은 다양성이 아니다.
+     → 체형(build) · 머리 길이(hairlen) · 모자 · 소품 네 축으로 가르고, 여기서 지킨다.
+     ⚠️ **같은 이름의 인물이 여러 번 등장하는 건 정상이다**(라이벌 카이는 4곳에 나온다).
+        그래서 "같은 실루엣을 쓰는 **서로 다른 인물** 수"로 센다 — 이름으로 묶지 않으면
+        라이벌 4명 때문에 늘 빨개진다. */
+  console.log("\n[다양성] 실루엣이 실제로 갈리는가");
+  const v=await p.evaluate(()=>{
+    const F=window.SG.flow; window.SG.setG(window.SG.freshState()); F.enterMap(true);
+    const ns=(F.NPCS||[]).filter(n=>n.spr);
+    const key=n=>[(n.spr.build||"adult"),(n.spr.hat||"none"),(n.spr.extra||"none"),(n.spr.hairlen||"short")].join("|");
+    const m={}; ns.forEach(n=>{ const k=key(n); (m[k]=m[k]||new Set()).add(n.name); });
+    const groups=Object.entries(m).map(([k,set])=>({k, n:set.size, names:[...set]}))
+                       .sort((a,b)=>b.n-a.n);
+    return { total:ns.length, combos:groups.length, worst:groups[0],
+             builds:ns.reduce((a,n)=>{const k=n.spr.build||"adult";a[k]=(a[k]||0)+1;return a;},{}) };
+  });
+  ok(v.total>=40, `NPC 표본 ${v.total}명 (공허한 통과 방지)`);
+  ok(v.combos>=25, `실루엣 조합 ${v.combos}종 (기준 25종 이상)`);
+  ok(v.worst && v.worst.n<=4,
+     `같은 실루엣을 쓰는 서로 다른 인물 최대 ${v.worst?v.worst.n:"?"}명 (기준 4명 이하) — ${v.worst?v.worst.names.join(" / "):""}`);
+  ok(Object.keys(v.builds).length>=3, `체형이 ${Object.keys(v.builds).length}종 쓰인다 — ${JSON.stringify(v.builds)}`);
+
   ok(errs.length===0, `런타임 에러 0 (${errs.length}${errs.length?": "+errs[0]:""})`);
   console.log(fail?"\n❌ 실패":"\n🎉 NPC 스프라이트 통과");
   await b.close(); process.exit(fail);
