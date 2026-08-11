@@ -16,3 +16,5 @@ node_modules/
 undefined/
 # WORKLOG.md의 오래된 중복본
 WORKLOG 2.md
+# 대조표를 쪼갠 중간 산출물 — split_contact_sheet.py가 원본에서 언제든 다시 만든다
+art_inbox/npc/_split/

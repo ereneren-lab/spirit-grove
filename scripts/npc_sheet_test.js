@@ -61,7 +61,18 @@ const DOC = "outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md";
     F._char(ctx, 100, 100, 32, spec, "down", 1.0, true);
     return {img9, shapes};
   }`;
-  const noArt=await p.evaluate(new Function("return "+probe)(), {build:"kid", sheet:"kid", outfit:"#888"});
+  /* ⚠️ **아트를 그 자리에서 떼고 잰다.** 예전엔 "빌드에 시트가 하나도 없다"에 기대고 있었는데,
+        08-11에 진짜 아트 12장이 실리자 이 블록이 빨개졌다 — 그것도 **간헐적으로**.
+        이미지 디코드가 끝나기 전엔 `_sh.complete`가 false라 폴백이 돌아 우연히 통과했다
+        (단독 실행에선 통과하고 verify 안에선 실패했다).
+        폴백은 아트가 있든 없든 살아 있어야 하는 경로다 → 키를 빼고 재고 되돌린다. */
+  const noArt=await p.evaluate(probeSrc=>{
+    const A=window.SG.NPC_SHEET_ART;
+    const arch=Object.values(window.SG.NPC_ARCH)[0];   // 원형 이름을 이 파일에 적지 않는다
+    const keep=A[arch]; delete A[arch];
+    try{ return (new Function("return "+probeSrc)())({sheet:arch, outfit:"#888"}); }
+    finally{ if(keep!==undefined)A[arch]=keep; }
+  }, probe);
   ok(noArt.img9===0, `시트가 없으면 시트를 안 그린다 (drawImage 9인자 ${noArt.img9}회)`);
   ok(noArt.shapes>20, `대신 절차적으로 그린다 (도형 ${noArt.shapes}회)`);
 
@@ -113,6 +124,33 @@ const DOC = "outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md";
   ok(!flip(drew.right), `오른쪽은 반전하지 않는다`);
   /* 📌 정지 프레임은 0열이어야 한다 — 안 그러면 서 있는 NPC가 걷는 자세로 굳는다. */
   ok(cut(drew.idle)[0] && cut(drew.idle)[0][0]===0, `멈춰 있으면 0열(정지)을 쓴다 (sx=${cut(drew.idle)[0]&&cut(drew.idle)[0][0]})`);
+
+  console.log("\n[5] 실제로 배포될 시트 12장이 그려진다 (더미가 아니라 진짜 아트)");
+  /* 왜 있나
+       [3]은 **더미**를 꽂아 경로만 태운다 — 그림이 깨졌거나 규격이 어긋나도 초록이다.
+       실제로 08-11에 아트가 들어오자 [2]가 빨개졌는데 [3][4]는 아무 말도 안 했다.
+       → 매니페스트에 실린 것들을 **디코드까지 기다려** 진짜로 그려지는지 본다.
+     ⚠️ 첫 그리기는 원래 폴백이다 — `npcSheet()`가 그 자리에서 Image를 만들기 때문에
+        아직 `complete`가 false다. 그래서 **미리 부르고 로드를 기다린 뒤** 잰다. */
+  const real=await p.evaluate(async probeSrc=>{
+    /* ⚠️ [3]이 꽂아둔 더미(`__probe__`)를 빼고 센다 — 안 빼면 "12종"이 "13종"으로 보여
+          다음 사람이 원형이 하나 더 있는 줄 안다. */
+    const A=window.SG.NPC_SHEET_ART, archs=Object.keys(A).filter(k=>!k.startsWith("__")), run=new Function("return "+probeSrc)();
+    const out={archs:archs.length, bad:[], cells:{}};
+    for(const a of archs){
+      const im=window.SG.npcSheet(a);
+      if(!im){ out.bad.push(a+":시트없음"); continue; }
+      await new Promise(r=>{ im.complete?r():(im.onload=r, im.onerror=r); });
+      if(!im.naturalWidth){ out.bad.push(a+":디코드실패"); continue; }
+      if(im.naturalWidth!==im.naturalHeight||im.naturalWidth%3){ out.bad.push(`${a}:${im.naturalWidth}x${im.naturalHeight}`); continue; }
+      out.cells[im.naturalWidth/3]=(out.cells[im.naturalWidth/3]||0)+1;
+      if(run({sheet:a, outfit:"#888"}).img9!==1) out.bad.push(a+":안그려짐");
+    }
+    return out;
+  }, probe);
+  ok(real.archs>0, `매니페스트에 실린 시트 ${real.archs}종 (0이면 이 블록이 공허하다)`);
+  ok(real.bad.length===0, `전부 디코드되고 3×3 정사각이며 실제로 그려진다 (문제 ${real.bad.length}건: ${real.bad.join(",")||"없음"})`);
+  ok(Object.keys(real.cells).length<=1, `칸 크기가 한 값으로 통일돼 있다 (${JSON.stringify(real.cells)})`);
 
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs[0].slice(0,70):""}`);
   await b.close();

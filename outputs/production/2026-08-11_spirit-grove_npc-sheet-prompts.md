@@ -1,6 +1,14 @@
 # NPC 픽셀 시트 — 원형 12종 프롬프트 + 투입 절차
 
-작성 2026-08-11 · 상태 **아트 대기 — 코드는 이미 들어가 있다**
+작성 2026-08-11 · **✅ 2026-08-11 아트 12장 도착 · 투입 완료**
+
+> 🔴 **이 문서의 틀린 서술 하나**(아래 §0): *"같은 원형끼리는 기존 색 지정을 그대로 틴트로 얹어 구분한다"*
+> — **코드에 그 틴트가 없다.** `_char`의 시트 분기(`src/index.html:2865`)는 그림을 그대로 그리고 바로
+> `return`한다. 실제 결과는 **43명이 12가지 외모**다. 계획을 구현으로 읽은 것이다.
+> 어떻게 할지는 `NEXT_SESSION.md` §②(A-2)에 선택지로 정리해 뒀다.
+>
+> 📌 **받은 형식은 "원형당 1장"이 아니라 12원형이 전부 담긴 대조표 한 장이었다.** 그게 더 낫다 —
+> 한 번에 뽑아야 화풍이 안 갈린다. 쪼개는 건 `scripts/split_contact_sheet.py`가 한다(§4 참조).
 
 ✅ 끝난 것: 원형 매핑(`NPC_ARCH`, 43명) · 시트 렌더 경로(`_char` 앞단) · 빌드 임베딩(`npc_sheet`) ·
    일괄 변환기(`scripts/make_npc_sheet.py`) · 회귀(`scripts/npc_sheet_test.js`)
@@ -202,12 +210,16 @@ a shawl over the shoulders, holding a woven basket in one hand. Slow, gentle pos
 ## 4. 받은 뒤 절차
 
 ```bash
+# 0) 대조표 한 장으로 받았다면 먼저 쪼갠다 (실제로 08-11에 이렇게 왔다)
+python3 scripts/split_contact_sheet.py <대조표.png> --out art_inbox/npc/_split \
+        --names kid,bugkid,youth_f,youth_m,hunter,angler,miner,scholar,mystic,guard,merchant,elder
+
 # 1) 원형 하나씩 변환 (주인공과 같은 변환기)
 python3 scripts/make_hero_sheet.py <받은그림.png> assets/art/npc_sheet/kid.webp \
         --front r1c1 --back r1c2 --side r1c3
 
 # 12장을 한 번에:
-python3 scripts/make_npc_sheet.py --src <받은폴더> --out assets/art/npc_sheet
+python3 scripts/make_npc_sheet.py --src art_inbox/npc/_split --out assets/art/npc_sheet
 
 # 2) 매니페스트에 원형 id 추가 — assets/manifest.json 의 "npc_sheet" 배열
 # 3) 빌드 + 회귀

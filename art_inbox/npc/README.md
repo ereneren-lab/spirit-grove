@@ -1,5 +1,16 @@
 # 여기에 NPC 원형 그림을 넣으세요
 
+> ✅ **2026-08-11에 12종 전부 들어왔습니다.** 아래는 다음에 또 받을 때를 위한 안내입니다.
+>
+> 📌 **대조표 한 장으로 줘도 됩니다 — 오히려 그게 낫습니다.**
+> 12원형 × 3자세를 한 장에 몰아 뽑아야 화풍이 안 갈립니다(08-11에 실제로 그렇게 왔습니다).
+> 라벨이 인쇄돼 있어도 되고, 배경이 투명이 아니어도 됩니다. 쪼개는 건 이쪽에서 합니다:
+> ```bash
+> python3 scripts/split_contact_sheet.py <대조표.png> --out art_inbox/npc/_split \
+>         --names kid,bugkid,youth_f,youth_m,hunter,angler,miner,scholar,mystic,guard,merchant,elder
+> ```
+> ⚠️ 다만 **자세끼리는 떨어뜨려** 주세요. 소품(곡괭이·낚싯대)이 옆 자세와 겹치면 그만큼 잘려 나갑니다.
+
 **파일 이름 = 원형 id** 입니다. 확장자는 png/webp/jpg 다 됩니다.
 
 ```
