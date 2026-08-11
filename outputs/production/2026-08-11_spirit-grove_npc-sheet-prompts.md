@@ -68,9 +68,11 @@
 > id가 원형 이름과 겹쳐서(`elder`·`scholar`) 이미 배정된 걸로 읽혔다.
 > 넷 다 `spr`이 답을 갖고 있어 **그림 추가 없이** 기존 원형에 붙었다 →
 > beard→`elder_m` · scroll→`scholar` · straw+rod→`angler` · hood+staff→`mystic`.
-> **야외는 이제 47/47이다.** 진짜 남은 건 `NPC_SPR` 쪽이고, 거기는 새 그림이 필요하다.
-> ⚠️ 그중 `isleLeader`·`snowMaster`는 `boss:true`다 — **시트를 붙이면 보스 오라가 사라진다**
-> (시트 분기가 그림을 그리고 바로 `return`한다. 실측: 그라디언트 3 → 0). `npc_sheet_test [6]`이 잡는다.
+> **야외는 이제 47/47이다.** 진짜 남은 건 `NPC_SPR` 쪽이고, 거기는 새 그림이 필요하다 → **§8-A**.
+> 📌 `isleLeader`·`snowMaster`는 `boss:true`다. 한때 **시트를 붙이면 보스 오라가 조용히 사라지는**
+> 함정이 있었지만(시트 분기가 그림을 그리고 바로 `return`했다. 실측: 그라디언트 3 → 0)
+> **08-11에 `_bossAura`를 두 경로가 공유하도록 고쳤다.** 이제 시트를 줘도 오라가 살아 있고,
+> `npc_sheet_test [6]`이 그 동작을 단정한다(고치기 전 빌드에서 실패를 확인했다).
 
 ---
 
@@ -408,3 +410,188 @@ python3 scripts/build.py && node scripts/npc_sheet_test.js dist/spirit_grove_3d.
    그래서 `kid`는 3쌍 → 1쌍이 아니라 **2쌍**이 됐다. 옮기면 1쌍이 되지만 그림이 틀린다.
 2. **`scholar_f`는 "2쌍 → 0쌍"이 아니라 1쌍이 남는다.** 문서의 0쌍은 계산 착오였다 —
    남는 둘(연구소 조수 하린 · 기술 전문가)이 (4,48)·(9,47)로 5칸 거리다.
+
+---
+
+# 8. 3차 발주안 (2026-08-11 · 야외 47/47이 끝난 뒤)
+
+**대조표 두 장으로 나눠 받는다.** 한 장에 15명을 몰면 화풍이 흔들린다(1차가 12명이었고 그게 상한선에 가깝다).
+공통 프리픽스·네거티브·규격은 **§2·§3과 완전히 동일하다.**
+
+---
+
+## 8-A. 발주 A — **실내·특수 8장** (1순위)
+
+야외는 47/47이 끝났고, **아직 절차적으로 남은 건 `NPC_SPR` 쪽뿐이다.**
+이들은 `NPCS` 배열이 아니라 **지도 타일이 직접 그린다**(`_char(…, NPC_SPR.x, …)`).
+
+📌 **1순위인 이유**: 간호사와 상점 점원은 플레이어가 **가장 자주 보는 인물**인데
+지금 유일하게 납작한 절차적 스프라이트다. 원래 지적받은 이질감이 정확히 여기 남아 있다.
+
+| id | 누구 | 어디서 그려지나 |
+|---|---|---|
+| `nurse` | 정령센터 간호사 | `N` 타일 (실내 center) |
+| `clerk` | 상점 점원 | `N` 타일 (그 외 실내) |
+| `lore` | 전승 기록자 | `N` 타일 (야외) |
+| `p` | 감정사 🔍 | 회관 |
+| `n` | 개명사 ✒️ | 회관 |
+| `s` | 안마사 💆 | 회관 |
+| `snowMaster` | 설원 사범 | `Q` 타일 (야외 · **보스**) |
+| `isleLeader` | 섬 지도자 | `L` 타일 (야외 · **보스**) |
+
+⚠️ **보스 둘은 붉은 오라가 뒤에 깔린다.** 오라와 겹쳐 읽히도록 **실루엣을 크고 단순하게**,
+   색은 오라(분홍빛 붉은색)와 부딪히지 않게 **차가운 계열**로 받을 것.
+   (08-11에 시트 경로가 오라를 안 그리던 함정을 고쳤다 — 이제 시트를 줘도 오라가 살아 있다.
+    `npc_sheet_test [6]`이 고정한다.)
+
+📌 **색은 코드의 기존 지정을 따랐다.** 간호사 분홍 머리처럼 플레이어가 기억하는 색이 있다.
+
+### `nurse`
+```
+[공통 프리픽스]
+A cheerful nurse in a white uniform dress with a red cross on the chest,
+soft rose-pink hair curled at the shoulders, a small white nurse cap.
+Hands clasped in front. Calm, welcoming posture.
+```
+
+### `clerk`
+```
+[공통 프리픽스]
+A shop clerk in a blue button-up uniform with a name tag and a short apron,
+short dark brown hair, sleeves rolled to the elbow, one hand raised in greeting.
+```
+
+### `lore`
+```
+[공통 프리픽스]
+An archivist in a deep blue robe with silver-white hair tied back,
+an open book cradled in one arm, a quill tucked behind the ear. Thoughtful posture.
+```
+
+### `p` — 감정사
+```
+[공통 프리픽스]
+An appraiser in a plum-purple vest over a shirt, round spectacles low on the nose,
+holding a magnifying glass up at eye level. Slightly stooped, scrutinizing posture.
+```
+
+### `n` — 개명사
+```
+[공통 프리픽스]
+A calligrapher in a mauve tunic with wide sleeves, hair in a neat topknot,
+holding a long writing brush upright in one hand, an inkstone in the other. Poised posture.
+```
+
+### `s` — 안마사
+```
+[공통 프리픽스]
+A masseur in a sage-green short-sleeved work coat with a folded towel over one shoulder,
+sturdy build, both hands open and relaxed at the sides. Friendly, grounded stance.
+```
+
+### `snowMaster` — 설원 사범 (보스)
+```
+[공통 프리픽스]
+An ice master with spiky pale blue-white hair and a heavy fur-lined coat in cold slate blue,
+a long scarf trailing to one side, arms crossed. Imposing, broad silhouette.
+```
+
+### `isleLeader` — 섬 지도자 (보스)
+```
+[공통 프리픽스]
+An island leader with spiky dark hair and a sleeveless deep-teal coat over bare shoulders,
+a wide sash at the waist, one fist clenched at the side. Imposing, broad silhouette.
+```
+
+---
+
+## 8-B. 발주 B — **겹침 해소 변형 7장** (2순위)
+
+지금 **14쌍**이다. 아래 7장이면 **라이벌 카이 2쌍(같은 사람이라 원래 문제가 아니다)을 빼고 0쌍**이 된다.
+각 항목의 「옮길 NPC」는 실측 좌표로 고른 것이다 — **한 장이 2쌍을 지우는 배치**를 골랐다.
+
+| 새 원형 | 지우는 겹침 | 옮길 NPC |
+|---|---|---|
+| `angler2` | **3쌍 → 1쌍** | 호수 어부 (7,22) ← **바로 옆 칸에 낚시꾼 도윤(8,22)이 있다. 최우선.** |
+| `mystic2` | 2쌍 → 0쌍 | 용 수련생 하늘 (3,27) · 순례자 (16,16) |
+| `kid2` | 2쌍 → 0쌍 | 새싹 채집가 이든 (3,40) · 초보 정령사 준 (16,47) |
+| `guard_f` | 2쌍 → 0쌍 | 도장의 관장 세라 (16,9) — 여성 이름인데 지금 남성 갑주다 |
+| `youth_f2` | 1쌍 → 0쌍 | 교환하는 소녀 하늘 (9,45) |
+| `scholar2` | 1쌍 → 0쌍 | 기술 전문가 (9,47) |
+| `elder2` | 1쌍 → 0쌍 | 육아방 관리인 (13,47) |
+
+⚠️ **`angler`는 셋이 서로 다 겹친다**(어부·리오·도윤이 5칸 안에 몰려 있다). `angler2` 한 장으로 3 → 1이고,
+   완전히 지우려면 `angler3`가 하나 더 필요하다. **1쌍은 남겨도 된다** — 그 둘은 5칸 거리라 화면 끝과 끝이다.
+⛔ **`youth_m`은 손대지 않는다** — 6명 중 4명이 라이벌 카이 한 사람이다(§7-1).
+
+### `angler2`
+```
+[공통 프리픽스]
+An older fisherman with a weathered face and a short grey beard, a rolled bandana on the head,
+a heavy oilskin coat, a wicker creel on the hip, a short rod held low. Patient, settled stance.
+```
+
+### `mystic2`
+```
+[공통 프리픽스]
+A young shrine acolyte in pale cream robes with a wide sash, hood down showing short dark hair,
+a string of prayer beads wound around one wrist. Upright, formal posture.
+```
+
+### `kid2`
+```
+[공통 프리픽스]
+A small boy in denim overalls and a wide straw sun-hat, big head and short limbs,
+a woven basket carried in front with both hands. Curious, leaning-forward posture.
+```
+
+### `guard_f`
+```
+[공통 프리픽스]
+A tall woman guard captain in light layered armor over a tunic, a long dark ponytail,
+a shoulder guard on one side, a sheathed sword at the hip. Straight, disciplined posture.
+```
+
+### `youth_f2`
+```
+[공통 프리픽스]
+A young woman traveler with short bobbed hair and a headband, a hooded cape over a tunic,
+a satchel across the body. Relaxed, easy stance.
+```
+
+### `scholar2`
+```
+[공통 프리픽스]
+A move tutor in a rust-orange training jacket over a shirt, short cropped hair and a headband,
+a rolled scroll held like a baton in one hand. Confident, instructive posture.
+```
+
+### `elder2`
+```
+[공통 프리픽스]
+An elderly caretaker with white hair in a bun under a kerchief, a long apron over a plain dress,
+holding a swaddled bundle in both arms. Warm, gentle posture.
+```
+
+---
+
+## 8-C. 받은 뒤 절차
+
+```bash
+# 발주 A
+python3 scripts/split_contact_sheet.py <A.png> --out art_inbox/npc/_split3 \
+        --names nurse,clerk,lore,p,n,s,snowMaster,isleLeader
+# 발주 B
+python3 scripts/split_contact_sheet.py <B.png> --out art_inbox/npc/_split4 \
+        --names angler2,mystic2,kid2,guard_f,youth_f2,scholar2,elder2
+
+python3 scripts/make_npc_sheet.py --src art_inbox/npc/_splitN --out assets/art/npc_sheet
+```
+그다음 **세 군데**를 같이 고친다. 하나만 하면 조용히 폴백한다.
+1. `scripts/make_npc_sheet.py`의 `ARCHETYPES`에 새 id 추가 (없으면 경고하고 건너뛴다)
+2. `assets/manifest.json`의 `"npc_sheet"` 배열에 추가
+3. **발주 A는 `NPC_SPR`의 각 항목에 `sheet:"<id>"` 를 넣는다** (`NPC_ARCH`가 아니다 —
+   이들은 `NPCS` 배열에 없고 타일이 직접 그린다).
+   **발주 B는 `NPC_ARCH`** 에서 위 표의 NPC를 새 원형으로 옮긴다.
+
+⚠️ **아트가 없는 id를 먼저 적지 말 것** — 그 인물만 절차적으로 폴백해 한 화면에 두 화풍이 섞인다.

@@ -155,25 +155,41 @@ const DOC = "outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md";
   ok(real.bad.length===0, `전부 디코드되고 3×3 정사각이며 실제로 그려진다 (문제 ${real.bad.length}건: ${real.bad.join(",")||"없음"})`);
   ok(Object.keys(real.cells).length<=1, `칸 크기가 한 값으로 통일돼 있다 (${JSON.stringify(real.cells)})`);
 
-  console.log("\n[6] 보스 오라를 가진 인물에게 시트를 붙이지 않았다");
+  console.log("\n[6] 시트를 받은 보스도 오라를 잃지 않는다");
   /* 왜 있나
-       `_char`의 시트 분기는 그림을 그리고 **바로 return**한다 → `spec.boss`의 붉은 오라를
-       그리는 코드까지 못 간다. 실측: 시트가 로드된 상태로 `{sheet, boss:true}`를 그리면
-       그라디언트 호출이 **3 → 0**이 된다(절차적 경로는 평범 2 · 보스 3).
-       지금은 해당 인물이 없지만, 남은 절차적 인물(간호사·상점원·회관 3인·설원 사범·섬 지도자)을
-       시트로 옮길 때 **섬 지도자·설원 사범이 정확히 이 함정**이다 — 둘 다 boss:true다.
-       오라가 조용히 사라지면 "왜 저 사람만 안 빛나지"를 아무도 못 찾는다. */
-  const bossChk=await p.evaluate(()=>{
+       원래 `_char`의 시트 분기는 그림을 그리고 **바로 return**해서 `spec.boss`의 붉은 오라를
+       그리는 코드까지 못 갔다. 실측했다: 시트가 로드된 상태로 `{sheet, boss:true}`를 그리면
+       그라디언트 호출이 **3 → 0**이었다(절차적 경로는 평범 2 · 보스 3).
+       아직 시트를 받은 보스가 없어서 **버그가 아니라 함정**이었고, 다음 차례인 `NPC_SPR`의
+       `isleLeader`·`snowMaster`가 정확히 그 자리였다(둘 다 boss:true).
+       → 오라를 `_bossAura`로 빼서 두 경로가 같은 함수를 쓰게 고쳤다. 이 블록이 그걸 고정한다.
+     ⚠️ "금지"가 아니라 "동작"을 단정한다 — 금지 가드였다면 나중에 보스에게 시트를 주려는
+        사람을 막기만 하고 원인은 안 알려줬을 것이다. */
+  const bossChk=await p.evaluate(async probeSrc=>{
     const S=window.SG, F=S.flow;
-    const specs=[...(F.NPCS||[]).map(n=>[n.id, n.spr||{}]),
-                 ...Object.entries(S.NPC_SPR||{})];
-    return { total:specs.length,
-             bad:specs.filter(([,s])=>s&&s.boss&&s.sheet).map(([k])=>k),
-             bosses:specs.filter(([,s])=>s&&s.boss).map(([k])=>k) };
-  });
-  ok(bossChk.total>0, `검사한 spec ${bossChk.total}개 (0이면 이 블록이 공허하다)`);
-  ok(bossChk.bosses.length>0, `보스 오라를 쓰는 spec이 실재한다 — ${bossChk.bosses.join(",")||"없음"}`);
-  ok(bossChk.bad.length===0, `그중 시트를 붙인 것은 없다 (위반 ${bossChk.bad.length}건: ${bossChk.bad.join(",")||"없음"})`);
+    const arch=Object.values(S.NPC_ARCH)[0];
+    const im=S.npcSheet(arch); await new Promise(r=>{ im.complete?r():(im.onload=r, im.onerror=r); });
+    const run=(spec)=>{ let grad=0, img9=0;
+      const ctx=new Proxy({},{ get:(t,k)=>{
+        if(k==="drawImage")return (...a)=>{ if(a.length===9)img9++; };
+        if(k==="canvas")return {width:430,height:760};
+        if(k==="createRadialGradient"||k==="createLinearGradient"){ grad++; return ()=>({addColorStop:()=>{}}); }
+        if(k==="fillStyle"||k==="strokeStyle"||k==="lineWidth"||k==="imageSmoothingEnabled")return "";
+        return ()=>{}; }, set:()=>true });
+      S.Field._char(ctx,100,100,32,spec,"down",1.0,true); return {grad,img9}; };
+    const specs=[...(F.NPCS||[]).map(n=>[n.id, n.spr||{}]), ...Object.entries(S.NPC_SPR||{})];
+    return { bosses:specs.filter(([,s])=>s&&s.boss).map(([k])=>k),
+             sheetBoss:run({sheet:arch, boss:true}), sheetPlain:run({sheet:arch}),
+             procBoss:run({boss:true}),              procPlain:run({}) };
+  }, probe);
+  ok(bossChk.bosses.length>0, `보스 오라를 쓰는 spec이 실재한다 — ${bossChk.bosses.join(",")||"없음"} (공허한 통과 방지)`);
+  ok(bossChk.sheetBoss.img9===1, `시트 경로를 실제로 탔다 (drawImage ${bossChk.sheetBoss.img9}회)`);
+  /* 📌 "그라디언트가 0보다 크다"가 아니라 **평범할 때보다 정확히 하나 많다**를 잰다 —
+        전자는 다른 그라디언트가 하나만 있어도 통과해 버린다. */
+  ok(bossChk.sheetBoss.grad===bossChk.sheetPlain.grad+1,
+     `시트+보스가 시트+평범보다 그라디언트 1개 많다 (${bossChk.sheetPlain.grad} → ${bossChk.sheetBoss.grad})`);
+  ok(bossChk.procBoss.grad===bossChk.procPlain.grad+1,
+     `절차적 경로도 그대로다 (${bossChk.procPlain.grad} → ${bossChk.procBoss.grad})`);
 
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs[0].slice(0,70):""}`);
   await b.close();

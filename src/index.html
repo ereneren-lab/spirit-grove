@@ -2856,6 +2856,15 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(dir==="left"){ ctx.fillRect(cx-u*0.16,cy-u*0.46,u*0.1,u*0.13); }
       else if(dir==="right"){ ctx.fillRect(cx+u*0.06,cy-u*0.46,u*0.1,u*0.13); }
       else { ctx.fillRect(cx-u*0.17,cy-u*0.46,u*0.09,u*0.13); ctx.fillRect(cx+u*0.08,cy-u*0.46,u*0.09,u*0.13); } } },
+  /* 보스 오라 — **시트 경로와 절차적 경로가 같은 함수를 쓴다.**
+     처음엔 절차적 경로에만 있었다. 시트 분기가 그림을 그리고 바로 return하므로
+     시트를 받은 보스는 오라가 **조용히 사라졌다**(실측: 그라디언트 3 → 0).
+     "왜 저 사람만 안 빛나지"는 화면을 아주 오래 봐야 알아채는 종류라 함정 자체를 없앴다.
+     ⚠️ 두 경로에 각각 그리면 그게 병렬 로직이다 — 한쪽만 고치는 사고가 이 저장소에서 반복됐다. */
+  _bossAura(ctx,cx,cy,u){
+    const g=ctx.createRadialGradient(cx,cy,u*0.3,cx,cy,u*1.35);
+    g.addColorStop(0,"rgba(255,110,150,.4)"); g.addColorStop(1,"rgba(255,110,150,0)");
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,u*1.35,0,6.29); ctx.fill(); },
   _char(ctx,cx,cy,s,spec,dir,now,moving){ spec=spec||{}; dir=dir||"down";
     /* ① 원형 시트가 있으면 그걸 그린다. 없으면 아래 절차적 스프라이트로 그대로 내려간다.
        ⚠️ **여기 한 곳에만 둔다** — `_char` 호출부가 7군데(오버월드 NPC·실내 N 타일·관장 등)라
@@ -2867,6 +2876,9 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       const _c=_sh&&_sh.complete&&_sh.naturalWidth?heroSheetCell(_sh.naturalWidth,_sh.naturalHeight):null;
       if(_c){ const _ds=heroDrawSpec(_c, s), S=_ds.size, _fr=heroSheetFrame(dir, moving, now);
         const _hb=moving?0:(now?Math.sin(now*2.2+cx*0.5)*s*0.012:0);
+        /* ⚠️ 오라를 **그림보다 먼저** 그린다(절차적 경로와 같은 순서). 나중에 그리면 인물을 덮는다.
+              반지름 기준 u는 절차적 쪽의 `s*0.5*_B.u`와 맞춘다 — 시트는 체형 보정이 없으므로 s*0.5다. */
+        if(spec.boss) this._bossAura(ctx,cx,cy,s*0.5);
         ctx.fillStyle="rgba(0,0,0,.28)"; ctx.beginPath();
         ctx.ellipse(cx,cy+s*0.32,s*0.30,s*0.11,0,0,6.29); ctx.fill();
         ctx.save(); if(_fr.flip){ ctx.translate(cx,0); ctx.scale(-1,1); ctx.translate(-cx,0); }
@@ -2884,7 +2896,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
                   stout:{u:1.02, tw:1.3  }, tall :{u:1.1,  tw:0.9 } };
     const _B=BUILD[spec.build]||BUILD.adult;
     const u=s*0.5*_B.u; const ol="rgba(18,14,22,.6)", olw=Math.max(1.2,u*0.05);
-    if(spec.boss){ const g=ctx.createRadialGradient(cx,cy,u*0.3,cx,cy,u*1.35); g.addColorStop(0,"rgba(255,110,150,.4)"); g.addColorStop(1,"rgba(255,110,150,0)"); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,u*1.35,0,6.29); ctx.fill(); }
+    if(spec.boss) this._bossAura(ctx,cx,cy,u);
     ctx.fillStyle="rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(cx,cy+u*0.64,u*0.42,u*0.15,0,0,6.29); ctx.fill();
     // 걸을 땐 걸음 사이클(다리 번갈아+살짝 통통), 멈추면 은은한 아이들 바운스(몸통만, 그림자는 땅 고정).
     const _cyc=moving?Math.floor(now*8)%4:0;

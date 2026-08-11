@@ -55,17 +55,19 @@ python3 scripts/make_npc_sheet.py --src art_inbox/npc/_split --out assets/art/np
 **그림 추가 없이** 기존 원형에 붙었다(beard→`elder_m` · scroll→`scholar` · straw+rod→`angler` ·
 hood+staff→`mystic`). id가 원형 이름과 겹쳐서(`elder`·`scholar`) 배정된 걸로 읽혔던 자리다.
 
-📌 **다음 발주 (우선순위 순) — 겹침 14쌍**
-   1. **`angler2` ← 1순위.** 호수 어부(7,22)·호수 낚시꾼 도윤(8,22)이 **바로 옆 칸**이라 쌍둥이가 눈에 띈다.
-   2. `mystic2` 2쌍 · `kid` 2쌍(→ `kid` 계열 하나 더) · `guard2` 2쌍
-   3. `youth_f2` · `scholar` · `elder` · `angler` 나머지 각 1쌍
-   숫자는 `outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md` §7-5 표에 있다.
+**(A-4) 🔴 3차 발주안 §8 — 프롬프트까지 다 짜뒀다. 그림만 오면 된다.**
+`outputs/production/2026-08-11_spirit-grove_npc-sheet-prompts.md` **§8**. 대조표 **두 장**으로 나눴다
+(한 장에 15명을 몰면 화풍이 흔들린다 — 1차 12장이 상한선에 가까웠다).
 
-📌 **그다음: `NPC_SPR` (지도 타일이 직접 그리는 인물들)**
-   간호사 · 상점 점원 · 회관 3인(`p`·`n`·`s`) · 설원 사범 · 섬 지도자. **여기는 새 그림이 필요하다.**
-   ⚠️ **`isleLeader`·`snowMaster`에 시트를 붙이면 보스 오라가 조용히 사라진다** —
-      시트 분기가 그림을 그리고 바로 `return`하기 때문이다(실측: 그라디언트 3 → 0).
-      `npc_sheet_test [6]`이 이제 이걸 잡는다.
+| | 무엇 | 왜 |
+|---|---|---|
+| **A (1순위)** | 실내·특수 **8장** — `nurse`·`clerk`·`lore`·`p`·`n`·`s`·`snowMaster`·`isleLeader` | 간호사·점원은 **가장 자주 보는 인물인데 아직 유일하게 절차적**이다 |
+| **B (2순위)** | 겹침 해소 **7장** — `angler2`·`mystic2`·`kid2`·`guard_f`·`youth_f2`·`scholar2`·`elder2` | 14쌍 → (라이벌 카이 2쌍 제외) **0쌍** |
+
+⚠️ **A는 `NPC_ARCH`가 아니라 `NPC_SPR`에 `sheet:`를 넣는다** — 이들은 `NPCS` 배열에 없고
+   지도 타일이 직접 그린다(`_char(…, NPC_SPR.nurse, …)`). B는 `NPC_ARCH`다.
+✅ 보스 오라 함정은 **없앴다** — `_bossAura`를 두 경로가 공유한다. 시트를 줘도 오라가 살아 있고
+   `npc_sheet_test [6]`이 그 동작을 단정한다. `snowMaster`·`isleLeader`를 마음 놓고 시트로 옮겨도 된다.
 
 **(B) 신규 정령 4종 그림 4장**
 데이터·진화 연결·프롬프트 전부 확정. **페인터리로 받을 것**(픽셀로 직접 뽑지 말 것).
@@ -297,6 +299,11 @@ node scripts/lord_route_test.js dist/spirit_grove_3d.html    # 몇 분이면 돈
   "지금 NPC가 서 있다"를 "지도가 막혔다"로 읽는다(`door_front_test`가 그랬다).
 - ⚠️ **부하 오탐 구분법**: 걷기가 목적지 **한 칸 앞**에서 멈추면 대개 환경이다(코어당 load 확인).
   단독으로 다시 돌려보면 통과한다. 이 맥은 Chrome·Slack만 떠 있어도 load 4~5다.
+  📌 **실측 사례(2026-08-11)**: `route_test [3-b]` 「모닥불 칸에 도착했다」가 **(8,5) 기대인데 (7,5)** 로 멈췄다.
+     같은 빌드로 **실패 2회(load 5~6) · 통과 5회(load ≲4.5)**. 뒤이은 4단정(회복·상태이상·부활 지점·
+     공중날기 등록)은 전부 **여기서 연쇄된 것**이라 원인은 하나다. 5건을 따로 조사하지 말 것.
+     ⚠️ `route_test`는 `verify.sh`의 **98번(마지막)** 이라, 여기서 넘어지면 남는 구간이 없다 —
+        `PW_FROM=98 bash scripts/verify.sh` 로 그 하나만 다시 돌리면 된다.
 - ⚠️ **명중률 있는 기술을 단정에 쓰면 테스트가 확률로 빨개진다**(날기 95 → verify 전체가 5%).
   상태 전이를 보려는 블록은 `Math.random`을 고정할 것.
 
