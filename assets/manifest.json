@@ -138,5 +138,14 @@
     "youth_f2",
     "scholar2",
     "elder2"
+  ],
+  "terrain": [
+    "center",
+    "shop",
+    "hall",
+    "gym",
+    "dojo",
+    "home",
+    "altar"
   ]
 }

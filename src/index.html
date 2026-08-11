@@ -2122,6 +2122,14 @@ const HOME_AT={ "5,47":"home_rio", "17,43":"home_mina", "10,41":"home_tori", "3,
 const CHAR_HOME=["home_rio","home_mina","home_tori","home_el"];          // styleIdx → 출신지
 const HOME_POS=[{x:5,y:48},{x:17,y:44},{x:10,y:42},{x:3,y:45}];          // 출신지 앞 오버월드 칸
 const DOOR_TILES="+EHGUSX";
+/* 지형 아트 — 타일 문자 → 아트 id. **단일 출처**다(build.py도 이 표를 다시 적지 않는다).
+   ⚠️ 파일 이름에 타일 문자를 못 쓴다(`+`·`#`) → id를 따로 둔다.
+   ⚠️ **`T`(긴 풀숲)는 일부러 뺐다.** 오토타일이라 이웃과 변을 이어 붙여 하나의 덩어리로 그린다
+      (07-28에 "맵이 너무 타일처럼"을 고치려고 넣은 장치다). 한 장짜리 이미지로 바꾸면
+      그 이음이 사라져 격자가 다시 드러난다. 물·길(`~`·`.`)도 같은 이유로 뺐다.
+   📌 발주안: outputs/production/2026-08-11_spirit-grove_terrain-art-order.md */
+const TERRAIN_ART_ID={ "+":"center", S:"shop", E:"hall", G:"gym", U:"dojo", H:"home", X:"altar",
+                       x:"tree_s", o:"rock", P:"sign", R:"campfire", "#":"tree_l" };
 /* 자연 입구 — 동굴·용암굴·설원·늪·봉우리·유적·분화구·화원·해안 + **지선 루트 입구($)**.
    ⚠️ 건물 문(DOOR_TILES)과 달리 **방향 제약이 없다**(옆에서도 들어가진다 — door_front_test [4]).
       그래서 표시도 다르게 준다: 발판·화살표가 아니라 입구 빛만(_doorFx).
@@ -2702,6 +2710,26 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     if(((h>>4)&3)===0){ ctx.fillStyle="rgba(40,110,60,.3)"; const dx=sx+rnd(0)*ts*0.7+ts*0.15, dy=sy+rnd(1)*ts*0.7+ts*0.15; ctx.fillRect(dx,dy,ts*0.06,ts*0.06); ctx.fillRect(dx+ts*0.07,dy+ts*0.04,ts*0.05,ts*0.05); }
     if(((h>>9)&7)===0){ const fx=sx+ts*0.3+rnd(5)*ts*0.4, fy=sy+ts*0.3+rnd(6)*ts*0.4, fc=((h>>12)&1)?"#f0d84a":"#f088b0";
       ctx.fillStyle=fc; for(let a=0;a<5;a++){ const an=a/5*6.28; ctx.beginPath(); ctx.arc(fx+Math.cos(an)*ts*0.055,fy+Math.sin(an)*ts*0.055,ts*0.038,0,6.29); ctx.fill(); } ctx.fillStyle="#fff3b0"; ctx.beginPath(); ctx.arc(fx,fy,ts*0.032,0,6.29); ctx.fill(); }
+    /* ===== 지형 아트 ===== 있으면 그걸 그리고, 없으면 아래 절차적 그림으로 그대로 내려간다.
+       ⚠️ **여기 한 곳에만 둔다.** `o`·`x` 같은 가지가 실외·실내·미니맵에 각각 있어(실측 3곳)
+          가지마다 넣으면 반드시 하나를 빠뜨린다 — NPC 때 `_char` 한 곳으로 몰아 해결한 것과 같은 결이다.
+          (실내·미니맵은 이 함수를 안 지나므로 지금은 절차적 그대로다. 그게 맞다 —
+           미니맵은 색 점이고, 실내 오브젝트는 다른 물건이다.)
+       ⚠️ 건물은 위 `_k=1.45` 블록이 sx/sy/ts를 **이미 확대해 놨다** → 같은 좌표계에 그대로 그리면
+          절차적 건물과 크기·접지선이 정확히 일치한다. 여기서 따로 계산하면 두 벌이 되어 갈라진다.
+       ⚠️ **로드 전에는 그리지 않는다.** `complete`·`naturalWidth`를 안 보면 디코드가 끝나기 전
+          몇 프레임 동안 그 타일이 **통째로 빈칸**으로 나온다(주인공·NPC가 같은 이유로 이 검사를 한다).
+       ⚠️ `#`(큰 나무)는 타일 해시로 위치·크기를 흔든다 — 그 흔들기를 **아트에도 그대로** 적용한다.
+          안 하면 숲이 다시 격자로 보인다(그 격자를 없애려고 넣은 장치다). */
+    if(typeof terrainArt==="function"){
+      const _ta=terrainArt(t);
+      if(_ta&&_ta.complete&&_ta.naturalWidth){
+        let ax=sx, ay=sy, as=ts;
+        if(t==="#"){ as=ts*(0.90+rnd(3)*0.22);
+          ax=sx+(rnd(1)-0.5)*ts*0.16+(ts-as)*0.5;
+          ay=sy+(rnd(2)-0.5)*ts*0.12+(ts-as); }        /* 접지선은 아래로 고정 */
+        ctx.save(); ctx.imageSmoothingEnabled=false;
+        ctx.drawImage(_ta, ax, ay, as, as); ctx.restore(); return; } }
     if(t==="T"){
       // 포켓몬식 키큰 풀: **진한 초록 패치**(걸어 들어가는 잔디밭임을 명확히 — 예전엔 키 큰 뾰족한 풀이라
       // 작은 나무처럼 보여 "나무를 통과하냐"는 오해가 있었다) + 짧고 촘촘한 풀 텍스처.
@@ -3638,6 +3666,7 @@ $("storySkip").addEventListener("click",()=>{ Audio.sfx("blip"); _storyEnd(); })
 //@@HERO_ART_BACK@@
 //@@HERO_SHEET@@
 //@@NPC_SHEET@@
+//@@TERRAIN@@
 const CHARS=[
   {em:"🧑‍🔬",nm:"연구원 리오",skin:0xe8b88a,hair:0x2a2a33,hat:0x4a6f8a,cloak:0x3d6e8a,pack:0x6e4a32,boot:0x2c3a4a,cap:"hood"},
   {em:"👩‍🦰",nm:"여행자 미나",skin:0xf0c49a,hair:0x9a3b2a,hat:0xe14b4b,cloak:0x355a8a,pack:0x5a3c28,boot:0x33405a,cap:"cap"},
@@ -4552,6 +4581,15 @@ const NPC_ARCH={
 /* 원형을 각 NPC의 spr에 붙인다 — 렌더러(`_char`)는 spec만 받으므로 여기서 한 번에 꽂는다.
    ⚠️ NPC_ARCH에 없는 id는 그냥 절차적으로 남는다(실내 간호사·상점원 등). 그게 정상 동작이다. */
 if(typeof NPCS!=="undefined")NPCS.forEach(n=>{ if(n&&n.spr&&NPC_ARCH[n.id])n.spr.sheet=NPC_ARCH[n.id]; });
+const _terrainArtCache={};
+/* 지형 아트 로더. `npcSheet`/`heroSheet`와 **같은 규칙**이다.
+   ⚠️ 없음(null)은 캐시하지 않는다 — 캐시하면 나중에 아트를 끼워 넣어도 영영 안 읽는다
+      (회귀가 런타임 주입으로 그리기 경로를 검사한다). */
+function terrainArt(t){ if(typeof Image==="undefined"||!t)return null;
+  const id=(typeof TERRAIN_ART_ID!=="undefined")&&TERRAIN_ART_ID[t]; if(!id)return null;
+  const url=(typeof TERRAIN_ART!=="undefined")&&TERRAIN_ART[id]; if(!url)return null;
+  if(_terrainArtCache[id]&&_terrainArtCache[id].src===url)return _terrainArtCache[id];
+  const img=new Image(); img.src=url; _terrainArtCache[id]=img; return img; }
 const _npcSheetCache={};
 /* ⚠️ 없음(null)은 캐시하지 않는다 — 캐시하면 나중에 시트를 끼워 넣어도 영영 안 읽는다
    (heroSheet가 같은 이유로 그렇게 돼 있고, 회귀가 런타임 주입으로 그리기 경로를 검사한다). */
@@ -7063,6 +7101,8 @@ window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/
 /* NPC_SPR도 같이 내보낸다 — 회귀가 "보스 오라를 가진 spec에 시트를 붙이지 않았는가"를 재기 위해서다.
    시트 경로는 그림을 그리고 바로 return하므로 `spec.boss`의 오라를 **그리지 않는다**(실측: 그라디언트 3 → 0). */
 window.SG.NPC_SPR=NPC_SPR;
+/* 지형 아트도 같이 — 회귀가 아트 없을 때/주입했을 때를 둘 다 태운다. */
+window.SG.TERRAIN_ART=TERRAIN_ART; window.SG.TERRAIN_ART_ID=TERRAIN_ART_ID; window.SG.terrainArt=terrainArt;
 
 window.SG.FLAVOR=FLAVOR;
 Object.assign(window.SG,{NPC_ARCH,NPC_SHEET_ART,npcSheet,NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,TRAINER_HELD,DOOR_TILES,NATURE_ENTRY,CHAR_HOME,ORIGIN_STORY,INTERIOR_NPC_MSG,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});

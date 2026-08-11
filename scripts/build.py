@@ -50,6 +50,14 @@ npcsheets = man.get("npc_sheet") or []
 npcsheet = "const NPC_SHEET_ART={%s};" % ",".join(
     f'"{k}":"{url("assets/art/npc_sheet/" + k + ".webp")}"' for k in npcsheets)
 
+# 지형지물 아트(건물·오브젝트). 자세가 없으므로 정사각 한 장씩이다.
+# ⚠️ 키는 **타일 문자가 아니라 아트 id**다(`+`·`#`는 파일 이름으로 못 쓴다).
+#    타일 문자 ↔ id 표는 게임 쪽 `TERRAIN_ART_ID` 하나가 단일 출처다 — 여기에 다시 적지 않는다.
+# ⚠️ manifest에 "terrain"이 없으면 빈 객체 → 게임은 지금의 절차적 그림으로 폴백한다(빌드 안 깨짐).
+terrains = man.get("terrain") or []
+terrain = "const TERRAIN_ART={%s};" % ",".join(
+    f'"{k}":"{url("assets/art/terrain/" + k + ".webp")}"' for k in terrains)
+
 # 순수 규칙(src/rules/*.js)을 마커 자리에 그대로 끼워 넣는다.
 # 브라우저는 이 인라인 결과를, node 단위 테스트(scripts/rules_env.js)는 같은 파일들을
 # 같은 순서로 이어붙여 평가한다 — 즉 양쪽이 문자 그대로 동일한 코드를 돈다.
@@ -66,6 +74,7 @@ repl = {
     "//@@HERO_ART_BACK@@": back,
     "//@@HERO_SHEET@@": sheet,
     "//@@NPC_SHEET@@": npcsheet,
+    "//@@TERRAIN@@": terrain,
     "//@@PAINT_ART@@": paint,
 }
 for marker, body in repl.items():
