@@ -40,4 +40,5 @@ echo "🎉 push 완료 — GitHub Actions가 1~2분 뒤 자동 배포한다."
 echo "   진행:  gh run watch   ·  https://github.com/ereneren-lab/spirit-grove/actions"
 echo "   주소:  https://ereneren-lab.github.io/spirit-grove/"
 echo ""
-echo "📌 `history` 브랜치는 옛 구조의 백업이다. main이 이제 전체 이력이라 더 밀 필요 없다."
+# ⚠️ 큰따옴표 안의 백틱은 **명령 치환으로 실행된다** — 여기서 실제로 겪었다(브랜치 이름이 사라졌다).
+echo '📌 history 브랜치는 옛 구조의 백업이다. main이 이제 전체 이력이라 더 밀 필요 없다.'

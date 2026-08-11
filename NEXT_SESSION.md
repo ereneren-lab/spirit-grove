@@ -12,7 +12,7 @@
 ### ① 상태 확인 (30초)
 ```bash
 cd ~/Desktop/_보관/게임프로젝트/spirit-grove
-git log --oneline -1        # 기대: 16bdd4d (또는 그 이후) · 워킹 트리 clean
+git log --oneline -1        # 기대: bc75982 (또는 그 이후) · 워킹 트리 clean
 git status --short
 pkill -f headless_shell     # 고아 프로세스 정리(습관)
 uptime                      # 코어당 0.5 넘으면 회귀는 구간으로 나눠 돌린다(§5)
@@ -100,9 +100,9 @@ curl -s https://ereneren-lab.github.io/spirit-grove/ | grep -c 'HOME_AT'   # 라
 
 | 항목 | 상태 |
 |---|---|
-| 로컬 `main` | `16bdd4d` · 워킹 트리 clean |
-| 원격 `history` | 로컬과 동일 — **커밋 이력 백업이 여기다** |
-| 원격 `main` | 배포 스냅샷(orphan 1개, 이력 없음) |
+| 로컬 `main` | `bc75982` 이후 · 워킹 트리 clean |
+| 원격 `main` | **로컬과 동일 · 전체 이력**(2026-08-11에 구조 변경 — §▶⑤) |
+| 원격 `history` | 옛 구조의 백업. 더 밀지 않는다 |
 | 라이브 | https://ereneren-lab.github.io/spirit-grove/ — 아트 44종(인물 32 + 지형 12) 반영 확증 |
 | `verify.sh` | 전 구간 통과 (`terrain_art_test` 신규 등록 · **총 99개**) |
 | 빌드 크기 | **약 4.27MB** — 아트 44종이 들어간 값이다 |
