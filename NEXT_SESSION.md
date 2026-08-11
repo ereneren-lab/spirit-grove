@@ -1,4 +1,4 @@
-# 다음 세션 인수인계 (2026-08-10 종료 시점)
+# 다음 세션 인수인계 (2026-08-11 종료 시점 · 재부팅 직전 저장)
 
 > 읽는 순서: **이 파일 → [`WORKLOG.md`](WORKLOG.md) → [`docs/SPIRIT_GROVE_GUIDE.md`](docs/SPIRIT_GROVE_GUIDE.md)**
 > 이 파일은 "지금 뭘 하면 되나"만 담는다. 왜 그렇게 됐는지는 WORKLOG, 영구 지식은 가이드.
@@ -12,12 +12,15 @@
 ### ① 상태 확인 (30초)
 ```bash
 cd ~/Desktop/_보관/게임프로젝트/spirit-grove
-git log --oneline -1        # 기대: 87087c2 (또는 그 이후) · 워킹 트리 clean
+git log --oneline -1        # 기대: b2bc0e7 (또는 그 이후) · 워킹 트리 clean
 git status --short          # 비어 있어야 정상
 pkill -f headless_shell     # 고아 프로세스 정리(습관)
 uptime                      # 코어당 1.0 넘으면 무거운 테스트는 미룬다
 ```
-직전 작업은 **초반 완급·공간 활용**까지다. **검증 전 구간 통과 · 배포 완료 · 미배포분 없다.**
+직전 작업은 **NPC 원형 시트 경로**까지다. **검증 전 구간 통과 · 배포 완료 · 미배포분 없다.**
+
+> 🔴 **2026-08-11 재부팅 직전 상태 — 코드 쪽은 전부 끝났고 막힌 건 "그림"뿐이다.**
+> 유저가 그림을 넣기 전까지 코드로 더 할 일이 없다. 아래 §② (A)의 5줄이 유저가 할 전부다.
 
 ### ② 🔴 바로 이어서 할 것 — **그림을 기다리는 것 둘. 코드는 다 돼 있다.**
 
@@ -72,11 +75,11 @@ curl -s https://ereneren-lab.github.io/spirit-grove/ | grep -c 'HOME_AT'   # 라
 
 | 항목 | 상태 |
 |---|---|
-| 로컬 `main` | `87087c2` · 워킹 트리 clean |
+| 로컬 `main` | `b2bc0e7` · 워킹 트리 clean |
 | 원격 `history` | 로컬과 동일 — **커밋 이력 백업이 여기다** |
 | 원격 `main` | 배포 스냅샷(orphan 1개, 이력 없음) |
 | 라이브 | https://ereneren-lab.github.io/spirit-grove/ — `GYM_AT`·`HOME_AT`·`ORIGIN_STORY`·`_doorFx`·`_goalFx` 반영 |
-| `verify.sh` | 전 구간 통과 (`pace_test` 신규 등록) |
+| `verify.sh` | 전 구간 통과 (`pace_test`·`npc_sheet_test` 신규 등록 · 총 98개) |
 | 빌드 크기 | **약 3.8MB** — ⚠️ 정령 픽셀화를 되돌려 페인터리 원본으로 복원했다(1.2MB였던 건 그 픽셀 버전) |
 
 ⚠️ **배포는 `scripts/deploy.sh`가 원격 main을 force-push로 덮는다.** 이력을 남기려면
