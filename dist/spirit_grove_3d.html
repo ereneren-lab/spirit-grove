@@ -3030,23 +3030,36 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         const a=run, b=x-1; run=null;
         const x0=ox+a*ts, x1=ox+(b+1)*ts; if(x1<0||x0>cw)continue;
         /* ⚠️ 꽉 찬 들보로 그렸더니 **울타리로 읽혀** "왜 통과되지?"가 된다(스크린샷으로 확인).
-           → 축 늘어진 금줄 + 매달린 등. 밑으로 지나가는 게 자연스러운 형태여야 한다. */
-        const w=x1-x0, sag=ts*0.13;
-        ctx.strokeStyle="#6b5740"; ctx.lineWidth=Math.max(1.5,ts*0.055); ctx.lineCap="round";
-        ctx.beginPath(); ctx.moveTo(x0-ts*0.04, ly-ts*0.18); ctx.quadraticCurveTo(x0+w/2, ly-ts*0.18+sag, x1-ts*0.02, ly-ts*0.18); ctx.stroke();
-        /* 기둥 2개 — 통로 양 끝 타일 경계에 */
-        for(const px of [x0-ts*0.06, x1-ts*0.10]){
+           → 축 늘어진 금줄 + 매달린 등. 밑으로 지나가는 게 자연스러운 형태여야 한다.
+           ⚠️ **그런데 반대쪽으로 실패했다** (유저: "맵에 줄 그어져있는건 뭐야?").
+              통행 구간이 화면 폭보다 길면 기둥은 양 끝(화면 밖)에만 서고, `sag`가 폭과 무관한
+              상수(ts*0.13)라 긴 구간에선 처짐이 안 보인다 → 화면엔 **완전한 직선 하나**만 남았다.
+              등도 5개 상한이라 넓게 흩어져 한 화면에 한두 개밖에 안 들어왔다.
+           → **구간을 SPAN칸씩 끊어 기둥을 규칙적으로 세우고, 처짐을 폭에 비례**시킨다.
+              어디에 서 있어도 기둥·처짐·등이 한 화면에 같이 들어온다. 통행성은 그대로다(순수 렌더). */
+        const SPAN=4;                                                 /* 기둥 간격(칸) */
+        const post=(px)=>{
           ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(px+ts*0.08, ly+ts*0.30, ts*0.14, ts*0.05, 0, 0, 6.29); ctx.fill();
           ctx.fillStyle="#4a3a2a"; ctx.fillRect(px, ly-ts*0.24, ts*0.16, ts*0.54);
-          ctx.fillStyle="rgba(255,236,190,.13)"; ctx.fillRect(px, ly-ts*0.24, ts*0.05, ts*0.54); }
-        /* 줄에 매단 등 — 폭에 비례해 3~5개. 밤에 경계선이 읽히는 것도 이 등 덕이다. */
-        const lamps=Math.max(2, Math.min(5, Math.round(w/(ts*2.6))));
-        for(let i=1;i<=lamps;i++){ const t=i/(lamps+1), lx=x0+w*t;
-          const ly2=ly-ts*0.18+sag*(4*t*(1-t));                       /* 늘어진 줄 위에 얹는다 */
-          ctx.strokeStyle="#6b5740"; ctx.lineWidth=Math.max(1,ts*0.03);
-          ctx.beginPath(); ctx.moveTo(lx, ly2); ctx.lineTo(lx, ly2+ts*0.12); ctx.stroke();
-          ctx.fillStyle="rgba(255,228,150,.30)"; ctx.beginPath(); ctx.arc(lx, ly2+ts*0.20, ts*0.15, 0, 6.29); ctx.fill();
-          ctx.fillStyle="#e8bf62"; ctx.beginPath(); ctx.ellipse(lx, ly2+ts*0.20, ts*0.068, ts*0.085, 0, 0, 6.29); ctx.fill(); } } } },
+          ctx.fillStyle="rgba(255,236,190,.13)"; ctx.fillRect(px, ly-ts*0.24, ts*0.05, ts*0.54); };
+        for(let s=a; s<=b; s+=SPAN){
+          const e=Math.min(b, s+SPAN-1), sx0=ox+s*ts, sx1=ox+(e+1)*ts;
+          if(sx1<-ts||sx0>cw+ts)continue;                             /* 화면 밖 구간은 건너뛴다 */
+          const w=sx1-sx0, droop=Math.min(ts*0.22, w*0.06);
+          ctx.strokeStyle="#6b5740"; ctx.lineWidth=Math.max(1.5,ts*0.055); ctx.lineCap="round";
+          /* 2차 베지어는 제어점 오프셋의 **절반**만큼 처진다 → 실제 처짐을 droop으로 두려면 2배를 준다. */
+          ctx.beginPath(); ctx.moveTo(sx0-ts*0.04, ly-ts*0.18);
+          ctx.quadraticCurveTo(sx0+w/2, ly-ts*0.18+droop*2, sx1-ts*0.02, ly-ts*0.18); ctx.stroke();
+          post(sx0-ts*0.06);
+          if(e===b) post(sx1-ts*0.10);                                /* 구간 끝에만 오른쪽 기둥 */
+          /* 줄에 매단 등 — 이제 **구간마다** 1~3개. 밤에 경계선이 읽히는 것도 이 등 덕이다. */
+          const lamps=Math.max(1, Math.min(3, Math.round(w/(ts*1.8))));
+          for(let i=1;i<=lamps;i++){ const t=i/(lamps+1), lx=sx0+w*t;
+            const ly2=ly-ts*0.18+droop*(4*t*(1-t));                   /* 늘어진 줄 위에 얹는다 */
+            ctx.strokeStyle="#6b5740"; ctx.lineWidth=Math.max(1,ts*0.03);
+            ctx.beginPath(); ctx.moveTo(lx, ly2); ctx.lineTo(lx, ly2+ts*0.12); ctx.stroke();
+            ctx.fillStyle="rgba(255,228,150,.30)"; ctx.beginPath(); ctx.arc(lx, ly2+ts*0.20, ts*0.15, 0, 6.29); ctx.fill();
+            ctx.fillStyle="#e8bf62"; ctx.beginPath(); ctx.ellipse(lx, ly2+ts*0.20, ts*0.068, ts*0.085, 0, 0, 6.29); ctx.fill(); } } } } },
   // 풀숲 게임필 3종: (1) 밟은 칸이 술렁임 (2) 풀숲에 서면 하체가 풀에 가림 (3) 달릴 때 발밑 먼지.
   // ⚠️ Map2D는 객체 리터럴이다 — 메서드를 추가할 땐 앞 메서드 끝의 콤마를 확인할 것.
   _grassFx(ctx,ox,oy,ts,now,pcx,pcy,moving){ if(CONFIG.reduceMotion)return;
