@@ -98,12 +98,17 @@ const DOC = "outputs/production/2026-08-11_spirit-grove_terrain-art-order.md";
     const g=cv.getContext("2d"); g.fillStyle="#0f0"; g.fillRect(0,0,64,64);
     const url=cv.toDataURL("image/png");
     const ID=S.TERRAIN_ART_ID;
+    /* ⚠️ 주입한 더미는 **반드시 되돌린다.** 안 되돌렸더니 뒤 블록이 진짜 아트 대신 더미를 재고
+          "지역 색이 같다"는 엉뚱한 실패를 냈다(08-11에 실제로 겪었다). */
+    window.__keepTerrain={...S.TERRAIN_ART};
     for(const id of Object.values(ID)) S.TERRAIN_ART[id]=url;
     /* 캐시를 채우고 디코드까지 기다린다 — 첫 그리기는 원래 폴백이다(complete=false). */
     await Promise.all(Object.keys(ID).map(t=>new Promise(r=>{
       const im=S.terrainArt(t); if(!im)return r(); im.complete?r():(im.onload=r, im.onerror=r); })));
     const run=new Function("return "+probeSrc)(); const out={};
     for(const [t,xy] of Object.entries(sp)) out[t]=run(xy[0],xy[1]);
+    for(const k of Object.keys(S.TERRAIN_ART)) delete S.TERRAIN_ART[k];
+    Object.assign(S.TERRAIN_ART, window.__keepTerrain);
     return out;
   }, [probe, spots]);
   const notDrawn=Object.entries(drew).filter(([,v])=>v.img!==1).map(([t])=>t);
@@ -133,7 +138,41 @@ const DOC = "outputs/production/2026-08-11_spirit-grove_terrain-art-order.md";
   ok(sizes.size>1, `크기가 타일마다 다르다 (서로 다른 크기 ${sizes.size}종)`);
   ok(offs.size>1, `위치가 타일마다 다르다 (서로 다른 위치 ${offs.size}종)`);
 
-  console.log("\n[5] 매니페스트에 실린 아트");
+  console.log("\n[5] 식물은 지역마다 다른 색으로 그려진다 (지역 색이 난이도 신호다)");
+  /* 왜 있나
+       절차적 경로는 REGIONPAL의 t0/t1/big으로 지역마다 다른 초록을 쓴다. 아트는 한 장뿐이라
+       그냥 그리면 **마을과 고원이 같은 색**이 된다 — 이 게임에서 지역 색은 "위로 갈수록 강함"을
+       알려주는 신호라 잃으면 안 된다. → `terrainTinted`가 곱연산으로 지역색을 얹는다.
+     ⚠️ 눈으로만 확인하면 다음에 조용히 깨진다. **픽셀을 실제로 읽어** 지역마다 다른지 잰다. */
+  const tint=await p.evaluate(async()=>{
+    const S=window.SG, T=S.TERRAIN_TINT||{}, ids=Object.keys(T);
+    if(!ids.length) return {ids:[], out:{}};
+    const out={};
+    for(const id of ids){
+      const url=S.TERRAIN_ART[id]; if(!url){ out[id]="아트없음"; continue; }
+      const img=new Image(); img.src=url;
+      await new Promise(r=>{ img.complete?r():(img.onload=r, img.onerror=r); });
+      if(!img.naturalWidth){ out[id]="디코드실패"; continue; }
+      /* 지역 0(마을)과 5(고원)의 결과 픽셀을 읽어 비교한다 — 팔레트가 가장 다른 두 지역이다. */
+      const px=(r)=>{ const cv=S.terrainTinted(id, img, r);
+        const c=document.createElement("canvas"); c.width=c.height=img.naturalWidth;
+        const g=c.getContext("2d"); g.drawImage(cv,0,0);
+        const d=g.getImageData(0,0,c.width,c.height).data;
+        let n=0,R=0,G=0,B=0;
+        for(let i=0;i<d.length;i+=4){ if(d[i+3]>200){ R+=d[i]; G+=d[i+1]; B+=d[i+2]; n++; } }
+        return n?[Math.round(R/n),Math.round(G/n),Math.round(B/n)]:null; };
+      const a=px(0), b=px(5);
+      out[id]=(a&&b)?{town:a, high:b, diff:Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])+Math.abs(a[2]-b[2])}:"픽셀없음";
+    }
+    return {ids, out};
+  });
+  ok(tint.ids.length>0, `틴트 대상 ${tint.ids.length}종 (공허한 통과 방지) — ${tint.ids.join(" ")}`);
+  const flat=Object.entries(tint.out).filter(([,v])=>v!=="아트없음"&&(typeof v!=="object"||v.diff<12)).map(([k,v])=>k+":"+(v.diff!==undefined?v.diff:v));
+  ok(flat.length===0, `마을과 고원의 평균색이 실제로 다르다 (같은 것: ${flat.join(",")||"없음"})`);
+  for(const [k,v] of Object.entries(tint.out)) if(typeof v==="object")
+    console.log(`     · ${k}: 마을 rgb(${v.town}) → 고원 rgb(${v.high}) · 차이 ${v.diff}`);
+
+  console.log("\n[6] 매니페스트에 실린 아트");
   /* 아직 0장이어도 실패가 아니다 — 발주 대기 상태가 정상이다. 다만 **말은 한다.** */
   console.log(`     · 지금 실린 지형 아트: ${m.loaded.length>0?m.loaded.length+"종 — "+m.loaded.join(" "):"0종 (발주 대기 — 절차적으로 그린다)"}`);
   /* 실린 게 있으면 전부 아는 id인지 본다 — 오타로 넣으면 조용히 폴백한다. */

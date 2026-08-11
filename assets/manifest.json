@@ -146,6 +146,11 @@
     "gym",
     "dojo",
     "home",
-    "altar"
+    "altar",
+    "tree_s",
+    "rock",
+    "sign",
+    "campfire",
+    "tree_l"
   ]
 }

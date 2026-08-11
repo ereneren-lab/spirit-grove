@@ -2724,12 +2724,18 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
     if(typeof terrainArt==="function"){
       const _ta=terrainArt(t);
       if(_ta&&_ta.complete&&_ta.naturalWidth){
+        /* 식물은 지역 색을 얹어 그린다(그 외는 원본 그대로 돌아온다). */
+        const _im=(typeof terrainTinted==="function")
+          ? terrainTinted(TERRAIN_ART_ID[t], _ta, region(y)) : _ta;
         let ax=sx, ay=sy, as=ts;
         if(t==="#"){ as=ts*(0.90+rnd(3)*0.22);
           ax=sx+(rnd(1)-0.5)*ts*0.16+(ts-as)*0.5;
           ay=sy+(rnd(2)-0.5)*ts*0.12+(ts-as); }        /* 접지선은 아래로 고정 */
         ctx.save(); ctx.imageSmoothingEnabled=false;
-        ctx.drawImage(_ta, ax, ay, as, as); ctx.restore(); return; } }
+        ctx.drawImage(_im, ax, ay, as, as); ctx.restore();
+        /* 아트가 대체하지 못하는 **애니메이션**은 위에 얹는다. 지금은 모닥불 불꽃 하나뿐이다. */
+        if(t==="R") this._fireFx(ctx,sx,sy,ts,now);
+        return; } }
     if(t==="T"){
       // 포켓몬식 키큰 풀: **진한 초록 패치**(걸어 들어가는 잔디밭임을 명확히 — 예전엔 키 큰 뾰족한 풀이라
       // 작은 나무처럼 보여 "나무를 통과하냐"는 오해가 있었다) + 짧고 촘촘한 풀 텍스처.
@@ -2856,9 +2862,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       ctx.fillStyle="#caa066"; ctx.fillRect(sx+ts*0.26,sy+ts*0.26,ts*0.48,ts*0.28); ctx.strokeStyle="rgba(55,35,15,.5)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.26,sy+ts*0.26,ts*0.48,ts*0.28);
       ctx.fillStyle="rgba(80,55,25,.5)"; ctx.fillRect(sx+ts*0.32,sy+ts*0.33,ts*0.36,ts*0.03); ctx.fillRect(sx+ts*0.32,sy+ts*0.4,ts*0.26,ts*0.03); }
     else if(t==="R"){ ctx.fillStyle="#6a6560"; for(let i=0;i<5;i++){ const a=i/5*6.28; ctx.beginPath(); ctx.arc(sx+ts*0.5+Math.cos(a)*ts*0.26,sy+ts*0.68+Math.sin(a)*ts*0.12,ts*0.08,0,6.29); ctx.fill(); }
-      const fl=Math.sin((now||0)*8)*0.5+0.5;
-      ctx.fillStyle="#e88028"; ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*(0.28-fl*0.06)); ctx.quadraticCurveTo(sx+ts*0.68,sy+ts*0.56,sx+ts*0.5,sy+ts*0.68); ctx.quadraticCurveTo(sx+ts*0.32,sy+ts*0.56,sx+ts*0.5,sy+ts*(0.28-fl*0.06)); ctx.fill();
-      ctx.fillStyle="#f0d048"; ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*(0.42-fl*0.04)); ctx.quadraticCurveTo(sx+ts*0.59,sy+ts*0.57,sx+ts*0.5,sy+ts*0.66); ctx.quadraticCurveTo(sx+ts*0.41,sy+ts*0.57,sx+ts*0.5,sy+ts*(0.42-fl*0.04)); ctx.fill(); }
+      this._fireFx(ctx,sx,sy,ts,now); }
     else if(t==="S"){ ctx.fillStyle="rgba(0,0,0,.16)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.9,ts*0.42,ts*0.1,0,0,6.29); ctx.fill();
       ctx.fillStyle="#dbe0e5"; ctx.fillRect(sx+ts*0.18,sy+ts*0.4,ts*0.64,ts*0.48); ctx.strokeStyle="rgba(60,70,80,.5)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.18,sy+ts*0.4,ts*0.64,ts*0.48);
       ctx.fillStyle="#3a7ac0"; ctx.fillRect(sx+ts*0.12,sy+ts*0.29,ts*0.76,ts*0.13); ctx.strokeRect(sx+ts*0.12,sy+ts*0.29,ts*0.76,ts*0.13);
@@ -2908,6 +2912,16 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
      시트를 받은 보스는 오라가 **조용히 사라졌다**(실측: 그라디언트 3 → 0).
      "왜 저 사람만 안 빛나지"는 화면을 아주 오래 봐야 알아채는 종류라 함정 자체를 없앴다.
      ⚠️ 두 경로에 각각 그리면 그게 병렬 로직이다 — 한쪽만 고치는 사고가 이 저장소에서 반복됐다. */
+  /* 모닥불 불꽃 — **절차적 경로와 아트 경로가 같은 함수를 쓴다.**
+     처음엔 `t==="R"` 가지 안에만 있었다. 지형 아트를 넣자 훅이 그 가지를 통째로 건너뛰어
+     **불꽃이 조용히 사라졌다**(장작만 남은 차가운 돌무더기가 됐다). 모닥불은 회복 지점이고
+     불꽃이 그 신호라, 없어지면 "여기서 쉴 수 있다"가 안 읽힌다.
+     ⚠️ 보스 오라가 똑같은 방식으로 사라졌던 것과 같은 부류다(08-11에 두 번 겪었다) —
+        **아트로 대체할 때 그 가지 안의 애니메이션을 같이 잃지 않았는지 확인할 것.** */
+  _fireFx(ctx,sx,sy,ts,now){
+    const fl=Math.sin((now||0)*8)*0.5+0.5;
+    ctx.fillStyle="#e88028"; ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*(0.28-fl*0.06)); ctx.quadraticCurveTo(sx+ts*0.68,sy+ts*0.56,sx+ts*0.5,sy+ts*0.68); ctx.quadraticCurveTo(sx+ts*0.32,sy+ts*0.56,sx+ts*0.5,sy+ts*(0.28-fl*0.06)); ctx.fill();
+    ctx.fillStyle="#f0d048"; ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*(0.42-fl*0.04)); ctx.quadraticCurveTo(sx+ts*0.59,sy+ts*0.57,sx+ts*0.5,sy+ts*0.66); ctx.quadraticCurveTo(sx+ts*0.41,sy+ts*0.57,sx+ts*0.5,sy+ts*(0.42-fl*0.04)); ctx.fill(); },
   _bossAura(ctx,cx,cy,u){
     const g=ctx.createRadialGradient(cx,cy,u*0.3,cx,cy,u*1.35);
     g.addColorStop(0,"rgba(255,110,150,.4)"); g.addColorStop(1,"rgba(255,110,150,0)");
@@ -4581,6 +4595,32 @@ const NPC_ARCH={
 /* 원형을 각 NPC의 spr에 붙인다 — 렌더러(`_char`)는 spec만 받으므로 여기서 한 번에 꽂는다.
    ⚠️ NPC_ARCH에 없는 id는 그냥 절차적으로 남는다(실내 간호사·상점원 등). 그게 정상 동작이다. */
 if(typeof NPCS!=="undefined")NPCS.forEach(n=>{ if(n&&n.spr&&NPC_ARCH[n.id])n.spr.sheet=NPC_ARCH[n.id]; });
+/* 지역 색을 얹는 지형 — 나무·풀처럼 **7개 지역에 다 나오는 식물**만이다.
+   ⚠️ 절차적 경로는 `REGIONPAL`의 `t0`/`t1`/`big`으로 지역마다 다른 초록을 쓴다.
+      아트는 한 장뿐이라 그냥 그리면 **마을과 고원이 같은 색**이 된다 — 이 게임에서 지역 색은
+      "위로 갈수록 강함"을 알려주는 신호라 잃으면 안 된다.
+   📌 NPC 틴트는 기각했는데(받은 그림이 이미 원색이라 hue-rotate가 피부색까지 돌렸다)
+      여기는 **무채색에 가깝게 받았으므로** 곱연산이 깔끔하게 먹는다. 조건이 다르다. */
+const TERRAIN_TINT={ tree_s:"t0", tree_l:"big", tallgrass:"t1" };
+const _terrainTintCache={};
+/* 아트 × 지역 조합마다 한 번만 만들어 캐시한다(타일마다 만들면 프레임이 죽는다). */
+function terrainTinted(id, img, r){
+  const key=(typeof TERRAIN_TINT!=="undefined")&&TERRAIN_TINT[id]; if(!key)return img;
+  /* ⚠️ 캐시는 **원본 src까지 확인**한다. id|지역만으로 키를 잡으면 아트를 갈아끼워도
+        옛 그림을 계속 돌려준다(회귀가 더미를 주입했을 때 실제로 그 일이 났다).
+        `npcSheet`가 `.src===url`을 보는 것과 같은 이유다. */
+  const ck=id+"|"+r, hit=_terrainTintCache[ck];
+  if(hit&&hit.src===img.src)return hit.cv;
+  const pal=(typeof REGIONPAL!=="undefined")&&REGIONPAL[r]; if(!pal)return img;
+  const col=Array.isArray(pal[key])?pal[key][0]:pal[key]; if(!col)return img;
+  const cv=document.createElement("canvas"); cv.width=img.naturalWidth; cv.height=img.naturalHeight;
+  const g=cv.getContext("2d"); g.imageSmoothingEnabled=false; g.drawImage(img,0,0);
+  /* multiply로 색을 얹고, destination-in으로 **원래 알파를 되돌린다** —
+     안 하면 투명한 바깥까지 색이 칠해져 사각형 덩어리가 된다. */
+  g.globalCompositeOperation="multiply"; g.globalAlpha=0.62;
+  g.fillStyle=col; g.fillRect(0,0,cv.width,cv.height);
+  g.globalAlpha=1; g.globalCompositeOperation="destination-in"; g.drawImage(img,0,0);
+  _terrainTintCache[ck]={src:img.src, cv}; return cv; }
 const _terrainArtCache={};
 /* 지형 아트 로더. `npcSheet`/`heroSheet`와 **같은 규칙**이다.
    ⚠️ 없음(null)은 캐시하지 않는다 — 캐시하면 나중에 아트를 끼워 넣어도 영영 안 읽는다
@@ -7103,6 +7143,7 @@ window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/
 window.SG.NPC_SPR=NPC_SPR;
 /* 지형 아트도 같이 — 회귀가 아트 없을 때/주입했을 때를 둘 다 태운다. */
 window.SG.TERRAIN_ART=TERRAIN_ART; window.SG.TERRAIN_ART_ID=TERRAIN_ART_ID; window.SG.terrainArt=terrainArt;
+window.SG.TERRAIN_TINT=TERRAIN_TINT; window.SG.terrainTinted=terrainTinted;
 
 window.SG.FLAVOR=FLAVOR;
 Object.assign(window.SG,{NPC_ARCH,NPC_SHEET_ART,npcSheet,NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,TRAINER_HELD,DOOR_TILES,NATURE_ENTRY,CHAR_HOME,ORIGIN_STORY,INTERIOR_NPC_MSG,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
