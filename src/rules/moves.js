@@ -8,6 +8,7 @@ const MOVES={
   slam:{name:"내려찍기",type:"normal",power:50,acc:95,pp:20,pri:0},
   crush:{name:"파괴광선",type:"normal",power:72,acc:90,pp:10,pri:0},
   dragonbreath:{name:"용의숨결",type:"dragon",power:65,acc:95,pp:15,pri:0,cat:"spec"},
+  bugbite:{name:"벌레먹기",type:"bug",power:50,acc:100,pp:20,pri:0,cat:"phys"},
   reflect:{name:"리플렉터",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{screen:"reflect"}},
   lightscreen:{name:"빛의장막",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{screen:"light"}},
   leechseed:{name:"씨뿌리기",type:"grass",power:0,acc:90,pp:10,pri:0,eff:{seed:true}},
