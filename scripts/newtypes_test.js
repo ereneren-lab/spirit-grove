@@ -24,7 +24,7 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(r.frostwyrm==="ice", `빙하룡=얼음 (${r.frostwyrm})`);
   ok(r.snowl==="flying/ice", `설올빼미=비행/얼음 (${r.snowl})`);
   ok(r.glaciarch==="ice/water", `빙하제=얼음/물 (${r.glaciarch})`);
-  ok(r.jellure==="water/poison", `해파리정=물/독 (${r.jellure})`);
+  ok(r.jellure==="water/poison", `개굴알=물/독 (${r.jellure})`);
   ok(r.swampfrog==="water/poison", `개굴몽=물/독 (${r.swampfrog})`);
   ok(r.burrowmouse==="ground", `굴다람=땅 (${r.burrowmouse})`);
   ok(r.boulderin==="rock/ground", `바위정=바위/땅 (${r.boulderin})`);

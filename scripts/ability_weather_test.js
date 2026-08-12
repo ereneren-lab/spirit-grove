@@ -21,7 +21,7 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(r.normEff>0, `부유 없으면 땅 기술 유효 (eff=${r.normEff})`);
   ok(r.iceAbil==="icebody", `얼음 타입 기본특성=얼음몸 (${r.iceAbil})`);
   ok(r.groundAbil==="sturdy", `땅 타입 기본특성=옹골참 (${r.groundAbil})`);
-  ok(r.jellureAbil==="levitate", `해파리정 특성=부유 (${r.jellureAbil})`);
+  ok(r.jellureAbil==="levitate", `개굴알 특성=부유 (${r.jellureAbil})`);
   ok(r.hailMv, "싸라기눈 기술 정의됨");
   ok(r.yesHail>r.noHail, `싸라기눈 때 얼음 위력↑ (${r.noHail}→${r.yesHail})`);
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));

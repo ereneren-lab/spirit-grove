@@ -78,7 +78,10 @@ family as earlier stages, now with gold and red-gem accents and many tails.
 
 ---
 
-## 4. 💧 무르꼬 라인 (water) — 계승: **하늘색+크림 + 짙은 파랑 무늬 / 물결 모티프**
+## 4. 💧 무르꼬 라인 (water) — ⚠️ **진화 재설계 반영(2026-08-12)** · 계승: **하늘색+크림+짙은파랑 + 화룡(化龍) 모티프**
+
+> 재설계 근거: `outputs/strategy/2026-08-12_spirit-grove_evolution-realign-strategy.md` §9-1-A.
+> 옛 설계(거북→악어→오징어)를 폐기하고 **거북→용거북→수호룡**으로 통일. 파충류 4족·등딱지 실루엣을 라인 끝까지 유지, 3단에 금색 뿔/갑주 포인트. 타입은 water 유지(dragon 타입 아님 — 시각 모티프일 뿐).
 
 #### `shellow` — 무르꼬 (1단, 귀여운 아기 거북)
 ```
@@ -89,28 +92,35 @@ sparkly blue eyes, small pink cheek blush, cheerful open smile, one little arm r
 Sitting pose. Reads round and adorable.
 ```
 
-#### `riverdrake` — 무르롱 (2단, 동양 물 용)
+#### `riverdrake` — 무르롱 (2단, 용이 되어가는 거북)
 ```
 [공통 프리픽스]
-An elegant serpentine eastern water dragon. Cyan-blue body with a cream-white belly,
-a blue mane and fins edged in cream, whisker-like fins by the snout, small horns,
-blue eyes, feathery fin-tufts at the legs and tail tip. Coiled flowing S-shaped body.
-Same cyan + cream + darker-blue palette as the turtle form.
+A young dragon-turtle mid-transformation from its hatchling form. Cyan-blue body with a
+cream-white belly, the rounded shell of stage 1 still carried on its back as it grows,
+a lengthening neck and forelimbs, small horns just budding on the head, short whisker-
+fins by the snout, blue eyes, fins edged in cream. Clearly still a four-legged reptile
+WITH a shell — a turtle becoming a dragon, not a serpent. Same cyan + cream + darker-
+blue palette as the turtle form, with a first hint of gold on the budding horns.
 ```
 
-#### `krakentide` — 무르칸 (3단, 왕관 쓴 크라켄)
+#### `krakentide` — 무르칸 (3단, 화룡한 심해 수호룡)
 ```
 [공통 프리픽스]
-A royal deep-blue kraken / octopus. Deep blue body, a crown of water-crest spikes
-with cream-tan coral tips on the head, a glowing cyan gem on the forehead (drawn as
-a bright cyan block with a white highlight dot, not a glow), blue eyes, thick
-tentacles curling like ocean waves with cream foam tips. Imposing wide pose. Blue +
-cream family carried from earlier stages, wave/foam motif dialed up.
+A majestic deep-sea guardian dragon — the final form of the turtle line. A reptilian
+body with FOUR clawed legs, the old shell now hardened into layered armor plating on
+the back, several long flowing whiskers streaming from the face (the ONE trait kept
+from its old kraken concept — these are whiskers, NOT tentacles), curved golden horns,
+a glowing cyan gem on the brow (bright cyan block + white highlight dot, not a glow),
+blue eyes. Deep blue body with cyan + cream accents and gold horn/armor trim. Imposing,
+long-necked but firmly four-legged. NO octopus, NO tentacles, NO extra arms.
 ```
 
 ---
 
-## 5. 🌿 새록꼬 라인 (grass) — 계승: **라임그린+크림 + 잎/새싹 모티프 (→ 나무)**
+## 5. 🌿 새록꼬 라인 (grass) — ⚠️ **진화 재설계 반영(2026-08-12)** · 계승: **라임그린+크림 + 잎 모티프 · 파충류 실루엣 유지**
+
+> 재설계 근거: `outputs/strategy/2026-08-12_spirit-grove_evolution-realign-strategy.md` §9-1-B.
+> 옛 설계(도마뱀→공룡→나무정령 인간체)를 폐기하고 **도마뱀→잎용→나무 두른 거대 파충류**로 통일. 4족·긴 꼬리 실루엣을 라인 끝까지 유지, 3단은 이끼짙은녹색+고목갈색 비중↑. 타입 grass 유지.
 
 #### `leafdrake` — 새록꼬 (1단, 귀여운 새싹 도마뱀)
 ```
@@ -121,23 +131,26 @@ cream-yellow belly, big green eyes, cheerful open smile, a leaf-tipped tail. Sit
 pose. Reads soft and sprout-like.
 ```
 
-#### `leafwyrm` — 새록룡 (2단, 잎사귀 뱀 용)
+#### `leafwyrm` — 새록룡 (2단, 잎갈기가 무성해진 잎용)
 ```
 [공통 프리픽스]
-A serpentine leaf dragon whose body is woven from vines and leaves. Green leafy body
-with a cream segmented underbelly, a mane of leaves with small twig antlers, a few
-tiny white flowers along the coils, teal-green eyes. Coiled S-shaped pose. Same
-lime-green + cream palette as the sprout form, leaf motif expanded across the body.
+A growing leaf dragon, larger than its sprout form. A LIZARD-like quadruped with four
+legs and a long tail (NOT a serpent), lime-green scales, a thick mane of overlapping
+leaves running down the neck and back, small twig-like horns, and the two-leaf sprout
+of stage 1 grown into a leafy crown, a cream belly, teal-green eyes. Same lime-green +
+cream palette as the sprout, leaf motif expanded across the body.
 ```
 
-#### `grovespirit` — 새록정 (3단, 나무 정령/골렘)
+#### `grovespirit` — 새록정 (3단, 나무를 두른 거대 파충류)
 ```
 [공통 프리픽스]
-A large wise tree-spirit golem. Sturdy brown bark body covered in mossy green
-foliage, an elder face framed by a leafy beard and twig antlers/horns, a glowing
-green gem set in the chest (bright green block + white highlight dot, not a glow),
-big mossy fists, broad standing pose. Brown wood + mossy green palette, the green gem
-echoing the leaf motif of earlier stages.
+A giant ancient forest dragon — the final form of the sprout line. A large reptilian
+QUADRUPED whose body is covered in gnarled tree bark and thick moss (NOT a humanoid
+tree-ent). Four sturdy clawed legs and a long tail continue the lizard silhouette from
+stage 1, twig antlers, a small forest of foliage growing along the back, a glowing
+green gem in the chest (bright green block + white highlight dot, not a glow), wise
+eyes. Palette shifts toward deep mossy green + aged-wood brown while keeping the lime-
+green roots of earlier stages.
 ```
 
 ---
