@@ -10,12 +10,13 @@ const { chromium } = require("playwright"); const path=require("path");
     const eff=(atk,def)=>{ const A={atk:50,spa:50,def:50,spDef:50,hp:100,maxHp:100,stages:{atk:0,def:0,spd:0},status:null};
       const D={type:def,type2:null,def:50,spDef:50,hp:100,maxHp:100,stages:{atk:0,def:0,spd:0}};
       return S.damage(A,D,{type:atk,power:50,acc:100,pp:10}).eff; };
-    const types=["fire","water","grass","elec","normal","flying","rock","ice","poison","ground"];
+    const types=["fire","water","grass","elec","normal","flying","rock","ice","poison","ground","dragon"];
     let bad=0; for(const a of types)for(const d of types){ const e=eff(a,d); if(typeof e!=="number"||isNaN(e))bad++; }
     return { bad, iceGrass:eff("ice","grass"), iceFire:eff("ice","fire"), iceFly:eff("ice","flying"),
       groundElec:eff("ground","elec"), groundFly:eff("ground","flying"), groundPoison:eff("ground","poison"),
       poisonGrass:eff("poison","grass"), poisonGround:eff("poison","ground"),
-      fireIce:eff("fire","ice"), elecGround:eff("elec","ground"), rockIce:eff("rock","ice") }; });
+      fireIce:eff("fire","ice"), elecGround:eff("elec","ground"), rockIce:eff("rock","ice"),
+      iceDragon:eff("ice","dragon"), fireDragon:eff("fire","dragon"), dragonDragon:eff("dragon","dragon"), normalDragon:eff("normal","dragon") }; });
 
   ok(r.bad===0, `상성표 10x10 완전성(NaN 없음, 불량 ${r.bad})`);
   ok(r.iceGrass===2, `얼음→풀 2배 (${r.iceGrass})`);
@@ -29,6 +30,10 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(r.fireIce===2, `불→얼음 2배 (${r.fireIce})`);
   ok(r.elecGround===0, `전기→땅 무효(0) (${r.elecGround})`);
   ok(r.rockIce===2, `바위→얼음 2배 (${r.rockIce})`);
+  ok(r.iceDragon===2, `얼음→용 2배 (${r.iceDragon})`);
+  ok(r.fireDragon===0.5, `불→용 0.5배 (${r.fireDragon})`);
+  ok(r.dragonDragon===2, `용→용 2배 (${r.dragonDragon})`);
+  ok(r.normalDragon===1, `노말→용 1배 (${r.normalDragon})`);
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 타입 상성표 통과");
   await b.close(); process.exit(process.exitCode||0);
