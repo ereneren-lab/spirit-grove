@@ -9,6 +9,8 @@ const MOVES={
   crush:{name:"파괴광선",type:"normal",power:72,acc:90,pp:10,pri:0},
   dragonbreath:{name:"용의숨결",type:"dragon",power:65,acc:95,pp:15,pri:0,cat:"spec"},
   bugbite:{name:"벌레먹기",type:"bug",power:50,acc:100,pp:20,pri:0,cat:"phys"},
+  dragonpulse:{name:"용의파동",type:"dragon",power:82,acc:100,pp:10,pri:0,cat:"spec"},
+  bugbuzz:{name:"벌레버즈",type:"bug",power:70,acc:100,pp:10,pri:0,cat:"spec"},
   reflect:{name:"리플렉터",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{screen:"reflect"}},
   lightscreen:{name:"빛의장막",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{screen:"light"}},
   leechseed:{name:"씨뿌리기",type:"grass",power:0,acc:90,pp:10,pri:0,eff:{seed:true}},
