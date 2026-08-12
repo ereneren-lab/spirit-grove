@@ -1,6 +1,10 @@
 node_modules/
 .DS_Store
 
+# 파이썬 스크립트 import 부산물 (make_creature_art.py가 make_hero_sheet를 import할 때 생김)
+__pycache__/
+*.pyc
+
 # 빌드 산출물 — Actions가 서버에서 빌드하므로 커밋 불필요
 /index.html
 
