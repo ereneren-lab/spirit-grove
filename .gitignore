@@ -5,6 +5,13 @@ node_modules/
 __pycache__/
 *.pyc
 
+# 정령 픽셀 아트 원본 마스터(수 MB) — git 폭증 방지로 로컬만 보존.
+# 게임에 실리는 건 make_creature_art.py가 만든 assets/art/creatures/*.webp(96px)이고 그건 커밋된다.
+art_inbox/creatures/*.png
+art_inbox/creatures/*.jpg
+art_inbox/creatures/*.jpeg
+art_inbox/creatures/*.webp
+
 # 빌드 산출물 — Actions가 서버에서 빌드하므로 커밋 불필요
 /index.html
 
