@@ -44,11 +44,11 @@ mouse.
 
 ---
 
-## 4. 🐍 가시몽 라인 (hedgemoss → vinesnake, poison/grass) — ⚠️ **진화 재설계 반영(2026-08-12)** · 계승: **올리브그린+보라(독) + 가시=크림색 하이라이트 밴드**
+## 4. 🐍 넝쿠리 라인 (hedgemoss → vinesnake, poison/grass) — ⚠️ **진화 재설계 반영(2026-08-12)** · 계승: **올리브그린 이끼+보라(독) + 넝쿨·꽃봉오리 → 개화 모티프**
 
-> 재설계 근거: `outputs/strategy/2026-08-12_spirit-grove_evolution-realign-strategy.md` §9-1 표 D(가시몽 라인, id: hedgemoss→vinesnake). 2단 이름을 "넝쿠리"에서 "가시넝쿨"로 바꿔 1단과 어간(가시)을 공유시켰고, "가시가 길게 자라 온몸을 휘감은 독가시뱀"이 되는 것을 **곤충 변태에 준하는 의도된 변태**로 명시했다. 스타일 바이블 §4-1: 팔레트는 올리브그린+보라(독), 가시의 크림색 하이라이트 밴드가 1→2단으로 이어져야 한다.
+> 재설계 근거: `outputs/strategy/2026-08-12_spirit-grove_evolution-realign-strategy.md` §9-1 표 D + 유저 컨셉 채택(꽃넝쿨 방향, 2026-08-12). 어간 통일: 1단 **넝쿠리**(이끼 속 꽃봉오리를 품은 고슴도치) → 2단 **넝쿠왕**(봉오리가 피어 **꽃넝쿨을 두른 독 나가**). 팔레트는 올리브그린 이끼+보라(독)+보라 꽃, 봉오리→개화가 1→2단으로 이어진다.
 
-#### `hedgemoss` — 가시몽 (1단, 정체성 앵커 · 넝쿠왕의 유생)
+#### `hedgemoss` — 넝쿠리 (1단, 정체성 앵커 · 넝쿠왕의 유생)
 ```
 [공통 프리픽스]
 A round chubby hedgehog spirit covered in soft moss and short olive-green quills, with
@@ -113,7 +113,7 @@ palette as stage 1, now larger and more powerful with the horn as its new emblem
 
 > 뱀에서 용으로의 아키타입 전환은 재설계가 아니라 원본 그대로다(브리프에서 명시). 스타일 바이블 §4-2 dragon 단서(뿔·비늘·긴 목/꼬리)를 살려 thundwyrm에 적용한다.
 
-#### `voltsnake` — 번개뱀 (1단, elec)
+#### `voltsnake` — 찌릿뱀 (1단, elec)
 ```
 [공통 프리픽스]
 A cute coiled baby snake. Yellow body with bold black zigzag-lightning band markings
@@ -142,7 +142,7 @@ radiating from the body and tail. Low aggressive coiled-to-strike stance.
 
 ## 7. ⚡🪶 번개새 라인 (zapfinch → voltfalcon, elec → elec/flying) — 계승: **노랑(몸)+파랑(장식깃) + 번개꼬리/번개깃 모티프**
 
-#### `zapfinch` — 번개새 (1단, elec)
+#### `zapfinch` — 삐릿새 (1단, elec)
 ```
 [공통 프리픽스]
 A tiny round yellow chick. Bright yellow fluffy body, a single upright feather tuft
@@ -205,7 +205,7 @@ wing trim; elec via the chevron-sharpened eye-spots.
 
 > §9-1-D "이미 코히런트한 라인" 목록에 속해 그림은 그대로 도마뱀→와이번→용을 따른다. dragon 타입 단서(뿔·비늘·긴 목/꼬리)를 세 단계 모두에서 강조한다.
 
-#### `drakeling` — 새끼용 (1단, dragon)
+#### `drakeling` — 꼬마룡 (1단, dragon)
 ```
 [공통 프리픽스]
 A tiny chubby baby dragon (lizard-like). Cream-white scaly body with pale blue
@@ -269,7 +269,7 @@ yellow lightning accents at the tips). Reads stormy, fast, and predatory.
 
 계승: 없음(단독종).
 
-#### `snowl` — 설올빼미
+#### `snowl` — 눈올빼
 ```
 [공통 프리픽스]
 A tiny round baby snow owl. Fluffy white body with pale icy-blue feather-pattern

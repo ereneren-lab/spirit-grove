@@ -55,7 +55,7 @@ antler-crown) — NO trunk, NO humanoid arms/legs, NO leaves covering the whole 
 
 ### 1-2. 씨앗콩 라인 (id: seedbean→titanoak · grass · t1→t3, 기존 코히런트) — 계승: **라임그린 씨앗 + 잎 모티프 → 거대 숲**
 
-#### `seedbean` — 씨앗콩 (1단, 원본 참고)
+#### `seedbean` — 떡잎이 (1단, 원본 참고)
 ```
 [공통 프리픽스]
 A tiny round lime-green bean/seed creature. Smooth glossy lime-green body, a single
@@ -118,7 +118,7 @@ pattern blocks for a flamboyant impression.
 
 ### 1-4. 이끼등 라인 (id: mossback→terrapin · grass/rock→grass/ground, 기존 코히런트) — 계승: **올리브그린 이끼 모티프 → 돌·나무로 확장**
 
-#### `mossback` — 이끼등 (1단, 원본 참고)
+#### `mossback` — 이끼돌이 (1단, 원본 참고)
 ```
 [공통 프리픽스]
 A small round tortoise. Olive-green shell with darker green segmented plates, a tuft
@@ -218,7 +218,7 @@ replacing the kit's playful grin. Cream muzzle/chest fur carried over from stage
 
 ### 3-1. 모래매 (id: sandwhirl · ground/flying, 단독) — 원본 참고, 변경 없음
 
-#### `sandwhirl` — 모래매 (단일종, 사막 맹금)
+#### `sandwhirl` — 회오리매 (단일종, 사막 맹금)
 ```
 [공통 프리픽스]
 A large hawk-like raptor with a sand/desert palette. Sandy-tan and warm brown layered
@@ -232,7 +232,7 @@ Palette: sandy-tan + warm brown + amber. Reads as a fierce desert bird of prey.
 
 > 재설계 근거: 전략 §9-1-J / 스타일 바이블 §4-1. 옛 최종형 "매머드" 폐기 → **뒷다리로 땅을 굴러 진동을 내는 왕토끼**. 코끼리 모티프(코·상아) 금지.
 
-#### `dustbunny` — 먼지토끼 (1단, 원본 참고)
+#### `dustbunny` — 먼지깡총 (1단, 원본 참고)
 ```
 [공통 프리픽스]
 A round fluffy beige rabbit. Cream-beige fuzzy fur all over, very long floppy drooping
@@ -260,7 +260,7 @@ as the kit, deepened for weight and power.
 
 ### 3-3. 조약돌 라인 (id: pebblet→boulderin→megalith · rock, 기존 코히런트) — 계승: **회색 돌 + 이끼 패치 → 청백색 크리스탈 뿔 점층**
 
-#### `pebblet` — 조약돌 (1단, 원본 참고)
+#### `pebblet` — 몽돌이 (1단, 원본 참고)
 ```
 [공통 프리픽스]
 A small round pebble/boulder creature. Warm gray stone-textured round body with a few

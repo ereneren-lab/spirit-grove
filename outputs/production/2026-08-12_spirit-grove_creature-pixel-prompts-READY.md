@@ -278,7 +278,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `dewdrop` — 이슬방울 (water, 살아있는 물방울)
+### `dewdrop` — 이스리 (water, 살아있는 물방울)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -469,7 +469,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `lavakit` — 용암구리 (1단, 몸의 틈으로 용암이 비치는 돌덩이, fire/rock)
+### `lavakit` — 마그구리 (1단, 몸의 틈으로 용암이 비치는 돌덩이, fire/rock)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -823,7 +823,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `frostpup` — 서리강아지 (1단, 원본 웹피 그대로 — 복슬복슬한 눈강아지)
+### `frostpup` — 서리멍 (1단, 원본 웹피 그대로 — 복슬복슬한 눈강아지)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -935,7 +935,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `puddlet` — 물방울 (1단, 물방울 컬을 가진 물 정령)
+### `puddlet` — 또랑이 (1단, 또랑이 컬을 가진 물 정령)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -1217,7 +1217,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `seedbean` — 씨앗콩 (1단, 원본 참고)
+### `seedbean` — 떡잎이 (1단, 원본 참고)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -1330,7 +1330,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `mossback` — 이끼등 (1단, 원본 참고)
+### `mossback` — 이끼돌이 (1단, 원본 참고)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -1515,7 +1515,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `sandwhirl` — 모래매 (단일종, 사막 맹금)
+### `sandwhirl` — 회오리매 (단일종, 사막 맹금)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -1540,7 +1540,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `dustbunny` — 먼지토끼 (1단, 원본 참고)
+### `dustbunny` — 먼지깡총 (1단, 원본 참고)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -1596,7 +1596,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `pebblet` — 조약돌 (1단, 원본 참고)
+### `pebblet` — 몽돌이 (1단, 원본 참고)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -1790,7 +1790,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `hedgemoss` — 가시몽 (1단, 정체성 앵커 · 넝쿠왕의 유생)
+### `hedgemoss` — 넝쿠리 (1단, 정체성 앵커 · 넝쿠왕의 유생)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -1903,7 +1903,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `voltsnake` — 번개뱀 (1단, elec)
+### `voltsnake` — 찌릿뱀 (1단, elec)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -1958,7 +1958,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `zapfinch` — 번개새 (1단, elec)
+### `zapfinch` — 삐릿새 (1단, elec)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -2069,7 +2069,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `drakeling` — 새끼용 (1단, dragon)
+### `drakeling` — 꼬마룡 (1단, dragon)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -2181,7 +2181,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `snowl` — 설올빼미
+### `snowl` — 눈올빼
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.

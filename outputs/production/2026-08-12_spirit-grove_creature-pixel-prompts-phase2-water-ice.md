@@ -159,7 +159,7 @@ larval stage (jellure), tying the two stages together. Confident standing pose.
 
 > 재설계 근거: §9-1-H. glacibear는 "빙하곰"이 아니라 **frostpup(강아지)에서 이어지는 늑대**로 재정의했다(개과 안에서만 전환, 곰→늑대 오분류 수정). 계승 팔레트(스타일바이블 §4-1 표): **흰색+하늘색(서리)+회색(바위갑주)**, 2단에 회색 갑주 신규 추가. 귀·주둥이·꼬리 형태는 강아지 시절과 동일하게 유지한다.
 
-#### `frostpup` — 서리강아지 (1단, 원본 웹피 그대로 — 복슬복슬한 눈강아지)
+#### `frostpup` — 서리멍 (1단, 원본 웹피 그대로 — 복슬복슬한 눈강아지)
 ```
 [공통 프리픽스]
 A tiny fluffy white puppy. Thick white fur, pale sky-blue snowflake-shaped markings
@@ -223,7 +223,7 @@ expression, upright floating pose.
 
 > 계승 항목: 1단 앞머리의 작은 물방울 컬(curl)이 → 2단에서 등줄기 지느러미 볏으로 → 3단에서 거대한 파도형 볏/갈기로 확장된다. 크림색 배(1·2단 공통)와 사파이어 눈은 3단까지 유지.
 
-#### `puddlet` — 물방울 (1단, 물방울 컬을 가진 물 정령)
+#### `puddlet` — 또랑이 (1단, 또랑이 컬을 가진 물 정령)
 ```
 [공통 프리픽스]
 A tiny round living water-blob spirit. Bright cyan-blue body rendered as SOLID color

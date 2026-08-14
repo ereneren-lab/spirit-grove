@@ -175,7 +175,7 @@ surfaces, a small tuft of amber-orange fur sticking up on the head, big amber ey
 pink paw pads, cheerful open smile. Sitting pose, fluffy round body. Warm and soft.
 ```
 
-#### `dewdrop` — 이슬방울 (water, 살아있는 물방울)
+#### `dewdrop` — 이스리 (water, 살아있는 물방울)
 ```
 [공통 프리픽스]
 A living water droplet spirit. Teardrop-shaped body in light cyan-blue, rendered as

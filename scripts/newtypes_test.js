@@ -22,7 +22,7 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(r.badMove===0, `모든 크리처 기술이 MOVES에 존재 (누락 ${r.badMove})`);
   ok(r.iceling==="ice", `얼음정=얼음 (${r.iceling})`);
   ok(r.frostwyrm==="ice/dragon", `빙하룡=얼음/용 (${r.frostwyrm})`);
-  ok(r.snowl==="flying/ice", `설올빼미=비행/얼음 (${r.snowl})`);
+  ok(r.snowl==="flying/ice", `눈올빼=비행/얼음 (${r.snowl})`);
   ok(r.glaciarch==="ice/dragon", `빙하제=얼음/용 (${r.glaciarch})`);
   ok(r.jellure==="water/poison", `개굴알=물/독 (${r.jellure})`);
   ok(r.swampfrog==="water/poison", `개굴몽=물/독 (${r.swampfrog})`);

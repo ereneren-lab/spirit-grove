@@ -120,7 +120,7 @@ dominated by dark charcoal wings with molten eye-spots.
 
 바위(1단)에서 육중한 지상형 용(3단)으로 커지는 라인. 몸을 덮은 각진 암석 판과 그 틈으로 빛나는 마그마 균열이 라인 전체의 시그니처.
 
-#### `lavakit` — 용암구리 (1단, 몸의 틈으로 용암이 비치는 돌덩이, fire/rock)
+#### `lavakit` — 마그구리 (1단, 몸의 틈으로 용암이 비치는 돌덩이, fire/rock)
 ```
 [공통 프리픽스]
 A small round rock-boulder creature. Dark grey-charcoal stone-plate body
