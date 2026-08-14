@@ -48,33 +48,29 @@ mouse.
 
 > 재설계 근거: `outputs/strategy/2026-08-12_spirit-grove_evolution-realign-strategy.md` §9-1 표 D(가시몽 라인, id: hedgemoss→vinesnake). 2단 이름을 "넝쿠리"에서 "가시넝쿨"로 바꿔 1단과 어간(가시)을 공유시켰고, "가시가 길게 자라 온몸을 휘감은 독가시뱀"이 되는 것을 **곤충 변태에 준하는 의도된 변태**로 명시했다. 스타일 바이블 §4-1: 팔레트는 올리브그린+보라(독), 가시의 크림색 하이라이트 밴드가 1→2단으로 이어져야 한다.
 
-#### `hedgemoss` — 가시몽 (1단, 변경 없음·정체성 앵커)
+#### `hedgemoss` — 가시몽 (1단, 정체성 앵커 · 넝쿠왕의 유생)
 ```
 [공통 프리픽스]
-A round chubby hedgehog spirit. Body covered in clustered spike-mounds rendered in
-olive-green (mossy) with a stony grey undertone, EACH spike cluster carrying a hard
-cream-white highlight dot at its tip (this cream highlight band is the trait that
-must carry into its evolution). A few tiny leaf sprigs poking out of the moss, and
-two or three small amethyst-purple berry-like accent dots tucked among the spikes as
-a subtle poison-type hint. Cream-white fluffy round face, pink cheek blush, big round
-teal-green eyes, small brown snout and stubby brown paws held up near the chest.
-Sitting/standing pose, reads soft and round despite the spikes.
+A round chubby hedgehog spirit covered in soft moss and short olive-green quills, with
+a FEW tiny budding vines and small closed amethyst-purple flower-buds sprouting among
+the moss — these buds are what bloom in its evolution (the mandatory carry-over trait).
+Two or three small purple berry accent dots as a subtle poison-type hint. Cream-white
+fluffy round face, pink cheek blush, big round teal-green eyes, small brown snout and
+stubby brown paws held near the chest. Sitting pose, reads soft and round.
 ```
 
-#### `vinesnake` — 가시넝쿨 (2단, ⚠️ **재설계** — 뱀 형태, 원본 넝쿠리 무시)
+#### `vinesnake` — 넝쿠왕 (2단, ⚠️ **재설계** — 꽃넝쿨 나가, poison/grass)
 ```
 [공통 프리픽스]
-A long coiled thorn-snake — hedgemoss's spikes grown long and wrapped around an
-elongated serpent body (this is a NEW design, ignore any old bird/vine-snake concept).
-Body covered in ridges of hardened olive-green spike-plates running the full length
-of the spine, each spike ridge keeping the SAME hard cream-white highlight-tip band
-established on hedgemoss (this is the mandatory carry-over trait). Underside and a
-few banded markings in amethyst-purple (poison), small purple-tinted fangs visible in
-an open mouth. The head keeps a rounded, blunt hedgehog-like snout shape and two
-small rounded ear-nubs pressed close to the skull (a vestige of hedgemoss's face, so
-the lineage reads clearly) rather than a generic snake head. Big round teal-green
-eyes narrowed to a soft slit, a tiny tuft of moss/leaf remaining at the base of the
-neck as another vestige of the mossy coat. Coiled resting battle pose, 3/4 view.
+A regal serpent-naga wreathed in flowering vines — the budding vines of its hedgehog
+form now grown and bloomed (NEW design; ignore any thorn/bird concept). Long coiled
+amethyst-purple scaled body with a cream-white banded underside, wrapped in twisting
+green leafy vines that trail along its length, small six-petal purple flowers and
+purple berry accents blooming on the vines. A crown/mane of green leaves framing the
+head with a small purple gem at the brow, a forked purple tongue, small fangs, faint
+purple poison-mist wisps rising off the body. Big teal-green eyes, calm venomous
+expression. Coiled upright battle pose, 3/4 view facing left. Clearly the bloomed
+adult of the mossy hedgehog — elegant and poisonous.
 ```
 
 ---

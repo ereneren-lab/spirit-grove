@@ -2,7 +2,6 @@
 
 > 각 블록의 **Prompt 전체를 그대로 복사**해 생성기에 붙여넣는다(placeholder 없음). Negative는 별도 필드에.
 > 파일명=정령 id로 `art_inbox/creatures/`에 저장 → `python3 scripts/make_creature_art.py && python3 scripts/build.py`.
-> 규격/근거: creature-pixel-style-bible.md · 라인 재설계: evolution-realign-strategy.md
 
 ### `foxfire` — 파라꼬 (1단, 귀여운 여우 새끼)
 **Prompt**
@@ -1791,7 +1790,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `hedgemoss` — 가시몽 (1단, 변경 없음·정체성 앵커)
+### `hedgemoss` — 가시몽 (1단, 정체성 앵커 · 넝쿠왕의 유생)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -1802,14 +1801,12 @@ per material and one hard highlight, limited palette of at most 24 colors, NO
 anti-aliasing, NO gradients, NO dithering, NO soft glow, NO blur. Crisp square pixels
 on a 96x96 grid. Fully transparent background — no backdrop, no frame, no card, no
 ground circle, no drop shadow. Creature centered with a small even margin on all sides.
-A round chubby hedgehog spirit. Body covered in clustered spike-mounds rendered in
-olive-green (mossy) with a stony grey undertone, EACH spike cluster carrying a hard
-cream-white highlight dot at its tip (this cream highlight band is the trait that
-must carry into its evolution). A few tiny leaf sprigs poking out of the moss, and
-two or three small amethyst-purple berry-like accent dots tucked among the spikes as
-a subtle poison-type hint. Cream-white fluffy round face, pink cheek blush, big round
-teal-green eyes, small brown snout and stubby brown paws held up near the chest.
-Sitting/standing pose, reads soft and round despite the spikes.
+A round chubby hedgehog spirit covered in soft moss and short olive-green quills, with
+a FEW tiny budding vines and small closed amethyst-purple flower-buds sprouting among
+the moss — these buds are what bloom in its evolution (the mandatory carry-over trait).
+Two or three small purple berry accent dots as a subtle poison-type hint. Cream-white
+fluffy round face, pink cheek blush, big round teal-green eyes, small brown snout and
+stubby brown paws held near the chest. Sitting pose, reads soft and round.
 ```
 **Negative**
 ```
@@ -1819,7 +1816,7 @@ glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, grad
 glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs
 ```
 
-### `vinesnake` — 가시넝쿨 (2단, ⚠️ **재설계** — 뱀 형태, 원본 넝쿠리 무시)
+### `vinesnake` — 넝쿠왕 (2단, ⚠️ **재설계** — 꽃넝쿨 나가, poison/grass)
 **Prompt**
 ```
 96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
@@ -1830,17 +1827,15 @@ per material and one hard highlight, limited palette of at most 24 colors, NO
 anti-aliasing, NO gradients, NO dithering, NO soft glow, NO blur. Crisp square pixels
 on a 96x96 grid. Fully transparent background — no backdrop, no frame, no card, no
 ground circle, no drop shadow. Creature centered with a small even margin on all sides.
-A long coiled thorn-snake — hedgemoss's spikes grown long and wrapped around an
-elongated serpent body (this is a NEW design, ignore any old bird/vine-snake concept).
-Body covered in ridges of hardened olive-green spike-plates running the full length
-of the spine, each spike ridge keeping the SAME hard cream-white highlight-tip band
-established on hedgemoss (this is the mandatory carry-over trait). Underside and a
-few banded markings in amethyst-purple (poison), small purple-tinted fangs visible in
-an open mouth. The head keeps a rounded, blunt hedgehog-like snout shape and two
-small rounded ear-nubs pressed close to the skull (a vestige of hedgemoss's face, so
-the lineage reads clearly) rather than a generic snake head. Big round teal-green
-eyes narrowed to a soft slit, a tiny tuft of moss/leaf remaining at the base of the
-neck as another vestige of the mossy coat. Coiled resting battle pose, 3/4 view.
+A regal serpent-naga wreathed in flowering vines — the budding vines of its hedgehog
+form now grown and bloomed (NEW design; ignore any thorn/bird concept). Long coiled
+amethyst-purple scaled body with a cream-white banded underside, wrapped in twisting
+green leafy vines that trail along its length, small six-petal purple flowers and
+purple berry accents blooming on the vines. A crown/mane of green leaves framing the
+head with a small purple gem at the brow, a forked purple tongue, small fangs, faint
+purple poison-mist wisps rising off the body. Big teal-green eyes, calm venomous
+expression. Coiled upright battle pose, 3/4 view facing left. Clearly the bloomed
+adult of the mossy hedgehog — elegant and poisonous.
 ```
 **Negative**
 ```
