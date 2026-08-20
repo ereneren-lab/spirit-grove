@@ -82,6 +82,42 @@ human, humanoid proportions, holding weapon, boxing gloves as separate objects
 
 ---
 
+## `lumbeast` — 우직수 (normal/fight, 2단)
+
+**계승(유지):** 회색 털 + 크림 가슴 + **너구리 눈가 마스크** + 굵은 줄무늬 꼬리 = 부족장 너구리. 두 발로 서서 주먹을 든 실루엣.
+**격투 강화:** **낮은 무술 스탠스**(한 주먹 가드·한 주먹 당김), 앞발에 감은 회색/갈색 **주먹 붕대**, 허리에 **부족장 띠(천 벨트)**, 이마·머리에 **부족장 상징 머리띠 + 깃털 하나**로 "우직한 족장" 정체성 유지. 노말/격투라 원소 이펙트는 없음 — 순수 근성형 무투가.
+
+**Prompt**
+```
+96x96 pixel art creature sprite for a 2D JRPG, GBA / 16-bit era battle sprite look.
+Single creature, full body, one idle battle pose, seen in 3/4 view facing slightly
+toward the LEFT of the frame. Chunky readable silhouette. Hard 1px dark outline in a
+dark shade of the creature's own color, flat cel shading with at most two shade steps
+per material and one hard highlight, limited palette of at most 24 colors, NO
+anti-aliasing, NO gradients, NO dithering, NO soft glow, NO blur. Crisp square pixels
+on a 96x96 grid. Fully transparent background — no backdrop, no frame, no card, no
+ground circle, no drop shadow. Creature centered with a small even margin on all sides.
+A chieftain raccoon brawler — the sturdy middle stage of the raccoon line. Grey fur
+with a cream-white chest, the classic dark raccoon eye-mask, and a thick ringed
+striped bushy tail. Standing upright on two legs in a low disciplined martial stance,
+one paw raised forward as a fist guard and the other cocked back, grey-brown cloth
+combat wraps bound around both forearms and paws, a simple tribal cloth belt knotted
+at the waist, a chieftain's headband with a single upright feather tucked at the brow.
+Stocky powerful build, calm determined expression. Earthy grey + cream + brown-cloth
+palette, no elemental effects — a grounded, gutsy hand-to-hand fighter. Same
+raccoon-chieftain identity as before, now clearly a martial brawler.
+```
+**Negative**
+```
+painterly, watercolor, gouache, anime illustration, realistic, soft shading, rim light,
+glow, bloom, lens flare, translucent particles, blurry, anti-aliased edges, gradient,
+3D render, drop shadow, ground shadow, background plate, card frame, sticker border,
+glass reflection, text, watermark, signature, multiple creatures, cropped, extra limbs,
+human, humanoid proportions, holding weapon, sword, spear, boxing gloves as separate objects
+```
+
+---
+
 ## 검수 포인트 (받은 뒤)
 
 - [ ] **원종 대조**: 기존 집게왕(파랑+붉은집게+금)·쿵쿵왕(크림갈색 근육토끼)로 여전히 알아보는가
