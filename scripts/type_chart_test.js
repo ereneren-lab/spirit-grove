@@ -10,7 +10,7 @@ const { chromium } = require("playwright"); const path=require("path");
     const eff=(atk,def)=>{ const A={atk:50,spa:50,def:50,spDef:50,hp:100,maxHp:100,stages:{atk:0,def:0,spd:0},status:null};
       const D={type:def,type2:null,def:50,spDef:50,hp:100,maxHp:100,stages:{atk:0,def:0,spd:0}};
       return S.damage(A,D,{type:atk,power:50,acc:100,pp:10}).eff; };
-    const types=["fire","water","grass","elec","normal","flying","rock","ice","poison","ground","dragon","bug","fight","psychic","fairy"];
+    const types=["fire","water","grass","elec","normal","flying","rock","ice","poison","ground","dragon","bug","fight","psychic","fairy","ghost"];
     let bad=0; for(const a of types)for(const d of types){ const e=eff(a,d); if(typeof e!=="number"||isNaN(e))bad++; }
     return { bad, iceGrass:eff("ice","grass"), iceFire:eff("ice","fire"), iceFly:eff("ice","flying"),
       groundElec:eff("ground","elec"), groundFly:eff("ground","flying"), groundPoison:eff("ground","poison"),
@@ -23,7 +23,9 @@ const { chromium } = require("playwright"); const path=require("path");
       psyFight:eff("psychic","fight"), psyPoison:eff("psychic","poison"), bugPsy:eff("bug","psychic"),
       fightPsy:eff("fight","psychic"), psyPsy:eff("psychic","psychic"),
       fairyDragon:eff("fairy","dragon"), fairyFight:eff("fairy","fight"), fairyFire:eff("fairy","fire"),
-      dragonFairy:eff("dragon","fairy"), poisonFairy:eff("poison","fairy") }; });
+      dragonFairy:eff("dragon","fairy"), poisonFairy:eff("poison","fairy"),
+      ghostPsy:eff("ghost","psychic"), ghostGhost:eff("ghost","ghost"), ghostNormal:eff("ghost","normal"),
+      normalGhost:eff("normal","ghost"), fightGhost:eff("fight","ghost") }; });
 
   ok(r.bad===0, `상성표 10x10 완전성(NaN 없음, 불량 ${r.bad})`);
   ok(r.iceGrass===2, `얼음→풀 2배 (${r.iceGrass})`);
@@ -58,6 +60,10 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(r.fairyFire===0.5, `페어리→불 0.5배 (${r.fairyFire})`);
   ok(r.dragonFairy===0, `용→페어리 무효(0) (${r.dragonFairy})`);
   ok(r.poisonFairy===2, `독→페어리 2배 (${r.poisonFairy})`);
+  ok(r.ghostPsy===2 && r.ghostGhost===2, `고스트→에스퍼·고스트 2배 (${r.ghostPsy}/${r.ghostGhost})`);
+  ok(r.ghostNormal===0, `고스트→노말 무효(0) (${r.ghostNormal})`);
+  ok(r.normalGhost===0, `노말→고스트 무효(0) (${r.normalGhost})`);
+  ok(r.fightGhost===0, `격투→고스트 무효(0) (${r.fightGhost})`);
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 타입 상성표 통과");
   await b.close(); process.exit(process.exitCode||0);

@@ -31,7 +31,7 @@ const { chromium } = require("playwright"); const path=require("path");
     for(const k in M){ const mv=M[k]; if(!(mv.power>0))continue;
       const cat=S.moveCat(mv);
       const physMon=mk({atk:160,spa:60}), specMon=mk({atk:60,spa:160});
-      const target=mk({type:"normal"});
+      const target=mk({type:"water"});   // ⚠️ water는 어떤 타입에도 면역이 없다(0 없음) — 고스트/노말/땅 등 면역기도 물/특 구분이 가능
       const dPhys=avg(physMon,target,mv), dSpec=avg(specMon,target,mv);
       const wins=dPhys>dSpec*1.15?"phys":(dSpec>dPhys*1.15?"spec":"무승부");
       out.push({k,name:mv.name,type:mv.type,declared:cat,overridden:!!mv.cat,measured:wins,
@@ -111,7 +111,7 @@ const { chromium } = require("playwright"); const path=require("path");
   console.log("     " + Object.entries(r5).map(([t,c])=>`${t} ${c.phys}/${c.spec}`).join(" · ") + "  (물리/특수)");
   ok(JSON.stringify(oneSided)===JSON.stringify([...KNOWN_ONE_SIDED].sort()),
      `한쪽 계열만 있는 타입이 알려진 3개 그대로다 (지금: ${oneSided.join(",")||"없음"} · 기대: ${[...KNOWN_ONE_SIDED].sort().join(",")})`);
-  ok(Object.keys(r5).length-oneSided.length===11, `나머지 11타입은 물리·특수를 모두 갖는다`);
+  ok(Object.keys(r5).length-oneSided.length===12, `나머지 12타입은 물리·특수를 모두 갖는다`);
 
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs.slice(0,2).join(" | "):""}`);
   await b.close();

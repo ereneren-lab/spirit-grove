@@ -143,6 +143,10 @@ const MOVES={
   dazzlinggleam:{name:"매지컬샤인",type:"fairy",power:65,acc:100,pp:15,pri:0},
   moonblast:{name:"문포스",type:"fairy",power:85,acc:100,pp:10,pri:0},
   playrough:{name:"플레이러프",type:"fairy",power:75,acc:95,pp:10,pri:0,cat:"phys"},
+  lick:{name:"핥기",type:"ghost",power:30,acc:100,pp:30,pri:0,cat:"phys",eff:{status:"par",chance:0.3}},
+  shadowsneak:{name:"그림자밟기",type:"ghost",power:40,acc:100,pp:30,pri:1,cat:"phys"},
+  ominouswind:{name:"도깨비바람",type:"ghost",power:55,acc:100,pp:15,pri:0},
+  shadowball:{name:"섀도볼",type:"ghost",power:80,acc:100,pp:10,pri:0},
   charm:{name:"애교부리기",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{stat:"atk",stage:-2,target:"foe"}},
   scaryface:{name:"위협하기",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{stat:"spd",stage:-2,target:"foe"}},
   // ===== 풀죽음 =====
