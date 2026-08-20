@@ -147,6 +147,10 @@ const MOVES={
   shadowsneak:{name:"그림자밟기",type:"ghost",power:40,acc:100,pp:30,pri:1,cat:"phys"},
   ominouswind:{name:"도깨비바람",type:"ghost",power:55,acc:100,pp:15,pri:0},
   shadowball:{name:"섀도볼",type:"ghost",power:80,acc:100,pp:10,pri:0},
+  crunch:{name:"깨물어부수기",type:"dark",power:80,acc:100,pp:10,pri:0,cat:"phys"},
+  suckerpunch:{name:"기습",type:"dark",power:70,acc:100,pp:5,pri:1,cat:"phys"},
+  nightburst:{name:"어둠뭉치",type:"dark",power:55,acc:100,pp:15,pri:0,cat:"spec"},
+  darkpulse:{name:"악의파동",type:"dark",power:80,acc:100,pp:10,pri:0,cat:"spec"},
   charm:{name:"애교부리기",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{stat:"atk",stage:-2,target:"foe"}},
   scaryface:{name:"위협하기",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{stat:"spd",stage:-2,target:"foe"}},
   // ===== 풀죽음 =====

@@ -22,6 +22,7 @@ const TYPES={
   psychic:{ko:"에스퍼",col:"#e07bb0",par:"🔮", ic:"🔮", spec:1, ab:"guts",        wav:"sine", fg:"#f3ecdd"},
   fairy:  {ko:"페어리",col:"#f4aad0",par:"✨", ic:"🧚", spec:1, ab:"guts",        wav:"triangle"},
   ghost:  {ko:"고스트",col:"#6f5c9c",par:"👻", ic:"👻", spec:1, ab:"guts",        wav:"sawtooth", fg:"#f3ecdd"},
+  dark:   {ko:"악",  col:"#5b5560",par:"🌑", ic:"🌑", spec:0, ab:"guts",        wav:"square", fg:"#f3ecdd"},
 };
 const TYPE_LIST=Object.keys(TYPES);
 const _derive=(src,f)=>{ const o={}; for(const k in src)o[k]=f(src[k],k); return o; };
@@ -140,20 +141,21 @@ if(typeof document!=="undefined")injectPalette();
    행 하나와 '모든 행의 열 하나'를 같이 넣을 것 — 누락 시 damage()에서 NaN.
    회귀(palette_source_test)가 전 조합을 검사한다. */
 const EFF={
-  fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1, dragon:.5, bug:2, fight:1, psychic:1, fairy:1, ghost:1},
-  water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2, dragon:.5, bug:1, fight:1, psychic:1, fairy:1, ghost:1},
-  grass:  {fire:.5,water:2, grass:.5,elec:1, normal:1,flying:.5,rock:2, ice:1, poison:.5,ground:2, dragon:.5, bug:1, fight:1, psychic:1, fairy:1, ghost:1},
-  elec:   {fire:1, water:2, grass:.5,elec:.5,normal:1,flying:2, rock:1, ice:1, poison:1, ground:0, dragon:.5, bug:1, fight:1, psychic:1, fairy:1, ghost:1},
-  normal: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:1, fight:1, psychic:1, fairy:1, ghost:0},
-  flying: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:2, fight:2, psychic:1, fairy:1, ghost:1},
-  rock:   {fire:2, water:1, grass:1, elec:1, normal:1,flying:2, rock:1, ice:2, poison:1, ground:.5, dragon:1, bug:2, fight:.5, psychic:1, fairy:1, ghost:1},
-  ice:    {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:2, rock:1, ice:.5,poison:1, ground:2, dragon:2, bug:1, fight:1, psychic:1, fairy:1, ghost:1},
-  poison: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:.5,ground:.5, dragon:1, bug:1, fight:1, psychic:1, fairy:2, ghost:.5},
-  ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:1, psychic:1, fairy:1, ghost:1},
-  dragon: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:2, bug:1, fight:1, psychic:1, fairy:0, ghost:1},
-  bug:    {fire:.5,water:1, grass:2, elec:1, normal:1,flying:.5,rock:1, ice:1, poison:.5,ground:1, dragon:1, bug:1, fight:.5, psychic:2, fairy:.5, ghost:.5},
-  fight:  {fire:1, water:1, grass:1, elec:1, normal:2,flying:.5,rock:2, ice:2, poison:.5,ground:1, dragon:1, bug:.5,fight:1, psychic:.5, fairy:.5, ghost:0},
-  psychic:{fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:2, psychic:.5, fairy:1, ghost:1},
-  fairy:  {fire:.5,water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:.5,ground:1, dragon:2, bug:1, fight:2, psychic:1, fairy:1, ghost:1},
-  ghost:  {fire:1, water:1, grass:1, elec:1, normal:0,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:1, bug:1, fight:1, psychic:2, fairy:1, ghost:2},
+  fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1, dragon:.5, bug:2, fight:1, psychic:1, fairy:1, ghost:1, dark:1},
+  water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2, dragon:.5, bug:1, fight:1, psychic:1, fairy:1, ghost:1, dark:1},
+  grass:  {fire:.5,water:2, grass:.5,elec:1, normal:1,flying:.5,rock:2, ice:1, poison:.5,ground:2, dragon:.5, bug:1, fight:1, psychic:1, fairy:1, ghost:1, dark:1},
+  elec:   {fire:1, water:2, grass:.5,elec:.5,normal:1,flying:2, rock:1, ice:1, poison:1, ground:0, dragon:.5, bug:1, fight:1, psychic:1, fairy:1, ghost:1, dark:1},
+  normal: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:1, fight:1, psychic:1, fairy:1, ghost:0, dark:1},
+  flying: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:2, fight:2, psychic:1, fairy:1, ghost:1, dark:1},
+  rock:   {fire:2, water:1, grass:1, elec:1, normal:1,flying:2, rock:1, ice:2, poison:1, ground:.5, dragon:1, bug:2, fight:.5, psychic:1, fairy:1, ghost:1, dark:1},
+  ice:    {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:2, rock:1, ice:.5,poison:1, ground:2, dragon:2, bug:1, fight:1, psychic:1, fairy:1, ghost:1, dark:1},
+  poison: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:.5,ground:.5, dragon:1, bug:1, fight:1, psychic:1, fairy:2, ghost:.5, dark:1},
+  ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:1, psychic:1, fairy:1, ghost:1, dark:1},
+  dragon: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:2, bug:1, fight:1, psychic:1, fairy:0, ghost:1, dark:1},
+  bug:    {fire:.5,water:1, grass:2, elec:1, normal:1,flying:.5,rock:1, ice:1, poison:.5,ground:1, dragon:1, bug:1, fight:.5, psychic:2, fairy:.5, ghost:.5, dark:2},
+  fight:  {fire:1, water:1, grass:1, elec:1, normal:2,flying:.5,rock:2, ice:2, poison:.5,ground:1, dragon:1, bug:.5,fight:1, psychic:.5, fairy:.5, ghost:0, dark:2},
+  psychic:{fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:2, psychic:.5, fairy:1, ghost:1, dark:0},
+  fairy:  {fire:.5,water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:.5,ground:1, dragon:2, bug:1, fight:2, psychic:1, fairy:1, ghost:1, dark:2},
+  ghost:  {fire:1, water:1, grass:1, elec:1, normal:0,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:1, bug:1, fight:1, psychic:2, fairy:1, ghost:2, dark:.5},
+  dark:   {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:1, bug:1, fight:.5, psychic:2, fairy:.5, ghost:2, dark:.5},
 };
