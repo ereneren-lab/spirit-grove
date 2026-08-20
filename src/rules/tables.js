@@ -83,7 +83,16 @@ const HELD_ITEMS={
 TYPE_LIST.forEach(t=>{ HELD_ITEMS["charm_"+t]={ko:TYPE_KO[t]+"부적",em:TYPE_ICON[t]||"🔮",desc:TYPE_KO[t]+" 타입 기술 위력 +20%",boost:t}; });
 // 종별 특성 지정. 없으면 DEFAULT_ABILITY[type] → "guts" 폴백이라
 // 지정을 안 하면 같은 타입 정령이 죄다 같은 특성이 된다. 라인마다 흩뿌릴 것.
-const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate",emberfly:"flamebody",pyrmoth:"flamebody",cindercat:"flamebody",lavakit:"flamebody",boulderin:"roughskin",crablord:"roughskin",hedgemoss:"roughskin",otterwave:"swiftswim",sharkfin:"swiftswim",frostfish:"swiftswim",nipling:"swiftswim",seedbean:"chlorophyll",sproutcat:"chlorophyll",palmore:"chlorophyll",leafwyrm:"chlorophyll",thunderowl:"insomnia",lunarmoth:"insomnia",swampfrog:"immunity",burrowmouse:"immunity",tidalore:"waterveil",shellow:"waterveil",stormhawk:"sniper",sandwhirl:"sniper",sprigfawn:"naturalcure",bunnyhop:"naturalcure",dewdrop:"naturalcure",tigerflame:"hugepower",magmadon:"hugepower"};
+const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate",emberfly:"flamebody",pyrmoth:"flamebody",cindercat:"flamebody",lavakit:"flamebody",boulderin:"roughskin",crablord:"roughskin",hedgemoss:"roughskin",otterwave:"swiftswim",sharkfin:"swiftswim",frostfish:"swiftswim",nipling:"swiftswim",seedbean:"chlorophyll",sproutcat:"chlorophyll",palmore:"chlorophyll",leafwyrm:"chlorophyll",thunderowl:"insomnia",lunarmoth:"insomnia",swampfrog:"immunity",burrowmouse:"immunity",tidalore:"waterveil",shellow:"waterveil",stormhawk:"sniper",sandwhirl:"sniper",sprigfawn:"naturalcure",bunnyhop:"naturalcure",dewdrop:"naturalcure",tigerflame:"hugepower",magmadon:"hugepower",
+  // 2026-08-20 갭 B: 미배정 47종 특성 지정(엔진 기구현 21종 풀 안에서 종 컨셉·역할별 분산 — ability_expand_test 편중 상한 13종 준수)
+  foxfire:"blaze",emberwolf:"intimidate",cindercub:"blaze",pyrewolf:"intimidate",emberdrake:"flamebody",emberlix:"flamebody",
+  puddlet:"torrent",riverine:"swiftswim",gullian:"swiftswim",glimmertide:"swiftswim",moonytide:"naturalcure",aqualord:"intimidate",
+  leafdrake:"overgrow",vinesnake:"poisonpoint",petalwing:"chlorophyll",blossomhawk:"chlorophyll",bloomlynx:"chlorophyll",mossback:"sturdy",terrapin:"sturdy",titanoak:"sturdy",
+  sparkmouse:"static",voltbeetle:"static",voltsnake:"static",thundwyrm:"static",zapfinch:"static",voltfalcon:"sniper",glowfly:"static",arcmoth:"poisonpoint",crystalgon:"levitate",
+  racoonmon:"guts",lumbeast:"intimidate",
+  frostpup:"icebody",glacibear:"thickfat",snowl:"insomnia",cryogon:"icebody",iceling:"icebody",frostwyrm:"icebody",glaciarch:"sturdy",
+  drakeling:"guts",wyverna:"intimidate",skydrake:"intimidate",dawnwyrm:"sturdy",
+  pebblet:"sturdy",megalith:"sturdy",burrowlord:"roughskin",dustbunny:"immunity",thumplord:"hugepower"};
 /* ===== 상태이상 단일 출처 =====
    ⚠️ 상태를 추가할 땐 여기만 고친다. 예전엔 STATUS_KO·STATUS_CLS·_MV_STATUS_KO·
    STATUS_TYPE_IMMUNE·연출 글리프 2곳·.b-* CSS·.dbst.b-* CSS가 따로 놀아서
