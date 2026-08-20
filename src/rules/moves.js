@@ -131,6 +131,10 @@ const MOVES={
   focusenergy:{name:"기합충전",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{crit:2,target:"self"}},
   slash:{name:"가르기",type:"normal",power:58,acc:100,pp:20,pri:0,highCrit:true},
   crosschop:{name:"크로스촙",type:"rock",power:72,acc:85,pp:10,pri:0,highCrit:true},
+  karatechop:{name:"태권당수",type:"fight",power:55,acc:100,pp:25,pri:0,highCrit:true},
+  machpunch:{name:"마하펀치",type:"fight",power:40,acc:100,pp:30,pri:1},
+  closecombat:{name:"인파이트",type:"fight",power:95,acc:100,pp:5,pri:0,eff:{stat:"def",stage:-1,target:"self"}},
+  aurasphere:{name:"파동탄",type:"fight",power:80,acc:100,pp:10,pri:0,cat:"spec"},
   charm:{name:"애교부리기",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{stat:"atk",stage:-2,target:"foe"}},
   scaryface:{name:"위협하기",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{stat:"spd",stage:-2,target:"foe"}},
   // ===== 풀죽음 =====

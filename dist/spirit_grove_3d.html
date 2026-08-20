@@ -1222,6 +1222,7 @@ const TYPES={
   ground: {ko:"땅",  col:"#d2a862", par:"🪨", ic:"⛰️", spec:0, ab:"sturdy",      wav:"square"},
   dragon: {ko:"용",  col:"#7a6ff0", par:"🐉", ic:"🐉", spec:1, ab:"guts",        wav:"sawtooth", fg:"#f3ecdd"},
   bug:    {ko:"벌레",col:"#a4b23e", par:"🐛", ic:"🐛", spec:0, ab:"guts",        wav:"square"},
+  fight:  {ko:"격투",col:"#cf6a5a", par:"👊", ic:"🥊", spec:0, ab:"guts",        wav:"square", fg:"#f3ecdd"},
 };
 const TYPE_LIST=Object.keys(TYPES);
 const _derive=(src,f)=>{ const o={}; for(const k in src)o[k]=f(src[k],k); return o; };
@@ -1340,18 +1341,19 @@ if(typeof document!=="undefined")injectPalette();
    행 하나와 '모든 행의 열 하나'를 같이 넣을 것 — 누락 시 damage()에서 NaN.
    회귀(palette_source_test)가 전 조합을 검사한다. */
 const EFF={
-  fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1, dragon:.5, bug:2},
-  water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2, dragon:.5, bug:1},
-  grass:  {fire:.5,water:2, grass:.5,elec:1, normal:1,flying:.5,rock:2, ice:1, poison:.5,ground:2, dragon:.5, bug:1},
-  elec:   {fire:1, water:2, grass:.5,elec:.5,normal:1,flying:2, rock:1, ice:1, poison:1, ground:0, dragon:.5, bug:1},
-  normal: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:1},
-  flying: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:2},
-  rock:   {fire:2, water:1, grass:1, elec:1, normal:1,flying:2, rock:1, ice:2, poison:1, ground:.5, dragon:1, bug:2},
-  ice:    {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:2, rock:1, ice:.5,poison:1, ground:2, dragon:2, bug:1},
-  poison: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:.5,ground:.5, dragon:1, bug:1},
-  ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1, dragon:1, bug:1},
-  dragon: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:2, bug:1},
-  bug:    {fire:.5,water:1, grass:2, elec:1, normal:1,flying:.5,rock:1, ice:1, poison:.5,ground:1, dragon:1, bug:1},
+  fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1, dragon:.5, bug:2, fight:1},
+  water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2, dragon:.5, bug:1, fight:1},
+  grass:  {fire:.5,water:2, grass:.5,elec:1, normal:1,flying:.5,rock:2, ice:1, poison:.5,ground:2, dragon:.5, bug:1, fight:1},
+  elec:   {fire:1, water:2, grass:.5,elec:.5,normal:1,flying:2, rock:1, ice:1, poison:1, ground:0, dragon:.5, bug:1, fight:1},
+  normal: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:1, fight:1},
+  flying: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:2, fight:2},
+  rock:   {fire:2, water:1, grass:1, elec:1, normal:1,flying:2, rock:1, ice:2, poison:1, ground:.5, dragon:1, bug:2, fight:.5},
+  ice:    {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:2, rock:1, ice:.5,poison:1, ground:2, dragon:2, bug:1, fight:1},
+  poison: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:.5,ground:.5, dragon:1, bug:1, fight:1},
+  ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:1},
+  dragon: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:2, bug:1, fight:1},
+  bug:    {fire:.5,water:1, grass:2, elec:1, normal:1,flying:.5,rock:1, ice:1, poison:.5,ground:1, dragon:1, bug:1, fight:.5},
+  fight:  {fire:1, water:1, grass:1, elec:1, normal:2,flying:.5,rock:2, ice:2, poison:.5,ground:1, dragon:1, bug:.5,fight:1},
 };
 
 // 기술 데이터 + 사람이 읽는 한 줄 설명. **DOM을 쓰지 않는다**(순수 규칙 계층).
@@ -1487,6 +1489,10 @@ const MOVES={
   focusenergy:{name:"기합충전",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{crit:2,target:"self"}},
   slash:{name:"가르기",type:"normal",power:58,acc:100,pp:20,pri:0,highCrit:true},
   crosschop:{name:"크로스촙",type:"rock",power:72,acc:85,pp:10,pri:0,highCrit:true},
+  karatechop:{name:"태권당수",type:"fight",power:55,acc:100,pp:25,pri:0,highCrit:true},
+  machpunch:{name:"마하펀치",type:"fight",power:40,acc:100,pp:30,pri:1},
+  closecombat:{name:"인파이트",type:"fight",power:95,acc:100,pp:5,pri:0,eff:{stat:"def",stage:-1,target:"self"}},
+  aurasphere:{name:"파동탄",type:"fight",power:80,acc:100,pp:10,pri:0,cat:"spec"},
   charm:{name:"애교부리기",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{stat:"atk",stage:-2,target:"foe"}},
   scaryface:{name:"위협하기",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{stat:"spd",stage:-2,target:"foe"}},
   // ===== 풀죽음 =====
@@ -1615,7 +1621,7 @@ const DEX=[
   /* ⚠️ 집게왕은 atk25/spa9인데 기본 기술셋에 하이드로펌프(물 특수)가 들어 있었다 —
    물 STAB을 spa9로 쏘느라 크로스촙의 1/3밖에 못 때렸다(실측 125 vs 363). 계열이 타입에 묶여 있어
    생긴 사고다. 기술 단위 계열 도입으로 아쿠아제트가 물리가 됐으므로 그걸로 바꾼다. */
-{id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"rock",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","aquajet","boulder"],learn:[[8,"confuse"],[16,"focusenergy"],[23,"growl"],[31,"doubleteam"],[38,"crosschop"],[39,"swordsdance"]]},
+{id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"fight",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","aquajet","karatechop"],learn:[[8,"confuse"],[16,"focusenergy"],[23,"growl"],[31,"doubleteam"],[38,"closecombat"],[39,"swordsdance"],[44,"aurasphere"]]},
   {id:"gullian",name:"갈매정",em:"🐦",type:"flying",type2:"water",tier:2,base:{hp:58,atk:16,def:12,spd:23,spa:16,spDef:13},moves:["peck","gust","wingatk","splash"],learn:[[8,"nastyplot"],[16,"skyrush"],[18,"batonpass"],[27,"harden"],[36,"agility"]]},
   {id:"palmore",name:"야자정",em:"🦌",type:"grass",tier:2,base:{hp:72,atk:18,def:22,spd:8,spa:16,spDef:18},moves:["vine","bloom","slam","absorb"],learn:[[8,"confuse"],[18,"focusenergy"],[20,"megadrain"],[27,"growl"],[36,"doubleteam"]]},
   {id:"jellure",name:"개굴알",em:"🪼",type:"water",type2:"poison",tier:1,base:{hp:54,atk:8,def:12,spd:15,spa:20,spDef:20},moves:["splash","sludge","hydro"],learn:[[8,"roar"],[12,"poisonpowder"],[22,"tsunami"],[26,"amnesia"],[27,"toxic"]],evolveTo:"swampfrog",evolveLv:25},
@@ -1638,7 +1644,7 @@ const DEX=[
   {id:"pyrewolf",name:"화염랑",em:"🐺",type:"fire",tier:3,base:{hp:78,atk:26,def:18,spd:24,spa:24,spDef:16},moves:["inferno","flare","furyswipe","crush"],learn:[]},
   {id:"petalwing",name:"꽃날개",em:"🦋",type:"grass",type2:"bug",tier:1,base:{hp:44,atk:12,def:11,spd:18,spa:16,spDef:13},moves:["gust","leaf"],learn:[[8,"growl"],[14,"absorb"],[16,"bugbite"],[17,"bugbuzz"],[18,"doubleteam"],[20,"wingatk"],[27,"confuse"],[36,"focusenergy"]],evolveTo:"blossomhawk",evolveLv:30},
   {id:"blossomhawk",name:"꽃호접",em:"🦋",type:"grass",type2:"flying",tier:3,base:{hp:74,atk:20,def:16,spd:26,spa:26,spDef:18},moves:["skyrush","megadrain","wingatk","bloom"],learn:[]},
-  {id:"lumbeast",name:"우직수",em:"🦝",type:"normal",tier:2,base:{hp:80,atk:24,def:22,spd:12,spa:12,spDef:18},moves:["crush","headbutt","slam","growl"],learn:[[8,"recover"],[18,"lullaby"],[27,"swordsdance"],[36,"boulder"],[37,"doubleteam"]]},
+  {id:"lumbeast",name:"우직수",em:"🦝",type:"normal",type2:"fight",tier:2,base:{hp:80,atk:24,def:22,spd:12,spa:12,spDef:18},moves:["crush","headbutt","karatechop","growl"],learn:[[8,"recover"],[18,"lullaby"],[27,"swordsdance"],[33,"closecombat"],[37,"doubleteam"]]},
   {id:"snowl",name:"눈올빼",em:"🦉",type:"flying",type2:"ice",tier:2,base:{hp:62,atk:16,def:14,spd:24,spa:20,spDef:16},moves:["peck","icebeam","gust","wingatk"],learn:[[8,"nastyplot"],[18,"batonpass"],[27,"harden"],[32,"skyrush"],[36,"agility"]]},
   {id:"cryogon",name:"동결룡",em:"🐋",type:"ice",type2:"dragon",tier:3,base:{hp:84,atk:24,def:28,spd:14,spa:24,spDef:22},moves:["blizzard","rockslide","icebeam","dragonpulse"],learn:[]},
   {id:"iceling",name:"얼음정",em:"🧊",type:"ice",tier:1,base:{hp:48,atk:12,def:16,spd:12,spa:16,spDef:16},moves:["tackle","iceshard"],learn:[[8,"lullaby"],[14,"icebeam"],[18,"recover"],[20,"harden"],[27,"swordsdance"],[36,"doubleteam"]],evolveTo:"frostwyrm",evolveLv:32},
@@ -1654,7 +1660,7 @@ const DEX=[
   {id:"zapfinch",name:"삐릿새",em:"🐤",type:"elec",type2:"flying",tier:1,base:{hp:42,atk:12,def:11,spd:20,spa:16,spDef:11},moves:["peck","spark"],learn:[[8,"confuse"],[14,"gust"],[18,"focusenergy"],[20,"bolt"],[27,"doubleteam"],[36,"growl"]],evolveTo:"voltfalcon",evolveLv:30},
   {id:"voltfalcon",name:"뇌전매",em:"🦅",type:"elec",type2:"flying",tier:3,base:{hp:72,atk:20,def:16,spd:30,spa:24,spDef:16},moves:["skyrush","twinbolt","wingatk","spark"],learn:[]},
   {id:"dustbunny",name:"먼지깡총",em:"🐰",type:"ground",tier:1,base:{hp:52,atk:13,def:14,spd:14,spa:9,spDef:13},moves:["tackle","growl"],learn:[[8,"lullaby"],[10,"quickjab"],[16,"headbutt"],[18,"recover"],[27,"swordsdance"],[36,"doubleteam"]],evolveTo:"thumplord",evolveLv:26},
-  {id:"thumplord",name:"쿵쿵왕",em:"🐇",type:"ground",type2:"normal",tier:3,base:{hp:88,atk:26,def:24,spd:16,spa:12,spDef:22},moves:["crush","headbutt","slam","furyswipe"],learn:[]},
+  {id:"thumplord",name:"쿵쿵왕",em:"🐇",type:"ground",type2:"fight",tier:3,base:{hp:88,atk:26,def:24,spd:16,spa:12,spDef:22},moves:["crush","karatechop","headbutt","machpunch"],learn:[[42,"closecombat"]]},
   {id:"glowfly",name:"반딧불이",em:"🪰",type:"elec",type2:"bug",tier:1,base:{hp:40,atk:10,def:10,spd:18,spa:18,spDef:12},moves:["spark","tackle"],learn:[[8,"nastyplot"],[14,"bolt"],[16,"bugbite"],[17,"bugbuzz"],[18,"agility"],[22,"confuse"],[27,"harden"],[36,"batonpass"]],evolveTo:"arcmoth",evolveLv:30},
   {id:"arcmoth",name:"뇌광나방",em:"🦋",type:"elec",type2:"poison",tier:3,base:{hp:71,atk:16,def:16,spd:24,spa:28,spDef:20},moves:["thunder","twinbolt","gust","spark"],learn:[]},
   {id:"pebblet",name:"몽돌이",em:"🪨",type:"rock",tier:1,base:{hp:44,atk:14,def:22,spd:8,spa:6,spDef:14},moves:["tackle","rockthrow"],learn:[[8,"irondefense"],[12,"harden"],[18,"rockslide"],[19,"toxic"],[27,"roar"],[36,"batonpass"]],evolveTo:"boulderin",evolveLv:22},
@@ -5822,7 +5828,12 @@ const SIGFX={
   dragonbreath: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); for(let i=0;i<5;i++){ _fly("🐉",{x:from.x+rand(-10,10),y:from.y+rand(-10,10)},{x:to.x+rand(-20,20),y:to.y+rand(-16,16)},TYPE_COLOR.dragon,fxT(200),1.1); await wait(fxT(50)); } fxBurst(d,"dragon",2); if(fxT)screenShake(false); },
   dragonpulse: async(s,d)=>{ const c=fxCenter(d); const r=fxGlyph("💠",c,TYPE_COLOR.dragon,"fx-proj"); r.style.fontSize="22px"; r.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:"translate(-50%,-50%) scale(3.2)",opacity:0}],{duration:fxT(360),easing:"ease-out",fill:"forwards"}).finished.then(()=>r.remove()).catch(()=>r.remove()); const from=fxCenter(s); for(let i=0;i<3;i++){ _fly("🐉",{x:from.x,y:from.y},{x:c.x+rand(-14,14),y:c.y+rand(-14,14)},TYPE_COLOR.dragon,fxT(220),1.2); await wait(fxT(60)); } fxBurst(d,"dragon",3); impactFlash(); screenShake(false); },
   bugbite: async(s,d)=>{ const c=fxCenter(d); _pop("🦷",c,TYPE_COLOR.bug,0,-6,240); await wait(fxT(120)); fxSlash(d); fxBurst(d,"bug",2); screenShake(false); },
-  bugbuzz: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<3;k++){ const rg=fxGlyph("🐛",c,TYPE_COLOR.bug,"fx-proj"); rg.style.fontSize="20px"; rg.animate([{transform:"translate(-50%,-50%) scale(.4)",opacity:.9},{transform:"translate(-50%,-50%) scale(2.6)",opacity:0}],{duration:fxT(300),easing:"ease-out",fill:"forwards"}).finished.then(()=>rg.remove()).catch(()=>rg.remove()); await wait(fxT(90)); } fxBurst(d,"bug",2); }
+  bugbuzz: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<3;k++){ const rg=fxGlyph("🐛",c,TYPE_COLOR.bug,"fx-proj"); rg.style.fontSize="20px"; rg.animate([{transform:"translate(-50%,-50%) scale(.4)",opacity:.9},{transform:"translate(-50%,-50%) scale(2.6)",opacity:0}],{duration:fxT(300),easing:"ease-out",fill:"forwards"}).finished.then(()=>rg.remove()).catch(()=>rg.remove()); await wait(fxT(90)); } fxBurst(d,"bug",2); },
+  // fight 기술 전용 연출(공격자 모션은 moveFx가 물리=lunge로 자동 부여)
+  karatechop: async(s,d)=>{ const c=fxCenter(d); _pop("✊",c,TYPE_COLOR.fight,0,-8,220); await wait(fxT(90)); fxSlash(d); fxBurst(d,"fight",2); screenShake(false); },
+  machpunch: async(s,d)=>{ const c=fxCenter(d); const g=fxGlyph("👊",c,TYPE_COLOR.fight,"fx-proj"); g.style.fontSize="24px"; g.animate([{transform:"translate(-50%,-50%) scale(.4)",opacity:1},{transform:"translate(-50%,-50%) scale(1.7)",opacity:0}],{duration:fxT(190),easing:"ease-out",fill:"forwards"}).finished.then(()=>g.remove()).catch(()=>g.remove()); fxBurst(d,"fight",2); impactFlash(); },
+  closecombat: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<4;k++){ _pop(k%2?"👊":"🦵",{x:c.x+rand(-18,18),y:c.y+rand(-12,12)},TYPE_COLOR.fight,rand(-8,8),rand(-12,-2),220); await wait(fxT(55)); } fxSlash(d); fxBurst(d,"fight",3); impactFlash(); screenShake(true); },
+  aurasphere: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const orb=fxGlyph("🔵",from,TYPE_COLOR.fight,"fx-proj"); orb.style.fontSize="22px"; await orb.animate([{left:from.x+"px",top:from.y+"px",opacity:.9},{left:to.x+"px",top:to.y+"px",opacity:1}],{duration:fxT(230),easing:"ease-in",fill:"forwards"}).finished.then(()=>orb.remove()).catch(()=>orb.remove()); fxBurst(d,"fight",3); impactFlash(); }
 };
 // 자체적으로 공격자 스프라이트를 움직이는(lunge/cast) SIGFX 목록 — 중앙 모션과 겹치지 않게 제외한다.
 const SIGFX_SELF_MOTION=new Set(["venomfang","voltfang","headbutt","quickjab","bite","struggle","aquajet","wildbolt","ironhead","doublekick","flareblitz","peck","tackle","takedown","quickstrike","poisonjab"]);

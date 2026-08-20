@@ -40,7 +40,7 @@ const DEX=[
   /* ⚠️ 집게왕은 atk25/spa9인데 기본 기술셋에 하이드로펌프(물 특수)가 들어 있었다 —
    물 STAB을 spa9로 쏘느라 크로스촙의 1/3밖에 못 때렸다(실측 125 vs 363). 계열이 타입에 묶여 있어
    생긴 사고다. 기술 단위 계열 도입으로 아쿠아제트가 물리가 됐으므로 그걸로 바꾼다. */
-{id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"rock",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","aquajet","boulder"],learn:[[8,"confuse"],[16,"focusenergy"],[23,"growl"],[31,"doubleteam"],[38,"crosschop"],[39,"swordsdance"]]},
+{id:"crablord",name:"집게왕",em:"🦞",type:"water",type2:"fight",tier:3,base:{hp:82,atk:25,def:32,spd:11,spa:9,spDef:22},moves:["crush","rockslide","aquajet","karatechop"],learn:[[8,"confuse"],[16,"focusenergy"],[23,"growl"],[31,"doubleteam"],[38,"closecombat"],[39,"swordsdance"],[44,"aurasphere"]]},
   {id:"gullian",name:"갈매정",em:"🐦",type:"flying",type2:"water",tier:2,base:{hp:58,atk:16,def:12,spd:23,spa:16,spDef:13},moves:["peck","gust","wingatk","splash"],learn:[[8,"nastyplot"],[16,"skyrush"],[18,"batonpass"],[27,"harden"],[36,"agility"]]},
   {id:"palmore",name:"야자정",em:"🦌",type:"grass",tier:2,base:{hp:72,atk:18,def:22,spd:8,spa:16,spDef:18},moves:["vine","bloom","slam","absorb"],learn:[[8,"confuse"],[18,"focusenergy"],[20,"megadrain"],[27,"growl"],[36,"doubleteam"]]},
   {id:"jellure",name:"개굴알",em:"🪼",type:"water",type2:"poison",tier:1,base:{hp:54,atk:8,def:12,spd:15,spa:20,spDef:20},moves:["splash","sludge","hydro"],learn:[[8,"roar"],[12,"poisonpowder"],[22,"tsunami"],[26,"amnesia"],[27,"toxic"]],evolveTo:"swampfrog",evolveLv:25},
@@ -63,7 +63,7 @@ const DEX=[
   {id:"pyrewolf",name:"화염랑",em:"🐺",type:"fire",tier:3,base:{hp:78,atk:26,def:18,spd:24,spa:24,spDef:16},moves:["inferno","flare","furyswipe","crush"],learn:[]},
   {id:"petalwing",name:"꽃날개",em:"🦋",type:"grass",type2:"bug",tier:1,base:{hp:44,atk:12,def:11,spd:18,spa:16,spDef:13},moves:["gust","leaf"],learn:[[8,"growl"],[14,"absorb"],[16,"bugbite"],[17,"bugbuzz"],[18,"doubleteam"],[20,"wingatk"],[27,"confuse"],[36,"focusenergy"]],evolveTo:"blossomhawk",evolveLv:30},
   {id:"blossomhawk",name:"꽃호접",em:"🦋",type:"grass",type2:"flying",tier:3,base:{hp:74,atk:20,def:16,spd:26,spa:26,spDef:18},moves:["skyrush","megadrain","wingatk","bloom"],learn:[]},
-  {id:"lumbeast",name:"우직수",em:"🦝",type:"normal",tier:2,base:{hp:80,atk:24,def:22,spd:12,spa:12,spDef:18},moves:["crush","headbutt","slam","growl"],learn:[[8,"recover"],[18,"lullaby"],[27,"swordsdance"],[36,"boulder"],[37,"doubleteam"]]},
+  {id:"lumbeast",name:"우직수",em:"🦝",type:"normal",type2:"fight",tier:2,base:{hp:80,atk:24,def:22,spd:12,spa:12,spDef:18},moves:["crush","headbutt","karatechop","growl"],learn:[[8,"recover"],[18,"lullaby"],[27,"swordsdance"],[33,"closecombat"],[37,"doubleteam"]]},
   {id:"snowl",name:"눈올빼",em:"🦉",type:"flying",type2:"ice",tier:2,base:{hp:62,atk:16,def:14,spd:24,spa:20,spDef:16},moves:["peck","icebeam","gust","wingatk"],learn:[[8,"nastyplot"],[18,"batonpass"],[27,"harden"],[32,"skyrush"],[36,"agility"]]},
   {id:"cryogon",name:"동결룡",em:"🐋",type:"ice",type2:"dragon",tier:3,base:{hp:84,atk:24,def:28,spd:14,spa:24,spDef:22},moves:["blizzard","rockslide","icebeam","dragonpulse"],learn:[]},
   {id:"iceling",name:"얼음정",em:"🧊",type:"ice",tier:1,base:{hp:48,atk:12,def:16,spd:12,spa:16,spDef:16},moves:["tackle","iceshard"],learn:[[8,"lullaby"],[14,"icebeam"],[18,"recover"],[20,"harden"],[27,"swordsdance"],[36,"doubleteam"]],evolveTo:"frostwyrm",evolveLv:32},
@@ -79,7 +79,7 @@ const DEX=[
   {id:"zapfinch",name:"삐릿새",em:"🐤",type:"elec",type2:"flying",tier:1,base:{hp:42,atk:12,def:11,spd:20,spa:16,spDef:11},moves:["peck","spark"],learn:[[8,"confuse"],[14,"gust"],[18,"focusenergy"],[20,"bolt"],[27,"doubleteam"],[36,"growl"]],evolveTo:"voltfalcon",evolveLv:30},
   {id:"voltfalcon",name:"뇌전매",em:"🦅",type:"elec",type2:"flying",tier:3,base:{hp:72,atk:20,def:16,spd:30,spa:24,spDef:16},moves:["skyrush","twinbolt","wingatk","spark"],learn:[]},
   {id:"dustbunny",name:"먼지깡총",em:"🐰",type:"ground",tier:1,base:{hp:52,atk:13,def:14,spd:14,spa:9,spDef:13},moves:["tackle","growl"],learn:[[8,"lullaby"],[10,"quickjab"],[16,"headbutt"],[18,"recover"],[27,"swordsdance"],[36,"doubleteam"]],evolveTo:"thumplord",evolveLv:26},
-  {id:"thumplord",name:"쿵쿵왕",em:"🐇",type:"ground",type2:"normal",tier:3,base:{hp:88,atk:26,def:24,spd:16,spa:12,spDef:22},moves:["crush","headbutt","slam","furyswipe"],learn:[]},
+  {id:"thumplord",name:"쿵쿵왕",em:"🐇",type:"ground",type2:"fight",tier:3,base:{hp:88,atk:26,def:24,spd:16,spa:12,spDef:22},moves:["crush","karatechop","headbutt","machpunch"],learn:[[42,"closecombat"]]},
   {id:"glowfly",name:"반딧불이",em:"🪰",type:"elec",type2:"bug",tier:1,base:{hp:40,atk:10,def:10,spd:18,spa:18,spDef:12},moves:["spark","tackle"],learn:[[8,"nastyplot"],[14,"bolt"],[16,"bugbite"],[17,"bugbuzz"],[18,"agility"],[22,"confuse"],[27,"harden"],[36,"batonpass"]],evolveTo:"arcmoth",evolveLv:30},
   {id:"arcmoth",name:"뇌광나방",em:"🦋",type:"elec",type2:"poison",tier:3,base:{hp:71,atk:16,def:16,spd:24,spa:28,spDef:20},moves:["thunder","twinbolt","gust","spark"],learn:[]},
   {id:"pebblet",name:"몽돌이",em:"🪨",type:"rock",tier:1,base:{hp:44,atk:14,def:22,spd:8,spa:6,spDef:14},moves:["tackle","rockthrow"],learn:[[8,"irondefense"],[12,"harden"],[18,"rockslide"],[19,"toxic"],[27,"roar"],[36,"batonpass"]],evolveTo:"boulderin",evolveLv:22},

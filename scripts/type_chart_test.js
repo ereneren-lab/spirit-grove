@@ -10,14 +10,16 @@ const { chromium } = require("playwright"); const path=require("path");
     const eff=(atk,def)=>{ const A={atk:50,spa:50,def:50,spDef:50,hp:100,maxHp:100,stages:{atk:0,def:0,spd:0},status:null};
       const D={type:def,type2:null,def:50,spDef:50,hp:100,maxHp:100,stages:{atk:0,def:0,spd:0}};
       return S.damage(A,D,{type:atk,power:50,acc:100,pp:10}).eff; };
-    const types=["fire","water","grass","elec","normal","flying","rock","ice","poison","ground","dragon","bug"];
+    const types=["fire","water","grass","elec","normal","flying","rock","ice","poison","ground","dragon","bug","fight"];
     let bad=0; for(const a of types)for(const d of types){ const e=eff(a,d); if(typeof e!=="number"||isNaN(e))bad++; }
     return { bad, iceGrass:eff("ice","grass"), iceFire:eff("ice","fire"), iceFly:eff("ice","flying"),
       groundElec:eff("ground","elec"), groundFly:eff("ground","flying"), groundPoison:eff("ground","poison"),
       poisonGrass:eff("poison","grass"), poisonGround:eff("poison","ground"),
       fireIce:eff("fire","ice"), elecGround:eff("elec","ground"), rockIce:eff("rock","ice"),
       iceDragon:eff("ice","dragon"), fireDragon:eff("fire","dragon"), dragonDragon:eff("dragon","dragon"), normalDragon:eff("normal","dragon"),
-      bugGrass:eff("bug","grass"), fireBug:eff("fire","bug"), flyBug:eff("flying","bug"), bugFire:eff("bug","fire") }; });
+      bugGrass:eff("bug","grass"), fireBug:eff("fire","bug"), flyBug:eff("flying","bug"), bugFire:eff("bug","fire"),
+      fightNormal:eff("fight","normal"), fightRock:eff("fight","rock"), fightIce:eff("fight","ice"),
+      fightFlying:eff("fight","flying"), fightBug:eff("fight","bug"), flyFight:eff("flying","fight"), rockFight:eff("rock","fight") }; });
 
   ok(r.bad===0, `상성표 10x10 완전성(NaN 없음, 불량 ${r.bad})`);
   ok(r.iceGrass===2, `얼음→풀 2배 (${r.iceGrass})`);
@@ -39,6 +41,11 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(r.fireBug===2, `불→벌레 2배 (${r.fireBug})`);
   ok(r.flyBug===2, `비행→벌레 2배 (${r.flyBug})`);
   ok(r.bugFire===0.5, `벌레→불 0.5배 (${r.bugFire})`);
+  ok(r.fightNormal===2, `격투→노말 2배 (${r.fightNormal})`);
+  ok(r.fightRock===2 && r.fightIce===2, `격투→바위·얼음 2배 (${r.fightRock}/${r.fightIce})`);
+  ok(r.fightFlying===0.5 && r.fightBug===0.5, `격투→비행·벌레 0.5배 (${r.fightFlying}/${r.fightBug})`);
+  ok(r.flyFight===2, `비행→격투 2배 (${r.flyFight})`);
+  ok(r.rockFight===0.5, `바위→격투 0.5배 (${r.rockFight})`);
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 타입 상성표 통과");
   await b.close(); process.exit(process.exitCode||0);
