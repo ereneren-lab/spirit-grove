@@ -5817,10 +5817,24 @@ const SIGFX={
   furyswipe: async(s,d)=>{ for(let i=0;i<5;i++){ const c=fxCenter(d); fxSlash(d); _pop("✦",{x:c.x+rand(-18,18),y:c.y+rand(-18,18)},TYPE_COLOR.normal,rand(-20,20),rand(-20,20),rand(240,400)); await wait(fxT(70)); } fxBurst(d,"normal",2); screenShake(false); },
   twinbolt: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<2;k++){ const b=fxGlyph("⚡",{x:c.x+rand(-16,16),y:c.y-80},TYPE_COLOR.elec,"fx-proj"); b.animate([{top:(c.y-80)+"px",opacity:.3},{top:c.y+"px",opacity:1}],{duration:fxT(130),easing:"ease-in",fill:"forwards"}).finished.then(()=>b.remove()).catch(()=>b.remove()); await wait(fxT(110)); } fxBurst(d,"elec",2); impactFlash(); screenShake(false); },
   crush: async(s,d)=>{ const c=fxCenter(d); const sh=fxGlyph("💥",c,TYPE_COLOR.normal,"fx-proj"); sh.style.fontSize="20px"; sh.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:"translate(-50%,-50%) scale(3)",opacity:0}],{duration:fxT(320),easing:"ease-out",fill:"forwards"}).finished.then(()=>sh.remove()).catch(()=>sh.remove()); fxSlash(d); fxBurst(d,"normal",3); impactFlash(); screenShake(true); await wait(fxT(150)); },
-  drainfang: async(s,d)=>{ const c=fxCenter(d); _pop("🦷",c,TYPE_COLOR.normal,0,-6,260); await wait(fxT(130)); const from=fxCenter(d),to=fxCenter(s); for(let i=0;i<4;i++)_fly("✦",{x:from.x+rand(-14,14),y:from.y+rand(-14,14)},to,"#8fd16f",340,1); fxBurst(d,"normal",2); screenShake(false); await wait(fxT(120)); }
+  drainfang: async(s,d)=>{ const c=fxCenter(d); _pop("🦷",c,TYPE_COLOR.normal,0,-6,260); await wait(fxT(130)); const from=fxCenter(d),to=fxCenter(s); for(let i=0;i<4;i++)_fly("✦",{x:from.x+rand(-14,14),y:from.y+rand(-14,14)},to,"#8fd16f",340,1); fxBurst(d,"normal",2); screenShake(false); await wait(fxT(120)); },
+  // dragon/bug 기술 전용 연출(선재 누락 보완) — 공격자 모션은 moveFx가 물리=lunge/특수=cast로 자동 부여
+  dragonbreath: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); for(let i=0;i<5;i++){ _fly("🐉",{x:from.x+rand(-10,10),y:from.y+rand(-10,10)},{x:to.x+rand(-20,20),y:to.y+rand(-16,16)},TYPE_COLOR.dragon,fxT(200),1.1); await wait(fxT(50)); } fxBurst(d,"dragon",2); if(fxT)screenShake(false); },
+  dragonpulse: async(s,d)=>{ const c=fxCenter(d); const r=fxGlyph("💠",c,TYPE_COLOR.dragon,"fx-proj"); r.style.fontSize="22px"; r.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:"translate(-50%,-50%) scale(3.2)",opacity:0}],{duration:fxT(360),easing:"ease-out",fill:"forwards"}).finished.then(()=>r.remove()).catch(()=>r.remove()); const from=fxCenter(s); for(let i=0;i<3;i++){ _fly("🐉",{x:from.x,y:from.y},{x:c.x+rand(-14,14),y:c.y+rand(-14,14)},TYPE_COLOR.dragon,fxT(220),1.2); await wait(fxT(60)); } fxBurst(d,"dragon",3); impactFlash(); screenShake(false); },
+  bugbite: async(s,d)=>{ const c=fxCenter(d); _pop("🦷",c,TYPE_COLOR.bug,0,-6,240); await wait(fxT(120)); fxSlash(d); fxBurst(d,"bug",2); screenShake(false); },
+  bugbuzz: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<3;k++){ const rg=fxGlyph("🐛",c,TYPE_COLOR.bug,"fx-proj"); rg.style.fontSize="20px"; rg.animate([{transform:"translate(-50%,-50%) scale(.4)",opacity:.9},{transform:"translate(-50%,-50%) scale(2.6)",opacity:0}],{duration:fxT(300),easing:"ease-out",fill:"forwards"}).finished.then(()=>rg.remove()).catch(()=>rg.remove()); await wait(fxT(90)); } fxBurst(d,"bug",2); }
 };
+// 자체적으로 공격자 스프라이트를 움직이는(lunge/cast) SIGFX 목록 — 중앙 모션과 겹치지 않게 제외한다.
+const SIGFX_SELF_MOTION=new Set(["venomfang","voltfang","headbutt","quickjab","bite","struggle","aquajet","wildbolt","ironhead","doublekick","flareblitz","peck","tackle","takedown","quickstrike","poisonjab"]);
+// 공격자 모션: 데미지기만, 물리=lunge(돌진)·특수=cast(시전 펄스). 변화기(위력0)는 statusMoveFx가 담당하므로 제외.
+function attackerMotion(side,mv){ if(CONFIG.reduceMotion)return; const M=mv&&MOVES[mv]; if(!M||!(M.power>0))return;
+  const aS=spriteEl(side); const spec=isSpecMove(mv); const cls=spec?"cast":"lunge";
+  if(spec)aS.style.setProperty("--castc",TYPE_COLOR[M.type]||"#fff");
+  aS.classList.remove("lunge","cast"); void aS.offsetWidth; aS.classList.add(cls);
+  setTimeout(()=>aS.classList.remove(cls), 460); }
 async function moveFx(move,side,dSide,mv){ const type=move.type; const pw=move.power||0; const inten=pw<=0?1:pw<=45?1:pw<=62?2:3; fieldFlash(type); if(CONFIG.reduceMotion){ await mw(60); return; }
   if(inten>=3){ const aS=spriteEl(side); aS.style.filter=`drop-shadow(0 0 13px ${TYPE_COLOR[type]})`; setTimeout(()=>{aS.style.filter="";},300); }
+  if(mv && !SIGFX_SELF_MOTION.has(mv)) attackerMotion(side,mv);   // 중앙 공격자 모션(자체 모션 SIGFX 16종은 제외)
   if(mv&&SIGFX[mv]){ await SIGFX[mv](side,dSide,inten,type); return; }   // ⚠️ 변화기도 전용 연출을 가질 수 있게 power 체크보다 앞
   if(move.power===0){ await statusMoveFx(move,side,dSide,type); return; }
   if(type==="elec"){ const c=fxCenter(dSide); const bolt=fxGlyph("⚡",{x:c.x,y:c.y-80},TYPE_COLOR.elec,"fx-proj");
