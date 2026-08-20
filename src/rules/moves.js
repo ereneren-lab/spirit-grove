@@ -139,6 +139,10 @@ const MOVES={
   psybeam:{name:"사이코빔",type:"psychic",power:65,acc:100,pp:15,pri:0},
   psystrike:{name:"사이코키네시스",type:"psychic",power:85,acc:100,pp:10,pri:0},
   zenheadbutt:{name:"젠헤드벗",type:"psychic",power:70,acc:100,pp:15,pri:0,cat:"phys",eff:{flinch:0.2}},
+  fairywind:{name:"요정바람",type:"fairy",power:40,acc:100,pp:25,pri:0},
+  dazzlinggleam:{name:"매지컬샤인",type:"fairy",power:65,acc:100,pp:15,pri:0},
+  moonblast:{name:"문포스",type:"fairy",power:85,acc:100,pp:10,pri:0},
+  playrough:{name:"플레이러프",type:"fairy",power:75,acc:95,pp:10,pri:0,cat:"phys"},
   charm:{name:"애교부리기",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{stat:"atk",stage:-2,target:"foe"}},
   scaryface:{name:"위협하기",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{stat:"spd",stage:-2,target:"foe"}},
   // ===== 풀죽음 =====

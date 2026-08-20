@@ -1224,6 +1224,7 @@ const TYPES={
   bug:    {ko:"벌레",col:"#a4b23e", par:"🐛", ic:"🐛", spec:0, ab:"guts",        wav:"square"},
   fight:  {ko:"격투",col:"#cf6a5a", par:"👊", ic:"🥊", spec:0, ab:"guts",        wav:"square", fg:"#f3ecdd"},
   psychic:{ko:"에스퍼",col:"#e07bb0",par:"🔮", ic:"🔮", spec:1, ab:"guts",        wav:"sine", fg:"#f3ecdd"},
+  fairy:  {ko:"페어리",col:"#f4aad0",par:"✨", ic:"🧚", spec:1, ab:"guts",        wav:"triangle"},
 };
 const TYPE_LIST=Object.keys(TYPES);
 const _derive=(src,f)=>{ const o={}; for(const k in src)o[k]=f(src[k],k); return o; };
@@ -1342,20 +1343,21 @@ if(typeof document!=="undefined")injectPalette();
    행 하나와 '모든 행의 열 하나'를 같이 넣을 것 — 누락 시 damage()에서 NaN.
    회귀(palette_source_test)가 전 조합을 검사한다. */
 const EFF={
-  fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1, dragon:.5, bug:2, fight:1, psychic:1},
-  water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2, dragon:.5, bug:1, fight:1, psychic:1},
-  grass:  {fire:.5,water:2, grass:.5,elec:1, normal:1,flying:.5,rock:2, ice:1, poison:.5,ground:2, dragon:.5, bug:1, fight:1, psychic:1},
-  elec:   {fire:1, water:2, grass:.5,elec:.5,normal:1,flying:2, rock:1, ice:1, poison:1, ground:0, dragon:.5, bug:1, fight:1, psychic:1},
-  normal: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:1, fight:1, psychic:1},
-  flying: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:2, fight:2, psychic:1},
-  rock:   {fire:2, water:1, grass:1, elec:1, normal:1,flying:2, rock:1, ice:2, poison:1, ground:.5, dragon:1, bug:2, fight:.5, psychic:1},
-  ice:    {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:2, rock:1, ice:.5,poison:1, ground:2, dragon:2, bug:1, fight:1, psychic:1},
-  poison: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:.5,ground:.5, dragon:1, bug:1, fight:1, psychic:1},
-  ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:1, psychic:1},
-  dragon: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:2, bug:1, fight:1, psychic:1},
-  bug:    {fire:.5,water:1, grass:2, elec:1, normal:1,flying:.5,rock:1, ice:1, poison:.5,ground:1, dragon:1, bug:1, fight:.5, psychic:2},
-  fight:  {fire:1, water:1, grass:1, elec:1, normal:2,flying:.5,rock:2, ice:2, poison:.5,ground:1, dragon:1, bug:.5,fight:1, psychic:.5},
-  psychic:{fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:2, psychic:.5},
+  fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1, dragon:.5, bug:2, fight:1, psychic:1, fairy:1},
+  water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2, dragon:.5, bug:1, fight:1, psychic:1, fairy:1},
+  grass:  {fire:.5,water:2, grass:.5,elec:1, normal:1,flying:.5,rock:2, ice:1, poison:.5,ground:2, dragon:.5, bug:1, fight:1, psychic:1, fairy:1},
+  elec:   {fire:1, water:2, grass:.5,elec:.5,normal:1,flying:2, rock:1, ice:1, poison:1, ground:0, dragon:.5, bug:1, fight:1, psychic:1, fairy:1},
+  normal: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:1, fight:1, psychic:1, fairy:1},
+  flying: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:2, fight:2, psychic:1, fairy:1},
+  rock:   {fire:2, water:1, grass:1, elec:1, normal:1,flying:2, rock:1, ice:2, poison:1, ground:.5, dragon:1, bug:2, fight:.5, psychic:1, fairy:1},
+  ice:    {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:2, rock:1, ice:.5,poison:1, ground:2, dragon:2, bug:1, fight:1, psychic:1, fairy:1},
+  poison: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:.5,ground:.5, dragon:1, bug:1, fight:1, psychic:1, fairy:2},
+  ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:1, psychic:1, fairy:1},
+  dragon: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:2, bug:1, fight:1, psychic:1, fairy:0},
+  bug:    {fire:.5,water:1, grass:2, elec:1, normal:1,flying:.5,rock:1, ice:1, poison:.5,ground:1, dragon:1, bug:1, fight:.5, psychic:2, fairy:.5},
+  fight:  {fire:1, water:1, grass:1, elec:1, normal:2,flying:.5,rock:2, ice:2, poison:.5,ground:1, dragon:1, bug:.5,fight:1, psychic:.5, fairy:.5},
+  psychic:{fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:2, psychic:.5, fairy:1},
+  fairy:  {fire:.5,water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:.5,ground:1, dragon:2, bug:1, fight:2, psychic:1, fairy:1},
 };
 
 // 기술 데이터 + 사람이 읽는 한 줄 설명. **DOM을 쓰지 않는다**(순수 규칙 계층).
@@ -1499,6 +1501,10 @@ const MOVES={
   psybeam:{name:"사이코빔",type:"psychic",power:65,acc:100,pp:15,pri:0},
   psystrike:{name:"사이코키네시스",type:"psychic",power:85,acc:100,pp:10,pri:0},
   zenheadbutt:{name:"젠헤드벗",type:"psychic",power:70,acc:100,pp:15,pri:0,cat:"phys",eff:{flinch:0.2}},
+  fairywind:{name:"요정바람",type:"fairy",power:40,acc:100,pp:25,pri:0},
+  dazzlinggleam:{name:"매지컬샤인",type:"fairy",power:65,acc:100,pp:15,pri:0},
+  moonblast:{name:"문포스",type:"fairy",power:85,acc:100,pp:10,pri:0},
+  playrough:{name:"플레이러프",type:"fairy",power:75,acc:95,pp:10,pri:0,cat:"phys"},
   charm:{name:"애교부리기",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{stat:"atk",stage:-2,target:"foe"}},
   scaryface:{name:"위협하기",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{stat:"spd",stage:-2,target:"foe"}},
   // ===== 풀죽음 =====
@@ -1641,15 +1647,15 @@ const DEX=[
   {id:"frostpup",name:"서리멍",em:"🐕",type:"ice",tier:1,base:{hp:50,atk:13,def:13,spd:12,spa:14,spDef:14},moves:["tackle","frostbreath"],learn:[[8,"swordsdance"],[12,"icebeam"],[16,"icywind"],[18,"harden"],[21,"recover"],[33,"lullaby"]],evolveTo:"glacibear",evolveLv:30},
   {id:"glacibear",name:"서리랑",em:"🐺",type:"ice",type2:"rock",tier:3,base:{hp:90,atk:24,def:24,spd:10,spa:16,spDef:22},moves:["crush","icebeam","rockslide","boulder"],learn:[[8,"recover"],[16,"lullaby"],[23,"swordsdance"],[31,"hailstorm"],[38,"blizzard"],[39,"growl"]]},
   {id:"dewdrop",name:"이스리",em:"💧",type:"water",tier:1,base:{hp:45,atk:9,def:11,spd:13,spa:14,spDef:12},moves:["tackle","splash"],learn:[[8,"roar"],[10,"hydro"],[16,"absorb"],[18,"toxic"],[27,"nastyplot"],[36,"batonpass"]],evolveTo:"moonytide",evolveLv:34,evolveBranch:[{to:"glimmertide",lv:24,time:"day"},{to:"moonytide",lv:24,time:"night"}]},
-  {id:"glimmertide",name:"윤슬정",em:"🌊",type:"water",type2:"flying",tier:3,base:{hp:72,atk:17,def:17,spd:25,spa:25,spDef:19},moves:["hydro","wingatk","tsunami","skyrush"],learn:[]},
+  {id:"glimmertide",name:"윤슬정",em:"🌊",type:"water",type2:"fairy",tier:3,base:{hp:72,atk:17,def:17,spd:25,spa:25,spDef:19},moves:["hydro","dazzlinggleam","tsunami","moonblast"],learn:[[38,"fairywind"]]},
   {id:"moonytide",name:"월광정",em:"🌙",type:"water",type2:"psychic",tier:3,base:{hp:82,atk:18,def:22,spd:14,spa:24,spDef:24},moves:["hydro","confusion","absorb","recover"],learn:[[28,"psybeam"],[36,"psystrike"]]},
   {id:"puddlet",name:"또랑이",em:"💧",type:"water",tier:1,base:{hp:46,atk:12,def:13,spd:14,spa:15,spDef:13},moves:["tackle","splash"],learn:[[8,"harden"],[12,"hydro"],[18,"quickjab"],[19,"batonpass"],[27,"agility"],[36,"nastyplot"]],evolveTo:"riverine",evolveLv:20},
   {id:"riverine",name:"물살정",em:"🌊",type:"water",tier:2,base:{hp:64,atk:18,def:18,spd:20,spa:20,spDef:18},moves:["hydro","quickjab","crush","splash"],learn:[[8,"recover"],[18,"lullaby"],[27,"amnesia"],[30,"tsunami"],[36,"swordsdance"]],evolveTo:"tidalore",evolveLv:36},
   {id:"tidalore",name:"해일군주",em:"🐳",type:"water",tier:3,base:{hp:88,atk:23,def:23,spd:21,spa:27,spDef:23},moves:["tsunami","hydro","crush","quickjab"],learn:[]},
   {id:"cindercub",name:"불씨늑대",em:"🔥",type:"fire",tier:1,base:{hp:48,atk:16,def:13,spd:15,spa:16,spDef:12},moves:["ember","tackle"],learn:[[8,"roar"],[14,"furyswipe"],[18,"toxic"],[20,"flare"],[27,"nastyplot"],[36,"willowisp"]],evolveTo:"pyrewolf",evolveLv:30},
   {id:"pyrewolf",name:"화염랑",em:"🐺",type:"fire",tier:3,base:{hp:78,atk:26,def:18,spd:24,spa:24,spDef:16},moves:["inferno","flare","furyswipe","crush"],learn:[]},
-  {id:"petalwing",name:"꽃날개",em:"🦋",type:"grass",type2:"bug",tier:1,base:{hp:44,atk:12,def:11,spd:18,spa:16,spDef:13},moves:["gust","leaf"],learn:[[8,"growl"],[14,"absorb"],[16,"bugbite"],[17,"bugbuzz"],[18,"doubleteam"],[20,"wingatk"],[27,"confuse"],[36,"focusenergy"]],evolveTo:"blossomhawk",evolveLv:30},
-  {id:"blossomhawk",name:"꽃호접",em:"🦋",type:"grass",type2:"flying",tier:3,base:{hp:74,atk:20,def:16,spd:26,spa:26,spDef:18},moves:["skyrush","megadrain","wingatk","bloom"],learn:[]},
+  {id:"petalwing",name:"꽃날개",em:"🦋",type:"grass",type2:"fairy",tier:1,base:{hp:44,atk:12,def:11,spd:18,spa:16,spDef:13},moves:["gust","leaf"],learn:[[8,"growl"],[14,"absorb"],[16,"fairywind"],[17,"dazzlinggleam"],[18,"doubleteam"],[20,"playrough"],[27,"confuse"],[36,"focusenergy"]],evolveTo:"blossomhawk",evolveLv:30},
+  {id:"blossomhawk",name:"꽃호접",em:"🦋",type:"grass",type2:"fairy",tier:3,base:{hp:74,atk:20,def:16,spd:26,spa:26,spDef:18},moves:["moonblast","megadrain","dazzlinggleam","bloom"],learn:[[36,"playrough"]]},
   {id:"lumbeast",name:"우직수",em:"🦝",type:"normal",type2:"fight",tier:2,base:{hp:80,atk:24,def:22,spd:12,spa:12,spDef:18},moves:["crush","headbutt","karatechop","growl"],learn:[[8,"recover"],[18,"lullaby"],[27,"swordsdance"],[33,"closecombat"],[37,"doubleteam"]]},
   {id:"snowl",name:"눈올빼",em:"🦉",type:"flying",type2:"ice",tier:2,base:{hp:62,atk:16,def:14,spd:24,spa:20,spDef:16},moves:["peck","icebeam","gust","wingatk"],learn:[[8,"nastyplot"],[18,"batonpass"],[27,"harden"],[32,"skyrush"],[36,"agility"]]},
   {id:"cryogon",name:"동결룡",em:"🐋",type:"ice",type2:"dragon",tier:3,base:{hp:84,atk:24,def:28,spd:14,spa:24,spDef:22},moves:["blizzard","rockslide","icebeam","dragonpulse"],learn:[]},
@@ -5844,7 +5850,12 @@ const SIGFX={
   confusion: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<3;k++){ const a=k/3*6.28; const g=fxGlyph("💫",{x:c.x+Math.cos(a)*26,y:c.y+Math.sin(a)*26},TYPE_COLOR.psychic,"fx-particle"); g.animate([{transform:"translate(-50%,-50%) rotate(0) scale(.6)",opacity:1},{transform:"translate(-50%,-50%) rotate(300deg) scale(1.1)",opacity:0}],{duration:fxT(400),easing:"ease-out"}).finished.then(()=>g.remove()).catch(()=>g.remove()); } await wait(fxT(200)); fxBurst(d,"psychic",2); },
   psybeam: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); for(let i=0;i<4;i++){ _fly("🔮",{x:from.x+rand(-8,8),y:from.y+rand(-8,8)},{x:to.x+rand(-16,16),y:to.y+rand(-12,12)},TYPE_COLOR.psychic,fxT(190),1.0); await wait(fxT(45)); } fxBurst(d,"psychic",2); },
   psystrike: async(s,d)=>{ const c=fxCenter(d); const r=fxGlyph("🔮",c,TYPE_COLOR.psychic,"fx-proj"); r.style.fontSize="22px"; r.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:"translate(-50%,-50%) scale(3)",opacity:0}],{duration:fxT(340),easing:"ease-out",fill:"forwards"}).finished.then(()=>r.remove()).catch(()=>r.remove()); const tg=spriteEl(d); tg.style.filter=`drop-shadow(0 0 12px ${TYPE_COLOR.psychic})`; setTimeout(()=>{tg.style.filter="";},fxT(520)); fxBurst(d,"psychic",3); impactFlash(); screenShake(false); },
-  zenheadbutt: async(s,d)=>{ const c=fxCenter(d); _pop("💥",c,TYPE_COLOR.psychic,0,-6,240); await wait(fxT(90)); fxBurst(d,"psychic",3); impactFlash(); screenShake(true); }
+  zenheadbutt: async(s,d)=>{ const c=fxCenter(d); _pop("💥",c,TYPE_COLOR.psychic,0,-6,240); await wait(fxT(90)); fxBurst(d,"psychic",3); impactFlash(); screenShake(true); },
+  // fairy 기술 전용 연출
+  fairywind: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); for(let i=0;i<5;i++){ _fly("✨",{x:from.x+rand(-10,10),y:from.y+rand(-10,10)},{x:to.x+rand(-18,18),y:to.y+rand(-14,14)},TYPE_COLOR.fairy,fxT(200),1.0); await wait(fxT(42)); } fxBurst(d,"fairy",2); },
+  dazzlinggleam: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<7;k++){ _pop("✨",{x:c.x+rand(-28,28),y:c.y+rand(-22,22)},TYPE_COLOR.fairy,rand(-8,8),rand(-14,-2),rand(360,560)); await wait(fxT(26)); } fxBurst(d,"fairy",3); impactFlash(); },
+  moonblast: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const orb=fxGlyph("🌙",from,TYPE_COLOR.fairy,"fx-proj"); orb.style.fontSize="24px"; await orb.animate([{left:from.x+"px",top:from.y+"px",opacity:.9},{left:to.x+"px",top:to.y+"px",opacity:1}],{duration:fxT(240),easing:"ease-in",fill:"forwards"}).finished.then(()=>orb.remove()).catch(()=>orb.remove()); fxBurst(d,"fairy",3); impactFlash(); screenShake(false); },
+  playrough: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<4;k++){ _pop(k%2?"💥":"✨",{x:c.x+rand(-18,18),y:c.y+rand(-12,12)},TYPE_COLOR.fairy,rand(-8,8),rand(-10,-2),220); await wait(fxT(55)); } fxSlash(d); fxBurst(d,"fairy",3); screenShake(true); }
 };
 // 자체적으로 공격자 스프라이트를 움직이는(lunge/cast) SIGFX 목록 — 중앙 모션과 겹치지 않게 제외한다.
 const SIGFX_SELF_MOTION=new Set(["venomfang","voltfang","headbutt","quickjab","bite","struggle","aquajet","wildbolt","ironhead","doublekick","flareblitz","peck","tackle","takedown","quickstrike","poisonjab"]);
