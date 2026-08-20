@@ -111,7 +111,7 @@ const { chromium } = require("playwright"); const path=require("path");
   console.log("     " + Object.entries(r5).map(([t,c])=>`${t} ${c.phys}/${c.spec}`).join(" · ") + "  (물리/특수)");
   ok(JSON.stringify(oneSided)===JSON.stringify([...KNOWN_ONE_SIDED].sort()),
      `한쪽 계열만 있는 타입이 알려진 3개 그대로다 (지금: ${oneSided.join(",")||"없음"} · 기대: ${[...KNOWN_ONE_SIDED].sort().join(",")})`);
-  ok(Object.keys(r5).length-oneSided.length===13, `나머지 13타입은 물리·특수를 모두 갖는다`);
+  ok(Object.keys(r5).length-oneSided.length===14, `나머지 14타입은 물리·특수를 모두 갖는다`);
 
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs.slice(0,2).join(" | "):""}`);
   await b.close();

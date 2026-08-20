@@ -151,6 +151,10 @@ const MOVES={
   suckerpunch:{name:"기습",type:"dark",power:70,acc:100,pp:5,pri:1,cat:"phys"},
   nightburst:{name:"어둠뭉치",type:"dark",power:55,acc:100,pp:15,pri:0,cat:"spec"},
   darkpulse:{name:"악의파동",type:"dark",power:80,acc:100,pp:10,pri:0,cat:"spec"},
+  metalclaw:{name:"메탈크로",type:"steel",power:50,acc:95,pp:20,pri:0,cat:"phys"},
+  bulletpunch:{name:"총알펀치",type:"steel",power:40,acc:100,pp:30,pri:1,cat:"phys"},
+  mirrorshot:{name:"미러샷",type:"steel",power:55,acc:100,pp:15,pri:0,cat:"spec"},
+  flashcannon:{name:"플래시캐논",type:"steel",power:80,acc:100,pp:10,pri:0,cat:"spec"},
   charm:{name:"애교부리기",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{stat:"atk",stage:-2,target:"foe"}},
   scaryface:{name:"위협하기",type:"normal",power:0,acc:100,pp:15,pri:0,eff:{stat:"spd",stage:-2,target:"foe"}},
   // ===== 풀죽음 =====

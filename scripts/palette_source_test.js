@@ -63,7 +63,7 @@ const { chromium } = require("playwright"); const path=require("path");
              poison:probe("type-tag t-poison") };
   });
 
-  ok(r.tk.length===17, `타입 17종 (${r.tk.length})`);
+  ok(r.tk.length===18, `타입 18종 (${r.tk.length})`);
   ok(r.sk.length===5, `상태 5종 (${r.sk.length})`);
   for(const [name,m] of Object.entries(r.derived))
     ok(m.length===0, `${name}이 전 타입을 덮는다 (${m.join(",")||"누락 없음"})`);
