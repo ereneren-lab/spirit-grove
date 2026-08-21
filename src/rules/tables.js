@@ -83,6 +83,8 @@ const HELD_ITEMS={
   heavycore:{ko:"무게추",em:"🏋️",desc:"기술 위력 ×1.25 · 대신 속도가 크게 준다(×0.8)",dmg:1.25,spdx:0.8},
   recklessgem:{ko:"무모의보석",em:"🔺",desc:"기술 위력 ×1.2 · 대신 공격할 때마다 최대HP 1/20 반동",dmg:1.2,recoil:0.05},
   resolvering:{ko:"집념의고리",em:"💍",desc:"위력·속도 ×1.15 · 대신 처음 쓴 기술만 계속 쓴다",dmg:1.15,spdx:1.15,lock:true},
+  /* 교배 전용 — 전투 효과 없음(dmg/spdx 등 없음). makeEgg가 natureLock을 읽어 이 정령의 성격을 100% 유전시킨다. */
+  everstone:{ko:"변함의돌",em:"🪨",desc:"교배 시 지닌 정령의 성격이 반드시 유전된다",natureLock:true},
 };
 // 타입별 강화 부적 — TYPES에서 파생(단일 출처). 해당 타입 기술 위력 +20%.
 // ⚠️ 손으로 10개 나열하지 않는다 — 그러면 타입 추가 시 또 하나의 병렬 테이블을 빠뜨린다.
