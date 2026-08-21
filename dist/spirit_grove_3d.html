@@ -6687,7 +6687,7 @@ async function winBattle(){
   for(const o of G.party){ if(o!==me && o.hp>0){ await gainXpFor(o,base,false); } }
   // coins for wild kill
   if(!G.trainer){ const c=ri(8,18)+Math.floor(_foe.level*1.5); G.money+=c; updateMoney(); }
-  if(!G.trainer && G.foe && G.foe.id==="dawnwyrm"){ G.legendDone=true; setMsg("여명룡이 그대를 인정하고 하늘로 솟아올랐다… 두 인장의 힘이 공명한다!"); await mw(1400); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="shadowlord"){ G.shadowDone=true; setMsg("흑요마가 빛 속으로 흩어졌다… 숲에 평온이 돌아온다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="aqualord"){ G.lakeDone=true; setMsg("수룡왕이 호수 깊은 곳으로 잠겨들었다… 물의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="glaciarch"){ G.snowDone=true; setMsg("빙하제가 눈보라 속으로 사라졌다… 얼음의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="skydrake"){ G.skyBossDone=true; setMsg("천공룡이 번개 구름 너머로 사라졌다… 봉우리에 정적이 감돈다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="megalith"){ G.ruinsBossDone=true; setMsg("거암왕이 다시 돌기둥 사이로 잠겨들었다… 유적이 고요해진다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="tidalore"){ G.seaBossDone=true; setMsg("해일군주가 물살을 가르며 먼바다로 사라졌다… 파도가 잦아든다."); await mw(1300); saveGame(); }
+  if(!G.trainer && G.foe && G.foe.id==="dawnwyrm"){ G.legendDone=true; setMsg("여명룡이 그대를 인정하고 하늘로 솟아올랐다… 두 인장의 힘이 공명한다!"); await mw(1400); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="shadowlord"){ const _firstShadow=!G.shadowDone; G.shadowDone=true; setMsg("흑요마가 빛 속으로 흩어졌다… 숲에 평온이 돌아온다."); await mw(1300); saveGame(); if(_firstShadow && G.questFlags && G.questFlags.haramScene){ endBattle(); playStory(SHADOW_AFTERMATH,()=>{}); return; } } if(!G.trainer && G.foe && G.foe.id==="aqualord"){ G.lakeDone=true; setMsg("수룡왕이 호수 깊은 곳으로 잠겨들었다… 물의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="glaciarch"){ G.snowDone=true; setMsg("빙하제가 눈보라 속으로 사라졌다… 얼음의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="skydrake"){ G.skyBossDone=true; setMsg("천공룡이 번개 구름 너머로 사라졌다… 봉우리에 정적이 감돈다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="megalith"){ G.ruinsBossDone=true; setMsg("거암왕이 다시 돌기둥 사이로 잠겨들었다… 유적이 고요해진다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="tidalore"){ G.seaBossDone=true; setMsg("해일군주가 물살을 가르며 먼바다로 사라졌다… 파도가 잦아든다."); await mw(1300); saveGame(); }
   if(!G.trainer && G.foe && G.foe.id==="dawnguard"){ G.dawnDone=true; setMsg("오로르가 하늘로 날아올라 숲을 축복했다."); await mw(1300); saveGame(); }
   if(G.trainer){ G.trainer.fainted.add(G.trainer.idx);
     const _nextI=trainerNextAlive();
@@ -6757,6 +6757,18 @@ const RIVAL_MASTER_SCENE=[
   {art:_haramSVG_B,t:"하람: \"그림자는 지키려는 자에게 먼저 속삭인다. '더 큰 힘을 주겠다'고. …나는 손을 내밀었고, 이렇게 됐어.\" 그의 몸에서 다시 검은 안개가 피어오른다."},
   {art:_haramSVG_B,t:"카이: \"안 돼요! 제가— 우리가 되돌릴게요!\" 뻗은 손을 뒤로하고, 하람은 그림자에 삼켜지듯 제단 안쪽으로 물러난다. \"군주의 빛으로도 나는 늦었다. 허나 그림자의 <b>근원</b>을 꺾으면… 나 같은 자가 더는 생기지 않아. 부탁한다.\""},
   {art:_haramSVG_B,t:"카이가 당신을 돌아본다. \"…들었지. 저 안쪽, 그림자의 근원이야. 챔피언이 되면 군주가 그 문을 열어 준댔어. 내 스승님을 — 그 사람들을 되찾자. 이번엔 나도 네 곁에서 싸울게.\""}
+];
+/* ===== 이벤트 씬: 흑요마(그림자 근원) 격파 후 하람·카이 후일담 =====
+   포스트게임 흑요마를 처음 쓰러뜨렸을 때, **그림자 사도(하람)를 이미 대면한 플레이어에게만**
+   재생된다(questFlags.haramScene). 그림자에 삼켜졌던 이들이 풀려나고 하람이 제 정신으로 돌아와
+   카이와 재회하는 것으로 그림자 아크를 닫는다. art C = 빛으로 흩어지는 그림자, art D = 재회.  */
+const _aftSVG_C="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><defs><radialGradient id='AC' cx='50%' cy='45%' r='65%'><stop offset='0' stop-color='#fff6d0'/><stop offset='.5' stop-color='#e8c86a'/><stop offset='1' stop-color='#3a3358'/></radialGradient></defs><rect width='160' height='110' rx='12' fill='url(#AC)'/><circle cx='80' cy='50' r='16' fill='#fff' opacity='.95'><animate attributeName='r' values='16;24;16' dur='2.2s' repeatCount='indefinite'/></circle><g stroke='#fff' stroke-width='2' opacity='.8'><path d='M80 50 L80 14'/><path d='M80 50 L118 30'/><path d='M80 50 L124 62'/><path d='M80 50 L112 90'/><path d='M80 50 L48 90'/><path d='M80 50 L36 62'/><path d='M80 50 L42 30'/></g><path d='M40 92 q40 -8 80 0' stroke='#2f5a3a' stroke-width='8' fill='none' opacity='.7'/></svg>";
+const _aftSVG_D="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='AD' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fbe6a2'/><stop offset='1' stop-color='#8f6f9a'/></linearGradient></defs><rect width='160' height='110' rx='12' fill='url(#AD)'/><circle cx='80' cy='26' r='16' fill='#fff3c8' opacity='.9'/><rect x='40' y='84' width='80' height='8' rx='3' fill='#6a5a7a'/><path d='M66 52 q-4 16 -2 32 h14 q2 -16 -2 -32 q-5 -5 -10 0 z' fill='#7a6a9a'/><circle cx='71' cy='46' r='6' fill='#e8c9a0'/><path d='M92 54 q-3 14 -1 30 h13 q2 -14 -1 -30 q-5 -5 -11 0 z' fill='#d8503e'/><circle cx='98' cy='48' r='6' fill='#e8b88a'/><path d='M80 66 q1 -6 2 0' stroke='#fff' stroke-width='1' fill='none' opacity='.5'/></svg>";
+const SHADOW_AFTERMATH=[
+  {art:_aftSVG_C,t:"흑요마가 빛으로 흩어지자, 제단을 짓누르던 어둠이 걷힌다. 그림자에 삼켜졌던 이들이 하나둘, 제 모습으로 풀려난다."},
+  {art:_aftSVG_D,t:"그 사이, 텅 비었던 눈에 빛이 돌아온 사람 — <b>하람</b>이 무릎을 짚고 일어선다. \"…돌아왔군. 이 손이, 다시 내 것이야.\" 달려온 카이가 그를 붙든다. \"스승님!\""},
+  {art:_aftSVG_D,t:"하람: \"미안하다, 카이. 그리고… 고맙다.\" 그가 너와 카이를 번갈아 본다. \"힘이 아니라 유대가 먼저다 — 내가 잊었던 그 말을, 너희가 증명했어.\""},
+  {art:_aftSVG_C,t:"카이가 씩 웃으며 너를 본다. \"…봤지? 우리가 해냈어. 스승님도, 저 사람들도 돌아왔다. 고마워, 친구.\" 제단 위로 인장의 빛이 온전히 차오른다."}
 ];
 /* ===== 명예의 전당 ===== */
 // 챔피언 등극 시점의 파티를 박제한다. 예전엔 G.champion 플래그 하나뿐이라

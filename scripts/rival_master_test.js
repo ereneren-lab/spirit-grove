@@ -44,6 +44,31 @@ const { chromium } = require("playwright"); const path=require("path");
   const r2=await beatSH3();
   ok(r2.open===false, "이미 본 뒤 재대결에선 씬이 다시 뜨지 않는다");
 
+  // 흑요마(그림자 근원) 격파 처리만 돌려 후일담 씬을 검증한다.
+  const beatShadow=async(metHaram)=>p.evaluate(async(met)=>{
+    const S=window.SG,F=S.flow; S.setG(S.freshState());
+    const G=S.G(); G.questFlags=G.questFlags||{}; if(met)G.questFlags.haramScene=1; G.shadowDone=false;
+    G.party=[S.makeMon("foxfire",50)]; G.active=0; G.inBattle=true; G.trainer=null;
+    G.foe=S.makeMon("shadowlord",50); G.foe.hp=G.foe.maxHp;
+    const fn=F.winBattle||window.winBattle; await fn();
+    await new Promise(r=>setTimeout(r,900));
+    const ov=document.getElementById("storyOverlay");
+    let all=""; for(let i=0;i<10;i++){ if(!ov||getComputedStyle(ov).display==="none")break; all+=" "+ov.textContent;
+      const nx=ov.querySelector("[data-next],.storyNext,button"); if(nx)nx.click(); else ov.click(); await new Promise(r=>setTimeout(r,120)); }
+    return { done:G.shadowDone, opened:all.length>0, text:all };
+  },metHaram);
+
+  // ── 4) 하람을 대면했다면: 흑요마 격파 후 후일담(재회)이 뜬다 ──
+  const aft=await beatShadow(true);
+  ok(aft.done===true, "흑요마 격파로 shadowDone이 선다");
+  ok(aft.opened===true, "하람을 만난 세이브에선 후일담 씬이 뜬다");
+  ok(/하람/.test(aft.text)&&/스승/.test(aft.text), "후일담에 하람·스승 재회가 담긴다");
+  ok(!/은\(는\)|이\(가\)|을\(를\)|와\(과\)/.test(aft.text), "후일담에 괄호형 조사 노출 0");
+
+  // ── 5) 하람을 못 만났다면: 후일담은 뜨지 않는다(설정 없는 후일담 방지) ──
+  const aftNo=await beatShadow(false);
+  ok(aftNo.done===true && aftNo.opened===false, "하람 미대면 세이브에선 후일담이 뜨지 않는다");
+
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,2).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 카이·스승 대면 씬 통과");
   await b.close(); process.exit(process.exitCode||0);
