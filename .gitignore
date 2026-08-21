@@ -1,6 +1,24 @@
 node_modules/
 .DS_Store
 
+# 파이썬 스크립트 import 부산물 (make_creature_art.py가 make_hero_sheet를 import할 때 생김)
+__pycache__/
+*.pyc
+
+# 정령 픽셀 아트 원본 마스터(수 MB) — git 폭증 방지로 로컬만 보존.
+# 게임에 실리는 건 make_creature_art.py가 만든 assets/art/creatures/*.webp(96px)이고 그건 커밋된다.
+art_inbox/creatures/*.png
+art_inbox/creatures/*.jpg
+art_inbox/creatures/*.jpeg
+art_inbox/creatures/*.webp
+
+# 픽셀 정령 소스(사용자가 생성한 고해상도 원본, 종당 ~1MB) — 재변환용 로컬 보존.
+# 게임에 실리는 건 make_creature_art.py가 만든 assets/art/creatures/*.webp(96px)뿐이라
+# 소스 PNG는 추적하지 않아 diff·클론 용량을 가볍게 유지한다. README.md는 계속 추적한다.
+art_inbox/creatures_pixel/*.png
+art_inbox/creatures_pixel/*.jpg
+art_inbox/creatures_pixel/*.jpeg
+
 # 빌드 산출물 — Actions가 서버에서 빌드하므로 커밋 불필요
 /index.html
 

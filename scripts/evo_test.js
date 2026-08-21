@@ -20,7 +20,7 @@ const { chromium } = require("playwright"); const path=require("path");
   const evo = await p.evaluate(async()=>{ const SG=window.SG; const m=SG.makeMon("wyverna",42); SG.G().party[0]=m;
     const r=await SG.flow.evolveCheck(m,false); return { r, id:m.id, type:m.type, type2:m.type2 }; });
   ok(evo.r===true && evo.id==="skydrake", `취소 안 하면 진화 (id=${evo.id})`);
-  ok(evo.type==="normal" && evo.type2==="flying", `이중타입 진화 시 type2 반영 (${evo.type}/${evo.type2})`);
+  ok(evo.type==="dragon" && evo.type2==="flying", `이중타입 진화 시 type2 반영 (${evo.type}/${evo.type2})`);
   ok(errs.length===0, "런타임 에러 0");
 
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 진화 취소·type2 통과");
