@@ -877,6 +877,10 @@
       <div id="daycareBody"></div>
       <button class="dcbtn" id="daycareClose" style="width:100%;margin-top:10px">닫기</button>
     </div></div>
+    <div class="overlay" id="tradeOverlay"><div class="sheet" style="max-width:420px">
+      <div class="ov-head"><h3 id="tradeTitle">🔁 코드 교환</h3><button class="closex" data-close="tradeOverlay">✕</button></div>
+      <div id="tradeBody" class="ov-body"></div>
+    </div></div>
     <div class="overlay" id="dbOverlay"><div class="sheet" style="max-width:460px">
       <div id="dbTitle" style="font-weight:800;text-align:center;margin-bottom:6px">⚔️ 듀오 배틀 · 2 vs 2</div>
       <div class="dbfoes" id="dbFoes"></div>
@@ -1166,6 +1170,7 @@ $("muteBtn").addEventListener("click",()=>{ Audio.init(); const m=Audio.toggleMu
 //@@RULES_TYPES@@
 //@@RULES_MOVES@@
 //@@RULES_DEX@@
+//@@RULES_QR@@
 
 const FIND_HINT={1:"숲 · 초원",2:"깊은 숲",3:"숲 정상"};   // 오버월드(잔디) 조우의 티어별 깊이 힌트
 const HABITAT_KO={fireflyway:"반딧불 오솔길",pier:"호숫가 잔교",frostpass:"서리 고갯길",hillpath:"바람 언덕길",mine:"버려진 갱도",mosshollow:"이끼 골짜기",fallspath:"물안개 벼랑길",snow:"설원 지대",marsh:"안개 늪지",skyridge:"뇌명 봉우리",ruins:"고대 유적",crater:"불꽃 분화구",garden:"달빛 화원",isle:"여명의 섬",coast:"노을 해안",surf:"수면 위",fishRare:"낚시(대물)",fish:"낚시",lava:"용암 동굴",cave:"수정 동굴"};
@@ -1402,6 +1407,7 @@ const NPCS=[
   {id:"woodsman",x:9,y:24,em:"🪓",name:"나무꾼 바우",spr:{build:"stout",extra:"basket",outfit:"#7a5a3a",accent:"#a0784a",skin:"#e3b07e",hair:"#3a2c22",hat:"cap",hatc:"#5a4028",boots:"#4a3420"},chat:["나무꾼 바우: 앞을 막은 작은 나무 보이지? 체육관 인장을 얻으면 '자르기'로 벨 수 있게 돼.","나무꾼 바우: 큰 바위는 '괴력'으로 밀고, 넓은 물은 '파도타기'로 건너지. 다 인장의 힘이라네.","나무꾼 바우: 길이 막혔다고 포기 말게. 인장을 모을수록 새 길이 열리는 법이야."]},
   {id:"towerkeeper",x:16,y:9,em:"🗼",name:"도장의 관장 세라",tower:true,spr:{build:"tall",hairlen:"long",outfit:"#3a3a5a",accent:"#c04a6a",skin:"#e3b07e",hair:"#2a2436",hat:"none",boots:"#2a2a44"},lines:["도장의 관장 세라: 여긴 연전 도장. 강자들이 회복 없이 연이어 겨루는 곳이지."]},
   {id:"pvpref",x:19,y:9,em:"🎌",name:"대전 심판 하루",hotseat:true,spr:{build:"stout",outfit:"#4a4a6a",accent:"#e0c060",skin:"#e3b07e",hair:"#2a2a36",hat:"cap",hatc:"#c04a6a",boots:"#2a2a3a"},lines:["대전 심판 하루: 친구와 한 기기로 겨루는 <b>핫싯 대전</b>을 주관하지. 렌탈 정령 3마리로 정정당당히!"]},
+  {id:"tradebroker",x:21,y:9,em:"🔁",name:"교환 중개인 미로",tradecode:true,spr:{hairlen:"long",extra:"bag",outfit:"#4a6a8a",accent:"#8ac0e0",skin:"#e0bd96",hair:"#2a3a4a",hat:"none",boots:"#2a3a4a"},lines:["교환 중개인 미로: 정령을 <b>코드·QR</b>로 주고받게 도와줄게. 멀리 있는 친구와도 교환할 수 있어!"]},
 ];
 const NPC_AT={}; NPCS.forEach(n=>{ NPC_AT[n.x+","+n.y]=n; });
 function npcAvailable(n){ if(!n)return false; if(n.battleKey&&G.defeated.has(n.battleKey)){ if(n.dir&&G.rematchWanted&&G.rematchWanted.has(n.battleKey))return true; return false; } if(n.requires&&!G.defeated.has(n.requires))return false; return true; }
@@ -1692,6 +1698,7 @@ function talkNPC(npc){ if(_talking||dialogActive())return;
   if(npc.exchange){ Audio.sfx&&Audio.sfx("blip"); openExchange(); return; }
   if(npc.tower){ Audio.sfx&&Audio.sfx("blip"); openTower(); return; }
   if(npc.hotseat){ Audio.sfx&&Audio.sfx("blip"); showDialog({name:npc.name,text:"친구와 한 기기로 겨루는 <b>핫싯 대전</b>이다. 각자 렌탈 정령 3마리를 고르지. 시작할까?"},()=>{ startHotSeat(); }); return; }
+  if(npc.tradecode){ Audio.sfx&&Audio.sfx("blip"); showDialog({name:npc.name,text:"정령을 <b>코드·QR</b>로 만들어 친구에게 보내거나, 받은 코드로 정령을 받을 수 있어. 열어줄까?"},()=>{ openTradeCode(); }); return; }
   // ⚠️ 퀘스트 분기는 trade보다 **먼저** 와야 한다 — trade1(교환하는 소녀)은 trade와 q_bond 제공자를
   //    겸하는데, trade가 먼저 return하면 q_bond가 영영 안 뜬다. questForGiver는 done이면 null이라
   //    퀘스트 완료 후엔 자연히 교환으로 넘어간다(퀘스트 먼저 → 완료 → 교환).
@@ -3352,7 +3359,7 @@ function updateRunBtn(){ const b=$("runBtn"); if(b)b.textContent=(G&&G.running)?
 function toggleRun(){ G.running=!G.running; if(Field)Field.moveSpeed=G.running?11.4:6.8; updateRunBtn(); flashHint(G.running?"👟 달리기 켜짐":"🚶 걷기 모드"); }
 /* ⚠️ 여기 빠진 패널은 **Escape·B·✕(가려지면)로 못 닫는다.** 지도(minimap)가 목록 밖이라
    가로에서 버튼이 화면 밖으로 밀렸을 때 리로드 말곤 탈출로가 없었다(유저 제보). 새 패널을 만들면 여기 등록할 것. */
-const CANCELABLE_OVERLAYS=["buyOverlay","dexDetailOverlay","dexOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay","minimap"];
+const CANCELABLE_OVERLAYS=["buyOverlay","dexDetailOverlay","dexOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay","tradeOverlay","minimap"];
 function anyOverlayOpen(){ for(const id of CANCELABLE_OVERLAYS){ const el=$(id); if(el&&el.classList.contains("active"))return id; } return null; }
 function cancelBtn(){ if(dialogActive()){ advanceDialog(); return; } const id=anyOverlayOpen(); if(id){ closeOverlay(id); if(Audio&&Audio.sfx)Audio.sfx("blip"); } }
 document.addEventListener("keydown",e=>{ if(!$("map").classList.contains("active"))return; const k=e.key.toLowerCase();
@@ -5722,6 +5729,73 @@ function pvpEnd(winner){ PVP.phase="done"; const W=PVP[winner]; dbLog(`🏆 <b>$
     const t=$("dbTitle"); if(t)t.textContent="⚔️ 듀오 배틀 · 2 vs 2";
     if(typeof fieldMusic==="function")Audio.startMusic(fieldMusic()); }); }
 
+/* ===== 코드/QR 기반 정령 교환 =====
+   서버 없는 단일 HTML → 정령을 serMon으로 직렬화해 base64url 코드로 만든다. 상대는 코드를 붙여넣어 받는다.
+   QR은 그 코드를 그림으로 그려, 두 기기 사이를 카메라로 옮길 수 있게 한다(폰 카메라로 QR→텍스트→붙여넣기).
+   ⚠️ 코드는 '선물/복제' 의미다(오프라인이라 전송 실패 시 손실을 막으려 보내는 쪽은 정령을 잃지 않는다). */
+const TRADE_VER="SGT1";
+function _b64e(s){ return btoa(unescape(encodeURIComponent(s))).replace(/=+$/,"").replace(/\+/g,"-").replace(/\//g,"_"); }
+function _b64d(s){ s=s.replace(/-/g,"+").replace(/_/g,"/"); return decodeURIComponent(escape(atob(s))); }
+function _tradeChk(s){ let h=5381; for(let i=0;i<s.length;i++)h=((h*33)^s.charCodeAt(i))>>>0; return h.toString(36); }
+function tradeCodeFor(m){ if(!m)return ""; const body=_b64e(JSON.stringify(serMon(m))); return `${TRADE_VER}.${body}.${_tradeChk(body)}`; }
+function parseTradeCode(code){ if(!code)return {err:"코드가 비어 있어요."}; code=(""+code).trim().replace(/\s+/g,"");
+  const parts=code.split("."); if(parts.length!==3||parts[0]!==TRADE_VER)return {err:"형식이 올바르지 않은 코드예요."};
+  if(_tradeChk(parts[1])!==parts[2])return {err:"손상된 코드예요 (체크섬 불일치)."};
+  let obj; try{ obj=JSON.parse(_b64d(parts[1])); }catch(e){ return {err:"해독할 수 없는 코드예요."}; }
+  const m=reviveMon(obj); if(!m||!byId(m.id))return {err:"정령 데이터를 복원하지 못했어요."};
+  return {mon:m}; }
+function qrModules(text){ const q=qrcode(0,"M"); q.addData(text); q.make(); const n=q.getModuleCount();
+  const rows=[]; for(let y=0;y<n;y++){ const r=[]; for(let x=0;x<n;x++)r.push(q.isDark(y,x)); rows.push(r); } return rows; }
+function drawQR(canvas,text){ try{ const mods=qrModules(text); const n=mods.length; const scale=Math.max(2,Math.floor(216/(n+8))); const pad=4*scale, W=n*scale+pad*2;
+  canvas.width=W; canvas.height=W; canvas.style.width=Math.min(W,240)+"px"; canvas.style.height="auto"; canvas.style.imageRendering="pixelated";
+  const ctx=canvas.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,W); ctx.fillStyle="#000";
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(mods[y][x])ctx.fillRect(pad+x*scale,pad+y*scale,scale,scale); return true; }catch(e){ return false; } }
+function openTradeCode(){ Audio.sfx&&Audio.sfx("blip"); openOverlay("tradeOverlay"); tradeHome(); }
+function tradeHome(){ const body=$("tradeBody");
+  body.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">정령을 <b>코드</b>로 만들어 친구에게 보내거나, 받은 코드를 붙여넣어 정령을 받아요. QR을 폰 카메라로 찍으면 코드가 나와요.</div>
+    <button class="dbmv" id="tradeExpBtn" style="width:100%;margin-bottom:8px">📤 정령 내보내기 (코드 만들기)</button>
+    <button class="dbmv" id="tradeImpBtn" style="width:100%">📥 코드로 정령 받기</button>`;
+  $("tradeExpBtn").onclick=()=>{ Audio.sfx&&Audio.sfx("blip"); tradeExportList(); };
+  $("tradeImpBtn").onclick=()=>{ Audio.sfx&&Audio.sfx("blip"); tradeImportUI(); };
+}
+function tradeExportList(){ const body=$("tradeBody");
+  const pool=[]; (G.party||[]).forEach((m,i)=>{ if(m&&!m.isEgg)pool.push({m,src:"party",i}); });
+  (G.box||[]).forEach((m,i)=>{ if(m&&!m.isEgg)pool.push({m,src:"box",i}); });
+  if(!pool.length){ body.innerHTML=`<div style="color:var(--muted);text-align:center;padding:20px">내보낼 정령이 없어요.</div><button class="dbmv" id="tradeBack" style="width:100%">← 뒤로</button>`; $("tradeBack").onclick=tradeHome; return; }
+  body.innerHTML=`<div class="dbprompt" style="margin-bottom:8px">내보낼 정령을 고르세요</div><div style="display:flex;flex-direction:column;gap:5px;max-height:52vh;overflow:auto">`+
+    pool.map((o,i)=>`<button class="dbmv" data-pi="${i}" style="flex-direction:row;justify-content:space-between;align-items:center"><span>${o.m.shiny?"✨":""}${o.m.em||"❔"} ${o.m.nick||o.m.name}</span><span class="dbmvp">Lv${o.m.level} · ${tkLabel(o.m.type)}${o.src==="party"?" · 파티":""}</span></button>`).join("")+
+    `</div><button class="dbmv" id="tradeBack" style="width:100%;margin-top:8px">← 뒤로</button>`;
+  body.querySelectorAll("[data-pi]").forEach(b=>b.onclick=()=>{ Audio.sfx&&Audio.sfx("blip"); tradeShowCode(pool[+b.dataset.pi].m); });
+  $("tradeBack").onclick=tradeHome;
+}
+function tradeShowCode(m){ const body=$("tradeBody"); const code=tradeCodeFor(m);
+  body.innerHTML=`<div class="dbprompt" style="margin-bottom:8px"><b>${m.nick||m.name}</b> Lv${m.level} 교환 코드</div>
+    <div style="display:flex;justify-content:center;margin-bottom:8px"><canvas id="tradeQR"></canvas></div>
+    <textarea id="tradeCodeBox" readonly style="width:100%;height:64px;font-size:10px;font-family:monospace;background:#1c2030;color:#cfe0ff;border:1px solid #3a4060;border-radius:8px;padding:6px;resize:none">${code}</textarea>
+    <div style="display:flex;gap:6px;margin-top:8px"><button class="dbmv" id="tradeCopy" style="flex:1">📋 코드 복사</button><button class="dbmv" id="tradeBack" style="flex:1">← 뒤로</button></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6">이 코드나 QR을 친구에게 보내면, 친구가 <b>코드로 받기</b>에서 같은 정령을 받아요. (내 정령은 그대로 남아요.)</div>`;
+  const cv=$("tradeQR"); if(cv&&!drawQR(cv,code)){ cv.style.display="none"; }
+  $("tradeCopy").onclick=()=>{ const t=$("tradeCodeBox"); t.select(); let okc=false;
+    try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(code); okc=true; } }catch(e){}
+    if(!okc){ try{ okc=document.execCommand("copy"); }catch(e){} }
+    Audio.sfx&&Audio.sfx("blip"); flashHint(okc?"코드를 복사했어요":"코드를 길게 눌러 복사하세요"); };
+  $("tradeBack").onclick=tradeExportList;
+}
+function tradeImportUI(){ const body=$("tradeBody");
+  body.innerHTML=`<div class="dbprompt" style="margin-bottom:8px">받은 코드를 붙여넣으세요</div>
+    <textarea id="tradeInBox" placeholder="SGT1.xxxxx.yyy" style="width:100%;height:80px;font-size:11px;font-family:monospace;background:#1c2030;color:#cfe0ff;border:1px solid #3a4060;border-radius:8px;padding:6px;resize:none"></textarea>
+    <div id="tradeInMsg" style="font-size:12px;min-height:18px;margin-top:6px"></div>
+    <div style="display:flex;gap:6px;margin-top:6px"><button class="dbmv" id="tradeRecv" style="flex:1">📥 받기</button><button class="dbmv" id="tradeBack" style="flex:1">← 뒤로</button></div>`;
+  $("tradeRecv").onclick=()=>{ const code=$("tradeInBox").value; const r=parseTradeCode(code);
+    const msg=$("tradeInMsg");
+    if(r.err){ msg.style.color="#f6a5c0"; msg.textContent="⚠️ "+r.err; Audio.sfx&&Audio.sfx("miss"); return; }
+    G.box=G.box||[]; r.mon.wild=false; r.mon.traded=true; G.box.push(r.mon); G.caught&&G.caught.add(r.mon.id); G.seen&&G.seen.add(r.mon.id);
+    saveGame&&saveGame(); updateDexPill&&updateDexPill();
+    msg.style.color="#7fd16f"; msg.innerHTML=`✅ <b>${r.mon.nick||r.mon.name}</b> Lv${r.mon.level}을(를) 받았어요! (보관함에 보관됨)`;
+    Audio.sfx&&Audio.sfx("win"); $("tradeInBox").value=""; };
+  $("tradeBack").onclick=tradeHome;
+}
+
 async function doMove(mvKey){ if(G.busy)return; G.busy=true; G.battleTurn=(G.battleTurn||0)+1; setMenuEnabled(false); showMain();
   // 트레이너가 상성 불리를 읽고 먼저 교체할 수 있다. 교체하면 그게 상대의 턴이라
   // 내 기술은 새로 나온 정령에게 들어간다(본가와 동일).
@@ -7385,7 +7459,8 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   getDB:()=>DB, dbReplace,   // 듀오 배틀 상태 + 벤치 교대. held_effect_test [5]가 듀오 상대의 지닌물건 풀을 검사한다.
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
   setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, terrainWalkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HOME_POS, HOME_AT, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS,
-  startHotSeat, pvpSelect, pvpRenderSelect, pvpPromptChoice, pvpChoose, pvpSwitchList, pvpResolve, pvpActive, pvpAlive, PVP_RENTAL, getPVP:()=>PVP};
+  startHotSeat, pvpSelect, pvpRenderSelect, pvpPromptChoice, pvpChoose, pvpSwitchList, pvpResolve, pvpActive, pvpAlive, PVP_RENTAL, getPVP:()=>PVP,
+  openTradeCode, tradeHome, tradeExportList, tradeShowCode, tradeImportUI, tradeCodeFor, parseTradeCode, qrModules, drawQR, qrcode};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
