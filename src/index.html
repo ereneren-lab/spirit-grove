@@ -6478,6 +6478,17 @@ const BAG_ITEMS=[
   {key:"tm_twinbolt",em:"💿",nm:"기술머신: 트윈볼트",ds:"전기 정령에게 트윈볼트를 가르친다",use:"tm",move:"twinbolt",where:"map"},
   {key:"tm_skyrush",em:"💿",nm:"기술머신: 스카이러시",ds:"비행 정령에게 스카이러시를 가르친다",use:"tm",move:"skyrush",where:"map"},
   {key:"tm_bloom",em:"💿",nm:"기술머신: 개화",ds:"풀 정령에게 개화를 가르친다",use:"tm",move:"bloom",where:"map"},
+  /* 신규 8타입 강기 TM(H1-1) — 기존 타입TM과 동일하게 **타입 전용**(universal 아님)이라
+     그 타입 정령만 배운다. 레벨업 학습셋엔 안 넣으므로 트레이너·야생 편성 불변 = 밸런스 안전.
+     ⚠️ 자격 검사는 type2까지 본다(이중타입 재타이핑 종이 2차 타입 TM을 배우게). */
+  {key:"tm_dragonpulse",em:"💿",nm:"기술머신: 용의파동",ds:"용 정령에게 용의파동을 가르친다",use:"tm",move:"dragonpulse",where:"map"},
+  {key:"tm_bugbuzz",em:"💿",nm:"기술머신: 벌레버즈",ds:"벌레 정령에게 벌레버즈를 가르친다",use:"tm",move:"bugbuzz",where:"map"},
+  {key:"tm_closecombat",em:"💿",nm:"기술머신: 인파이트",ds:"격투 정령에게 인파이트를 가르친다",use:"tm",move:"closecombat",where:"map"},
+  {key:"tm_psystrike",em:"💿",nm:"기술머신: 사이코키네시스",ds:"에스퍼 정령에게 사이코키네시스를 가르친다",use:"tm",move:"psystrike",where:"map"},
+  {key:"tm_moonblast",em:"💿",nm:"기술머신: 문포스",ds:"페어리 정령에게 문포스를 가르친다",use:"tm",move:"moonblast",where:"map"},
+  {key:"tm_shadowball",em:"💿",nm:"기술머신: 섀도볼",ds:"고스트 정령에게 섀도볼을 가르친다",use:"tm",move:"shadowball",where:"map"},
+  {key:"tm_darkpulse",em:"💿",nm:"기술머신: 악의파동",ds:"악 정령에게 악의파동을 가르친다",use:"tm",move:"darkpulse",where:"map"},
+  {key:"tm_flashcannon",em:"💿",nm:"기술머신: 플래시캐논",ds:"강철 정령에게 플래시캐논을 가르친다",use:"tm",move:"flashcannon",where:"map"},
   {key:"tm_crush",em:"💿",nm:"기술머신: 분쇄",ds:"어떤 정령이든 분쇄를 배운다",use:"tm",move:"crush",universal:true,where:"map"},
   {key:"tm_recover",em:"💿",nm:"기술머신: 회복",ds:"어떤 정령이든 회복을 배운다",use:"tm",move:"recover",universal:true,where:"map"},
   {key:"tm_reflect",em:"💿",nm:"기술머신: 리플렉터",ds:"물리 데미지를 5턴간 반감",use:"tm",move:"reflect",universal:true,where:"map"},
@@ -6611,7 +6622,7 @@ function applyItemEffect(it,tgt){ const m=tgt||activeMon();
   if(it.use==="vsseeker"){ return useVsSeeker(); }
   if(it.use==="tm"){ const mv=it.move, md=MOVES[mv]; if(!m){flashHint("정령이 없다");return false;} if(!md){flashHint("잘못된 기술머신");return false;}
     if(m.moves.includes(mv)){ flashHint(`${dispName(m)}은(는) 이미 ${md.name}을(를) 알고 있다`); return false; }
-    if(!(it.universal||md.type===m.type)){ flashHint(`${dispName(m)}은(는) ${md.name}을(를) 배울 수 없다`); return false; }
+    if(!(it.universal||md.type===m.type||md.type===m.type2)){ flashHint(`${dispName(m)}은(는) ${md.name}을(를) 배울 수 없다`); return false; }   // ⚠️ type2까지: 이중타입은 두 타입 중 하나만 맞으면 그 타입 TM을 배운다
     G.items[it.key]--; Audio.sfx("levelup"); flashHint(`${dispName(m)}에게 ${md.name}을(를) 가르친다!`); learnMoveFlow(m,mv,true); return true; }
   if(it.use==="rod"){ if(G.inBattle||G.busy)return false;
     const adj=[[0,1],[0,-1],[1,0],[-1,0]].some(([dx,dy])=>tileAt(G.pos.x+dx,G.pos.y+dy)==="~");
@@ -6761,6 +6772,14 @@ const SHOP=[
   {key:"tm_twinbolt",em:"💿",nm:"기술머신: 트윈볼트",ds:"전기 타입 전용",price:1400,need:2},
   {key:"tm_skyrush",em:"💿",nm:"기술머신: 스카이러시",ds:"비행 타입 전용",price:1400,need:2},
   {key:"tm_bloom",em:"💿",nm:"기술머신: 개화",ds:"풀 타입 전용",price:1400,need:2},
+  {key:"tm_dragonpulse",em:"💿",nm:"기술머신: 용의파동",ds:"dragon 타입 전용",price:1800,need:3},
+  {key:"tm_bugbuzz",em:"💿",nm:"기술머신: 벌레버즈",ds:"bug 타입 전용",price:1600,need:3},
+  {key:"tm_closecombat",em:"💿",nm:"기술머신: 인파이트",ds:"fight 타입 전용",price:1800,need:3},
+  {key:"tm_psystrike",em:"💿",nm:"기술머신: 사이코키네시스",ds:"psychic 타입 전용",price:1800,need:3},
+  {key:"tm_moonblast",em:"💿",nm:"기술머신: 문포스",ds:"fairy 타입 전용",price:1800,need:3},
+  {key:"tm_shadowball",em:"💿",nm:"기술머신: 섀도볼",ds:"ghost 타입 전용",price:1800,need:3},
+  {key:"tm_darkpulse",em:"💿",nm:"기술머신: 악의파동",ds:"dark 타입 전용",price:1800,need:3},
+  {key:"tm_flashcannon",em:"💿",nm:"기술머신: 플래시캐논",ds:"steel 타입 전용",price:1800,need:3},
   {key:"escaperope",em:"🪢",nm:"탈출로프",ds:"던전 밖으로 즉시 탈출",price:550,need:1},
   {key:"protein",em:"💊",nm:"단백질",ds:"공격 노력치 +10",price:900,need:2},
   {key:"iron",em:"💊",nm:"철분",ds:"방어 노력치 +10",price:900,need:2},
