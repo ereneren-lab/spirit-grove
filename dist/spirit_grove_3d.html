@@ -9397,7 +9397,7 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
     healParty(true); G.trainer=null; endBattle(); blackout(); } }
 
 /* ===================== CATCH / RUN ===================== */
-const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",ultraball:"울트라볼",duskball:"다크볼",netball:"네트볼",quickball:"퀵볼",healball:"힐볼",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프",protein:"단백질",iron:"철분",calcium:"칼슘",zinc:"아연",carbos:"카르본",hpup:"맥스업",mint_adamant:"고집 민트",mint_bold:"대담 민트",mint_timid:"겁쟁이 민트",mint_brave:"용감 민트",mint_relaxed:"무사 민트",mint_modest:"조심 민트",mint_calm:"차분 민트",bottlecap:"황금 병뚜껑",goodrod:"좋은 낚싯대",superrod:"초 낚싯대"};
+const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",ultraball:"울트라볼",duskball:"다크볼",netball:"네트볼",quickball:"퀵볼",healball:"힐볼",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프",protein:"단백질",iron:"철분",calcium:"칼슘",zinc:"아연",carbos:"카르본",hpup:"맥스업",mint_adamant:"고집 민트",mint_bold:"대담 민트",mint_timid:"겁쟁이 민트",mint_brave:"용감 민트",mint_relaxed:"무사 민트",mint_modest:"조심 민트",mint_calm:"차분 민트",bottlecap:"황금 병뚜껑",goodrod:"좋은 낚싯대",superrod:"초 낚싯대",abcap_guts:"근성 캡슐",abcap_intimidate:"위협 캡슐",abcap_sturdy:"옹골참 캡슐",abcap_naturalcure:"자연회복 캡슐",abcap_sniper:"스나이퍼 캡슐",abcap_thickfat:"두꺼운지방 캡슐"};
 // 아이템 표시명 단일 조회. ⚠️ ITEM_KO만 보면 안 된다 — TM·기력·엘릭서·볼·지닌물건은
 // 각자 다른 테이블(BAG_ITEMS.nm / BALLS.ko / HELD_ITEMS.ko)에 이름이 있어서,
 // 예전엔 바닥에서 기력을 주우면 "ether을(를) 주웠다!"처럼 **키가 그대로 노출**됐다.
@@ -9756,6 +9756,12 @@ const BAG_ITEMS=[
   {key:"mint_modest",em:"🌿",nm:"조심 민트",ds:"선두 정령을 조심스러운 성격(특공↑공↓)으로",use:"mint",nature:"modest",where:"map"},
   {key:"mint_calm",em:"🌿",nm:"차분 민트",ds:"선두 정령을 차분한 성격(특방↑공↓)으로",use:"mint",nature:"calm",where:"map"},
   {key:"bottlecap",em:"🔩",nm:"황금 병뚜껑",ds:"선두 정령의 개체값을 모두 최고로",use:"bottlecap",where:"map"},
+  {key:"abcap_guts",em:"🧬",nm:"근성 캡슐",ds:"정령의 특성을 근성으로 바꾼다",use:"abilitycap",ability:"guts",where:"map"},
+  {key:"abcap_intimidate",em:"🧬",nm:"위협 캡슐",ds:"정령의 특성을 위협으로 바꾼다",use:"abilitycap",ability:"intimidate",where:"map"},
+  {key:"abcap_sturdy",em:"🧬",nm:"옹골참 캡슐",ds:"정령의 특성을 옹골참으로 바꾼다",use:"abilitycap",ability:"sturdy",where:"map"},
+  {key:"abcap_naturalcure",em:"🧬",nm:"자연회복 캡슐",ds:"정령의 특성을 자연회복으로 바꾼다",use:"abilitycap",ability:"naturalcure",where:"map"},
+  {key:"abcap_sniper",em:"🧬",nm:"스나이퍼 캡슐",ds:"정령의 특성을 스나이퍼로 바꾼다",use:"abilitycap",ability:"sniper",where:"map"},
+  {key:"abcap_thickfat",em:"🧬",nm:"두꺼운지방 캡슐",ds:"정령의 특성을 두꺼운지방으로 바꾼다",use:"abilitycap",ability:"thickfat",where:"map"},
   {key:"goodrod",em:"🎣",nm:"좋은 낚싯대",ds:"대물이 더 자주 걸린다",use:"rodup",tier:2,where:"map"},
   {key:"superrod",em:"🎣",nm:"초 낚싯대",ds:"대물이 가장 자주 걸린다",use:"rodup",tier:3,where:"map"},
   {key:"candy",em:"🍬",nm:"정령 사탕",ds:"선두 정령 Lv +1",use:"candy",where:"map"},
@@ -9887,7 +9893,7 @@ function renderBallPicker(balls){
       closeOverlay("bagOverlay"); tryCatch(it.key); });
     body.appendChild(row); });
 }
-function itemNeedsTarget(it){ return ["heal","pp","cure","revive","ev","mint","bottlecap","candy","evostone","tm"].includes(it.use); }
+function itemNeedsTarget(it){ return ["heal","pp","cure","revive","ev","mint","abilitycap","bottlecap","candy","evostone","tm"].includes(it.use); }
 /* 아이템 대상 선택 — 가방 본문을 파티 목록으로 바꾼다(새 오버레이 없이 전투·필드 공용).
    ⚠️ HP바/상태칩은 `miniHpHtml`/`statusChipHtml` 단일 출처를 쓴다(파티·보관함·교체·데이케어와 같은 마크업). */
 function renderItemTarget(it){
@@ -9969,6 +9975,10 @@ function applyItemEffect(it,tgt){ const m=tgt||activeMon();
     if(m.nature===it.nature){ flashHint(`${dispName(m)}은(는) 이미 그 성격이다`); return false; }
     G.items[it.key]--; m.nature=it.nature; recalc(m); m.hp=Math.min(m.hp,m.maxHp); Audio.sfx("heal");
     flashHint(`🌿 ${dispName(m)}의 성격이 ${(NATURE_BY_K[it.nature]&&NATURE_BY_K[it.nature].ko)||it.nature}(으)로 바뀌었다!`); return true; }
+  if(it.use==="abilitycap"){ if(!m){flashHint("정령이 없다");return false;}
+    if(m.ability===it.ability){ flashHint(`${dispName(m)}은(는) 이미 그 특성이다`); return false; }
+    G.items[it.key]--; m.ability=it.ability; Audio.sfx("heal");
+    flashHint(`🧬 ${dispName(m)}의 특성이 ${ABILITY_KO[it.ability]||it.ability}(으)로 바뀌었다!`); return true; }
   if(it.use==="bottlecap"){ if(!m){flashHint("정령이 없다");return false;} m.ivs=m.ivs||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0};
     if(["hp","atk","def","spa","spDef","spd"].every(k=>(m.ivs[k]||0)>=31)){ flashHint(`${dispName(m)}의 개체값은 이미 최고다`); return false; }
     G.items[it.key]--; ["hp","atk","def","spa","spDef","spd"].forEach(k=>m.ivs[k]=31); recalc(m); m.hp=Math.min(m.hp,m.maxHp); Audio.sfx("levelup");
@@ -10114,6 +10124,12 @@ const PREMIUM=[
   {key:"mint_modest",em:"🌿",nm:"조심 민트",ds:"선두 정령 성격을 조심스러운(특공↑공↓)으로",price:4000,held:false},
   {key:"mint_calm",em:"🌿",nm:"차분 민트",ds:"선두 정령 성격을 차분한(특방↑공↓)으로",price:4000,held:false},
   {key:"bottlecap",em:"🔩",nm:"황금 병뚜껑",ds:"선두 정령의 개체값을 모두 최고로",price:9000,held:false},
+  {key:"abcap_guts",em:"🧬",nm:"근성 캡슐",ds:"정령의 특성을 근성(상태이상 시 공격↑)으로",price:5000,held:false},
+  {key:"abcap_intimidate",em:"🧬",nm:"위협 캡슐",ds:"정령의 특성을 위협(등장 시 상대 공격↓)으로",price:5000,held:false},
+  {key:"abcap_sturdy",em:"🧬",nm:"옹골참 캡슐",ds:"정령의 특성을 옹골참(풀피일 때 한 방 버팀)으로",price:5000,held:false},
+  {key:"abcap_naturalcure",em:"🧬",nm:"자연회복 캡슐",ds:"정령의 특성을 자연회복(교체 시 상태이상 치료)으로",price:5000,held:false},
+  {key:"abcap_sniper",em:"🧬",nm:"스나이퍼 캡슐",ds:"정령의 특성을 스나이퍼(급소 위력↑)으로",price:5000,held:false},
+  {key:"abcap_thickfat",em:"🧬",nm:"두꺼운지방 캡슐",ds:"정령의 특성을 두꺼운지방(불 피해 절반)으로",price:5000,held:false},
   {key:"shinycharm",em:"✨",nm:"반짝임의 부적",ds:"샤이니(이로치) 정령 출현 확률 ↑ (1회 구매)",price:12000,unique:true},
 ];
 function openExchange(){ Audio.sfx("blip"); { const t=$("shopHeadTitle"); if(t)t.textContent="💱 교환소"; } renderExchange(); updateMoney(); openOverlay("shopOverlay"); }

@@ -271,6 +271,19 @@ a~z·A~Z 중 남은 글자는 `t` **하나뿐**이다. 그래서 이번부터 **
 
 ## 세션 기록 (최신이 위)
 
+### 2026-08-21 (H2-6) — **특성 캡슐** (성격 민트의 특성판)
+
+**유저**: "특성 캡슐도 추가해줘"
+
+이 게임은 종별 특성이 **단일**(makeMon이 sp.ability→ABILITY_OVERRIDE→DEFAULT_ABILITY로 1개 배정)이라
+포켓몬식 2특성 토글이 안 맞는다 → **성격 민트와 똑같이 특성별 캡슐 아이템**으로 구현(동기 apply, 신규 UI 0).
+- `abcap_{guts,intimidate,sturdy,naturalcure,sniper,thickfat}` 6종(범용 특성 위주, 타입 종속 blaze/급류류 제외).
+- `BAG_ITEMS`에 `use:"abilitycap",ability:"…"` 정의 + `applyItemEffect` 분기(이미 그 특성이면 소모 없이 거부) +
+  `itemNeedsTarget`에 편입(대상 선택) + `ITEM_KO` 한글명 + `PREMIUM`(교환소) 5000코인 판매.
+
+**회귀 신설** `ability_capsule_test.js`(10종): 캡슐 6종·실재 특성·ITEM_KO·교환소 판매·적용/소모·중복 거부·
+대상선택·구매 유입. stat_items·dead_content·shop·item_target·helditems 통과.
+
 ### 2026-08-21 (H3-8b) — **코드/QR 기반 정령 교환**
 
 **유저**: "코드/QR 기반 교환도 추가해줘"
