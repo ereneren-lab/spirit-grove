@@ -9223,6 +9223,7 @@ async function winBattle(){
   for(const o of G.party){ if(o!==me && o.hp>0){ await gainXpFor(o,base,false); } }
   // coins for wild kill
   if(!G.trainer){ const c=ri(8,18)+Math.floor(_foe.level*1.5); G.money+=c; updateMoney(); }
+  if(G._bossTrial && !G.trainer && G.foe){ await bossTrialWin(); return; }   // H5-A-3 보스 재대전(시련): 원본 격파 플래그·서사 재생을 건너뛰고 연습·보상만
   if(!G.trainer && G.foe && G.foe.id==="dawnwyrm"){ G.legendDone=true; setMsg("여명룡이 그대를 인정하고 하늘로 솟아올랐다… 두 인장의 힘이 공명한다!"); await mw(1400); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="shadowlord"){ const _firstShadow=!G.shadowDone; G.shadowDone=true; setMsg("흑요마가 빛 속으로 흩어졌다… 숲에 평온이 돌아온다."); await mw(1300); saveGame(); if(_firstShadow && G.questFlags && G.questFlags.haramScene){ endBattle(); playStory(SHADOW_AFTERMATH,()=>{}); return; } } if(!G.trainer && G.foe && G.foe.id==="aqualord"){ G.lakeDone=true; setMsg("수룡왕이 호수 깊은 곳으로 잠겨들었다… 물의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="glaciarch"){ G.snowDone=true; setMsg("빙하제가 눈보라 속으로 사라졌다… 얼음의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="skydrake"){ G.skyBossDone=true; setMsg("천공룡이 번개 구름 너머로 사라졌다… 봉우리에 정적이 감돈다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="megalith"){ G.ruinsBossDone=true; setMsg("거암왕이 다시 돌기둥 사이로 잠겨들었다… 유적이 고요해진다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="tidalore"){ G.seaBossDone=true; setMsg("해일군주가 물살을 가르며 먼바다로 사라졌다… 파도가 잦아든다."); await mw(1300); saveGame(); }
   if(!G.trainer && G.foe && G.foe.id==="dawnguard"){ G.dawnDone=true; setMsg("오로르가 하늘로 날아올라 숲을 축복했다."); await mw(1300); saveGame(); }
   if(G.trainer){ G.trainer.fainted.add(G.trainer.idx);
@@ -9415,10 +9416,12 @@ function towerMenu(){ const body=$("towerBody"); const rk=towerRank(G.towerBest|
     </div>
     <button class="dbmv" id="towerParty" style="width:100%;margin-bottom:8px">🗼 파티 모드 — 내 정령으로 도전</button>
     <button class="dbmv" id="towerSet" style="width:100%;margin-bottom:8px;background:#31456a;border-color:#7fd16f">⚖️ 세트 룰 — Lv50 렌탈 3마리(순수 실력)</button>
+    <button class="dbmv" id="towerBoss" style="width:100%;margin-bottom:8px">🔮 보스 재대전 — 이미 꺾은 보스와 연습·보상전</button>
     <button class="dbmv" id="towerRec" style="width:100%">📜 기록 보기</button>
     <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6">회복 없이 연이어 싸운다. 지면 그 자리에서 종료(번 돈은 남는다). 7연승마다 상대 레벨이 오른다.</div>`;
   $("towerParty").onclick=()=>{ closeOverlay("towerOverlay"); towerBegin("party"); };
   $("towerSet").onclick=()=>{ towerRentalPick(); };
+  $("towerBoss").onclick=()=>{ bossTrialMenu(); };
   $("towerRec").onclick=()=>{ towerRecords(); };
 }
 function towerRecords(){ const body=$("towerBody"); const recs=(G.towerRecords||[]);
@@ -9481,6 +9484,43 @@ async function endTowerRun(){
   G._towerMode=null;
   endBattle(); }   // 제자리(도장 관장 옆)에서 눈뜬다 — blackout 워프 없음
 
+/* ===== H5-A-3 보스 재대전(시련) =====
+   이미 격파한 포스트게임 보스/전설을 연습·보상용으로 다시 부른다. 원본 격파 함수(startXxxBoss)를 그대로 재사용한다.
+   시련은 (1) 포획 불가(tryCatch에서 차단) (2) 승패 어느 쪽도 소지금 패널티·워프 없음 (3) 원본 격파 플래그·서사 재생 없음.
+   G._bossTrial은 휘발 상태(세이브 안 함) — 재대전은 항상 처음부터. */
+const BOSS_TRIALS=[
+  {k:"shadow", fn:startShadowBoss,   done:"shadowDone",   nm:"흑요마",   em:"⚫"},
+  {k:"dawn",   fn:startDawnBoss,     done:"dawnDone",     nm:"오로르",   em:"🕊️"},
+  {k:"snow",   fn:startSnowLegendary,done:"snowDone",     nm:"빙하제",   em:"❄️"},
+  {k:"lake",   fn:startLakeLegendary,done:"lakeDone",     nm:"수룡왕",   em:"🌊"},
+  {k:"legend", fn:startLegendary,    done:"legendDone",   nm:"여명룡",   em:"🐉"},
+  {k:"sky",    fn:startSkyBoss,      done:"skyBossDone",  nm:"천공룡",   em:"⚡"},
+  {k:"ruins",  fn:startRuinsBoss,    done:"ruinsBossDone",nm:"거암왕",   em:"🗿"},
+  {k:"sea",    fn:startSeaBoss,      done:"seaBossDone",  nm:"해일군주", em:"🌀"},
+];
+function bossTrialMenu(){ const body=$("towerBody");
+  const rows=BOSS_TRIALS.map(t=>{ const on=!!G[t.done];
+    return `<button class="dbmv bt-row" data-k="${t.k}" ${on?"":"disabled"} style="width:100%;margin-bottom:6px;text-align:left;${on?"":"opacity:.45;cursor:default"}"><span style="font-size:16px">${t.em}</span> ${t.nm} ${on?"":"🔒"}</button>`; }).join("");
+  const anyOn=BOSS_TRIALS.some(t=>!!G[t.done]);
+  body.innerHTML=`<div class="dbprompt" style="margin-bottom:10px">🔮 보스 재대전 — 이미 꺾은 보스와 다시 겨룬다 (포획·소지금 패널티 없음)</div>${rows}`+
+    (anyOn?"":`<div style="color:var(--muted);text-align:center;padding:14px;font-size:12px">아직 재대전할 보스가 없어. 포스트게임 보스를 먼저 꺾어봐.</div>`)+
+    `<button class="dbmv" id="towerBack" style="width:100%;margin-top:8px">← 뒤로</button>`;
+  body.querySelectorAll(".bt-row").forEach(b=>{ if(b.disabled)return; b.onclick=()=>{ const t=BOSS_TRIALS.find(x=>x.k===b.dataset.k); if(t)bossTrialStart(t); }; });
+  $("towerBack").onclick=towerMenu;
+}
+function bossTrialStart(t){ if(!t||!G[t.done]){ setMsg("아직 쓰러뜨린 적 없는 상대다."); return; }
+  Audio.sfx&&Audio.sfx("blip"); closeOverlay("towerOverlay");
+  G._bossTrial=t.k; healParty(true); t.fn(); }
+async function bossTrialWin(){ const k=G._bossTrial; G._bossTrial=null;
+  const t=BOSS_TRIALS.find(x=>x.k===k); const money=800; G.money+=money; updateMoney();
+  G.items.candy=(G.items.candy||0)+1;
+  Audio.sfx("win"); Audio.startMusic("victory",true);
+  setMsg(`🔮 <b>${t?t.nm:"보스"}</b> 시련 클리어! 💰 ${money} · 정령 사탕 ×1`); await mw(1400);
+  healParty(true); endBattle(); }
+async function bossTrialEnd(){ G._bossTrial=null; Audio.stopMusic(); Audio.sfx("defeat");
+  setMsg("🔮 시련에서 물러난다… 언제든 다시 도전할 수 있다."); await mw(1300);
+  healParty(true); G.trainer=null; endBattle(); }
+
 function blackout(){ healParty(true); G.trainer=null; G.inBattle=false; G.busy=false; G.surfing=false;
   if(G.indoor && typeof _exitInterior==="function"){ _exitInterior(); }   // 즉시판: 아래서 G.pos를 덮어쓰므로 지연 페이드 쓰면 안 됨
   const lh=G.lastHeal;
@@ -9508,6 +9548,7 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
   const alive=G.party.filter(m=>m.hp>0);
   if(alive.length>0){ setMsg("다음 정령을 내보내자."); G.busy=false; openSwitch(true); }
   else if(G.trainer&&G.trainer.tower){ await endTowerRun(); }   // 연전 도장 전멸 = 그 자리에서 도전 종료(워프·소지금 패널티 없음, 번 돈 유지)
+  else if(G._bossTrial){ await bossTrialEnd(); }   // H5-A-3 보스 재대전 패배 = 워프·소지금 패널티 없이 제자리 종료
   else{ Audio.stopMusic(); Audio.sfx("defeat");   // 포켓몬식 화이트아웃: 전투 음악 멈추고 구슬픈 패배 징글. endBattle/blackout이 필드 음악 복귀.
     const pen=Math.floor(G.money*0.5); G.money=Math.max(0,G.money-pen); updateMoney();   // 본가 1세대: 소지금 절반
     const _where=(G.lastHeal&&G.lastHeal.indoor==="center")?"정령센터":(G.lastHeal?"마지막으로 쉰 곳":"모닥불");
@@ -9701,6 +9742,7 @@ function ballBonus(ball,foe){ switch(ball){
 function statusCatchBonus(st){ return (st==="slp"||st==="frz")?0.25:(st?0.14:0); }
 // 인자 없으면 기본 정령구(없으면 고급). 배틀 가방에서 특정 볼을 던지면 그 볼 종류로 들어온다.
 async function tryCatch(ballKey){ if(G.busy)return; if(G.trainer){ setMsg("트레이너의 정령은 포획할 수 없다!"); return; }
+  if(G._bossTrial){ setMsg("시련에서는 포획할 수 없다!"); return; }   // H5-A-3 보스 재대전은 연습·보상용
   let ball=ballKey;
   if(!ball){ ball=(G.items.ball>0)?"ball":(G.items.greatball>0)?"greatball":null; }
   if(!ball || (G.items[ball]||0)<=0){ setMsg("포획구가 없다! 상점에서 사자."); return; }
@@ -10898,7 +10940,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   getCooldown:()=>encCooldown,
   getDB:()=>DB, dbReplace,   // 듀오 배틀 상태 + 벤치 교대. held_effect_test [5]가 듀오 상대의 지닌물건 풀을 검사한다.
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, terrainWalkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HOME_POS, HOME_AT, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, towerMenu, towerRentalPick, towerRecords, towerBegin, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, towerRank, towerSeasonBest, towerRecordRun, TOWER_RANKS, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS,
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, terrainWalkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HOME_POS, HOME_AT, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, towerMenu, towerRentalPick, towerRecords, towerBegin, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, towerRank, towerSeasonBest, towerRecordRun, TOWER_RANKS, BOSS_TRIALS, bossTrialMenu, bossTrialStart, bossTrialWin, bossTrialEnd, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS,
   startHotSeat, pvpSelect, pvpRenderSelect, pvpPromptChoice, pvpChoose, pvpSwitchList, pvpResolve, pvpActive, pvpAlive, PVP_RENTAL, getPVP:()=>PVP,
   openTradeCode, tradeHome, tradeExportList, tradeShowCode, tradeImportUI, tradeCodeFor, parseTradeCode, qrModules, drawQR, qrcode,
   openAchievements, renderAchievements, claimAch, achDone, achStats, achClaimed, ACHIEVEMENTS, toggleRule, startNewGamePlus, renderChallengeBox,
