@@ -9836,6 +9836,7 @@ let _dexFilter={type:null,uncaught:false};
 let _dexSort="dex", _dexSearch="", _dexKeepFocus=false;
 // H5-B: 정령 정렬 비교 함수(도감·박스 공용). 종 스펙(sp)과 개체(m·있으면)로 정렬한다.
 let _boxSort="get", _boxSearch="", _boxKeepFocus=false;
+let _boxSelMode=false; const _boxSel=new Set();   // H5-B-6 박스 일괄 조작: 선택은 정령 객체 참조로 추적(정렬·필터로 순서가 바뀌어도 안전)
 const SORT_MODES={
   dex:  {ko:"도감순", cmp:(a,b)=>a.i-b.i},
   get:  {ko:"획득순", cmp:(a,b)=>a.i-b.i},
@@ -10584,7 +10585,7 @@ function doTrade(){ const it=_trIt,qty=_trQty,mode=_trMode; if(!it)return;
 
 /* ===================== PC BOX ===================== */
 let pcTab="party";
-function openPC(){ pcTab="party"; setPcTab(); renderPC(); openOverlay("pcOverlay"); }
+function openPC(){ pcTab="party"; _boxSelMode=false; _boxSel.clear(); setPcTab(); renderPC(); openOverlay("pcOverlay"); }
 $("openPC").addEventListener("click",()=>{Audio.sfx("blip");openPC();});
 $("pcTabParty").addEventListener("click",()=>{Audio.sfx("blip");pcTab="party";setPcTab();renderPC();});
 $("pcTabBox").addEventListener("click",()=>{Audio.sfx("blip");pcTab="box";setPcTab();renderPC();});
@@ -10612,13 +10613,34 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
       b.style.cssText="font-size:11px;padding:4px 9px;border-radius:13px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.18);background:"+(_boxSort===k?"rgba(127,209,174,.32)":"rgba(255,255,255,.05)");
       b.addEventListener("click",()=>{ Audio.sfx("blip"); _boxSort=k; renderPC(); }); bar.appendChild(b); });
     body.appendChild(bar);
+    // H5-B-6 일괄 조작 도구 줄: 자동정렬(현재 정렬 순서를 보관함에 영구 적용) + 선택 모드 토글
+    const tools=document.createElement("div"); tools.style.cssText="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:9px";
+    const mkTool=(label,on,fn)=>{ const b=document.createElement("button"); b.innerHTML=label;
+      b.style.cssText="font-size:11px;padding:4px 10px;border-radius:13px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.18);background:"+(on?"rgba(127,209,174,.32)":"rgba(255,255,255,.05)");
+      b.addEventListener("click",fn); return b; };
+    tools.appendChild(mkTool("🔃 자동정렬",false,()=>{ Audio.sfx("blip"); boxAutoSort(); }));
+    tools.appendChild(mkTool(_boxSelMode?"✅ 선택 종료":"☑️ 선택",_boxSelMode,()=>{ Audio.sfx("blip"); _boxSelMode=!_boxSelMode; if(!_boxSelMode)_boxSel.clear(); renderPC(); }));
+    body.appendChild(tools);
     disp=disp.filter(o=>{ const sp=byId(o.m.id); return sp&&searchHit(_boxSearch,sp,o.m); })
       .map(o=>({...o,sp:byId(o.m.id),nm:(o.m.nick||o.m.name),caught:true}))
       .sort(SORT_MODES[_boxSort].cmp);
     if(_boxKeepFocus){ _boxKeepFocus=false; setTimeout(()=>{ const el=$("boxSearchInput"); if(el){ el.focus(); const v=el.value; el.value=""; el.value=v; } },0); }
+    // 선택 모드: 일괄 액션 바(꺼내기 N · 방생 N · 전체 · 해제)
+    if(_boxSelMode){ const n=disp.filter(o=>_boxSel.has(o.m)).length;
+      const act=document.createElement("div"); act.style.cssText="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:9px;padding:7px 8px;border:1px solid rgba(127,209,174,.28);border-radius:11px;background:rgba(127,209,174,.06)";
+      act.innerHTML=`<span style="font-size:12px;font-weight:700;margin-right:2px">${n}마리 선택</span>`;
+      const mkA=(label,cls,dis,fn)=>{ const b=document.createElement("button"); b.textContent=label; b.disabled=!!dis;
+        b.style.cssText="font-size:11px;padding:4px 10px;border-radius:11px;cursor:"+(dis?"default":"pointer")+";color:inherit;border:1px solid rgba(255,255,255,.18);opacity:"+(dis?".4":"1")+";background:"+(cls==="danger"?"rgba(240,120,120,.15)":"rgba(255,255,255,.06)");
+        if(!dis)b.addEventListener("click",fn); return b; };
+      act.appendChild(mkA("⬆️ 꺼내기","",n===0||G.party.length>=6,()=>boxWithdrawSel()));
+      act.appendChild(mkA("🕊️ 방생","danger",n===0,()=>boxReleaseSel()));
+      act.appendChild(mkA("전체","",disp.length===0,()=>{ disp.forEach(o=>_boxSel.add(o.m)); renderPC(); }));
+      act.appendChild(mkA("해제","",n===0,()=>{ _boxSel.clear(); renderPC(); }));
+      body.appendChild(act); }
   }
   if(!disp.length){ const e=document.createElement("div"); e.style.cssText="color:var(--muted);text-align:center;padding:30px;font-size:13px"; e.textContent=(pcTab==="party"?"파티가 비어있다":(_boxSearch?"조건에 맞는 정령이 없어":"보관함이 비어있다")); body.appendChild(e); return; }
-  disp.forEach(({m,i})=>{ recalc(m); const card=document.createElement("div"); card.className="mon-card"+(pcTab==="party"&&i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"");
+  const selMode=(pcTab==="box"&&_boxSelMode);
+  disp.forEach(({m,i})=>{ recalc(m); const sel=selMode&&_boxSel.has(m); const card=document.createElement("div"); card.className="mon-card"+(pcTab==="party"&&i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"")+(sel?" active-mon":"");
     let actions="";
     if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
     else { const canWith=G.party.length<6; actions=`<button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel" title="놓아주기" aria-label="놓아주기">방생</button>`; }
@@ -10629,8 +10651,9 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
     card.innerHTML=`<div class="em">${m.shiny?'<span class="shtag">✨</span>':""}${creatureVisual(m.id,m.type)}</div><div class="info"><div class="nm">${dispName(m)}${nmeta} <span class="type-tag ${TYPE_CLASS[m.type]}" style="font-size:9px">${tkLabel(m.type)}</span></div>
       ${miniHpHtml(m)}<div class="st">Lv ${m.level} · HP ${Math.max(0,m.hp)}/${m.maxHp}${statusChipHtml(m)}</div>
       <div class="st" style="font-size:10px;color:var(--muted)">${natureLabel(m.nature)}${m.ivs?` · <span style="color:${ivColor(m)}" title="개체값 잠재력">잠재력 ${ivRating(m)}</span>`:""}${heldTag} <span style="font-size:9px;color:${(m.friendship||0)>=(byId(m.id).evolveFriend||1e9)?'#7fd16f':'#f6a5c0'}">💚${m.friendship||0}${byId(m.id).evolveFriend?('/'+byId(m.id).evolveFriend):''}</span></div></div>
-      <div class="acts">${actions}</div>`;
-    card.querySelectorAll(".pick").forEach(btn=>btn.addEventListener("click",()=>pcAction(btn.dataset.a,i)));
+      <div class="acts">${selMode?`<div style="font-size:22px;width:34px;text-align:center">${sel?"✅":"⬜"}</div>`:actions}</div>`;
+    if(selMode){ card.style.cursor="pointer"; card.addEventListener("click",()=>{ Audio.sfx("blip"); if(_boxSel.has(m))_boxSel.delete(m); else _boxSel.add(m); renderPC(); }); }
+    else { card.querySelectorAll(".pick").forEach(btn=>btn.addEventListener("click",()=>pcAction(btn.dataset.a,i))); }
     body.appendChild(card); }); }
 function pcAction(a,i){ Audio.sfx("blip");
   if((a==="up"||a==="down")&&pcTab==="party"){ const j=a==="up"?i-1:i+1; if(j<0||j>=G.party.length)return;   // 포켓몬식 파티 순서 조절
@@ -10645,6 +10668,22 @@ function pcAction(a,i){ Audio.sfx("blip");
   else if(a==="with"){ if(G.party.length>=6){toast("파티가 가득 찼어");return;} const m=G.box.splice(i,1)[0]; G.party.push(m); flashHint(m.name+"을(를) 파티에 넣었다"); }
   else if(a==="rel"){ const m=G.box[i]; if(!confirm(`${dispName(m)}을(를) 방생할까? 되돌릴 수 없어.`))return; G.box.splice(i,1); flashHint(m.name+"을(를) 풀어주었다"); }
   setPcTab(); renderPC(); updateDexPill(); saveGame(); }
+
+// ===== H5-B-6 박스 일괄 조작 =====
+// 자동정렬: 현재 화면 정렬(검색은 무시, 전체 대상)을 보관함 실제 순서로 영구 고정.
+function boxAutoSort(){ if(!(G.box&&G.box.length))return;
+  const disp=G.box.map((m,i)=>({m,i,sp:byId(m.id),nm:(m.nick||m.name),caught:true})).sort(SORT_MODES[_boxSort].cmp);
+  G.box=disp.map(o=>o.m); flashHint("보관함을 "+SORT_MODES[_boxSort].ko+"으로 정렬했다"); renderPC(); saveGame(); }
+// 일괄 꺼내기: 선택한 정령을 파티 여유만큼 옮긴다(6칸 상한). 선택은 객체 참조라 인덱스 재계산 없이 안전.
+function boxWithdrawSel(){ const chosen=G.box.filter(m=>_boxSel.has(m)); if(!chosen.length)return;
+  let moved=0; for(const m of chosen){ if(G.party.length>=6)break; const idx=G.box.indexOf(m); if(idx<0)continue; G.box.splice(idx,1); G.party.push(m); _boxSel.delete(m); moved++; }
+  const left=chosen.length-moved;
+  flashHint(`⬆️ ${moved}마리를 파티에 넣었다`+(left>0?` (파티가 가득 차 ${left}마리는 남음)`:"")); renderPC(); updateDexPill(); saveGame(); }
+// 일괄 방생: 선택한 정령을 모두 놓아준다(되돌릴 수 없음 — 한 번의 확인).
+function boxReleaseSel(){ const chosen=G.box.filter(m=>_boxSel.has(m)); if(!chosen.length)return;
+  if(!confirm(`선택한 ${chosen.length}마리를 모두 방생할까? 되돌릴 수 없어.`))return;
+  for(const m of chosen){ const idx=G.box.indexOf(m); if(idx>=0)G.box.splice(idx,1); _boxSel.delete(m); }
+  flashHint(`🕊️ ${chosen.length}마리를 풀어주었다`); renderPC(); updateDexPill(); saveGame(); }
 
 function ivTotal(m){ if(!m.ivs)return 0; return (m.ivs.hp||0)+(m.ivs.atk||0)+(m.ivs.def||0)+(m.ivs.spa||0)+(m.ivs.spDef||0)+(m.ivs.spd||0); }
 function ivRating(m){ const t=ivTotal(m); return t>=168?"최상급 ✨":t>=140?"우수":t>=100?"양호":"평범"; }
@@ -10934,7 +10973,7 @@ window.SG.TERRAIN_TINT=TERRAIN_TINT; window.SG.terrainTinted=terrainTinted;
 window.SG.FLAVOR=FLAVOR;
 Object.assign(window.SG,{NPC_ARCH,NPC_SHEET_ART,npcSheet,NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,TRAINER_HELD,DOOR_TILES,NATURE_ENTRY,CHAR_HOME,ORIGIN_STORY,INTERIOR_NPC_MSG,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR,
   canBreed,makeEgg,hatchEgg,baseForm,eggMoves,PRE_EVO});
-window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,sendOutAnim,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
+window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,sendOutAnim,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,boxAutoSort,boxWithdrawSel,boxReleaseSel,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,markShinyDex,collectStats,openDexStats,renderDexStats,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
