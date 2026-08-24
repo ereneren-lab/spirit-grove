@@ -21,13 +21,13 @@ const { chromium } = require("playwright"); const path=require("path");
 
   ok(r.badMove===0, `모든 크리처 기술이 MOVES에 존재 (누락 ${r.badMove})`);
   ok(r.iceling==="ice", `얼음정=얼음 (${r.iceling})`);
-  ok(r.frostwyrm==="ice", `빙하룡=얼음 (${r.frostwyrm})`);
-  ok(r.snowl==="flying/ice", `설올빼미=비행/얼음 (${r.snowl})`);
-  ok(r.glaciarch==="ice/water", `빙하제=얼음/물 (${r.glaciarch})`);
-  ok(r.jellure==="water/poison", `해파리정=물/독 (${r.jellure})`);
+  ok(r.frostwyrm==="ice/dragon", `빙하룡=얼음/용 (${r.frostwyrm})`);
+  ok(r.snowl==="flying/ghost", `눈올빼=비행/고스트 (${r.snowl})`);
+  ok(r.glaciarch==="ice/dragon", `빙하제=얼음/용 (${r.glaciarch})`);
+  ok(r.jellure==="water/ghost", `개굴알=물/고스트 (${r.jellure})`);
   ok(r.swampfrog==="water/poison", `개굴몽=물/독 (${r.swampfrog})`);
   ok(r.burrowmouse==="ground", `굴다람=땅 (${r.burrowmouse})`);
-  ok(r.boulderin==="rock/ground", `바위정=바위/땅 (${r.boulderin})`);
+  ok(r.boulderin==="rock/steel", `바위정=바위/강철 (${r.boulderin})`);
   ok(r.magmadon==="fire/ground", `마그마룡=불/땅 (${r.magmadon})`);
   ok(r.icebeam&&r.blizzard&&r.sludge&&r.quake&&r.dig, "새 기술 정의됨(냉동빔/눈보라/오물폭탄/지진/땅파기)");
   ok(r.frzChip.includes("냉동"), `냉동 상태칩 표시 (${r.frzChip.replace(/<[^>]+>/g,'').trim()})`);

@@ -537,6 +537,13 @@
 .dbmvp{font-size:9px;opacity:.6;font-weight:400}
 .dbtg{padding:10px;border-radius:8px;border:1px solid #3a4060;background:#2a2f48;color:inherit;font-size:12px;cursor:pointer}
 .dbbench{align-self:center;font-size:11px;opacity:.6;padding:0 4px}
+/* 핫싯 대전(로컬 2인) */
+.pvpgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.pvppick{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 2px;border-radius:8px;border:1px solid #3a4060;background:#2a2f48;color:inherit;cursor:pointer}
+.pvppick.on{border-color:#7fd1ae;background:#31456a;box-shadow:0 0 0 2px rgba(127,209,174,.3)}
+.pvppick .pe{font-size:19px}.pvppick .pn{font-size:10px;font-weight:700}.pvppick .pt{font-size:8px;opacity:.6}
+.pvppass{text-align:center;padding:6px 4px}.pvppass .ppm{font-size:15px;font-weight:800;margin-bottom:3px}.pvppass .pps{font-size:11px;opacity:.7;margin-bottom:8px}
+.pvpend{text-align:center;font-size:15px;font-weight:800;margin-bottom:8px;color:#ffd23f}
 
 /* daycare */
 .dcslot{display:flex;justify-content:space-between;align-items:center;background:#2a2f48;border:1px solid #3a4060;border-radius:10px;padding:9px 11px;margin:5px 0;font-size:13px}
@@ -817,6 +824,15 @@
 
     <!-- ⚠️ 카드는 본문이 길어(뱃지·기록·명예의 전당) 가로에선 하단 '닫기'가 화면 밖으로 밀렸다
          → 다른 패널처럼 **고정 헤더 ✕**를 둔다. 본문 스크롤은 `.sheet` 규칙이 담당. -->
+    <div class="overlay" id="achOverlay">
+      <div class="ov-head"><h3>🎖️ 도전과제</h3><button class="closex" data-close="achOverlay">✕</button></div>
+      <div class="ov-body" id="achBody"></div>
+    </div>
+    <div class="overlay" id="dailyOverlay">
+      <div class="ov-head"><h3>🎁 오늘의 보너스</h3><button class="closex" data-close="dailyOverlay">✕</button></div>
+      <div class="sheet" style="max-width:380px"><div id="dailyBody"></div>
+      <button class="dcbtn" id="dailyClose" style="width:100%;margin-top:12px">닫기</button></div>
+    </div>
     <div class="overlay" id="cardOverlay">
       <div class="ov-head"><h3>🎫 트레이너 카드</h3><button class="closex" data-close="cardOverlay">✕</button></div>
       <div class="sheet" style="max-width:400px">
@@ -870,8 +886,12 @@
       <div id="daycareBody"></div>
       <button class="dcbtn" id="daycareClose" style="width:100%;margin-top:10px">닫기</button>
     </div></div>
+    <div class="overlay" id="tradeOverlay"><div class="sheet" style="max-width:420px">
+      <div class="ov-head"><h3 id="tradeTitle">🔁 코드 교환</h3><button class="closex" data-close="tradeOverlay">✕</button></div>
+      <div id="tradeBody" class="ov-body"></div>
+    </div></div>
     <div class="overlay" id="dbOverlay"><div class="sheet" style="max-width:460px">
-      <div style="font-weight:800;text-align:center;margin-bottom:6px">⚔️ 듀오 배틀 · 2 vs 2</div>
+      <div id="dbTitle" style="font-weight:800;text-align:center;margin-bottom:6px">⚔️ 듀오 배틀 · 2 vs 2</div>
       <div class="dbfoes" id="dbFoes"></div>
       <div class="dblog" id="dbLog"></div>
       <div class="dballies" id="dbAllies"></div>
@@ -1159,6 +1179,7 @@ $("muteBtn").addEventListener("click",()=>{ Audio.init(); const m=Audio.toggleMu
 //@@RULES_TYPES@@
 //@@RULES_MOVES@@
 //@@RULES_DEX@@
+//@@RULES_QR@@
 
 const FIND_HINT={1:"숲 · 초원",2:"깊은 숲",3:"숲 정상"};   // 오버월드(잔디) 조우의 티어별 깊이 힌트
 const HABITAT_KO={fireflyway:"반딧불 오솔길",pier:"호숫가 잔교",frostpass:"서리 고갯길",hillpath:"바람 언덕길",mine:"버려진 갱도",mosshollow:"이끼 골짜기",fallspath:"물안개 벼랑길",snow:"설원 지대",marsh:"안개 늪지",skyridge:"뇌명 봉우리",ruins:"고대 유적",crater:"불꽃 분화구",garden:"달빛 화원",isle:"여명의 섬",coast:"노을 해안",surf:"수면 위",fishRare:"낚시(대물)",fish:"낚시",lava:"용암 동굴",cave:"수정 동굴"};
@@ -1196,7 +1217,11 @@ function makeEgg(a,b){ const female=(a.gender==="F")?a:(b.gender==="F")?b:a; con
   const iv={hp:ri(0,31),atk:ri(0,31),def:ri(0,31),spa:ri(0,31),spDef:ri(0,31),spd:ri(0,31)};
   const stats=["hp","atk","def","spa","spDef","spd"]; const pick=stats.slice().sort(()=>Math.random()-0.5).slice(0,3);
   pick.forEach(st=>{ const parent=Math.random()<0.5?a:b; if(parent.ivs&&parent.ivs[st]!=null)iv[st]=parent.ivs[st]; });
-  return { isEgg:true, species:babyId, hatch:ri(20,34), ivInherit:iv, natureInherit:(Math.random()<0.5?a.nature:b.nature), moveInherit:eggMoves(babyId,a,b), id:babyId, name:"알", em:"🥚", level:1, hp:1, maxHp:1, moves:[], pp:{}, stages:newStages() }; }
+  // 성격 유전: 부모가 변함의돌(natureLock)을 지녔으면 그 부모 성격 100% 유전, 아니면 50%씩.
+  const _lockA=a.held&&HELD_ITEMS[a.held]&&HELD_ITEMS[a.held].natureLock;
+  const _lockB=b.held&&HELD_ITEMS[b.held]&&HELD_ITEMS[b.held].natureLock;
+  const natInherit=_lockA?a.nature:(_lockB?b.nature:(Math.random()<0.5?a.nature:b.nature));
+  return { isEgg:true, species:babyId, hatch:ri(20,34), ivInherit:iv, natureInherit:natInherit, moveInherit:eggMoves(babyId,a,b), id:babyId, name:"알", em:"🥚", level:1, hp:1, maxHp:1, moves:[], pp:{}, stages:newStages() }; }
 function hatchEgg(egg){ const m=makeMon(egg.species,5); if(egg.ivInherit)m.ivs=egg.ivInherit; if(egg.natureInherit)m.nature=egg.natureInherit; if(egg.moveInherit)egg.moveInherit.forEach(mv=>{ if(MOVES[mv])addMove(m,mv); }); m.friendship=70; recalc(m,null,true); m.hp=m.maxHp; return m; }
 function dayStep(){ if(!G.daycare)return; const d=G.daycare;
   if(d.a&&d.b&&!d.eggReady&&canBreed(d.a,d.b)){ d.steps=(d.steps||0)+1; if(d.steps>=160){ d.eggReady=true; d.steps=0; flashHint("🥚 육아방에 알이 생긴 것 같다!"); saveGame&&saveGame(); } }
@@ -1268,6 +1293,14 @@ TRAINERS.T8={key:"T8",name:"불새지기 소연",em:"🔥",team:[["stormhawk",28
 TRAINERS.V2={key:"V2",rival:true,name:"라이벌 카이",em:"🧑‍🎤",team:[["sparkmouse",15],["harelord",16]],reward:{greatball:2,hyperpotion:1},money:1100,intro:"라이벌 카이: 또 만났네! 이번엔 내 정령들도 한층 강해졌어.",outro:"쳇, 아직도 한 끗 차이야. 다음엔 진짜 이긴다."};
 TRAINERS.V3={key:"V3",rival:true,name:"라이벌 카이",em:"🧑‍🎤",team:[["voltrat",21],["thunderowl",22],["harelord",22]],reward:{greatball:3,hyperpotion:2,revive:1},money:1700,intro:"라이벌 카이: 너 정말 빨리 강해지네… 나도 질 수 없지!",outro:"…인정할게. 넌 진짜 강해. 근데 마지막은 내가 이긴다."};
 TRAINERS.V4={key:"V4",rival:true,name:"라이벌 카이",em:"🧑‍🎤",team:[["thunderowl",29],["voltrat",28],["harelord",30],["stormhawk",30]],reward:{greatball:5,hyperpotion:3,revive:2,candy:1},money:2800,intro:"라이벌 카이: 여기까지 왔구나. 군주께 닿기 전에 — 내 전부를 받아!",outro:"…졌다. 완전히. 가, 군주를 꺾어. 네가 이 숲을 지킬 자야. 친구."};
+/* ===== 그림자 잔재(Shadow Remnants) — 인장이 옅어지자 그림자의 속삭임에 응한 인간들 =====
+   왜: 그림자는 지금껏 추상적 힘(인장을 빨아먹는 어둠)이자 포스트게임 보스(흑요마)로만 존재했고,
+       라이벌 카이의 '실종된 스승' 실은 매듭이 없었다. 이 세 트레이너가 그림자에 **인간 대리자**를
+       주고, 사도(하람)가 카이의 스승 실을 비극으로 잇는다. 셋 다 게이트가 아닌 선택 트레이너다
+       → balance_test/league_test의 게이트 수치와 무관(라이벌·야생 규칙과 동일). */
+TRAINERS.SH1={key:"SH1",name:"그림자 추종자 여울",em:"🌑",team:[["racoonmon",30],["burrowlord",32]],reward:{greatball:3,hyperpotion:2},money:2300,intro:"그림자 추종자 여울: 인장이 옅어질수록… 우린 강해져. 그림자님이 진짜 힘을 나눠 주셨거든.",outro:"그림자 추종자 여울: 큭… 하지만 늦었어. 그분은 곧 완전히 깨어나신다."};
+TRAINERS.SH2={key:"SH2",name:"그림자 추종자 노야",em:"👻",team:[["snowl",31],["jellure",31],["crystalgon",33]],reward:{greatball:3,hyperpotion:2,revive:1},money:2600,intro:"그림자 추종자 노야: 봉인은 감옥이야. 그림자님이 정령들을 그 사슬에서 풀어 주실 거라고.",outro:"그림자 추종자 노야: …네 정령들은 사슬을 원치 않는구나. 어째서지."};
+TRAINERS.SH3={key:"SH3",name:"그림자 사도 하람",em:"🕯️",team:[["snowl",34],["burrowlord",35],["lunarmoth",35],["pyrewolf",36],["crystalgon",37]],reward:{hyperpotion:4,revive:2,candy:1},money:4400,intro:"그림자 사도 하람: 나도 한때는 인장을 지키러 이 위에 올랐다. …그림자는 지키려는 자에게 먼저 속삭이지. 이제 네 차례다.",outro:"그림자 사도 하람: …아. 이 감각… 오래전, 나를 스승이라 부르던 아이가 하나 있었어. 그 애도… 이 숲에서 나를 찾고 있을까. …가라. 그림자가 다시 나를 부르기 전에."};
 const NPCS=[
   /* ⚠️ **출신지 출구 2칸 안엔 전투 트레이너를 두지 않는다.** 출신지를 4곳으로 늘리면서
      기존 트레이너 둘(벌레소년 메아 · 물놀이 소년 하리)이 새 출구 바로 옆에 놓여
@@ -1362,7 +1395,16 @@ const NPCS=[
   {id:"t20",x:19,y:37,em:"🌷",name:"꽃밭 소녀 채원",battleKey:"T20",spr:{hairlen:"long",extra:"basket",outfit:"#e0709a",accent:"#c04a7a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["꽃밭 소녀 채원: 예쁜 정령이 강하기도 하다구!"],linesAfter:["꽃밭 소녀 채원: 졌지만 즐거웠어!"]},
   {id:"t21",x:15,y:31,em:"🏹",name:"숲의 사냥꾼 강",battleKey:"T21",spr:{build:"tall",hat:"bandana",hatc:"#5a6a3a",outfit:"#5a6a3a",accent:"#3a4a22",skin:"#e3b07e",hair:"#2a2416",boots:"#2a3a1a"},lines:["숲의 사냥꾼 강: 이 숲의 규칙은 강함이다."],linesAfter:["숲의 사냥꾼 강: …네가 더 강했다."]},
   {id:"altar_pilgrim",x:5,y:10,em:"🧎",name:"제단의 순례자",spr:{build:"tall",extra:"bag",outfit:"#6a5a7a",accent:"#a898c0",skin:"#e0bd96",hair:"#3a3446",hat:"none",boots:"#4a4258"},lines:["제단의 순례자: 여기까지 왔군요… 군주는 홀로 그림자를 막아내고 있습니다.","제단의 순례자: 인장 조각을 모두 모았다면, 리그로 가세요. 챔피언만이 군주를 도울 수 있습니다."]},
-  {id:"altar_watcher",x:20,y:11,em:"🔭",name:"제단 감시인",spr:{hat:"beanie",hatc:"#3a4a5a",outfit:"#4a5a6a",accent:"#8a9aaa",skin:"#e8c39a",hair:"#2a3440",boots:"#2a3440"},lines:["제단 감시인: 밤이 길어졌어. 인장의 빛이 약해진 탓이지.","제단 감시인: 이 근방엔 아직 아무도 줍지 않은 물건이 남아 있을 거야. 잘 둘러봐."]},
+  {id:"altar_watcher",x:20,y:11,em:"🔭",name:"제단 감시인",spr:{hat:"beanie",hatc:"#3a4a5a",outfit:"#4a5a6a",accent:"#8a9aaa",skin:"#e8c39a",hair:"#2a3440",boots:"#2a3440"},lines:["제단 감시인: 밤이 길어졌어. 인장의 빛이 약해진 탓이지.","제단 감시인: 저 위쪽에 후드를 쓴 자들이 모여 있어. 제단을 노리는 것 같은데… 조심해.","제단 감시인: 이 근방엔 아직 아무도 줍지 않은 물건이 남아 있을 거야. 잘 둘러봐."]},
+  /* 그림자 잔재 3인 — 고원~제단 접근로에 배치. 후드/촛불 실루엣으로 다른 트레이너와 구분한다.
+     ⚠️ 제단으로 가는 유일 통로를 막으면 reachability_test가 깨진다 → 곁길 칸에 세운다. */
+  {id:"shadow1",x:4,y:16,em:"🌑",name:"그림자 추종자 여울",battleKey:"SH1",spr:{outfit:"#3a3448",accent:"#6a5a8a",skin:"#d8c0a0",hair:"#2a2432",hat:"hood",hatc:"#2a2438",boots:"#2a2432"},
+    lines:["그림자 추종자 여울: 인장의 빛이 꺼지길 우린 여기서 기다린다. …방해할 셈이라면, 상대해 주지."],linesAfter:["그림자 추종자 여울: 넌 아직 몰라. 그분이 깨어나면 이 숲의 사슬이 전부 풀린다는 걸."]},
+  {id:"shadow2",x:14,y:13,em:"👻",name:"그림자 추종자 노야",battleKey:"SH2",spr:{outfit:"#2f3a48",accent:"#7a8aa8",skin:"#d0c8d8",hair:"#2a3038",hat:"hood",hatc:"#28323e",boots:"#28323e"},
+    lines:["그림자 추종자 노야: 봉인 너머의 목소리가 들려? …곧 너에게도 들릴 거야."],linesAfter:["그림자 추종자 노야: 목소리가… 조용해졌어. 네 정령들 곁에선 왜 들리지 않지."]},
+  {id:"shadow3",x:16,y:11,em:"🕯️",name:"그림자 사도 하람",battleKey:"SH3",spr:{build:"tall",outfit:"#302a3a",accent:"#b0a0c8",skin:"#c8b8a0",hair:"#8a8496",hat:"hood",hatc:"#241f30",boots:"#241f30",extra:"staff"},
+    lines:["그림자 사도 하람: …빛을 지고 올라온 아이로군. 나도 그랬다. 아주 오래전에.","그림자 사도 하람: 인장을 지키려던 손이 지금은 그림자를 붙든다. 다가와 나를 시험해라 — 그것이 그림자를 아는 유일한 길이니."],
+    linesAfter:["그림자 사도 하람: …그 아이의 이름이 자꾸 흐려진다. 나를 스승이라 부르던 아이가 있었어. 미안하다고, 전해다오."]},
   {id:"trade1",x:9,y:45,em:"🔄",name:"교환하는 소녀 하늘",trade:"tr_forest",spr:{hairlen:"long",extra:"bag",outfit:"#e0a0c0",accent:"#c07a9a",skin:"#e8c39a",hair:"#6a4a5a",hat:"none",boots:"#8a5a7a"},lines:["교환하는 소녀 하늘: 정령 교환, 관심 있어?"]},
   {id:"trade2",x:10,y:21,em:"🔄",name:"교환하는 청년 재하",trade:"tr_lake",spr:{extra:"bag",outfit:"#7a9ac0",accent:"#4a6a9a",skin:"#e0bd96",hair:"#3a3a4a",hat:"none",boots:"#3a4a6a"},lines:["교환하는 청년 재하: 교환할 정령 있어?"]},
   {id:"t22",x:8,y:22,em:"🎣",name:"호수 낚시꾼 도윤",battleKey:"T22",spr:{build:"stout",extra:"bag",outfit:"#4a7a9a",accent:"#2a5a7a",skin:"#e0bd96",hair:"#3a3a2a",hat:"cap",hatc:"#2a5a7a",boots:"#2a4a5a"},lines:["호수 낚시꾼 도윤: 이 호수의 물 정령은 내가 제일 잘 알지!"],linesAfter:["호수 낚시꾼 도윤: …내 낚싯대가 부끄럽구먼."]},
@@ -1373,6 +1415,8 @@ const NPCS=[
   {id:"broker",x:20,y:9,em:"💱",name:"교환상인 로엔",exchange:true,spr:{build:"stout",extra:"bag",outfit:"#b8862c",accent:"#f0d85a",skin:"#e3b07e",hair:"#3a2c22",hat:"none",boots:"#5a4632"},lines:["교환상인 로엔: 코인으로 희귀한 물건을 바꿔주지. 챔피언쯤 되면 쓸 데가 필요할 테니 말이야."]},
   {id:"woodsman",x:9,y:24,em:"🪓",name:"나무꾼 바우",spr:{build:"stout",extra:"basket",outfit:"#7a5a3a",accent:"#a0784a",skin:"#e3b07e",hair:"#3a2c22",hat:"cap",hatc:"#5a4028",boots:"#4a3420"},chat:["나무꾼 바우: 앞을 막은 작은 나무 보이지? 체육관 인장을 얻으면 '자르기'로 벨 수 있게 돼.","나무꾼 바우: 큰 바위는 '괴력'으로 밀고, 넓은 물은 '파도타기'로 건너지. 다 인장의 힘이라네.","나무꾼 바우: 길이 막혔다고 포기 말게. 인장을 모을수록 새 길이 열리는 법이야."]},
   {id:"towerkeeper",x:16,y:9,em:"🗼",name:"도장의 관장 세라",tower:true,spr:{build:"tall",hairlen:"long",outfit:"#3a3a5a",accent:"#c04a6a",skin:"#e3b07e",hair:"#2a2436",hat:"none",boots:"#2a2a44"},lines:["도장의 관장 세라: 여긴 연전 도장. 강자들이 회복 없이 연이어 겨루는 곳이지."]},
+  {id:"pvpref",x:19,y:9,em:"🎌",name:"대전 심판 하루",hotseat:true,spr:{build:"stout",outfit:"#4a4a6a",accent:"#e0c060",skin:"#e3b07e",hair:"#2a2a36",hat:"cap",hatc:"#c04a6a",boots:"#2a2a3a"},lines:["대전 심판 하루: 친구와 한 기기로 겨루는 <b>핫싯 대전</b>을 주관하지. 렌탈 정령 3마리로 정정당당히!"]},
+  {id:"tradebroker",x:21,y:9,em:"🔁",name:"교환 중개인 미로",tradecode:true,spr:{hairlen:"long",extra:"bag",outfit:"#4a6a8a",accent:"#8ac0e0",skin:"#e0bd96",hair:"#2a3a4a",hat:"none",boots:"#2a3a4a"},lines:["교환 중개인 미로: 정령을 <b>코드·QR</b>로 주고받게 도와줄게. 멀리 있는 친구와도 교환할 수 있어!"]},
 ];
 const NPC_AT={}; NPCS.forEach(n=>{ NPC_AT[n.x+","+n.y]=n; });
 function npcAvailable(n){ if(!n)return false; if(n.battleKey&&G.defeated.has(n.battleKey)){ if(n.dir&&G.rematchWanted&&G.rematchWanted.has(n.battleKey))return true; return false; } if(n.requires&&!G.defeated.has(n.requires))return false; return true; }
@@ -1552,7 +1596,7 @@ TRAINERS["i"]={key:"i",name:"엘리트 · 초원의 로사",em:"🌿",team:[["pa
 TRAINERS["j"]={key:"j",name:"엘리트 · 심연의 마레",em:"🌊",team:[["sharkfin",38],["glimmertide",38],["crablord",40],["krakentide",41]],reward:{hyperpotion:2,greatball:3},money:4500,intro:"마레: 물의 깊이를 견딜 수 있겠나?",outro:"마레: 파도를 넘었군. 계속 오르게."};
 TRAINERS["k"]={key:"k",name:"엘리트 · 불꽃의 이그니",em:"🔥",team:[["magmahound",39],["pyrmoth",40],["tigerflame",41],["blazelion",41]],reward:{hyperpotion:3,greatball:3},money:5000,intro:"이그니: 이 불길을 꺼뜨릴 수 있겠어?!",outro:"이그니: …재가 될 뻔했군. 인정하지."};
 TRAINERS["l"]={key:"l",name:"엘리트 · 창공의 제피르",em:"🌪️",team:[["thunderowl",40],["voltfalcon",41],["emberdrake",42],["stormhawk",41]],reward:{hyperpotion:3,greatball:4},money:5500,intro:"제피르: 마지막 관문이다. 하늘의 시련을 받으라!",outro:"제피르: 챔피언이 그대를 기다린다. 가라."};
-TRAINERS["q"]={key:"q",name:"챔피언 아리엘",em:"👑",champion:true,team:[["crablord",42],["blazelion",42],["stormhawk",42],["dawnwyrm",45]],reward:{hyperpotion:5,greatball:5},money:12000,intro:"챔피언 아리엘: 여기까지 오다니 대단하군. 허나 챔피언의 벽은 높다 — 전력을 다해라!",outro:"챔피언 아리엘: …졌다. 그대가 새로운 챔피언이다. 정령의 숲이 그대를 영원히 기억하리라!"};
+TRAINERS["q"]={key:"q",name:"챔피언 아리엘",em:"👑",champion:true,team:[["crablord",42],["pyrewolf",42],["lunarmoth",42],["dawnwyrm",45]],reward:{hyperpotion:5,greatball:5},money:12000,intro:"챔피언 아리엘: 여기까지 오다니 대단하군. 허나 챔피언의 벽은 높다 — 온갖 속성을 다스리는 내 정령들을 상대해봐라!",outro:"챔피언 아리엘: …졌다. 그대가 새로운 챔피언이다. 정령의 숲이 그대를 영원히 기억하리라!"};
 let _talking=false;
 const _npcTalk={};
 function npcAmbient(npc){
@@ -1662,6 +1706,8 @@ function talkNPC(npc){ if(_talking||dialogActive())return;
   if(npc.moveExpert){ Audio.sfx&&Audio.sfx("blip"); openMoveExpert(); return; }
   if(npc.exchange){ Audio.sfx&&Audio.sfx("blip"); openExchange(); return; }
   if(npc.tower){ Audio.sfx&&Audio.sfx("blip"); openTower(); return; }
+  if(npc.hotseat){ Audio.sfx&&Audio.sfx("blip"); showDialog({name:npc.name,text:"친구와 한 기기로 겨루는 <b>핫싯 대전</b>이다. 각자 렌탈 정령 3마리를 고르지. 시작할까?"},()=>{ startHotSeat(); }); return; }
+  if(npc.tradecode){ Audio.sfx&&Audio.sfx("blip"); showDialog({name:npc.name,text:"정령을 <b>코드·QR</b>로 만들어 친구에게 보내거나, 받은 코드로 정령을 받을 수 있어. 열어줄까?"},()=>{ openTradeCode(); }); return; }
   // ⚠️ 퀘스트 분기는 trade보다 **먼저** 와야 한다 — trade1(교환하는 소녀)은 trade와 q_bond 제공자를
   //    겸하는데, trade가 먼저 return하면 q_bond가 영영 안 뜬다. questForGiver는 done이면 null이라
   //    퀘스트 완료 후엔 자연히 교환으로 넘어간다(퀘스트 먼저 → 완료 → 교환).
@@ -1685,7 +1731,7 @@ const STARTPOS={x:8,y:48};
 let G=null;
 function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box:[],active:0,caught:new Set(),seen:new Set(),
   items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},lastHeal:null,repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),flySpots:new Set(),hasFly:false,mineSeen:false,hillSeen:false,pierSeen:false,frostSeen:false,seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
-  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,rodTier:0,lakeDone:false,lakeSignSeen:false,deepwoodsSeen:false,snowSeen:false,snowDone:false,marshSeen:false,skySeen:false,ruinsSeen:false,craterSeen:false,gardenSeen:false,seaBossDone:false,skyBossDone:false,ruinsBossDone:false,towerBest:0,towerStreak:0,towerRun:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,berries:{},heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
+  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],achClaimed:[],dailyLast:null,dailyStreak:0,shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,rodTier:0,lakeDone:false,lakeSignSeen:false,deepwoodsSeen:false,snowSeen:false,snowDone:false,marshSeen:false,skySeen:false,ruinsSeen:false,craterSeen:false,gardenSeen:false,seaBossDone:false,skyBossDone:false,ruinsBossDone:false,towerBest:0,towerStreak:0,towerRun:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,berries:{},heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
 function activeMon(){return G.party[G.active];}
 function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
 function updateDexPill(){$("dexPill").textContent=`📖 ${G.caught.size}/${DEX.length}${G.dexMaster?" 🏆":""}`;}
@@ -3166,9 +3212,9 @@ const TRADES={
     done:["교환하는 소녀 하늘: 새싹냥, 잘 지내? …고마워, 정말로."] },
   tr_lake:{ want:"otterwave", give:"frostpup", nick:"서리", lv:26,
     name:"교환하는 청년 재하",
-    ask:["교환하는 청년 재하: <b>수달정</b>이구나! 내 <b>서리강아지</b>랑 교환할래?",
+    ask:["교환하는 청년 재하: <b>수달정</b>이구나! 내 <b>서리멍</b>랑 교환할래?",
          "교환하는 청년 재하: 호수 건너에서 데려온 아이야. 추운 데서 왔지."],
-    none:["교환하는 청년 재하: <b>수달정</b>을 데려오면 <b>서리강아지</b>랑 바꿔줄게."],
+    none:["교환하는 청년 재하: <b>수달정</b>을 데려오면 <b>서리멍</b>랑 바꿔줄게."],
     done:["교환하는 청년 재하: 수달정은 잘 있어! 좋은 거래였어."] },
 };
 function tradeNPC(npc){
@@ -3322,7 +3368,7 @@ function updateRunBtn(){ const b=$("runBtn"); if(b)b.textContent=(G&&G.running)?
 function toggleRun(){ G.running=!G.running; if(Field)Field.moveSpeed=G.running?11.4:6.8; updateRunBtn(); flashHint(G.running?"👟 달리기 켜짐":"🚶 걷기 모드"); }
 /* ⚠️ 여기 빠진 패널은 **Escape·B·✕(가려지면)로 못 닫는다.** 지도(minimap)가 목록 밖이라
    가로에서 버튼이 화면 밖으로 밀렸을 때 리로드 말곤 탈출로가 없었다(유저 제보). 새 패널을 만들면 여기 등록할 것. */
-const CANCELABLE_OVERLAYS=["buyOverlay","dexDetailOverlay","dexOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay","minimap"];
+const CANCELABLE_OVERLAYS=["buyOverlay","dexDetailOverlay","dexOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","achOverlay","dailyOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay","tradeOverlay","minimap"];
 function anyOverlayOpen(){ for(const id of CANCELABLE_OVERLAYS){ const el=$(id); if(el&&el.classList.contains("active"))return id; } return null; }
 function cancelBtn(){ if(dialogActive()){ advanceDialog(); return; } const id=anyOverlayOpen(); if(id){ closeOverlay(id); if(Audio&&Audio.sfx)Audio.sfx("blip"); } }
 document.addEventListener("keydown",e=>{ if(!$("map").classList.contains("active"))return; const k=e.key.toLowerCase();
@@ -3794,34 +3840,34 @@ $("confirmStarter").addEventListener("click",()=>{ if(!pickedStarter)return;
 // 풀을 고치면 서식지 정보도 자동으로 따라온다 — 하드코딩하면 또 어긋난다.
 const ENC_POOLS={
   snow:["iceling","frostpup","frostfish","dustbunny","frostwyrm","glacibear","drakeling","mossback","snowl","cryogon"],
-  marsh:["swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"],
+  marsh:["wispkin","swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"],
   skyridge:["zapfinch","voltfalcon","thundwyrm","voltsnake","voltrat","sandwhirl","stormhawk","blossomhawk"],
-  mine:["pebblet","boulderin","burrowmouse","sandwhirl","mossback","hedgemoss"],
+  mine:["coglet","pebblet","boulderin","burrowmouse","sandwhirl","mossback","hedgemoss"],
   hillpath:["dustbunny","racoonmon","sprigfawn","petalwing","seedbean","thunderowl"],   // 언덕 오솔길 = 노말·풀·비행
   pier:["shellow","otterwave","nipling","dewdrop","puddlet","jellure"],                 // 잔교 = 물가
   frostpass:["frostpup","iceling","frostfish","snowl","sharkfin","pebblet"],            // 고갯길 = 얼음
   fireflyway:["glowfly","dustbunny","bunnyhop","sparkmouse","sprigfawn","shellow"],   // 오솔길 = 초반 소형종
-  mosshollow:["mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing"],     // 골짜기 = 이끼·숲
+  mosshollow:["pixibud","mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing"],     // 골짜기 = 이끼·숲
   fallspath:["riverine","gullian","sandwhirl","tidewhale","pebblet","dewdrop"],         // 벼랑길 = 폭포(물·바위·비행)
    // 언덕 오솔길 = 노말·풀·비행(전부 실존 종)   // 광산 = 바위·땅 계열(전부 실존 종)
   
-  ruins:["terrapin","thumplord","lumbeast","wyverna","pebblet","boulderin","burrowmouse","mossback","hedgemoss","sandwhirl"],
+  ruins:["pummelpup","terrapin","thumplord","lumbeast","wyverna","pebblet","boulderin","burrowmouse","mossback","hedgemoss","sandwhirl"],
   crater:["foxfire","emberwolf","blazelion","cindercat","cindercub","pyrewolf","emberfly","pyrmoth","lavakit","magmadon"],
-  garden:["glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop"],
+  garden:["psykit","glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop"],
   isle:["stormhawk","tigerflame","magmahound","krakentide","tidewhale","harelord","emberdrake","grovespirit","palmore","emberlix","crablord"],
   coast:["shellow","otterwave","frostfish","tidewhale","racoonmon","bunnyhop","stormhawk","nipling","gullian","jellure"],
   surf:["shellow","otterwave","frostfish","swampfrog","tidewhale","nipling","jellure","gullian"],
   fishRare:["tidewhale","krakentide","riverdrake","sharkfin","crablord"],
   fish:["shellow","frostfish","otterwave","swampfrog","jellure","nipling"],
   lava:["pebblet","lavakit","burrowmouse","pebblet","lavakit","boulderin","magmadon","crystalgon"],
-  cave:["hedgemoss","racoonmon","sparkmouse","voltbeetle","swampfrog"],
+  cave:["nightkit","hedgemoss","racoonmon","sparkmouse","voltbeetle","swampfrog"],
 };
 // 시간대 한정 출현. 도감 설명문(FLAVOR)의 생태와 일치시킨다 —
 // "밤에만 활동한다"고 써놓고 낮에 나오면 도감이 거짓말이 된다.
 // ⚠️ 늘릴 땐 낮/밤 각 티어 풀이 비지 않는지 확인할 것(pickWild가 티어로 먼저 거른다).
 const NIGHT_MONS=new Set(["lunarmoth", "thunderowl", "swampfrog", "emberwolf", "tigerflame", "vinesnake", "emberlix", "moonytide", "pyrewolf", "glowfly", "arcmoth"]);
 const SEA_MONS=new Set(["nipling","crablord","gullian","palmore","jellure","emberlix"]);
-const NO_WILD=new Set(["skydrake","tidalore","megalith"]);
+const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox","blossfae","lanternox","voidpanther","gearclad"]);
 const DAY_MONS=new Set(["sprigfawn", "stormhawk", "cindercat", "leafdrake", "palmore", "seedbean", "mossback", "sproutcat", "glimmertide"]);
 function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
   const deep=depth>=0.82;
@@ -5087,10 +5133,54 @@ const SIGFX={
   furyswipe: async(s,d)=>{ for(let i=0;i<5;i++){ const c=fxCenter(d); fxSlash(d); _pop("✦",{x:c.x+rand(-18,18),y:c.y+rand(-18,18)},TYPE_COLOR.normal,rand(-20,20),rand(-20,20),rand(240,400)); await wait(fxT(70)); } fxBurst(d,"normal",2); screenShake(false); },
   twinbolt: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<2;k++){ const b=fxGlyph("⚡",{x:c.x+rand(-16,16),y:c.y-80},TYPE_COLOR.elec,"fx-proj"); b.animate([{top:(c.y-80)+"px",opacity:.3},{top:c.y+"px",opacity:1}],{duration:fxT(130),easing:"ease-in",fill:"forwards"}).finished.then(()=>b.remove()).catch(()=>b.remove()); await wait(fxT(110)); } fxBurst(d,"elec",2); impactFlash(); screenShake(false); },
   crush: async(s,d)=>{ const c=fxCenter(d); const sh=fxGlyph("💥",c,TYPE_COLOR.normal,"fx-proj"); sh.style.fontSize="20px"; sh.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:"translate(-50%,-50%) scale(3)",opacity:0}],{duration:fxT(320),easing:"ease-out",fill:"forwards"}).finished.then(()=>sh.remove()).catch(()=>sh.remove()); fxSlash(d); fxBurst(d,"normal",3); impactFlash(); screenShake(true); await wait(fxT(150)); },
-  drainfang: async(s,d)=>{ const c=fxCenter(d); _pop("🦷",c,TYPE_COLOR.normal,0,-6,260); await wait(fxT(130)); const from=fxCenter(d),to=fxCenter(s); for(let i=0;i<4;i++)_fly("✦",{x:from.x+rand(-14,14),y:from.y+rand(-14,14)},to,"#8fd16f",340,1); fxBurst(d,"normal",2); screenShake(false); await wait(fxT(120)); }
+  drainfang: async(s,d)=>{ const c=fxCenter(d); _pop("🦷",c,TYPE_COLOR.normal,0,-6,260); await wait(fxT(130)); const from=fxCenter(d),to=fxCenter(s); for(let i=0;i<4;i++)_fly("✦",{x:from.x+rand(-14,14),y:from.y+rand(-14,14)},to,"#8fd16f",340,1); fxBurst(d,"normal",2); screenShake(false); await wait(fxT(120)); },
+  // dragon/bug 기술 전용 연출(선재 누락 보완) — 공격자 모션은 moveFx가 물리=lunge/특수=cast로 자동 부여
+  dragonbreath: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); for(let i=0;i<5;i++){ _fly("🐉",{x:from.x+rand(-10,10),y:from.y+rand(-10,10)},{x:to.x+rand(-20,20),y:to.y+rand(-16,16)},TYPE_COLOR.dragon,fxT(200),1.1); await wait(fxT(50)); } fxBurst(d,"dragon",2); if(fxT)screenShake(false); },
+  dragonpulse: async(s,d)=>{ const c=fxCenter(d); const r=fxGlyph("💠",c,TYPE_COLOR.dragon,"fx-proj"); r.style.fontSize="22px"; r.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:"translate(-50%,-50%) scale(3.2)",opacity:0}],{duration:fxT(360),easing:"ease-out",fill:"forwards"}).finished.then(()=>r.remove()).catch(()=>r.remove()); const from=fxCenter(s); for(let i=0;i<3;i++){ _fly("🐉",{x:from.x,y:from.y},{x:c.x+rand(-14,14),y:c.y+rand(-14,14)},TYPE_COLOR.dragon,fxT(220),1.2); await wait(fxT(60)); } fxBurst(d,"dragon",3); impactFlash(); screenShake(false); },
+  bugbite: async(s,d)=>{ const c=fxCenter(d); _pop("🦷",c,TYPE_COLOR.bug,0,-6,240); await wait(fxT(120)); fxSlash(d); fxBurst(d,"bug",2); screenShake(false); },
+  bugbuzz: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<3;k++){ const rg=fxGlyph("🐛",c,TYPE_COLOR.bug,"fx-proj"); rg.style.fontSize="20px"; rg.animate([{transform:"translate(-50%,-50%) scale(.4)",opacity:.9},{transform:"translate(-50%,-50%) scale(2.6)",opacity:0}],{duration:fxT(300),easing:"ease-out",fill:"forwards"}).finished.then(()=>rg.remove()).catch(()=>rg.remove()); await wait(fxT(90)); } fxBurst(d,"bug",2); },
+  // fight 기술 전용 연출(공격자 모션은 moveFx가 물리=lunge로 자동 부여)
+  karatechop: async(s,d)=>{ const c=fxCenter(d); _pop("✊",c,TYPE_COLOR.fight,0,-8,220); await wait(fxT(90)); fxSlash(d); fxBurst(d,"fight",2); screenShake(false); },
+  machpunch: async(s,d)=>{ const c=fxCenter(d); const g=fxGlyph("👊",c,TYPE_COLOR.fight,"fx-proj"); g.style.fontSize="24px"; g.animate([{transform:"translate(-50%,-50%) scale(.4)",opacity:1},{transform:"translate(-50%,-50%) scale(1.7)",opacity:0}],{duration:fxT(190),easing:"ease-out",fill:"forwards"}).finished.then(()=>g.remove()).catch(()=>g.remove()); fxBurst(d,"fight",2); impactFlash(); },
+  closecombat: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<4;k++){ _pop(k%2?"👊":"🦵",{x:c.x+rand(-18,18),y:c.y+rand(-12,12)},TYPE_COLOR.fight,rand(-8,8),rand(-12,-2),220); await wait(fxT(55)); } fxSlash(d); fxBurst(d,"fight",3); impactFlash(); screenShake(true); },
+  aurasphere: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const orb=fxGlyph("🔵",from,TYPE_COLOR.fight,"fx-proj"); orb.style.fontSize="22px"; await orb.animate([{left:from.x+"px",top:from.y+"px",opacity:.9},{left:to.x+"px",top:to.y+"px",opacity:1}],{duration:fxT(230),easing:"ease-in",fill:"forwards"}).finished.then(()=>orb.remove()).catch(()=>orb.remove()); fxBurst(d,"fight",3); impactFlash(); },
+  // psychic 기술 전용 연출
+  confusion: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<3;k++){ const a=k/3*6.28; const g=fxGlyph("💫",{x:c.x+Math.cos(a)*26,y:c.y+Math.sin(a)*26},TYPE_COLOR.psychic,"fx-particle"); g.animate([{transform:"translate(-50%,-50%) rotate(0) scale(.6)",opacity:1},{transform:"translate(-50%,-50%) rotate(300deg) scale(1.1)",opacity:0}],{duration:fxT(400),easing:"ease-out"}).finished.then(()=>g.remove()).catch(()=>g.remove()); } await wait(fxT(200)); fxBurst(d,"psychic",2); },
+  psybeam: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); for(let i=0;i<4;i++){ _fly("🔮",{x:from.x+rand(-8,8),y:from.y+rand(-8,8)},{x:to.x+rand(-16,16),y:to.y+rand(-12,12)},TYPE_COLOR.psychic,fxT(190),1.0); await wait(fxT(45)); } fxBurst(d,"psychic",2); },
+  psystrike: async(s,d)=>{ const c=fxCenter(d); const r=fxGlyph("🔮",c,TYPE_COLOR.psychic,"fx-proj"); r.style.fontSize="22px"; r.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:"translate(-50%,-50%) scale(3)",opacity:0}],{duration:fxT(340),easing:"ease-out",fill:"forwards"}).finished.then(()=>r.remove()).catch(()=>r.remove()); const tg=spriteEl(d); tg.style.filter=`drop-shadow(0 0 12px ${TYPE_COLOR.psychic})`; setTimeout(()=>{tg.style.filter="";},fxT(520)); fxBurst(d,"psychic",3); impactFlash(); screenShake(false); },
+  zenheadbutt: async(s,d)=>{ const c=fxCenter(d); _pop("💥",c,TYPE_COLOR.psychic,0,-6,240); await wait(fxT(90)); fxBurst(d,"psychic",3); impactFlash(); screenShake(true); },
+  // fairy 기술 전용 연출
+  fairywind: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); for(let i=0;i<5;i++){ _fly("✨",{x:from.x+rand(-10,10),y:from.y+rand(-10,10)},{x:to.x+rand(-18,18),y:to.y+rand(-14,14)},TYPE_COLOR.fairy,fxT(200),1.0); await wait(fxT(42)); } fxBurst(d,"fairy",2); },
+  dazzlinggleam: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<7;k++){ _pop("✨",{x:c.x+rand(-28,28),y:c.y+rand(-22,22)},TYPE_COLOR.fairy,rand(-8,8),rand(-14,-2),rand(360,560)); await wait(fxT(26)); } fxBurst(d,"fairy",3); impactFlash(); },
+  moonblast: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const orb=fxGlyph("🌙",from,TYPE_COLOR.fairy,"fx-proj"); orb.style.fontSize="24px"; await orb.animate([{left:from.x+"px",top:from.y+"px",opacity:.9},{left:to.x+"px",top:to.y+"px",opacity:1}],{duration:fxT(240),easing:"ease-in",fill:"forwards"}).finished.then(()=>orb.remove()).catch(()=>orb.remove()); fxBurst(d,"fairy",3); impactFlash(); screenShake(false); },
+  playrough: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<4;k++){ _pop(k%2?"💥":"✨",{x:c.x+rand(-18,18),y:c.y+rand(-12,12)},TYPE_COLOR.fairy,rand(-8,8),rand(-10,-2),220); await wait(fxT(55)); } fxSlash(d); fxBurst(d,"fairy",3); screenShake(true); },
+  // ghost 기술 전용 연출
+  lick: async(s,d)=>{ const c=fxCenter(d); _pop("👅",c,TYPE_COLOR.ghost,0,-6,240); await wait(fxT(100)); fxBurst(d,"ghost",2); screenShake(false); },
+  shadowsneak: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const g=fxGlyph("🌑",from,TYPE_COLOR.ghost,"fx-proj"); g.style.fontSize="22px"; await g.animate([{left:from.x+"px",top:from.y+"px",opacity:.55},{left:to.x+"px",top:to.y+"px",opacity:1}],{duration:fxT(150),easing:"ease-in",fill:"forwards"}).finished.then(()=>g.remove()).catch(()=>g.remove()); fxSlash(d); fxBurst(d,"ghost",2); },
+  ominouswind: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); for(let i=0;i<5;i++){ _fly("💨",{x:from.x+rand(-10,10),y:from.y+rand(-10,10)},{x:to.x+rand(-18,18),y:to.y+rand(-14,14)},TYPE_COLOR.ghost,fxT(210),1.1); await wait(fxT(44)); } fxBurst(d,"ghost",2); },
+  shadowball: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const orb=fxGlyph("🌑",from,TYPE_COLOR.ghost,"fx-proj"); orb.style.fontSize="24px"; await orb.animate([{left:from.x+"px",top:from.y+"px",opacity:.9},{left:to.x+"px",top:to.y+"px",opacity:1}],{duration:fxT(240),easing:"ease-in",fill:"forwards"}).finished.then(()=>orb.remove()).catch(()=>orb.remove()); const tg=spriteEl(d); tg.style.filter=`drop-shadow(0 0 12px ${TYPE_COLOR.ghost})`; setTimeout(()=>{tg.style.filter="";},fxT(500)); fxBurst(d,"ghost",3); impactFlash(); screenShake(false); },
+  // dark 기술 전용 연출
+  crunch: async(s,d)=>{ const c=fxCenter(d); _pop("🦷",{x:c.x-8,y:c.y},TYPE_COLOR.dark,-4,-4,220); _pop("🦷",{x:c.x+8,y:c.y},TYPE_COLOR.dark,4,-4,220); await wait(fxT(120)); fxBurst(d,"dark",3); impactFlash(); screenShake(true); },
+  suckerpunch: async(s,d)=>{ const c=fxCenter(d); const g=fxGlyph("👊",c,TYPE_COLOR.dark,"fx-proj"); g.style.fontSize="22px"; g.animate([{transform:"translate(-50%,-50%) scale(.4)",opacity:1},{transform:"translate(-50%,-50%) scale(1.6)",opacity:0}],{duration:fxT(190),easing:"ease-out",fill:"forwards"}).finished.then(()=>g.remove()).catch(()=>g.remove()); fxBurst(d,"dark",2); impactFlash(); },
+  nightburst: async(s,d)=>{ const c=fxCenter(d); for(let k=0;k<6;k++){ _pop("🌑",{x:c.x+rand(-26,26),y:c.y+rand(-20,20)},TYPE_COLOR.dark,rand(-8,8),rand(-12,-2),rand(340,520)); await wait(fxT(28)); } fxBurst(d,"dark",3); },
+  darkpulse: async(s,d)=>{ const c=fxCenter(d); const r=fxGlyph("🌑",c,TYPE_COLOR.dark,"fx-proj"); r.style.fontSize="22px"; r.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:1},{transform:"translate(-50%,-50%) scale(3)",opacity:0}],{duration:fxT(340),easing:"ease-out",fill:"forwards"}).finished.then(()=>r.remove()).catch(()=>r.remove()); const tg=spriteEl(d); tg.style.filter=`drop-shadow(0 0 12px ${TYPE_COLOR.dark})`; setTimeout(()=>{tg.style.filter="";},fxT(500)); fxBurst(d,"dark",3); impactFlash(); screenShake(false); },
+  // steel 기술 전용 연출
+  metalclaw: async(s,d)=>{ const c=fxCenter(d); fxSlash(d); _pop("✨",{x:c.x+rand(-10,10),y:c.y+rand(-8,8)},TYPE_COLOR.steel,0,-8,220); await wait(fxT(80)); fxBurst(d,"steel",2); screenShake(false); },
+  bulletpunch: async(s,d)=>{ const c=fxCenter(d); const g=fxGlyph("⚙️",c,TYPE_COLOR.steel,"fx-proj"); g.style.fontSize="20px"; g.animate([{transform:"translate(-50%,-50%) scale(.4)",opacity:1},{transform:"translate(-50%,-50%) scale(1.5)",opacity:0}],{duration:fxT(180),easing:"ease-out",fill:"forwards"}).finished.then(()=>g.remove()).catch(()=>g.remove()); fxBurst(d,"steel",2); impactFlash(); },
+  mirrorshot: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); for(let i=0;i<3;i++){ _fly("🔷",{x:from.x+rand(-8,8),y:from.y+rand(-8,8)},{x:to.x+rand(-14,14),y:to.y+rand(-10,10)},TYPE_COLOR.steel,fxT(190),1.0); await wait(fxT(50)); } fxBurst(d,"steel",2); },
+  flashcannon: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d); const orb=fxGlyph("⚙️",from,TYPE_COLOR.steel,"fx-proj"); orb.style.fontSize="24px"; await orb.animate([{left:from.x+"px",top:from.y+"px",opacity:.9},{left:to.x+"px",top:to.y+"px",opacity:1}],{duration:fxT(240),easing:"ease-in",fill:"forwards"}).finished.then(()=>orb.remove()).catch(()=>orb.remove()); impactFlash(); fxBurst(d,"steel",3); screenShake(false); }
 };
+// 자체적으로 공격자 스프라이트를 움직이는(lunge/cast) SIGFX 목록 — 중앙 모션과 겹치지 않게 제외한다.
+const SIGFX_SELF_MOTION=new Set(["venomfang","voltfang","headbutt","quickjab","bite","struggle","aquajet","wildbolt","ironhead","doublekick","flareblitz","peck","tackle","takedown","quickstrike","poisonjab"]);
+// 공격자 모션: 데미지기만, 물리=lunge(돌진)·특수=cast(시전 펄스). 변화기(위력0)는 statusMoveFx가 담당하므로 제외.
+function attackerMotion(side,mv){ if(CONFIG.reduceMotion)return; const M=mv&&MOVES[mv]; if(!M||!(M.power>0))return;
+  const aS=spriteEl(side); const spec=isSpecMove(mv); const cls=spec?"cast":"lunge";
+  if(spec)aS.style.setProperty("--castc",TYPE_COLOR[M.type]||"#fff");
+  aS.classList.remove("lunge","cast"); void aS.offsetWidth; aS.classList.add(cls);
+  setTimeout(()=>aS.classList.remove(cls), 460); }
 async function moveFx(move,side,dSide,mv){ const type=move.type; const pw=move.power||0; const inten=pw<=0?1:pw<=45?1:pw<=62?2:3; fieldFlash(type); if(CONFIG.reduceMotion){ await mw(60); return; }
   if(inten>=3){ const aS=spriteEl(side); aS.style.filter=`drop-shadow(0 0 13px ${TYPE_COLOR[type]})`; setTimeout(()=>{aS.style.filter="";},300); }
+  if(mv && !SIGFX_SELF_MOTION.has(mv)) attackerMotion(side,mv);   // 중앙 공격자 모션(자체 모션 SIGFX 16종은 제외)
   if(mv&&SIGFX[mv]){ await SIGFX[mv](side,dSide,inten,type); return; }   // ⚠️ 변화기도 전용 연출을 가질 수 있게 power 체크보다 앞
   if(move.power===0){ await statusMoveFx(move,side,dSide,type); return; }
   if(type==="elec"){ const c=fxCenter(dSide); const bolt=fxGlyph("⚡",{x:c.x,y:c.y-80},TYPE_COLOR.elec,"fx-proj");
@@ -5425,7 +5515,7 @@ function startDouble(foeSpecs,name,key){
   DB.foes.forEach(f=>{ f.stages=f.stages||newStages(); G.seen.add(f.id); });
   G.inBattle=true; G.double=true; G.busy=false;
   if(typeof Audio!=="undefined")Audio.startMusic&&Audio.startMusic("battle");
-  openOverlay("dbOverlay"); $("dbLog").innerHTML=""; dbLog(`<b>${DB.name}</b>의 2:2 듀오 배틀!`); dbRender(); dbBeginRound(); return true;
+  openOverlay("dbOverlay"); const _dt=$("dbTitle"); if(_dt)_dt.textContent="⚔️ 듀오 배틀 · 2 vs 2"; $("dbLog").innerHTML=""; dbLog(`<b>${DB.name}</b>의 2:2 듀오 배틀!`); dbRender(); dbBeginRound(); return true;
 }
 function dbHpClass(r){ return r>0.5?"":r>0.2?"warn":"crit"; }
 function dbCard(m,who,slot){ if(!m)return `<div class="dbmon empty">—</div>`;
@@ -5541,6 +5631,178 @@ async function dbLose(){ DB.phase="done"; dbLog(`<b>패배…</b> 눈앞이 캄�
 }
 function dbGrantXp(m,amt){ m.xp=(m.xp||0)+amt; let guard=0;
   while(m.xp>=m.level*30 && m.level<60 && guard++<20){ m.xp-=m.level*30; m.level++; recalc(m); }
+}
+
+/* ===== 핫싯 대전 (로컬 2인 · 렌탈 3마리) =====
+   한 기기를 번갈아 넘기며 두 사람이 겨룬다. 엔진 리프(dbExec/damage/dbStatus/effSpd)를 그대로 재사용하고,
+   렌더는 dbOverlay(dbCard/dbLog/dbMenu)를 공유한다. 보상·세이브·파티 변화 없음(렌탈은 별도 인스턴스).
+   ⚠️ dbExec의 side==="foe" 데미지 보정을 피하려 side="pvp"로 부른다(양쪽 풀 데미지·대칭). */
+const PVP_RENTAL=["blazelion","krakentide","leafdrake","thunderowl","wyverna","crablord","lunarmoth","glimmertide","pyrewolf","megalith","harelord","snowl"];
+let PVP=null;
+function pvpActive(p){ return PVP[p].team[PVP[p].active]; }
+function pvpAlive(p){ return PVP[p].team.filter(m=>m.hp>0).length; }
+function pvpSyncDB(){ DB={allies:[pvpActive("p1")],foes:[pvpActive("p2")],bench:[],_pvp:true}; }   // dbExec/dbCardEl/dbHitFx/dbRender가 참조(bench 필수)
+function pvpRenderCards(){ pvpSyncDB();
+  $("dbFoes").innerHTML=dbCard(pvpActive("p2"),"foe",0)+`<div class="dbbench">${PVP.p2.name} · ${pvpAlive("p2")}/3</div>`;
+  $("dbAllies").innerHTML=dbCard(pvpActive("p1"),"ally",0)+`<div class="dbbench">${PVP.p1.name} · ${pvpAlive("p1")}/3</div>`;
+}
+function startHotSeat(){ if(G.inBattle||G.busy)return;
+  PVP={ phase:"select", p1:{name:"플레이어 1",team:[],active:0}, p2:{name:"플레이어 2",team:[],active:0}, sel:[] };
+  G.inBattle=true; G._pvp=true;
+  openOverlay("dbOverlay"); const t=$("dbTitle"); if(t)t.textContent="⚔️ 핫싯 대전 · 로컬 2인";
+  $("dbFoes").innerHTML=""; $("dbAllies").innerHTML=""; $("dbLog").innerHTML="";
+  Audio.sfx&&Audio.sfx("blip");
+  dbLog("두 정령사가 겨룬다! 각자 렌탈 정령 <b>3마리</b>를 고르자. (Lv50)");
+  pvpSelect("p1");
+}
+function pvpSelect(pk){ PVP.phase="select"; PVP.selP=pk; PVP.sel=[]; pvpRenderSelect(); }
+function pvpRenderSelect(){ const menu=$("dbMenu"); const P=PVP[PVP.selP]; const chosen=PVP.sel;
+  menu.innerHTML=`<div class="dbprompt"><b>${P.name}</b> · 정령 선택 (${chosen.length}/3)</div>`+
+    `<div class="pvpgrid">`+PVP_RENTAL.map((id,i)=>{ const sp=byId(id); const on=chosen.includes(i);
+      return `<button class="pvppick${on?' on':''}" data-i="${i}"><span class="pe">${sp.em||"❔"}</span><span class="pn">${sp.name}</span><span class="pt">${tkLabel(sp.type)}${sp.type2?"·"+tkLabel(sp.type2):""}</span></button>`; }).join("")+`</div>`+
+    (chosen.length===3?`<button class="dbmv" id="pvpConfirm" style="width:100%;margin-top:6px;background:#31456a;border-color:#7fd1ae">✅ 확정</button>`:`<div class="dbprompt" style="margin-top:6px;opacity:.6">3마리를 고르면 확정할 수 있어요</div>`);
+  menu.querySelectorAll(".pvppick").forEach(b=>b.addEventListener("click",()=>{ const i=+b.dataset.i;
+    const at=PVP.sel.indexOf(i); if(at>=0)PVP.sel.splice(at,1); else if(PVP.sel.length<3)PVP.sel.push(i);
+    Audio.sfx&&Audio.sfx("blip"); pvpRenderSelect(); }));
+  const cf=$("pvpConfirm"); if(cf)cf.addEventListener("click",()=>{
+    P.team=PVP.sel.map(i=>{ const m=makeMon(PVP_RENTAL[i],50); m.stages=newStages(); m.hp=m.maxHp; return m; }); P.active=0;
+    Audio.sfx&&Audio.sfx("blip");
+    if(PVP.selP==="p1") pvpPass("플레이어 2 차례",()=>pvpSelect("p2"));
+    else pvpPass("대전 시작!",()=>pvpBeginBattle()); });
+}
+function pvpPass(msg,next){ PVP.phase="pass"; $("dbFoes").innerHTML=""; $("dbAllies").innerHTML="";
+  $("dbMenu").innerHTML=`<div class="pvppass"><div class="ppm">📱 ${msg}</div><div class="pps">상대에게 화면을 넘기고, 준비되면 누르세요.</div><button class="dbmv" id="pvpGo" style="width:100%">준비 완료 ▶</button></div>`;
+  $("pvpGo").addEventListener("click",()=>{ Audio.sfx&&Audio.sfx("blip"); next(); });
+}
+function pvpBeginBattle(){ pvpRenderCards(); Audio.startMusic&&Audio.startMusic("battle");
+  dbLog(`<b>${PVP.p1.name}</b> vs <b>${PVP.p2.name}</b> — 3:3 대전 시작!`); pvpBeginRound(); }
+function pvpBeginRound(){ PVP.phase="choose"; PVP.actp1=null; PVP.actp2=null;
+  pvpActive("p1")._protect=false; pvpActive("p2")._protect=false; pvpRenderCards();
+  pvpPromptChoice("p1"); }
+function pvpPromptChoice(pk){ PVP.choosing=pk; const P=PVP[pk], m=pvpActive(pk); const menu=$("dbMenu");
+  const bench=P.team.map((x,i)=>({x,i})).filter(o=>o.i!==P.active&&o.x.hp>0);
+  menu.innerHTML=`<div class="dbprompt"><b>${P.name}</b> · <b>${dbName(m)}</b>의 행동</div><div class="dbmoves">`+
+    (m.moves||["tackle"]).map(k=>{ const mv=MOVES[k]; if(!mv)return ""; const pp=(m.pp&&m.pp[k]!=null)?m.pp[k]:mv.pp;
+      return `<button class="dbmv t-${mv.type}" data-k="${k}" ${pp<=0?"disabled style='opacity:.4'":""}>${mv.name}<span class="dbmvp">${mv.power>0?"위력 "+mv.power:"변화"} · PP${pp}</span></button>`; }).join("")+`</div>`+
+    (bench.length?`<button class="dbmv" id="pvpSwitch" style="width:100%;margin-top:4px">🔄 교체</button>`:"");
+  menu.querySelectorAll(".dbmv[data-k]").forEach(b=>{ if(b.disabled)return; b.addEventListener("click",()=>pvpChoose(pk,{type:"move",key:b.dataset.k})); });
+  const sw=$("pvpSwitch"); if(sw)sw.addEventListener("click",()=>pvpSwitchList(pk,false));
+}
+function pvpSwitchList(pk,forced){ const P=PVP[pk]; const menu=$("dbMenu");
+  const bench=P.team.map((x,i)=>({x,i})).filter(o=>o.i!==P.active&&o.x.hp>0);
+  menu.innerHTML=`<div class="dbprompt">${P.name} · ${forced?"내보낼":"교체할"} 정령</div><div class="dbmoves">`+
+    bench.map(o=>`<button class="dbmv" data-si="${o.i}">${o.x.em||"❔"} ${dbName(o.x)} <span class="dbmvp">Lv${o.x.level} · ${Math.max(0,o.x.hp)}HP</span></button>`).join("")+`</div>`+
+    (forced?"":`<button class="dbmv" id="pvpBack" style="width:100%;margin-top:4px">← 뒤로</button>`);
+  menu.querySelectorAll(".dbmv[data-si]").forEach(b=>b.addEventListener("click",()=>{
+    if(forced){ P.active=+b.dataset.si; dbLog(`${P.name}: 가랏, <b>${dbName(pvpActive(pk))}</b>!`); PVP._force.shift(); Audio.sfx&&Audio.sfx("blip"); pvpRenderCards(); pvpForceNext(); }
+    else pvpChoose(pk,{type:"switch",idx:+b.dataset.si}); }));
+  const bk=$("pvpBack"); if(bk)bk.addEventListener("click",()=>pvpPromptChoice(pk));
+}
+function pvpChoose(pk,act){ PVP["act"+pk]=act; Audio.sfx&&Audio.sfx("blip");
+  if(pk==="p1") pvpPass(`${PVP.p2.name} 차례`,()=>pvpPromptChoice("p2"));
+  else pvpPass("결과 공개 ▶",()=>pvpResolve()); }
+async function pvpResolve(){ PVP.phase="resolve"; $("dbMenu").innerHTML=`<div class="dbprompt">전투 중…</div>`;
+  // 1) 교체 먼저(P1→P2)
+  [["p1",PVP.actp1],["p2",PVP.actp2]].forEach(([pk,act])=>{ if(act&&act.type==="switch"){ PVP[pk].active=act.idx; dbLog(`${PVP[pk].name}: 가랏, <b>${dbName(pvpActive(pk))}</b>!`); } });
+  pvpRenderCards();
+  // 2) 기술 액션 정렬(우선도→스피드→랜덤)
+  const acts=[]; if(PVP.actp1&&PVP.actp1.type==="move")acts.push({pk:"p1",opp:"p2",key:PVP.actp1.key});
+  if(PVP.actp2&&PVP.actp2.type==="move")acts.push({pk:"p2",opp:"p1",key:PVP.actp2.key});
+  acts.forEach(a=>a.mon=pvpActive(a.pk));
+  acts.sort((a,b)=>{ const pa=MOVES[a.key].pri||0,pb=MOVES[b.key].pri||0; if(pa!==pb)return pb-pa;
+    const sa=effSpd(a.mon),sb=effSpd(b.mon); if(sa!==sb)return sb-sa; return Math.random()-0.5; });
+  for(const a of acts){ const att=pvpActive(a.pk), def=pvpActive(a.opp);
+    if(att.hp<=0||def.hp<=0)continue;
+    if(att.pp&&att.pp[a.key]!=null)att.pp[a.key]=Math.max(0,att.pp[a.key]-1);
+    await dbExec(att,def,a.key,"pvp"); pvpRenderCards();
+    if(pvpActive("p1").hp<=0||pvpActive("p2").hp<=0)break; }
+  await pvpAfterRound();
+}
+async function pvpAfterRound(){
+  for(const pk of ["p1","p2"]){ const m=pvpActive(pk); if(m&&m.hp>0&&(m.status==="psn"||m.status==="brn")){
+    const bad=m.status==="psn"&&m._tox; const d=bad?Math.max(1,Math.floor(m.maxHp*Math.min(15,m._tox)/16)):Math.max(1,Math.floor(m.maxHp/(m.status==="psn"?8:16)));
+    if(bad)m._tox=Math.min(15,m._tox+1); m.hp=Math.max(0,m.hp-d);
+    dbLog(`<b>${dbName(m)}</b>이(가) ${bad?"맹독":STATUS_KO[m.status]} 피해!`); pvpRenderCards(); await wait(fxT(340)); } }
+  if(pvpAlive("p1")===0)return pvpEnd("p2");
+  if(pvpAlive("p2")===0)return pvpEnd("p1");
+  PVP._force=["p1","p2"].filter(pk=>pvpActive(pk).hp<=0);
+  if(PVP._force.length)return pvpForceNext();
+  pvpBeginRound();
+}
+function pvpForceNext(){ if(!PVP._force||!PVP._force.length)return pvpBeginRound();
+  const pk=PVP._force[0]; pvpPass(`${PVP[pk].name} · 정령이 쓰러졌다`,()=>pvpSwitchList(pk,true)); }
+function pvpEnd(winner){ PVP.phase="done"; const W=PVP[winner]; dbLog(`🏆 <b>${W.name}</b> 승리!`); Audio.sfx&&Audio.sfx("victory");
+  $("dbMenu").innerHTML=`<div class="pvpend">🏆 ${W.name} 승리!</div><button class="dbmv" id="pvpAgain" style="width:100%">다시 대전</button><button class="dbmv" id="pvpDone" style="width:100%;margin-top:4px">끝내기</button>`;
+  $("pvpAgain").addEventListener("click",()=>{ PVP=null; startHotSeat(); });
+  $("pvpDone").addEventListener("click",()=>{ closeOverlay("dbOverlay"); DB=null; PVP=null; G.inBattle=false; G._pvp=false;
+    const t=$("dbTitle"); if(t)t.textContent="⚔️ 듀오 배틀 · 2 vs 2";
+    if(typeof fieldMusic==="function")Audio.startMusic(fieldMusic()); }); }
+
+/* ===== 코드/QR 기반 정령 교환 =====
+   서버 없는 단일 HTML → 정령을 serMon으로 직렬화해 base64url 코드로 만든다. 상대는 코드를 붙여넣어 받는다.
+   QR은 그 코드를 그림으로 그려, 두 기기 사이를 카메라로 옮길 수 있게 한다(폰 카메라로 QR→텍스트→붙여넣기).
+   ⚠️ 코드는 '선물/복제' 의미다(오프라인이라 전송 실패 시 손실을 막으려 보내는 쪽은 정령을 잃지 않는다). */
+const TRADE_VER="SGT1";
+function _b64e(s){ return btoa(unescape(encodeURIComponent(s))).replace(/=+$/,"").replace(/\+/g,"-").replace(/\//g,"_"); }
+function _b64d(s){ s=s.replace(/-/g,"+").replace(/_/g,"/"); return decodeURIComponent(escape(atob(s))); }
+function _tradeChk(s){ let h=5381; for(let i=0;i<s.length;i++)h=((h*33)^s.charCodeAt(i))>>>0; return h.toString(36); }
+function tradeCodeFor(m){ if(!m)return ""; const body=_b64e(JSON.stringify(serMon(m))); return `${TRADE_VER}.${body}.${_tradeChk(body)}`; }
+function parseTradeCode(code){ if(!code)return {err:"코드가 비어 있어요."}; code=(""+code).trim().replace(/\s+/g,"");
+  const parts=code.split("."); if(parts.length!==3||parts[0]!==TRADE_VER)return {err:"형식이 올바르지 않은 코드예요."};
+  if(_tradeChk(parts[1])!==parts[2])return {err:"손상된 코드예요 (체크섬 불일치)."};
+  let obj; try{ obj=JSON.parse(_b64d(parts[1])); }catch(e){ return {err:"해독할 수 없는 코드예요."}; }
+  const m=reviveMon(obj); if(!m||!byId(m.id))return {err:"정령 데이터를 복원하지 못했어요."};
+  return {mon:m}; }
+function qrModules(text){ const q=qrcode(0,"M"); q.addData(text); q.make(); const n=q.getModuleCount();
+  const rows=[]; for(let y=0;y<n;y++){ const r=[]; for(let x=0;x<n;x++)r.push(q.isDark(y,x)); rows.push(r); } return rows; }
+function drawQR(canvas,text){ try{ const mods=qrModules(text); const n=mods.length; const scale=Math.max(2,Math.floor(216/(n+8))); const pad=4*scale, W=n*scale+pad*2;
+  canvas.width=W; canvas.height=W; canvas.style.width=Math.min(W,240)+"px"; canvas.style.height="auto"; canvas.style.imageRendering="pixelated";
+  const ctx=canvas.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,W); ctx.fillStyle="#000";
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(mods[y][x])ctx.fillRect(pad+x*scale,pad+y*scale,scale,scale); return true; }catch(e){ return false; } }
+function openTradeCode(){ Audio.sfx&&Audio.sfx("blip"); openOverlay("tradeOverlay"); tradeHome(); }
+function tradeHome(){ const body=$("tradeBody");
+  body.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">정령을 <b>코드</b>로 만들어 친구에게 보내거나, 받은 코드를 붙여넣어 정령을 받아요. QR을 폰 카메라로 찍으면 코드가 나와요.</div>
+    <button class="dbmv" id="tradeExpBtn" style="width:100%;margin-bottom:8px">📤 정령 내보내기 (코드 만들기)</button>
+    <button class="dbmv" id="tradeImpBtn" style="width:100%">📥 코드로 정령 받기</button>`;
+  $("tradeExpBtn").onclick=()=>{ Audio.sfx&&Audio.sfx("blip"); tradeExportList(); };
+  $("tradeImpBtn").onclick=()=>{ Audio.sfx&&Audio.sfx("blip"); tradeImportUI(); };
+}
+function tradeExportList(){ const body=$("tradeBody");
+  const pool=[]; (G.party||[]).forEach((m,i)=>{ if(m&&!m.isEgg)pool.push({m,src:"party",i}); });
+  (G.box||[]).forEach((m,i)=>{ if(m&&!m.isEgg)pool.push({m,src:"box",i}); });
+  if(!pool.length){ body.innerHTML=`<div style="color:var(--muted);text-align:center;padding:20px">내보낼 정령이 없어요.</div><button class="dbmv" id="tradeBack" style="width:100%">← 뒤로</button>`; $("tradeBack").onclick=tradeHome; return; }
+  body.innerHTML=`<div class="dbprompt" style="margin-bottom:8px">내보낼 정령을 고르세요</div><div style="display:flex;flex-direction:column;gap:5px;max-height:52vh;overflow:auto">`+
+    pool.map((o,i)=>`<button class="dbmv" data-pi="${i}" style="flex-direction:row;justify-content:space-between;align-items:center"><span>${o.m.shiny?"✨":""}${o.m.em||"❔"} ${o.m.nick||o.m.name}</span><span class="dbmvp">Lv${o.m.level} · ${tkLabel(o.m.type)}${o.src==="party"?" · 파티":""}</span></button>`).join("")+
+    `</div><button class="dbmv" id="tradeBack" style="width:100%;margin-top:8px">← 뒤로</button>`;
+  body.querySelectorAll("[data-pi]").forEach(b=>b.onclick=()=>{ Audio.sfx&&Audio.sfx("blip"); tradeShowCode(pool[+b.dataset.pi].m); });
+  $("tradeBack").onclick=tradeHome;
+}
+function tradeShowCode(m){ const body=$("tradeBody"); const code=tradeCodeFor(m);
+  body.innerHTML=`<div class="dbprompt" style="margin-bottom:8px"><b>${m.nick||m.name}</b> Lv${m.level} 교환 코드</div>
+    <div style="display:flex;justify-content:center;margin-bottom:8px"><canvas id="tradeQR"></canvas></div>
+    <textarea id="tradeCodeBox" readonly style="width:100%;height:64px;font-size:10px;font-family:monospace;background:#1c2030;color:#cfe0ff;border:1px solid #3a4060;border-radius:8px;padding:6px;resize:none">${code}</textarea>
+    <div style="display:flex;gap:6px;margin-top:8px"><button class="dbmv" id="tradeCopy" style="flex:1">📋 코드 복사</button><button class="dbmv" id="tradeBack" style="flex:1">← 뒤로</button></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6">이 코드나 QR을 친구에게 보내면, 친구가 <b>코드로 받기</b>에서 같은 정령을 받아요. (내 정령은 그대로 남아요.)</div>`;
+  const cv=$("tradeQR"); if(cv&&!drawQR(cv,code)){ cv.style.display="none"; }
+  $("tradeCopy").onclick=()=>{ const t=$("tradeCodeBox"); t.select(); let okc=false;
+    try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(code); okc=true; } }catch(e){}
+    if(!okc){ try{ okc=document.execCommand("copy"); }catch(e){} }
+    Audio.sfx&&Audio.sfx("blip"); flashHint(okc?"코드를 복사했어요":"코드를 길게 눌러 복사하세요"); };
+  $("tradeBack").onclick=tradeExportList;
+}
+function tradeImportUI(){ const body=$("tradeBody");
+  body.innerHTML=`<div class="dbprompt" style="margin-bottom:8px">받은 코드를 붙여넣으세요</div>
+    <textarea id="tradeInBox" placeholder="SGT1.xxxxx.yyy" style="width:100%;height:80px;font-size:11px;font-family:monospace;background:#1c2030;color:#cfe0ff;border:1px solid #3a4060;border-radius:8px;padding:6px;resize:none"></textarea>
+    <div id="tradeInMsg" style="font-size:12px;min-height:18px;margin-top:6px"></div>
+    <div style="display:flex;gap:6px;margin-top:6px"><button class="dbmv" id="tradeRecv" style="flex:1">📥 받기</button><button class="dbmv" id="tradeBack" style="flex:1">← 뒤로</button></div>`;
+  $("tradeRecv").onclick=()=>{ const code=$("tradeInBox").value; const r=parseTradeCode(code);
+    const msg=$("tradeInMsg");
+    if(r.err){ msg.style.color="#f6a5c0"; msg.textContent="⚠️ "+r.err; Audio.sfx&&Audio.sfx("miss"); return; }
+    G.box=G.box||[]; r.mon.wild=false; r.mon.traded=true; G.box.push(r.mon); G.caught&&G.caught.add(r.mon.id); G.seen&&G.seen.add(r.mon.id);
+    saveGame&&saveGame(); updateDexPill&&updateDexPill();
+    msg.style.color="#7fd16f"; msg.innerHTML=`✅ <b>${r.mon.nick||r.mon.name}</b> Lv${r.mon.level}을(를) 받았어요! (보관함에 보관됨)`;
+    Audio.sfx&&Audio.sfx("win"); $("tradeInBox").value=""; };
+  $("tradeBack").onclick=tradeHome;
 }
 
 async function doMove(mvKey){ if(G.busy)return; G.busy=true; G.battleTurn=(G.battleTurn||0)+1; setMenuEnabled(false); showMain();
@@ -5854,7 +6116,7 @@ async function winBattle(){
   for(const o of G.party){ if(o!==me && o.hp>0){ await gainXpFor(o,base,false); } }
   // coins for wild kill
   if(!G.trainer){ const c=ri(8,18)+Math.floor(_foe.level*1.5); G.money+=c; updateMoney(); }
-  if(!G.trainer && G.foe && G.foe.id==="dawnwyrm"){ G.legendDone=true; setMsg("여명룡이 그대를 인정하고 하늘로 솟아올랐다… 두 인장의 힘이 공명한다!"); await mw(1400); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="shadowlord"){ G.shadowDone=true; setMsg("흑요마가 빛 속으로 흩어졌다… 숲에 평온이 돌아온다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="aqualord"){ G.lakeDone=true; setMsg("수룡왕이 호수 깊은 곳으로 잠겨들었다… 물의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="glaciarch"){ G.snowDone=true; setMsg("빙하제가 눈보라 속으로 사라졌다… 얼음의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="skydrake"){ G.skyBossDone=true; setMsg("천공룡이 번개 구름 너머로 사라졌다… 봉우리에 정적이 감돈다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="megalith"){ G.ruinsBossDone=true; setMsg("거암왕이 다시 돌기둥 사이로 잠겨들었다… 유적이 고요해진다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="tidalore"){ G.seaBossDone=true; setMsg("해일군주가 물살을 가르며 먼바다로 사라졌다… 파도가 잦아든다."); await mw(1300); saveGame(); }
+  if(!G.trainer && G.foe && G.foe.id==="dawnwyrm"){ G.legendDone=true; setMsg("여명룡이 그대를 인정하고 하늘로 솟아올랐다… 두 인장의 힘이 공명한다!"); await mw(1400); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="shadowlord"){ const _firstShadow=!G.shadowDone; G.shadowDone=true; setMsg("흑요마가 빛 속으로 흩어졌다… 숲에 평온이 돌아온다."); await mw(1300); saveGame(); if(_firstShadow && G.questFlags && G.questFlags.haramScene){ endBattle(); playStory(SHADOW_AFTERMATH,()=>{}); return; } } if(!G.trainer && G.foe && G.foe.id==="aqualord"){ G.lakeDone=true; setMsg("수룡왕이 호수 깊은 곳으로 잠겨들었다… 물의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="glaciarch"){ G.snowDone=true; setMsg("빙하제가 눈보라 속으로 사라졌다… 얼음의 축복이 그대와 함께한다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="skydrake"){ G.skyBossDone=true; setMsg("천공룡이 번개 구름 너머로 사라졌다… 봉우리에 정적이 감돈다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="megalith"){ G.ruinsBossDone=true; setMsg("거암왕이 다시 돌기둥 사이로 잠겨들었다… 유적이 고요해진다."); await mw(1300); saveGame(); } if(!G.trainer && G.foe && G.foe.id==="tidalore"){ G.seaBossDone=true; setMsg("해일군주가 물살을 가르며 먼바다로 사라졌다… 파도가 잦아든다."); await mw(1300); saveGame(); }
   if(!G.trainer && G.foe && G.foe.id==="dawnguard"){ G.dawnDone=true; setMsg("오로르가 하늘로 날아올라 숲을 축복했다."); await mw(1300); saveGame(); }
   if(G.trainer){ G.trainer.fainted.add(G.trainer.idx);
     const _nextI=trainerNextAlive();
@@ -5889,6 +6151,8 @@ async function trainerDefeated(){ const tr=G.trainer;
     recordHallOfFame(); saveGame(); endBattle();
     playStory(LEAGUE_WIN,()=>{ showHallOfFame(); }); return; }
   if(tr.boss && firstWin){ G.badge=true; setMsg("🏆 숲의 인장을 손에 넣었다!"); await mw(1400); saveGame(); endBattle(); playStory(EPILOGUE,()=>showEnding()); return; }
+  // 그림자 사도(하람) 첫 격파 → 카이가 스승을 대면하는 이벤트 씬(딱 한 번).
+  if(tr.key==="SH3" && firstWin){ G.questFlags=G.questFlags||{}; G.questFlags.haramScene=1; saveGame(); endBattle(); playStory(RIVAL_MASTER_SCENE,()=>{}); return; }
   saveGame(); endBattle(); }
 const _leagueSVG="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><rect width='160' height='110' rx='12' fill='#2a2540'/><rect x='20' y='30' width='12' height='60' fill='#5a4f7a'/><rect x='128' y='30' width='12' height='60' fill='#5a4f7a'/><rect x='50' y='24' width='12' height='66' fill='#6a5a9a'/><rect x='98' y='24' width='12' height='66' fill='#6a5a9a'/><rect x='0' y='88' width='160' height='22' fill='#3a3358'/><path d='M64 40 l6 -14 6 14 15 3 -12 11 4 15 -13 -8 -13 8 4 -15 -12 -11 z' fill='#ffd23f'/></svg>";
 const LEAGUE_INTRO=[
@@ -5908,6 +6172,32 @@ const EPILOGUE=[
   {art:_epiSVG,t:"숲의 군주가 조용히 말한다. \"고맙다, 젊은 정령사여. 허나… 인장을 <b>빨아먹던 그림자</b>는 아직 완전히 스러지지 않았다.\""},
   {art:_epiSVG,t:"\"그림자는 제단 깊은 곳에 잠들어 있고, 바다 건너엔 또 다른 인장이 그대를 기다린다.\""},
   {art:_epiSVG,t:"정령들이 당신 곁에 모여든다. 한 정령사의 진짜 이야기는… 이제부터 시작이다."}
+];
+/* ===== 이벤트 씬: 카이 ↔ 그림자 사도(스승) 대면 =====
+   그림자 사도 하람(SH3)을 처음 격파하면 딱 한 번 재생된다. 라이벌 카이의 '실종된 스승' 실을
+   비극으로 매듭짓고, 포스트게임 흑요마(그림자 근원) 보스로 정서적 다리를 놓는다.
+   art A = 제단에 선 텅 빈 후드(하람) + 달려온 붉은 실루엣(카이), art B = 그림자에 삼켜지는 하람. */
+const _haramSVG_A="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><defs><radialGradient id='HA' cx='50%' cy='30%' r='70%'><stop offset='0' stop-color='#3a3358'/><stop offset='1' stop-color='#12101e'/></radialGradient></defs><rect width='160' height='110' rx='12' fill='url(#HA)'/><rect x='40' y='78' width='80' height='10' rx='3' fill='#2a2440'/><rect x='58' y='58' width='44' height='22' rx='2' fill='#241f38'/><circle cx='80' cy='30' r='9' fill='#e8d23f' opacity='.5'><animate attributeName='opacity' values='.5;.2;.5' dur='2.6s' repeatCount='indefinite'/></circle><path d='M74 44 q-4 18 -2 34 h16 q2 -16 -2 -34 q-6 -6 -12 0 z' fill='#2c2740'/><circle cx='80' cy='40' r='7' fill='#1c1830'/><path d='M62 40 Q50 60 44 82' stroke='#6a4f9a' stroke-width='2.5' fill='none' opacity='.7'/><path d='M98 40 Q110 60 116 82' stroke='#6a4f9a' stroke-width='2.5' fill='none' opacity='.7'/><path d='M120 62 q8 10 6 26' stroke='#d8503e' stroke-width='4' fill='none' opacity='.9'/><circle cx='122' cy='56' r='5' fill='#e8b88a'/></svg>";
+const _haramSVG_B="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><defs><radialGradient id='HB' cx='50%' cy='40%' r='70%'><stop offset='0' stop-color='#2a2444'/><stop offset='1' stop-color='#0e0c18'/></radialGradient></defs><rect width='160' height='110' rx='12' fill='url(#HB)'/><path d='M70 42 q-8 22 -4 44 h20 q4 -22 -4 -44 q-6 -6 -12 0 z' fill='#1a1628' opacity='.9'><animate attributeName='opacity' values='.9;.4;.9' dur='2.2s' repeatCount='indefinite'/></path><path d='M62 30 Q80 10 98 30' stroke='#6a4f9a' stroke-width='2' fill='none' opacity='.6'/><path d='M56 50 Q40 62 34 86' stroke='#4a3a70' stroke-width='6' fill='none' opacity='.7'/><path d='M104 50 Q120 62 126 86' stroke='#4a3a70' stroke-width='6' fill='none' opacity='.7'/><path d='M112 64 q8 10 6 24' stroke='#d8503e' stroke-width='4' fill='none' opacity='.95'/><circle cx='114' cy='58' r='5' fill='#e8b88a'/><path d='M108 60 q6 4 10 2' stroke='#e8b88a' stroke-width='2.5' fill='none'/></svg>";
+const RIVAL_MASTER_SCENE=[
+  {art:_haramSVG_A,t:"사도가 무릎을 꿇자, 후드 아래로 새어 나오던 그림자가 잠시 걷힌다. 그때 — 다급한 발소리. <b>라이벌 카이</b>가 제단으로 뛰어 올라온다."},
+  {art:_haramSVG_A,t:"카이가 사도의 얼굴을 보고 얼어붙는다. \"그 목소리… 설마—<b>스승님?!</b> 스승님이, 왜 여기서…\""},
+  {art:_haramSVG_A,t:"하람: \"…카이. 그래, 그 이름이었지.\" 흐린 눈에 잠깐 빛이 돈다. \"내가 가르쳤어. 힘보다 유대가 먼저라고. …그런데 나는, 인장을 지키려다 그 말을 잊었다.\""},
+  {art:_haramSVG_B,t:"하람: \"그림자는 지키려는 자에게 먼저 속삭인다. '더 큰 힘을 주겠다'고. …나는 손을 내밀었고, 이렇게 됐어.\" 그의 몸에서 다시 검은 안개가 피어오른다."},
+  {art:_haramSVG_B,t:"카이: \"안 돼요! 제가— 우리가 되돌릴게요!\" 뻗은 손을 뒤로하고, 하람은 그림자에 삼켜지듯 제단 안쪽으로 물러난다. \"군주의 빛으로도 나는 늦었다. 허나 그림자의 <b>근원</b>을 꺾으면… 나 같은 자가 더는 생기지 않아. 부탁한다.\""},
+  {art:_haramSVG_B,t:"카이가 당신을 돌아본다. \"…들었지. 저 안쪽, 그림자의 근원이야. 챔피언이 되면 군주가 그 문을 열어 준댔어. 내 스승님을 — 그 사람들을 되찾자. 이번엔 나도 네 곁에서 싸울게.\""}
+];
+/* ===== 이벤트 씬: 흑요마(그림자 근원) 격파 후 하람·카이 후일담 =====
+   포스트게임 흑요마를 처음 쓰러뜨렸을 때, **그림자 사도(하람)를 이미 대면한 플레이어에게만**
+   재생된다(questFlags.haramScene). 그림자에 삼켜졌던 이들이 풀려나고 하람이 제 정신으로 돌아와
+   카이와 재회하는 것으로 그림자 아크를 닫는다. art C = 빛으로 흩어지는 그림자, art D = 재회.  */
+const _aftSVG_C="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><defs><radialGradient id='AC' cx='50%' cy='45%' r='65%'><stop offset='0' stop-color='#fff6d0'/><stop offset='.5' stop-color='#e8c86a'/><stop offset='1' stop-color='#3a3358'/></radialGradient></defs><rect width='160' height='110' rx='12' fill='url(#AC)'/><circle cx='80' cy='50' r='16' fill='#fff' opacity='.95'><animate attributeName='r' values='16;24;16' dur='2.2s' repeatCount='indefinite'/></circle><g stroke='#fff' stroke-width='2' opacity='.8'><path d='M80 50 L80 14'/><path d='M80 50 L118 30'/><path d='M80 50 L124 62'/><path d='M80 50 L112 90'/><path d='M80 50 L48 90'/><path d='M80 50 L36 62'/><path d='M80 50 L42 30'/></g><path d='M40 92 q40 -8 80 0' stroke='#2f5a3a' stroke-width='8' fill='none' opacity='.7'/></svg>";
+const _aftSVG_D="<svg viewBox='0 0 160 110' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='AD' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fbe6a2'/><stop offset='1' stop-color='#8f6f9a'/></linearGradient></defs><rect width='160' height='110' rx='12' fill='url(#AD)'/><circle cx='80' cy='26' r='16' fill='#fff3c8' opacity='.9'/><rect x='40' y='84' width='80' height='8' rx='3' fill='#6a5a7a'/><path d='M66 52 q-4 16 -2 32 h14 q2 -16 -2 -32 q-5 -5 -10 0 z' fill='#7a6a9a'/><circle cx='71' cy='46' r='6' fill='#e8c9a0'/><path d='M92 54 q-3 14 -1 30 h13 q2 -14 -1 -30 q-5 -5 -11 0 z' fill='#d8503e'/><circle cx='98' cy='48' r='6' fill='#e8b88a'/><path d='M80 66 q1 -6 2 0' stroke='#fff' stroke-width='1' fill='none' opacity='.5'/></svg>";
+const SHADOW_AFTERMATH=[
+  {art:_aftSVG_C,t:"흑요마가 빛으로 흩어지자, 제단을 짓누르던 어둠이 걷힌다. 그림자에 삼켜졌던 이들이 하나둘, 제 모습으로 풀려난다."},
+  {art:_aftSVG_D,t:"그 사이, 텅 비었던 눈에 빛이 돌아온 사람 — <b>하람</b>이 무릎을 짚고 일어선다. \"…돌아왔군. 이 손이, 다시 내 것이야.\" 달려온 카이가 그를 붙든다. \"스승님!\""},
+  {art:_aftSVG_D,t:"하람: \"미안하다, 카이. 그리고… 고맙다.\" 그가 너와 카이를 번갈아 본다. \"힘이 아니라 유대가 먼저다 — 내가 잊었던 그 말을, 너희가 증명했어.\""},
+  {art:_aftSVG_C,t:"카이가 씩 웃으며 너를 본다. \"…봤지? 우리가 해냈어. 스승님도, 저 사람들도 돌아왔다. 고마워, 친구.\" 제단 위로 인장의 빛이 온전히 차오른다."}
 ];
 /* ===== 명예의 전당 ===== */
 // 챔피언 등극 시점의 파티를 박제한다. 예전엔 G.champion 플래그 하나뿐이라
@@ -6048,7 +6338,7 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
     healParty(true); G.trainer=null; endBattle(); blackout(); } }
 
 /* ===================== CATCH / RUN ===================== */
-const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",ultraball:"울트라볼",duskball:"다크볼",netball:"네트볼",quickball:"퀵볼",healball:"힐볼",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프",protein:"단백질",iron:"철분",calcium:"칼슘",zinc:"아연",carbos:"카르본",hpup:"맥스업",mint_adamant:"고집 민트",mint_bold:"대담 민트",mint_timid:"겁쟁이 민트",mint_brave:"용감 민트",mint_relaxed:"무사 민트",mint_modest:"조심 민트",mint_calm:"차분 민트",bottlecap:"황금 병뚜껑",goodrod:"좋은 낚싯대",superrod:"초 낚싯대"};
+const ITEM_KO={rod:"낚싯대",ball:"정령구",greatball:"고급 정령구",ultraball:"울트라볼",duskball:"다크볼",netball:"네트볼",quickball:"퀵볼",healball:"힐볼",potion:"회복약",hyperpotion:"고급 회복약",revive:"부활약",antidote:"해독제",repel:"퇴치 스프레이",candy:"정령 사탕",xatk:"X공격",xdef:"X방어",xspd:"X속도",firestone:"불꽃돌",waterstone:"물돌",thunderstone:"천둥돌",leafstone:"잎사귀돌",escaperope:"탈출로프",protein:"단백질",iron:"철분",calcium:"칼슘",zinc:"아연",carbos:"카르본",hpup:"맥스업",mint_adamant:"고집 민트",mint_bold:"대담 민트",mint_timid:"겁쟁이 민트",mint_brave:"용감 민트",mint_relaxed:"무사 민트",mint_modest:"조심 민트",mint_calm:"차분 민트",bottlecap:"황금 병뚜껑",goodrod:"좋은 낚싯대",superrod:"초 낚싯대",abcap_guts:"근성 캡슐",abcap_intimidate:"위협 캡슐",abcap_sturdy:"옹골참 캡슐",abcap_naturalcure:"자연회복 캡슐",abcap_sniper:"스나이퍼 캡슐",abcap_thickfat:"두꺼운지방 캡슐"};
 // 아이템 표시명 단일 조회. ⚠️ ITEM_KO만 보면 안 된다 — TM·기력·엘릭서·볼·지닌물건은
 // 각자 다른 테이블(BAG_ITEMS.nm / BALLS.ko / HELD_ITEMS.ko)에 이름이 있어서,
 // 예전엔 바닥에서 기력을 주우면 "ether을(를) 주웠다!"처럼 **키가 그대로 노출**됐다.
@@ -6079,6 +6369,102 @@ function checkDexRewards(){ if(!G.dexClaimed)G.dexClaimed=[]; if(!G.heldStock)G.
     const names=[...Object.keys(r.items||{}).map(k=>`${itemName(k)}×${r.items[k]}`),...Object.keys(r.held||{}).map(k=>`${HELD_ITEMS[k].ko}×${r.held[k]}`)].join(", ");
     setTimeout(()=>{ toast(`📖 도감 ${r.n}종 달성! 💰${r.money}${names?" · "+names:""}`); Audio.sfx("levelup"); },400);
   } } }
+/* ===== 도전과제 / 업적 =====
+   왜: 도감·리그·타워·전설·수집이 상태로만 쌓이고 "달성감"을 모아 보여줄 창구가 없었다.
+   기존 상태(G.caught/badges/champion/towerBest/legendDone…)에서 파생하는 순수 판정 + 보상 청구.
+   화면에서 '받기'로 수동 청구한다(auto-hook 없이 자기완결 — 회귀가 쉽고 놓침이 없다). */
+function _ownedMons(){ return [...(G.party||[]),...(G.box||[])].filter(Boolean); }
+function _legendCount(){ return [G.legendDone,G.lakeDone,G.shadowDone,G.dawnDone,G.snowDone,G.seaBossDone,G.skyBossDone,G.ruinsBossDone].filter(Boolean).length; }
+const ACHIEVEMENTS=[
+  {id:"first",   ic:"🥚", name:"첫 만남",       desc:"정령 1마리를 잡는다",           check:()=>G.caught.size>=1,              prog:()=>`${Math.min(G.caught.size,1)}/1`,            money:300,  items:{greatball:3}},
+  {id:"collect10",ic:"🎒",name:"수집의 시작",   desc:"도감 10종 등록",               check:()=>G.caught.size>=10,             prog:()=>`${Math.min(G.caught.size,10)}/10`,          money:800,  items:{hyperpotion:2}},
+  {id:"collect30",ic:"📚",name:"정령 애호가",   desc:"도감 30종 등록",               check:()=>G.caught.size>=30,             prog:()=>`${Math.min(G.caught.size,30)}/30`,          money:2500, items:{candy:2,revive:2}},
+  {id:"dexmaster",ic:"🏆",name:"도감 마스터",   desc:"도감 전종 등록",               check:()=>G.caught.size>=DEX.length,     prog:()=>`${G.caught.size}/${DEX.length}`,            money:10000,items:{candy:5}},
+  {id:"badge1",  ic:"🏅", name:"첫 인장",       desc:"숲의 인장 1개 획득",           check:()=>((typeof forestBadges==="function")?forestBadges():0)>=1, prog:()=>`${(typeof forestBadges==="function")?forestBadges():0}/1`, money:500, items:{greatball:5}},
+  {id:"badge4",  ic:"🎖️", name:"네 조각",       desc:"숲의 인장 4개 모두 획득",       check:()=>((typeof forestBadges==="function")?forestBadges():0)>=4, prog:()=>`${(typeof forestBadges==="function")?forestBadges():0}/4`, money:3000, items:{hyperpotion:5,revive:3}},
+  {id:"champion",ic:"👑", name:"챔피언",         desc:"정령 리그 제패",               check:()=>!!G.champion,                  prog:()=>G.champion?"완료":"미달성",                  money:8000, items:{candy:4}},
+  {id:"shadow",  ic:"🌑", name:"그림자를 걷다",  desc:"제단의 흑요마 격파",           check:()=>!!G.shadowDone,                prog:()=>G.shadowDone?"완료":"미달성",                money:6000, items:{revive:3}},
+  {id:"legend3", ic:"✨", name:"전설의 조련사",  desc:"전설 정령 3종 만남",           check:()=>_legendCount()>=3,             prog:()=>`${_legendCount()}/3`,                       money:9000, items:{candy:4,revive:3}},
+  {id:"shiny",   ic:"🌈", name:"빛나는 인연",    desc:"이로치(샤이니) 정령 보유",     check:()=>_ownedMons().some(m=>m.shiny), prog:()=>_ownedMons().some(m=>m.shiny)?"완료":"미달성",money:5000, items:{greatball:8}},
+  {id:"tower",   ic:"🗼", name:"연전의 강자",    desc:"연전 도장 7연승",             check:()=>(G.towerBest||0)>=7,           prog:()=>`${Math.min(G.towerBest||0,7)}/7`,           money:4000, items:{hyperpotion:5}},
+  {id:"maxlv",   ic:"💪", name:"극한까지",       desc:"Lv60 정령 육성",               check:()=>_ownedMons().some(m=>(m.level||0)>=60), prog:()=>`${Math.min(Math.max(0,..._ownedMons().map(m=>m.level||0)),60)}/60`, money:5000, items:{candy:3}},
+  {id:"rich",    ic:"💰", name:"부유한 정령사",  desc:"소지금 50000 달성",            check:()=>(G.money||0)>=50000,           prog:()=>`${Math.min(G.money||0,50000)}/50000`,       money:0,    items:{candy:2}},
+  {id:"playtime",ic:"⏱️", name:"긴 여정",        desc:"플레이 1시간",                 check:()=>(G.playSec||0)>=3600,          prog:()=>`${Math.floor((G.playSec||0)/60)}/60분`,     money:2000, items:{revive:2}},
+];
+function achDone(a){ try{ return !!a.check(); }catch(e){ return false; } }
+function achClaimed(id){ return (G.achClaimed||[]).includes(id); }
+function achStats(){ let done=0; for(const a of ACHIEVEMENTS)if(achDone(a))done++; return {done,total:ACHIEVEMENTS.length}; }
+function claimAch(id){ const a=ACHIEVEMENTS.find(x=>x.id===id); if(!a||!achDone(a)||achClaimed(id))return false;
+  G.achClaimed=G.achClaimed||[]; G.achClaimed.push(id);
+  if(a.money)G.money=(G.money||0)+a.money; for(const k in (a.items||{}))G.items[k]=(G.items[k]||0)+a.items[k];
+  updateMoney&&updateMoney(); Audio.sfx&&Audio.sfx("levelup"); saveGame&&saveGame();
+  const names=Object.keys(a.items||{}).map(k=>`${itemName(k)}×${a.items[k]}`).join(", ");
+  flashHint(`🎖️ 업적 «${a.name}» 달성! ${a.money?"💰"+a.money:""}${names?" · "+names:""}`);
+  renderAchievements(); return true; }
+function openAchievements(){ Audio.sfx&&Audio.sfx("blip"); openOverlay("achOverlay"); renderAchievements(); }
+function renderAchievements(){ const body=$("achBody"); if(!body)return; const st=achStats();
+  const claimable=ACHIEVEMENTS.filter(a=>achDone(a)&&!achClaimed(a.id)).length;
+  body.innerHTML=`<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px">달성 <b style="color:var(--cream)">${st.done}/${st.total}</b>${claimable?` · <span style="color:#7fd16f">받을 보상 ${claimable}</span>`:""}</div>`+
+    (claimable>1?`<button class="dbmv" id="achClaimAll" style="width:100%;margin-bottom:8px;background:#31456a;border-color:#7fd16f">🎁 완료한 업적 모두 받기</button>`:"")+
+    `<div style="display:flex;flex-direction:column;gap:6px">`+
+    ACHIEVEMENTS.map(a=>{ const done=achDone(a), claimed=achClaimed(a.id);
+      const names=Object.keys(a.items||{}).map(k=>`${itemName(k)}×${a.items[k]}`).join(", ");
+      const state=claimed?`<span style="color:#7fd16f;font-size:11px">✓ 받음</span>`:done?`<button class="pick" data-ach="${a.id}" style="background:#2f7d63;border:none;color:#fff;padding:5px 12px;border-radius:7px;font-weight:700">받기</button>`:`<span style="color:var(--muted);font-size:11px">${a.prog()}</span>`;
+      return `<div style="display:flex;align-items:center;gap:9px;padding:8px;border-radius:9px;background:${done?"rgba(127,209,111,.10)":"rgba(255,255,255,.04)"};border:1px solid ${done?"rgba(127,209,111,.25)":"rgba(255,255,255,.07)"};${done?"":"opacity:.7"}">
+        <div style="font-size:22px;filter:${done?"none":"grayscale(1)"}">${a.ic}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${a.name}</div><div style="font-size:11px;color:var(--muted)">${a.desc}${a.money||names?` <span style="opacity:.7">— 보상: ${a.money?"💰"+a.money:""}${names?(a.money?", ":"")+names:""}</span>`:""}</div></div>
+        <div style="flex-shrink:0">${state}</div></div>`; }).join("")+`</div>`;
+  body.querySelectorAll("[data-ach]").forEach(b=>b.onclick=()=>claimAch(b.dataset.ach));
+  const all=$("achClaimAll"); if(all)all.onclick=()=>{ ACHIEVEMENTS.filter(a=>achDone(a)&&!achClaimed(a.id)).forEach(a=>claimAch(a.id)); };
+}
+/* ===== 데일리 보너스 (요일 테마 · 연속 출석 스트릭) =====
+   왜: 재방문 동기(로드맵 H4 '시즌/이벤트'의 로컬 슬라이스). 서버 없이 기기 날짜로 하루 1회 보상.
+   요일마다 테마가 달라지고, 연속 출석하면 스트릭이 쌓여 보상이 커진다. 자기완결(스폰/전투 무침습). */
+function dailyKey(d){ d=d||new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+const DAILY_THEMES=[
+  {ic:"🎉",name:"축제의 날",   item:"candy",      qty:1,coin:1200},  /* 일 */
+  {ic:"💰",name:"코인의 날",   item:"greatball",  qty:2,coin:1500},  /* 월 */
+  {ic:"🔴",name:"정령구의 날", item:"greatball",  qty:5,coin:500 },  /* 화 */
+  {ic:"💊",name:"회복의 날",   item:"hyperpotion",qty:4,coin:500 },  /* 수 */
+  {ic:"🍬",name:"성장의 날",   item:"candy",      qty:2,coin:600 },  /* 목 */
+  {ic:"✨",name:"부활의 날",   item:"revive",     qty:3,coin:600 },  /* 금 */
+  {ic:"🍀",name:"행운의 날",   item:"ultraball",  qty:3,coin:800 },  /* 토 */
+];
+function dailyTheme(d){ return DAILY_THEMES[(d||new Date()).getDay()]; }
+function dailyReward(theme,streak){ const bonus=Math.min(streak-1,9);   // 스트릭 보너스 최대 10일치
+  return { coin:theme.coin+bonus*150, item:theme.item, qty:theme.qty+Math.floor(bonus/3) }; }
+function dailyStatus(){ const today=dailyKey(); const claimedToday=(G.dailyLast===today);
+  const yesterday=dailyKey(new Date(Date.now()-864e5));
+  const streakIfClaim=(G.dailyLast===yesterday)?((G.dailyStreak||0)+1):1;
+  return { today, claimedToday, streak:G.dailyStreak||0, streakIfClaim, theme:dailyTheme() }; }
+function claimDaily(){ const s=dailyStatus(); if(s.claimedToday)return false;
+  const streak=s.streakIfClaim; const rw=dailyReward(s.theme,streak);
+  G.dailyLast=s.today; G.dailyStreak=streak;
+  G.money=(G.money||0)+rw.coin; G.items[rw.item]=(G.items[rw.item]||0)+rw.qty;
+  updateMoney&&updateMoney(); Audio.sfx&&Audio.sfx("levelup"); saveGame&&saveGame();
+  flashHint(`${s.theme.ic} 데일리 보너스! 💰${rw.coin} · ${itemName(rw.item)}×${rw.qty} (${streak}일 연속)`);
+  renderDaily(); return true; }
+function openDaily(){ Audio.sfx&&Audio.sfx("blip"); openOverlay("dailyOverlay"); renderDaily(); }
+function renderDaily(){ const body=$("dailyBody"); if(!body)return; const s=dailyStatus();
+  const rw=dailyReward(s.theme, s.claimedToday?Math.max(1,s.streak):s.streakIfClaim);
+  const wk=["일","월","화","수","목","금","토"][new Date().getDay()];
+  body.innerHTML=`
+    <div style="text-align:center;padding:6px 4px 14px">
+      <div style="font-size:44px">${s.theme.ic}</div>
+      <div style="font-size:16px;font-weight:800;margin-top:2px">${wk}요일 · ${s.theme.name}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">연속 출석 <b style="color:var(--cream)">${s.claimedToday?s.streak:s.streakIfClaim-1}</b>일${s.claimedToday?"":" → 오늘 받으면 <b style=\"color:#7fd16f\">"+s.streakIfClaim+"</b>일"}</div>
+    </div>
+    <div style="background:rgba(127,209,111,.08);border:1px solid rgba(127,209,111,.22);border-radius:10px;padding:12px;text-align:center">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${s.claimedToday?"오늘 받은 보상":"오늘의 보상"}</div>
+      <div style="font-size:14px;font-weight:700">💰 ${rw.coin} · ${itemName(rw.item)} ×${rw.qty}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">연속 출석할수록 보상이 커져요 (최대 +10일치)</div>
+    </div>
+    ${s.claimedToday
+      ? `<div style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted)">✓ 오늘 보상을 받았어요. 내일 또 오세요!</div>`
+      : `<button class="dbmv" id="dailyClaim" style="width:100%;margin-top:14px;background:#2f7d63;border:none;color:#fff;font-size:14px;padding:11px">🎁 보상 받기</button>`}`;
+  const c=$("dailyClaim"); if(c)c.onclick=()=>claimDaily();
+}
+function dailyPending(){ return !dailyStatus().claimedToday; }
 function askNickname(mon){ return new Promise(res=>{
   $("nickEm").textContent=mon.em; $("nickTitle").textContent=`${mon.name} 별명 짓기`;
   $("nickInput").value=""; openOverlay("nickOverlay"); setTimeout(()=>{try{$("nickInput").focus();}catch(e){}},60);
@@ -6226,7 +6612,13 @@ function renderTrainerCard(){ const b=$("cardBody"); if(!b)return;
     ${row("✨ 전설 정령", `${[G.legendDone,G.lakeDone,G.shadowDone,G.dawnDone].filter(Boolean).length}/4`)}
     ${row("👟 이동 모드", G.running?"달리기":"걷기")}
     <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--cream);font-weight:600">${title}</div>
-    ${(G.hallOfFame&&G.hallOfFame.length)?`<button class="btn" id="cardHof" style="margin-top:12px;width:100%">👑 명예의 전당 보기 (${G.hallOfFame.length}회)</button>`:""}`;
+    <button class="btn" id="cardDaily" style="margin-top:12px;width:100%">🎁 오늘의 보너스${dailyPending()?' <span style="color:#7fd16f">●</span>':""}</button>
+    <button class="btn" id="cardAch" style="margin-top:8px;width:100%">🎖️ 도전과제 (${achStats().done}/${ACHIEVEMENTS.length})</button>
+    ${(G.hallOfFame&&G.hallOfFame.length)?`<button class="btn" id="cardHof" style="margin-top:8px;width:100%">👑 명예의 전당 보기 (${G.hallOfFame.length}회)</button>`:""}`;
+  const db=b.querySelector("#cardDaily");
+  if(db)db.addEventListener("click",()=>{ Audio.sfx("blip"); closeOverlay("cardOverlay"); openDaily(); });
+  const ab=b.querySelector("#cardAch");
+  if(ab)ab.addEventListener("click",()=>{ Audio.sfx("blip"); closeOverlay("cardOverlay"); openAchievements(); });
   const hb=b.querySelector("#cardHof");
   if(hb)hb.addEventListener("click",()=>{ Audio.sfx("blip"); closeOverlay("cardOverlay"); showHallOfFame(); });
 }
@@ -6344,6 +6736,19 @@ const FLAVOR={
   glaciarch:{cat:"극빙군주",h:5.0,w:800,t:"울음소리 한 번에 바다가 얼어붙었다 전해진다. 오랜 빙하 아래에서 잠들어 있다."},
   aqualord:{cat:"대양군주",h:5.4,w:980,t:"몸을 뒤척이면 해류의 방향이 바뀐다고 한다. 바다의 균형을 지키는 오랜 존재."},
   dawnwyrm:{cat:"새벽용",h:6.0,w:900,t:"첫 햇살을 타고 하늘 끝에서 내려온다 전해진다. 그 날갯짓이 새 시대를 연다고 한다."},
+  /* H3-9 네이티브 라인 12종 — 진화 시 키·무게가 커진다(dex_flavor_test 불변식). */
+  pummelpup:{cat:"권술강아지",h:0.5,w:9,t:"작은 앞발에 붕대를 감고 하루 종일 허공에 주먹을 지른다. 겁 없이 큰 상대에게도 달려든다."},
+  taekwarrior:{cat:"태권무사",h:1.6,w:62,t:"낡은 검은 띠를 두르고 도장을 지킨다. 한 발차기에 바위가 갈라진다 전해진다."},
+  psykit:{cat:"요술여우",h:0.4,w:6,t:"이마의 세 번째 눈으로 상대의 마음을 살짝 엿본다. 심심하면 작은 환영으로 장난친다."},
+  mystfox:{cat:"구미술호",h:1.2,w:28,t:"아홉 꼬리가 각기 다른 술법을 부린다. 달 밝은 밤 홀로 오래된 술수를 수련한다."},
+  pixibud:{cat:"꽃봉오리",h:0.3,w:3,t:"반쯤 벌어진 꽃봉오리 사이로 얼굴을 내민다. 기분이 좋으면 은은한 꽃가루를 흩뿌린다."},
+  blossfae:{cat:"꽃요정",h:0.9,w:11,t:"만개한 꽃잎 치마를 두르고 화원을 돌본다. 시든 풀도 그 손길에 다시 피어난다."},
+  wispkin:{cat:"도깨비불",h:0.5,w:2,t:"밤길에 떠도는 장난스러운 불꽃. 길 잃은 나그네를 골리다가도 몰래 길을 밝혀 준다."},
+  lanternox:{cat:"초롱요괴",h:1.5,w:9,t:"청사초롱을 든 오래된 혼령. 그 불빛을 따라가면 이승과 저승의 경계가 흐려진다."},
+  nightkit:{cat:"그믐고양이",h:0.4,w:5,t:"그믐밤에만 모습을 드러내는 검은 새끼 고양이. 이마의 초승달 무늬가 희미하게 빛난다."},
+  voidpanther:{cat:"심연표범",h:1.4,w:55,t:"어둠에 녹아드는 표범. 발소리 없이 다가와 상대의 그림자부터 덮친다."},
+  coglet:{cat:"톱니벌레",h:0.3,w:10,t:"등딱지가 통째로 톱니바퀴다. 종일 딸깍이며 무언가를 조립하듯 돌아다닌다."},
+  gearclad:{cat:"강철갑충",h:1.5,w:120,t:"맞물린 강판과 기어로 뒤덮인 요새 같은 갑충. 한번 버티면 좀처럼 밀리지 않는다."},
 };
 function ddAbility(sp){ return sp.ability||ABILITY_OVERRIDE[sp.id]||DEFAULT_ABILITY[sp.type]||"guts"; }
 function openDetail(id){ const sp=byId(id); Audio.sfx("blip"); $("ddTitle").textContent=sp.name;
@@ -6407,6 +6812,12 @@ const BAG_ITEMS=[
   {key:"mint_modest",em:"🌿",nm:"조심 민트",ds:"선두 정령을 조심스러운 성격(특공↑공↓)으로",use:"mint",nature:"modest",where:"map"},
   {key:"mint_calm",em:"🌿",nm:"차분 민트",ds:"선두 정령을 차분한 성격(특방↑공↓)으로",use:"mint",nature:"calm",where:"map"},
   {key:"bottlecap",em:"🔩",nm:"황금 병뚜껑",ds:"선두 정령의 개체값을 모두 최고로",use:"bottlecap",where:"map"},
+  {key:"abcap_guts",em:"🧬",nm:"근성 캡슐",ds:"정령의 특성을 근성으로 바꾼다",use:"abilitycap",ability:"guts",where:"map"},
+  {key:"abcap_intimidate",em:"🧬",nm:"위협 캡슐",ds:"정령의 특성을 위협으로 바꾼다",use:"abilitycap",ability:"intimidate",where:"map"},
+  {key:"abcap_sturdy",em:"🧬",nm:"옹골참 캡슐",ds:"정령의 특성을 옹골참으로 바꾼다",use:"abilitycap",ability:"sturdy",where:"map"},
+  {key:"abcap_naturalcure",em:"🧬",nm:"자연회복 캡슐",ds:"정령의 특성을 자연회복으로 바꾼다",use:"abilitycap",ability:"naturalcure",where:"map"},
+  {key:"abcap_sniper",em:"🧬",nm:"스나이퍼 캡슐",ds:"정령의 특성을 스나이퍼로 바꾼다",use:"abilitycap",ability:"sniper",where:"map"},
+  {key:"abcap_thickfat",em:"🧬",nm:"두꺼운지방 캡슐",ds:"정령의 특성을 두꺼운지방으로 바꾼다",use:"abilitycap",ability:"thickfat",where:"map"},
   {key:"goodrod",em:"🎣",nm:"좋은 낚싯대",ds:"대물이 더 자주 걸린다",use:"rodup",tier:2,where:"map"},
   {key:"superrod",em:"🎣",nm:"초 낚싯대",ds:"대물이 가장 자주 걸린다",use:"rodup",tier:3,where:"map"},
   {key:"candy",em:"🍬",nm:"정령 사탕",ds:"선두 정령 Lv +1",use:"candy",where:"map"},
@@ -6434,6 +6845,17 @@ const BAG_ITEMS=[
   {key:"tm_twinbolt",em:"💿",nm:"기술머신: 트윈볼트",ds:"전기 정령에게 트윈볼트를 가르친다",use:"tm",move:"twinbolt",where:"map"},
   {key:"tm_skyrush",em:"💿",nm:"기술머신: 스카이러시",ds:"비행 정령에게 스카이러시를 가르친다",use:"tm",move:"skyrush",where:"map"},
   {key:"tm_bloom",em:"💿",nm:"기술머신: 개화",ds:"풀 정령에게 개화를 가르친다",use:"tm",move:"bloom",where:"map"},
+  /* 신규 8타입 강기 TM(H1-1) — 기존 타입TM과 동일하게 **타입 전용**(universal 아님)이라
+     그 타입 정령만 배운다. 레벨업 학습셋엔 안 넣으므로 트레이너·야생 편성 불변 = 밸런스 안전.
+     ⚠️ 자격 검사는 type2까지 본다(이중타입 재타이핑 종이 2차 타입 TM을 배우게). */
+  {key:"tm_dragonpulse",em:"💿",nm:"기술머신: 용의파동",ds:"용 정령에게 용의파동을 가르친다",use:"tm",move:"dragonpulse",where:"map"},
+  {key:"tm_bugbuzz",em:"💿",nm:"기술머신: 벌레버즈",ds:"벌레 정령에게 벌레버즈를 가르친다",use:"tm",move:"bugbuzz",where:"map"},
+  {key:"tm_closecombat",em:"💿",nm:"기술머신: 인파이트",ds:"격투 정령에게 인파이트를 가르친다",use:"tm",move:"closecombat",where:"map"},
+  {key:"tm_psystrike",em:"💿",nm:"기술머신: 사이코키네시스",ds:"에스퍼 정령에게 사이코키네시스를 가르친다",use:"tm",move:"psystrike",where:"map"},
+  {key:"tm_moonblast",em:"💿",nm:"기술머신: 문포스",ds:"페어리 정령에게 문포스를 가르친다",use:"tm",move:"moonblast",where:"map"},
+  {key:"tm_shadowball",em:"💿",nm:"기술머신: 섀도볼",ds:"고스트 정령에게 섀도볼을 가르친다",use:"tm",move:"shadowball",where:"map"},
+  {key:"tm_darkpulse",em:"💿",nm:"기술머신: 악의파동",ds:"악 정령에게 악의파동을 가르친다",use:"tm",move:"darkpulse",where:"map"},
+  {key:"tm_flashcannon",em:"💿",nm:"기술머신: 플래시캐논",ds:"강철 정령에게 플래시캐논을 가르친다",use:"tm",move:"flashcannon",where:"map"},
   {key:"tm_crush",em:"💿",nm:"기술머신: 분쇄",ds:"어떤 정령이든 분쇄를 배운다",use:"tm",move:"crush",universal:true,where:"map"},
   {key:"tm_recover",em:"💿",nm:"기술머신: 회복",ds:"어떤 정령이든 회복을 배운다",use:"tm",move:"recover",universal:true,where:"map"},
   {key:"tm_reflect",em:"💿",nm:"기술머신: 리플렉터",ds:"물리 데미지를 5턴간 반감",use:"tm",move:"reflect",universal:true,where:"map"},
@@ -6527,7 +6949,7 @@ function renderBallPicker(balls){
       closeOverlay("bagOverlay"); tryCatch(it.key); });
     body.appendChild(row); });
 }
-function itemNeedsTarget(it){ return ["heal","pp","cure","revive","ev","mint","bottlecap","candy","evostone","tm"].includes(it.use); }
+function itemNeedsTarget(it){ return ["heal","pp","cure","revive","ev","mint","abilitycap","bottlecap","candy","evostone","tm"].includes(it.use); }
 /* 아이템 대상 선택 — 가방 본문을 파티 목록으로 바꾼다(새 오버레이 없이 전투·필드 공용).
    ⚠️ HP바/상태칩은 `miniHpHtml`/`statusChipHtml` 단일 출처를 쓴다(파티·보관함·교체·데이케어와 같은 마크업). */
 function renderItemTarget(it){
@@ -6567,7 +6989,7 @@ function applyItemEffect(it,tgt){ const m=tgt||activeMon();
   if(it.use==="vsseeker"){ return useVsSeeker(); }
   if(it.use==="tm"){ const mv=it.move, md=MOVES[mv]; if(!m){flashHint("정령이 없다");return false;} if(!md){flashHint("잘못된 기술머신");return false;}
     if(m.moves.includes(mv)){ flashHint(`${dispName(m)}은(는) 이미 ${md.name}을(를) 알고 있다`); return false; }
-    if(!(it.universal||md.type===m.type)){ flashHint(`${dispName(m)}은(는) ${md.name}을(를) 배울 수 없다`); return false; }
+    if(!(it.universal||md.type===m.type||md.type===m.type2)){ flashHint(`${dispName(m)}은(는) ${md.name}을(를) 배울 수 없다`); return false; }   // ⚠️ type2까지: 이중타입은 두 타입 중 하나만 맞으면 그 타입 TM을 배운다
     G.items[it.key]--; Audio.sfx("levelup"); flashHint(`${dispName(m)}에게 ${md.name}을(를) 가르친다!`); learnMoveFlow(m,mv,true); return true; }
   if(it.use==="rod"){ if(G.inBattle||G.busy)return false;
     const adj=[[0,1],[0,-1],[1,0],[-1,0]].some(([dx,dy])=>tileAt(G.pos.x+dx,G.pos.y+dy)==="~");
@@ -6609,6 +7031,10 @@ function applyItemEffect(it,tgt){ const m=tgt||activeMon();
     if(m.nature===it.nature){ flashHint(`${dispName(m)}은(는) 이미 그 성격이다`); return false; }
     G.items[it.key]--; m.nature=it.nature; recalc(m); m.hp=Math.min(m.hp,m.maxHp); Audio.sfx("heal");
     flashHint(`🌿 ${dispName(m)}의 성격이 ${(NATURE_BY_K[it.nature]&&NATURE_BY_K[it.nature].ko)||it.nature}(으)로 바뀌었다!`); return true; }
+  if(it.use==="abilitycap"){ if(!m){flashHint("정령이 없다");return false;}
+    if(m.ability===it.ability){ flashHint(`${dispName(m)}은(는) 이미 그 특성이다`); return false; }
+    G.items[it.key]--; m.ability=it.ability; Audio.sfx("heal");
+    flashHint(`🧬 ${dispName(m)}의 특성이 ${ABILITY_KO[it.ability]||it.ability}(으)로 바뀌었다!`); return true; }
   if(it.use==="bottlecap"){ if(!m){flashHint("정령이 없다");return false;} m.ivs=m.ivs||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0};
     if(["hp","atk","def","spa","spDef","spd"].every(k=>(m.ivs[k]||0)>=31)){ flashHint(`${dispName(m)}의 개체값은 이미 최고다`); return false; }
     G.items[it.key]--; ["hp","atk","def","spa","spDef","spd"].forEach(k=>m.ivs[k]=31); recalc(m); m.hp=Math.min(m.hp,m.maxHp); Audio.sfx("levelup");
@@ -6669,6 +7095,7 @@ const SHOP=[
   {key:"choiceband",em:"🎗️",nm:"구애머리띠",ds:"지닌물건 · 위력 ×1.3, 기술 하나로 고정",price:2400,held:true,need:3},
   {key:"choicescarf",em:"🧣",nm:"구애스카프",ds:"지닌물건 · 속도 ×1.5, 기술 하나로 고정",price:2400,held:true,need:3},
   {key:"swiftfeather",em:"🪶",nm:"재빠른 깃털",ds:"지닌물건 · 속도 ×1.15",price:1100,held:true,need:2},
+  {key:"everstone",em:"🪨",nm:"변함의 돌",ds:"지닌물건 · 교배 시 이 정령의 성격이 100% 유전된다",price:1000,held:true,need:2},
   {key:"lightwing",em:"🕊️",nm:"가벼운 날개",ds:"지닌물건 · 속도 ×1.3, 대신 위력 ×0.9",price:1800,held:true,need:3},
   {key:"heavycore",em:"🏋️",nm:"무게추",ds:"지닌물건 · 위력 ×1.25, 대신 속도 ×0.8",price:1800,held:true,need:3},
   {key:"recklessgem",em:"🔺",nm:"무모의 보석",ds:"지닌물건 · 위력 ×1.2, 대신 작은 반동",price:2000,held:true,need:3},
@@ -6717,6 +7144,14 @@ const SHOP=[
   {key:"tm_twinbolt",em:"💿",nm:"기술머신: 트윈볼트",ds:"전기 타입 전용",price:1400,need:2},
   {key:"tm_skyrush",em:"💿",nm:"기술머신: 스카이러시",ds:"비행 타입 전용",price:1400,need:2},
   {key:"tm_bloom",em:"💿",nm:"기술머신: 개화",ds:"풀 타입 전용",price:1400,need:2},
+  {key:"tm_dragonpulse",em:"💿",nm:"기술머신: 용의파동",ds:"dragon 타입 전용",price:1800,need:3},
+  {key:"tm_bugbuzz",em:"💿",nm:"기술머신: 벌레버즈",ds:"bug 타입 전용",price:1600,need:3},
+  {key:"tm_closecombat",em:"💿",nm:"기술머신: 인파이트",ds:"fight 타입 전용",price:1800,need:3},
+  {key:"tm_psystrike",em:"💿",nm:"기술머신: 사이코키네시스",ds:"psychic 타입 전용",price:1800,need:3},
+  {key:"tm_moonblast",em:"💿",nm:"기술머신: 문포스",ds:"fairy 타입 전용",price:1800,need:3},
+  {key:"tm_shadowball",em:"💿",nm:"기술머신: 섀도볼",ds:"ghost 타입 전용",price:1800,need:3},
+  {key:"tm_darkpulse",em:"💿",nm:"기술머신: 악의파동",ds:"dark 타입 전용",price:1800,need:3},
+  {key:"tm_flashcannon",em:"💿",nm:"기술머신: 플래시캐논",ds:"steel 타입 전용",price:1800,need:3},
   {key:"escaperope",em:"🪢",nm:"탈출로프",ds:"던전 밖으로 즉시 탈출",price:550,need:1},
   {key:"protein",em:"💊",nm:"단백질",ds:"공격 노력치 +10",price:900,need:2},
   {key:"iron",em:"💊",nm:"철분",ds:"방어 노력치 +10",price:900,need:2},
@@ -6745,6 +7180,12 @@ const PREMIUM=[
   {key:"mint_modest",em:"🌿",nm:"조심 민트",ds:"선두 정령 성격을 조심스러운(특공↑공↓)으로",price:4000,held:false},
   {key:"mint_calm",em:"🌿",nm:"차분 민트",ds:"선두 정령 성격을 차분한(특방↑공↓)으로",price:4000,held:false},
   {key:"bottlecap",em:"🔩",nm:"황금 병뚜껑",ds:"선두 정령의 개체값을 모두 최고로",price:9000,held:false},
+  {key:"abcap_guts",em:"🧬",nm:"근성 캡슐",ds:"정령의 특성을 근성(상태이상 시 공격↑)으로",price:5000,held:false},
+  {key:"abcap_intimidate",em:"🧬",nm:"위협 캡슐",ds:"정령의 특성을 위협(등장 시 상대 공격↓)으로",price:5000,held:false},
+  {key:"abcap_sturdy",em:"🧬",nm:"옹골참 캡슐",ds:"정령의 특성을 옹골참(풀피일 때 한 방 버팀)으로",price:5000,held:false},
+  {key:"abcap_naturalcure",em:"🧬",nm:"자연회복 캡슐",ds:"정령의 특성을 자연회복(교체 시 상태이상 치료)으로",price:5000,held:false},
+  {key:"abcap_sniper",em:"🧬",nm:"스나이퍼 캡슐",ds:"정령의 특성을 스나이퍼(급소 위력↑)으로",price:5000,held:false},
+  {key:"abcap_thickfat",em:"🧬",nm:"두꺼운지방 캡슐",ds:"정령의 특성을 두꺼운지방(불 피해 절반)으로",price:5000,held:false},
   {key:"shinycharm",em:"✨",nm:"반짝임의 부적",ds:"샤이니(이로치) 정령 출현 확률 ↑ (1회 구매)",price:12000,unique:true},
 ];
 function openExchange(){ Audio.sfx("blip"); { const t=$("shopHeadTitle"); if(t)t.textContent="💱 교환소"; } renderExchange(); updateMoney(); openOverlay("shopOverlay"); }
@@ -6857,7 +7298,7 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
     const heldTag=m.held?` <span style="font-size:9px;color:#ffd98a">${HELD_ITEMS[m.held].em}${HELD_ITEMS[m.held].ko}</span>`:"";
     card.innerHTML=`<div class="em">${m.shiny?'<span class="shtag">✨</span>':""}${creatureVisual(m.id,m.type)}</div><div class="info"><div class="nm">${dispName(m)}${nmeta} <span class="type-tag ${TYPE_CLASS[m.type]}" style="font-size:9px">${tkLabel(m.type)}</span></div>
       ${miniHpHtml(m)}<div class="st">Lv ${m.level} · HP ${Math.max(0,m.hp)}/${m.maxHp}${statusChipHtml(m)}</div>
-      <div class="st" style="font-size:10px;color:var(--muted)">${natureLabel(m.nature)}${heldTag} <span style="font-size:9px;color:${(m.friendship||0)>=(byId(m.id).evolveFriend||1e9)?'#7fd16f':'#f6a5c0'}">💚${m.friendship||0}${byId(m.id).evolveFriend?('/'+byId(m.id).evolveFriend):''}</span></div></div>
+      <div class="st" style="font-size:10px;color:var(--muted)">${natureLabel(m.nature)}${m.ivs?` · <span style="color:${ivColor(m)}" title="개체값 잠재력">잠재력 ${ivRating(m)}</span>`:""}${heldTag} <span style="font-size:9px;color:${(m.friendship||0)>=(byId(m.id).evolveFriend||1e9)?'#7fd16f':'#f6a5c0'}">💚${m.friendship||0}${byId(m.id).evolveFriend?('/'+byId(m.id).evolveFriend):''}</span></div></div>
       <div class="acts">${actions}</div>`;
     card.querySelectorAll(".pick").forEach(btn=>btn.addEventListener("click",()=>pcAction(btn.dataset.a,i)));
     body.appendChild(card); }); }
@@ -6883,7 +7324,10 @@ function statColor(k){ return k==="hp"?"#7fd16f":k==="atk"?"#f08a5d":k==="def"?"
 function showMonSummary(m){ if(!m)return; const body=$("sumBody"); if(!body)return; if(m.isEgg){ openOverlay("summaryOverlay"); const _h=m.hatch||20; const _prog=_h>18?"아직 한참 남은 듯하다.":_h>10?"조금씩 따뜻해지고 있다…":_h>4?"가끔 꿈틀거린다 — 곧이다!":"금방이라도 깨질 것 같다!"; body.innerHTML='<div style="text-align:center;padding:32px 20px"><div style="font-size:52px">🥚</div><div style="margin-top:14px;font-size:15px;font-weight:700">정령의 알</div><div style="margin-top:6px;font-size:12px;opacity:.7">함께 걸으면 부화한다.</div><div style="margin-top:12px;font-size:12px;font-weight:600;color:#e0c060">'+_prog+'</div></div>'; return; } recalc(m); const sp=byId(m.id);
   const stats=[["hp","체력",m.maxHp],["atk","공격",m.atk],["def","방어",m.def],["spa","특공",m.spa],["spDef","특방",m.spDef],["spd","속도",m.spd]];
   const maxStat=Math.max.apply(null,stats.map(s=>s[2]).concat([1]));
-  const statBars=stats.map(s=>`<div style="display:flex;align-items:center;gap:6px;margin:3px 0"><span style="width:34px;font-size:11px;color:var(--muted)">${s[1]}</span><span style="width:30px;text-align:right;font-size:11px">${s[2]}</span><div style="flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100,s[2]/maxStat*100)}%;background:${statColor(s[0])}"></i></div></div>`).join("");
+  // 성격 보정을 능력치 막대에 바로 표시(상시) — 오른 스탯 ▲(주황)·내린 스탯 ▼(파랑).
+  const _nat=NATURE_BY_K[m.nature]||{};
+  const natMark=k=> _nat.up===k?'<span style="color:#f0705d" title="성격으로 상승">▲</span>':_nat.down===k?'<span style="color:#6a9cf0" title="성격으로 하락">▼</span>':'';
+  const statBars=stats.map(s=>`<div style="display:flex;align-items:center;gap:6px;margin:3px 0"><span style="width:44px;font-size:11px;color:var(--muted)">${s[1]}${natMark(s[0])}</span><span style="width:30px;text-align:right;font-size:11px">${s[2]}</span><div style="flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100,s[2]/maxStat*100)}%;background:${statColor(s[0])}"></i></div></div>`).join("");
   const moveRows=m.moves.map(mv=>{ const md=MOVES[mv]; if(!md)return ""; const pp=(m.pp&&m.pp[mv]!=null)?m.pp[mv]:md.pp; return `<div style="display:flex;align-items:center;gap:6px;margin:3px 0;font-size:12px"><span class="type-tag ${TYPE_CLASS[md.type]}" style="font-size:9px">${tkLabel(md.type)}</span><span style="flex:1">${md.name}</span><span style="color:var(--muted);font-size:11px">위력 ${md.power||"-"}</span><span style="color:var(--muted);font-size:11px">PP ${pp}/${md.pp}</span></div>`; }).join("");
   const fr=m.friendship||0, efr=byId(m.id).evolveFriend;
   const need=m.level*30, xpPct=Math.min(100,Math.max(0,(m.xp/need)*100));
@@ -7041,7 +7485,7 @@ function serialize(){ return {v:4, ts:_nowMs(), pe:G.playerEmoji, ps:G.styleIdx|
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0} }; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp,tox:m._tox||0}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
   recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; m._tox=p.tox||0; if(p.nick)m.nick=p.nick; return m; }
@@ -7049,7 +7493,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.playerEmoji=o.pe||"🧑‍🔬"; s.styleIdx=o.ps||0; s.active=o.active||0;
   s.items=Object.assign({ball:0,greatball:0,potion:0,revive:0,antidote:0,hyperpotion:0,repel:0,candy:0,xatk:0,xdef:0,xspd:0},o.items||{});
   s.money=o.money!=null?o.money:600; s.pos=o.pos||{x:STARTPOS.x,y:STARTPOS.y}; s.lastHeal=o.lh||null; s.repel=o.repel||0;   // 구세이브는 null → blackout이 STARTPOS로 폴백
-  s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.flySpots=new Set(o.flySpots||[]); s.hasFly=!!o.hasFly; s.mineSeen=!!o.mineSeen; s.hillSeen=!!o.hillSeen; s.pierSeen=!!o.pierSeen; s.frostSeen=!!o.frostSeen; s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.lavaSeen=!!o.lavaSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.rodTier=(o.rodTier!=null)?o.rodTier:(o.hasRod?1:0); s.lakeDone=!!o.lakeDone; s.lakeSignSeen=!!o.lakeSignSeen; s.deepwoodsSeen=!!o.deepwoodsSeen; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.skySeen=!!o.skySeen; s.ruinsSeen=!!o.ruinsSeen; s.craterSeen=!!o.craterSeen; s.gardenSeen=!!o.gardenSeen; s.seaBossDone=!!o.seaBossDone; s.skyBossDone=!!o.skyBossDone; s.ruinsBossDone=!!o.ruinsBossDone; s.towerBest=o.tb||0; s.dexMaster=!!o.dexMaster; s.shinyCharm=!!o.shinyCharm; s.berries=o.berries||{}; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
+  s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.flySpots=new Set(o.flySpots||[]); s.hasFly=!!o.hasFly; s.mineSeen=!!o.mineSeen; s.hillSeen=!!o.hillSeen; s.pierSeen=!!o.pierSeen; s.frostSeen=!!o.frostSeen; s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.achClaimed=o.ac||[]; s.dailyLast=o.dl||null; s.dailyStreak=o.dst||0; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.lavaSeen=!!o.lavaSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.rodTier=(o.rodTier!=null)?o.rodTier:(o.hasRod?1:0); s.lakeDone=!!o.lakeDone; s.lakeSignSeen=!!o.lakeSignSeen; s.deepwoodsSeen=!!o.deepwoodsSeen; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.skySeen=!!o.skySeen; s.ruinsSeen=!!o.ruinsSeen; s.craterSeen=!!o.craterSeen; s.gardenSeen=!!o.gardenSeen; s.seaBossDone=!!o.seaBossDone; s.skyBossDone=!!o.skyBossDone; s.ruinsBossDone=!!o.ruinsBossDone; s.towerBest=o.tb||0; s.dexMaster=!!o.dexMaster; s.shinyCharm=!!o.shinyCharm; s.berries=o.berries||{}; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
   s.hallOfFame=Array.isArray(o.hof)?o.hof:[]; s.trades=o.trades||{};
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
@@ -7146,14 +7590,19 @@ window.SG.TERRAIN_ART=TERRAIN_ART; window.SG.TERRAIN_ART_ID=TERRAIN_ART_ID; wind
 window.SG.TERRAIN_TINT=TERRAIN_TINT; window.SG.terrainTinted=terrainTinted;
 
 window.SG.FLAVOR=FLAVOR;
-Object.assign(window.SG,{NPC_ARCH,NPC_SHEET_ART,npcSheet,NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,TRAINER_HELD,DOOR_TILES,NATURE_ENTRY,CHAR_HOME,ORIGIN_STORY,INTERIOR_NPC_MSG,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR});
+Object.assign(window.SG,{NPC_ARCH,NPC_SHEET_ART,npcSheet,NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,TRAINER_HELD,DOOR_TILES,NATURE_ENTRY,CHAR_HOME,ORIGIN_STORY,INTERIOR_NPC_MSG,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR,
+  canBreed,makeEgg,hatchEgg,baseForm,eggMoves,PRE_EVO});
 window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,sendOutAnim,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
   getDB:()=>DB, dbReplace,   // 듀오 배틀 상태 + 벤치 교대. held_effect_test [5]가 듀오 상대의 지닌물건 풀을 검사한다.
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, terrainWalkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HOME_POS, HOME_AT, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS};
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, terrainWalkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HOME_POS, HOME_AT, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS,
+  startHotSeat, pvpSelect, pvpRenderSelect, pvpPromptChoice, pvpChoose, pvpSwitchList, pvpResolve, pvpActive, pvpAlive, PVP_RENTAL, getPVP:()=>PVP,
+  openTradeCode, tradeHome, tradeExportList, tradeShowCode, tradeImportUI, tradeCodeFor, parseTradeCode, qrModules, drawQR, qrcode,
+  openAchievements, renderAchievements, claimAch, achDone, achStats, achClaimed, ACHIEVEMENTS,
+  openDaily, renderDaily, claimDaily, dailyStatus, dailyReward, dailyTheme, dailyKey, dailyPending, DAILY_THEMES};
 
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)

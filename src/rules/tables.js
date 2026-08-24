@@ -16,6 +16,14 @@ const TYPES={
   ice:    {ko:"얼음",col:"#88d6e6", par:"❄️", ic:"❄️", spec:1, ab:"icebody",     wav:"sine"},
   poison: {ko:"독",  col:"#b57fd0", par:"🫧", ic:"🫧", spec:0, ab:"poisonpoint", wav:"sawtooth", fg:"#f3ecdd"},
   ground: {ko:"땅",  col:"#d2a862", par:"🪨", ic:"⛰️", spec:0, ab:"sturdy",      wav:"square"},
+  dragon: {ko:"용",  col:"#7a6ff0", par:"🐉", ic:"🐉", spec:1, ab:"guts",        wav:"sawtooth", fg:"#f3ecdd"},
+  bug:    {ko:"벌레",col:"#a4b23e", par:"🐛", ic:"🐛", spec:0, ab:"guts",        wav:"square"},
+  fight:  {ko:"격투",col:"#cf6a5a", par:"👊", ic:"🥊", spec:0, ab:"guts",        wav:"square", fg:"#f3ecdd"},
+  psychic:{ko:"에스퍼",col:"#e07bb0",par:"🔮", ic:"🔮", spec:1, ab:"guts",        wav:"sine", fg:"#f3ecdd"},
+  fairy:  {ko:"페어리",col:"#f4aad0",par:"✨", ic:"🧚", spec:1, ab:"guts",        wav:"triangle"},
+  ghost:  {ko:"고스트",col:"#6f5c9c",par:"👻", ic:"👻", spec:1, ab:"guts",        wav:"sawtooth", fg:"#f3ecdd"},
+  dark:   {ko:"악",  col:"#5b5560",par:"🌑", ic:"🌑", spec:0, ab:"guts",        wav:"square", fg:"#f3ecdd"},
+  steel:  {ko:"강철",col:"#9fa8ba",par:"⚙️", ic:"⚙️", spec:0, ab:"guts",        wav:"square"},
 };
 const TYPE_LIST=Object.keys(TYPES);
 const _derive=(src,f)=>{ const o={}; for(const k in src)o[k]=f(src[k],k); return o; };
@@ -75,13 +83,27 @@ const HELD_ITEMS={
   heavycore:{ko:"무게추",em:"🏋️",desc:"기술 위력 ×1.25 · 대신 속도가 크게 준다(×0.8)",dmg:1.25,spdx:0.8},
   recklessgem:{ko:"무모의보석",em:"🔺",desc:"기술 위력 ×1.2 · 대신 공격할 때마다 최대HP 1/20 반동",dmg:1.2,recoil:0.05},
   resolvering:{ko:"집념의고리",em:"💍",desc:"위력·속도 ×1.15 · 대신 처음 쓴 기술만 계속 쓴다",dmg:1.15,spdx:1.15,lock:true},
+  /* 교배 전용 — 전투 효과 없음(dmg/spdx 등 없음). makeEgg가 natureLock을 읽어 이 정령의 성격을 100% 유전시킨다. */
+  everstone:{ko:"변함의돌",em:"🪨",desc:"교배 시 지닌 정령의 성격이 반드시 유전된다",natureLock:true},
 };
 // 타입별 강화 부적 — TYPES에서 파생(단일 출처). 해당 타입 기술 위력 +20%.
 // ⚠️ 손으로 10개 나열하지 않는다 — 그러면 타입 추가 시 또 하나의 병렬 테이블을 빠뜨린다.
 TYPE_LIST.forEach(t=>{ HELD_ITEMS["charm_"+t]={ko:TYPE_KO[t]+"부적",em:TYPE_ICON[t]||"🔮",desc:TYPE_KO[t]+" 타입 기술 위력 +20%",boost:t}; });
 // 종별 특성 지정. 없으면 DEFAULT_ABILITY[type] → "guts" 폴백이라
 // 지정을 안 하면 같은 타입 정령이 죄다 같은 특성이 된다. 라인마다 흩뿌릴 것.
-const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate",emberfly:"flamebody",pyrmoth:"flamebody",cindercat:"flamebody",lavakit:"flamebody",boulderin:"roughskin",crablord:"roughskin",hedgemoss:"roughskin",otterwave:"swiftswim",sharkfin:"swiftswim",frostfish:"swiftswim",nipling:"swiftswim",seedbean:"chlorophyll",sproutcat:"chlorophyll",palmore:"chlorophyll",leafwyrm:"chlorophyll",thunderowl:"insomnia",lunarmoth:"insomnia",swampfrog:"immunity",burrowmouse:"immunity",tidalore:"waterveil",shellow:"waterveil",stormhawk:"sniper",sandwhirl:"sniper",sprigfawn:"naturalcure",bunnyhop:"naturalcure",dewdrop:"naturalcure",tigerflame:"hugepower",magmadon:"hugepower"};
+const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate",emberfly:"flamebody",pyrmoth:"flamebody",cindercat:"flamebody",lavakit:"flamebody",boulderin:"roughskin",crablord:"roughskin",hedgemoss:"roughskin",otterwave:"swiftswim",sharkfin:"swiftswim",frostfish:"swiftswim",nipling:"swiftswim",seedbean:"chlorophyll",sproutcat:"chlorophyll",palmore:"chlorophyll",leafwyrm:"chlorophyll",thunderowl:"insomnia",lunarmoth:"insomnia",swampfrog:"immunity",burrowmouse:"immunity",tidalore:"waterveil",shellow:"waterveil",stormhawk:"sniper",sandwhirl:"sniper",sprigfawn:"naturalcure",bunnyhop:"naturalcure",dewdrop:"naturalcure",tigerflame:"hugepower",magmadon:"hugepower",
+  // 2026-08-20 갭 B: 미배정 47종 특성 지정(엔진 기구현 21종 풀 안에서 종 컨셉·역할별 분산 — ability_expand_test 편중 상한 13종 준수)
+  foxfire:"blaze",emberwolf:"intimidate",cindercub:"blaze",pyrewolf:"intimidate",emberdrake:"flamebody",emberlix:"flamebody",
+  puddlet:"torrent",riverine:"swiftswim",gullian:"swiftswim",glimmertide:"swiftswim",moonytide:"naturalcure",aqualord:"intimidate",
+  leafdrake:"overgrow",vinesnake:"poisonpoint",petalwing:"chlorophyll",blossomhawk:"chlorophyll",bloomlynx:"chlorophyll",mossback:"sturdy",terrapin:"sturdy",titanoak:"sturdy",
+  sparkmouse:"static",voltbeetle:"static",voltsnake:"static",thundwyrm:"static",zapfinch:"static",voltfalcon:"sniper",glowfly:"static",arcmoth:"poisonpoint",crystalgon:"levitate",
+  racoonmon:"guts",lumbeast:"intimidate",
+  frostpup:"icebody",glacibear:"thickfat",snowl:"insomnia",cryogon:"icebody",iceling:"icebody",frostwyrm:"icebody",glaciarch:"sturdy",
+  drakeling:"guts",wyverna:"intimidate",skydrake:"intimidate",dawnwyrm:"sturdy",
+  pebblet:"sturdy",megalith:"sturdy",burrowlord:"roughskin",dustbunny:"immunity",thumplord:"hugepower",
+  // H3-9 네이티브 라인 12종 — 편중 상한(≤13) 안에서 배정: 격투=근성/급소, 악=위협(포식자), 강철=옹골참 등.
+  pummelpup:"sniper",taekwarrior:"guts",psykit:"insomnia",mystfox:"insomnia",pixibud:"naturalcure",blossfae:"naturalcure",
+  wispkin:"levitate",lanternox:"levitate",nightkit:"intimidate",voidpanther:"intimidate",coglet:"sturdy",gearclad:"sturdy"};
 /* ===== 상태이상 단일 출처 =====
    ⚠️ 상태를 추가할 땐 여기만 고친다. 예전엔 STATUS_KO·STATUS_CLS·_MV_STATUS_KO·
    STATUS_TYPE_IMMUNE·연출 글리프 2곳·.b-* CSS·.dbst.b-* CSS가 따로 놀아서
@@ -125,14 +147,22 @@ if(typeof document!=="undefined")injectPalette();
    행 하나와 '모든 행의 열 하나'를 같이 넣을 것 — 누락 시 damage()에서 NaN.
    회귀(palette_source_test)가 전 조합을 검사한다. */
 const EFF={
-  fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1},
-  water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2},
-  grass:  {fire:.5,water:2, grass:.5,elec:1, normal:1,flying:.5,rock:2, ice:1, poison:.5,ground:2},
-  elec:   {fire:1, water:2, grass:.5,elec:.5,normal:1,flying:2, rock:1, ice:1, poison:1, ground:0},
-  normal: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1},
-  flying: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1},
-  rock:   {fire:2, water:1, grass:1, elec:1, normal:1,flying:2, rock:1, ice:2, poison:1, ground:.5},
-  ice:    {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:2, rock:1, ice:.5,poison:1, ground:2},
-  poison: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:.5,ground:.5},
-  ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1},
+  fire:   {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:1, rock:.5,ice:2, poison:1, ground:1, dragon:.5, bug:2, fight:1, psychic:1, fairy:1, ghost:1, dark:1, steel:2},
+  water:  {fire:2, water:.5,grass:.5,elec:1, normal:1,flying:1, rock:2, ice:1, poison:1, ground:2, dragon:.5, bug:1, fight:1, psychic:1, fairy:1, ghost:1, dark:1, steel:1},
+  grass:  {fire:.5,water:2, grass:.5,elec:1, normal:1,flying:.5,rock:2, ice:1, poison:.5,ground:2, dragon:.5, bug:1, fight:1, psychic:1, fairy:1, ghost:1, dark:1, steel:.5},
+  elec:   {fire:1, water:2, grass:.5,elec:.5,normal:1,flying:2, rock:1, ice:1, poison:1, ground:0, dragon:.5, bug:1, fight:1, psychic:1, fairy:1, ghost:1, dark:1, steel:1},
+  normal: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:1, fight:1, psychic:1, fairy:1, ghost:0, dark:1, steel:.5},
+  flying: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:1, ground:1, dragon:1, bug:2, fight:2, psychic:1, fairy:1, ghost:1, dark:1, steel:.5},
+  rock:   {fire:2, water:1, grass:1, elec:1, normal:1,flying:2, rock:1, ice:2, poison:1, ground:.5, dragon:1, bug:2, fight:.5, psychic:1, fairy:1, ghost:1, dark:1, steel:.5},
+  ice:    {fire:.5,water:.5,grass:2, elec:1, normal:1,flying:2, rock:1, ice:.5,poison:1, ground:2, dragon:2, bug:1, fight:1, psychic:1, fairy:1, ghost:1, dark:1, steel:.5},
+  poison: {fire:1, water:1, grass:2, elec:1, normal:1,flying:1, rock:.5,ice:1, poison:.5,ground:.5, dragon:1, bug:1, fight:1, psychic:1, fairy:2, ghost:.5, dark:1, steel:0},
+  ground: {fire:2, water:1, grass:.5,elec:2, normal:1,flying:0, rock:2, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:1, psychic:1, fairy:1, ghost:1, dark:1, steel:2},
+  dragon: {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:2, bug:1, fight:1, psychic:1, fairy:0, ghost:1, dark:1, steel:.5},
+  bug:    {fire:.5,water:1, grass:2, elec:1, normal:1,flying:.5,rock:1, ice:1, poison:.5,ground:1, dragon:1, bug:1, fight:.5, psychic:2, fairy:.5, ghost:.5, dark:2, steel:.5},
+  fight:  {fire:1, water:1, grass:1, elec:1, normal:2,flying:.5,rock:2, ice:2, poison:.5,ground:1, dragon:1, bug:.5,fight:1, psychic:.5, fairy:.5, ghost:0, dark:2, steel:2},
+  psychic:{fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:2, ground:1, dragon:1, bug:1, fight:2, psychic:.5, fairy:1, ghost:1, dark:0, steel:.5},
+  fairy:  {fire:.5,water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:.5,ground:1, dragon:2, bug:1, fight:2, psychic:1, fairy:1, ghost:1, dark:2, steel:.5},
+  ghost:  {fire:1, water:1, grass:1, elec:1, normal:0,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:1, bug:1, fight:1, psychic:2, fairy:1, ghost:2, dark:.5, steel:1},
+  dark:   {fire:1, water:1, grass:1, elec:1, normal:1,flying:1, rock:1, ice:1, poison:1, ground:1, dragon:1, bug:1, fight:.5, psychic:2, fairy:.5, ghost:2, dark:.5, steel:1},
+  steel:  {fire:.5,water:.5,grass:1, elec:.5,normal:1,flying:1, rock:2, ice:2, poison:1, ground:1, dragon:1, bug:1, fight:1, psychic:1, fairy:2, ghost:1, dark:1, steel:.5},
 };

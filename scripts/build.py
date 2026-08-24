@@ -69,6 +69,7 @@ repl = {
     "//@@RULES_TYPES@@": rules("tables"),
     "//@@RULES_MOVES@@": rules("moves"),
     "//@@RULES_DEX@@": rules("dex"),
+    "//@@RULES_QR@@": rules("qr"),
     "//@@RULES_BATTLE@@": rules("battle"),
     "//@@HERO_ART@@": hero,
     "//@@HERO_ART_BACK@@": back,

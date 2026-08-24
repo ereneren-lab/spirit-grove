@@ -34,8 +34,11 @@ const { chromium } = require("playwright"); const path=require("path");
       if(it.spdx){ const a=mk(), c=mk({held:k});
         out.push({k, field:"spdx", val:it.spdx, ok:Math.abs(S.flow?0:0)===0 && (it.spdx>1? S.effSpd(c)>S.effSpd(a) : S.effSpd(c)<S.effSpd(a)),
                   base:Math.round(S.effSpd(a)), with:Math.round(S.effSpd(c))}); }
-      if(it.boost){ const base=avg(mk(),mk({type:"normal"}),{type:it.boost,power:80});
-        const with_=avg(mk({held:k}),mk({type:"normal"}),{type:it.boost,power:80});
+      if(it.boost){ /* ⚠️ 타깃은 어떤 타입에도 면역이 없는 순수 water로(고스트→노말·에스퍼→악 같은 0배 방지).
+                        racoonmon이 normal/dark라 type2까지 명시로 덮어야 한다. */
+        const tgt=()=>mk({type:"water",type2:null});
+        const base=avg(mk(),tgt(),{type:it.boost,power:80});
+        const with_=avg(mk({held:k}),tgt(),{type:it.boost,power:80});
         out.push({k, field:"boost", val:it.boost, ok:with_>base*1.03, base:Math.round(base), with:Math.round(with_)}); }
     }
     return out; });
