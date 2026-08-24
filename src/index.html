@@ -949,6 +949,8 @@
         <div class="set-item"><label>⌨️ 키 설정 (키보드)</label><div class="note">이동·확인·취소 키를 바꿔요. '재설정'을 누르고 원하는 키를 누르면 돼요(Esc로 취소). 화면 터치·방향 버튼은 그대로 동작해요.</div>
           <div id="keymapBox" style="display:flex;flex-direction:column;gap:3px;margin-top:2px"></div>
           <button class="btn ghost" id="keymapReset" style="margin-top:8px;font-size:12px;padding:8px">키를 기본값으로 되돌리기</button></div>
+        <div class="set-item"><label>☁️ 온라인 <span id="netStatus" style="font-size:10px;color:var(--muted);font-weight:400"></span></label><div class="note">클라우드 저장·리더보드·원격 교환을 위한 온라인 연결(익명 계정). 꺼도 게임은 그대로예요. <b>지금은 준비 중</b>이라 켜도 오프라인으로 동작해요.</div>
+          <div class="seg" id="segOnline"><button data-v="0" class="on">끔</button><button data-v="1">켬</button></div></div>
         <div class="set-item"><label>🎯 챌린지 룰</label><div class="note">언제든 켜고 끌 수 있어요. 뉴게임+는 챔피언 등극 후에 열려요.</div>
           <div id="challengeBox" style="display:flex;flex-direction:column;gap:7px;margin-top:2px"></div></div>
         <button class="btn ghost" id="artBtn" style="color:#c9a8ff">🎨 정령 아트 가져오기</button>
@@ -1065,7 +1067,7 @@ function anySave(){ for(let i=1;i<=SAVE_SLOTS;i++) if(!slotInfo(i).empty)return 
 
 /* ===== CONFIG ===== */
 const DIFF={easy:{lvl:-3,dmg:0.6,catch:0.18,nm:"쉬움"},normal:{lvl:0,dmg:0.8,catch:0.05,nm:"보통"},hard:{lvl:2,dmg:1.12,catch:-0.06,nm:"어려움"}};
-const CONFIG={difficulty:"normal",textSpeed:1,volume:0.7,reduceMotion:false,follower:"all",battleText:"auto",gridMove:false,uiFont:"m",colorblind:false,autoAdvance:false,keymap:null};   // H5-D 접근성: uiFont(m/l/xl 글자크기)·colorblind(색약 보정)·autoAdvance(대사 자동 진행)·keymap(키 리매핑, null=기본)
+const CONFIG={difficulty:"normal",textSpeed:1,volume:0.7,reduceMotion:false,follower:"all",battleText:"auto",gridMove:false,uiFont:"m",colorblind:false,autoAdvance:false,keymap:null,online:false};   // H5-D 접근성: uiFont(m/l/xl 글자크기)·colorblind(색약 보정)·autoAdvance(대사 자동 진행)·keymap(키 리매핑, null=기본)·online(온라인 사용 의사, 백엔드는 다음 슬라이스)
 // H5-D 키 리매핑 — 논리 액션 → 키 목록. 기본은 화살표+WASD 이중 바인딩과 기존 확인/취소 키를 그대로 보존.
 // CONFIG.keymap이 null이면 이 기본을 쓰고, 사용자가 한 번이라도 재설정하면 전체 맵을 materialize해 CONFIG.keymap에 담는다.
 const DEFAULT_KEYMAP={up:["arrowup","w"],down:["arrowdown","s"],left:["arrowleft","a"],right:["arrowright","d"],confirm:["enter"," ","z"],cancel:["x","escape","backspace"],run:["shift"]};
@@ -1077,6 +1079,33 @@ function bindKey(action,k){ if(KEY_ACTION_ORDER.indexOf(action)<0||!k)return; k=
   for(const a of KEY_ACTION_ORDER)km[a]=km[a].filter(x=>x!==k);   // 충돌 방지: 다른 액션에서 그 키를 뗀다
   km[action]=[k]; CONFIG.keymap=km; if(typeof saveGame==="function")saveGame(); }
 function resetKeymap(){ CONFIG.keymap=null; if(typeof saveGame==="function")saveGame(); }
+
+/* ===== 온라인(NET) — 옵셔널 네트워크 레이어 (온라인 구현 명세 Phase 0 스캐폴드) =====
+   결정(2026-08-24): 익명 기기키 · SDK 빌드시 vendoring · 스캐폴드부터(백엔드 미연결).
+   ⚠️ 오프라인 우선 불변식: enabled=false면 모든 메서드가 안전하게 no-op({ok:false,offline:true})으로 실패한다.
+      게임 코어는 NET을 몰라도 되고, NET은 코어의 순수 산출물(serialize/serMon/towerBest)만 읽는다.
+   지금은 스캐폴드다 — 실제 Supabase 연동(vendored SDK·익명 로그인·RPC)은 다음 슬라이스에서 이 자리에 채운다.
+   공개 API 표면은 명세 부록 B를 그대로 따른다(교체 시 시그니처 불변). */
+const NET={
+  enabled:false, sb:null, uid:null, _reason:"scaffold",
+  available(){ return this.enabled; },
+  reason(){ return this._reason; },
+  _off(){ return {ok:false, offline:true}; },
+  async init(){ /* 스캐폴드: 백엔드 없음 → 항상 오프라인. 다음 슬라이스에서 vendored SDK + signInAnonymously로 교체. */
+    this.enabled=false; this.uid=null; this._reason="no-backend"; return false; },
+  async pushSave(slot,save){ if(!this.enabled)return this._off(); /* TODO: cloud_saves upsert */ return this._off(); },
+  async pullSave(slot){ if(!this.enabled)return this._off(); return this._off(); },
+  async submitScore(metric,value){ if(!this.enabled)return this._off(); return this._off(); },
+  async readBoard(metric,limit){ if(!this.enabled)return this._off(); return this._off(); },
+  async putOffer(mon){ if(!this.enabled)return this._off(); return this._off(); },
+  async claimTrade(code){ if(!this.enabled)return this._off(); return this._off(); },
+  async offerStatus(code){ if(!this.enabled)return this._off(); return this._off(); },
+  async cancelOffer(code){ if(!this.enabled)return this._off(); return this._off(); },
+};
+// 설정 토글에서 호출. 사용자의 '온라인 사용 의사'를 저장하고 연결을 시도한다(스캐폴드는 항상 오프라인으로 귀결).
+function netTryEnable(on){ CONFIG.online=!!on;
+  if(!on){ NET.enabled=false; NET._reason="off"; return Promise.resolve(false); }
+  return Promise.resolve().then(()=>NET.init()).catch(()=>{ NET.enabled=false; NET._reason="error"; return false; }); }
 let SKIP=false;
 // 전투 메시지 beats를 기본적으로 더 오래 머물게 하는 배율. "전투가 너무 빠르고 정신없다"는 피드백 →
 // 히트 애니(fxT/wait)는 쫀득하게 두고 **메시지 대기(mw)만** 늘려 "쫀득한 타격 → 텍스트가 잠깐 머묾 → 다음"
@@ -7828,7 +7857,7 @@ function serialize(){ return {v:4, ts:_nowMs(), pe:G.playerEmoji, ps:G.styleIdx|
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], sdx:[...(G.shinyDex||[])], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, rl:G.rules||{hardcore:false,nuzlocke:false}, ngp:G.ngPlus||0, grave:G.graveyard||[], hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, tbs:G.towerBestSet||0, tsn:G.towerSeason||{key:"",best:0}, trec:G.towerRecords||[], dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0,uf:CONFIG.uiFont||"m",cb:CONFIG.colorblind?1:0,aa:CONFIG.autoAdvance?1:0,km:CONFIG.keymap||null} }; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, rl:G.rules||{hardcore:false,nuzlocke:false}, ngp:G.ngPlus||0, grave:G.graveyard||[], hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, tbs:G.towerBestSet||0, tsn:G.towerSeason||{key:"",best:0}, trec:G.towerRecords||[], dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0,uf:CONFIG.uiFont||"m",cb:CONFIG.colorblind?1:0,aa:CONFIG.autoAdvance?1:0,km:CONFIG.keymap||null,on:CONFIG.online?1:0} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp,tox:m._tox||0}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
   recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; m._tox=p.tox||0; if(p.nick)m.nick=p.nick; return m; }
@@ -7841,7 +7870,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
   if(!s.party.length)return false;
-  if(o.cfg){ CONFIG.difficulty=o.cfg.d||"normal"; CONFIG.textSpeed=o.cfg.t||1; CONFIG.volume=o.cfg.v!=null?o.cfg.v:0.7; CONFIG.reduceMotion=!!o.cfg.m; CONFIG.follower=o.cfg.f||"all"; CONFIG.battleText=o.cfg.bt||"auto"; CONFIG.gridMove=!!o.cfg.gm; if(o.cfg&&o.cfg.gmini!=null)CONFIG.goalMini=!!o.cfg.gmini; CONFIG.uiFont=o.cfg.uf||"m"; CONFIG.colorblind=!!o.cfg.cb; CONFIG.autoAdvance=!!o.cfg.aa; CONFIG.keymap=(o.cfg.km&&typeof o.cfg.km==="object")?o.cfg.km:null; applyA11y(); Audio.setVolume(CONFIG.volume); }
+  if(o.cfg){ CONFIG.difficulty=o.cfg.d||"normal"; CONFIG.textSpeed=o.cfg.t||1; CONFIG.volume=o.cfg.v!=null?o.cfg.v:0.7; CONFIG.reduceMotion=!!o.cfg.m; CONFIG.follower=o.cfg.f||"all"; CONFIG.battleText=o.cfg.bt||"auto"; CONFIG.gridMove=!!o.cfg.gm; if(o.cfg&&o.cfg.gmini!=null)CONFIG.goalMini=!!o.cfg.gmini; CONFIG.uiFont=o.cfg.uf||"m"; CONFIG.colorblind=!!o.cfg.cb; CONFIG.autoAdvance=!!o.cfg.aa; CONFIG.keymap=(o.cfg.km&&typeof o.cfg.km==="object")?o.cfg.km:null; CONFIG.online=!!o.cfg.on; applyA11y(); Audio.setVolume(CONFIG.volume); }
   G=s; return true; }
 // ⚠️ 본가처럼 전투 중에는 저장하지 않는다.
 // serialize는 inBattle/foe/trainer를 담지 않으므로, 전투 중 저장이 남아 있으면
@@ -7850,7 +7879,10 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
 // endBattle/blackout은 G.inBattle=false로 만든 뒤 저장하므로 전투 결과는 정상 반영된다.
 function saveGame(){ if(G&&G.inBattle)return;
   try{ localStorage.setItem(slotKey(CUR_SLOT),JSON.stringify(serialize())); }
-  catch(e){ if(!saveGame._warned){saveGame._warned=true; toast("⚠️ 저장 불가(브라우저 설정)");} } }
+  catch(e){ if(!saveGame._warned){saveGame._warned=true; toast("⚠️ 저장 불가(브라우저 설정)");} }
+  // 온라인 클라우드 세이브 훅 — fire-and-forget. NET.enabled(스캐폴드=항상 false)일 때만, 실패해도 무시.
+  // ⚠️ 오프라인 불변식: 오프라인이면 serialize()조차 부르지 않는다(비용 0·예외 0).
+  try{ if(typeof NET!=="undefined" && NET.enabled){ Promise.resolve(NET.pushSave(CUR_SLOT, serialize())).catch(()=>{}); } }catch(_){} }
 function hasSave(){ try{ return !!localStorage.getItem(slotKey(CUR_SLOT)); }catch(e){ return false; } }
 function loadGame(n){ if(n)setSlot(n); try{ const raw=localStorage.getItem(slotKey(CUR_SLOT)); if(!raw)return false; return deserialize(JSON.parse(raw)); }catch(e){ return false; } }
 
@@ -7884,7 +7916,11 @@ function applySettingsUI(){ { const _sl=$("slotLabel"); if(_sl)_sl.textContent=`
   document.querySelectorAll("#segColorblind button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.colorblind));
   document.querySelectorAll("#segAutoAdv button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.autoAdvance));
   _rebindAction=null; renderKeymap();
+  document.querySelectorAll("#segOnline button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.online));
+  netRenderStatus();
   applyA11y(); }
+function netRenderStatus(){ const el=$("netStatus"); if(!el)return;
+  el.textContent = NET.enabled ? "· 연결됨" : (CONFIG.online ? "· 오프라인(준비 중)" : ""); }
 // H5-D 접근성 적용 — <html>에 클래스만 붙인다(글자 크기·색약). 전투/입력 로직은 건드리지 않는다.
 function applyA11y(){ const r=(typeof document!=="undefined")&&document.documentElement; if(!r)return;
   r.classList.toggle("fs-l", CONFIG.uiFont==="l");
@@ -7901,6 +7937,9 @@ document.querySelectorAll("#segColorblind button").forEach(b=>b.addEventListener
 document.querySelectorAll("#segAutoAdv button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.autoAdvance=b.dataset.v==="1"; Audio.sfx("blip");
   document.querySelectorAll("#segAutoAdv button").forEach(x=>x.classList.toggle("on",x===b)); saveGame(); }));
 { const _kr=$("keymapReset"); if(_kr)_kr.addEventListener("click",()=>{ Audio.sfx&&Audio.sfx("blip"); resetKeymap(); _rebindAction=null; renderKeymap(); toast&&toast("키를 기본값으로 되돌렸다"); }); }
+document.querySelectorAll("#segOnline button").forEach(b=>b.addEventListener("click",()=>{ const on=b.dataset.v==="1"; Audio.sfx&&Audio.sfx("blip");
+  document.querySelectorAll("#segOnline button").forEach(x=>x.classList.toggle("on",x===b));
+  Promise.resolve(netTryEnable(on)).then(()=>{ netRenderStatus(); saveGame(); }); }));
 document.querySelectorAll("#segMotion button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.reduceMotion=b.dataset.v==="1"; Audio.sfx("blip");
   document.querySelectorAll("#segMotion button").forEach(x=>x.classList.toggle("on",x===b)); saveGame(); }));
 document.querySelectorAll("#segFollower button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.follower=b.dataset.v; Audio.sfx("blip");
@@ -7955,6 +7994,7 @@ artLoadAll().then(()=>{ _artRefresh(); });
 window.SG.artSet=artSet; window.SG.artClearAll=artClearAll; window.SG.creatureVisual=creatureVisual; window.SG.ART=ART;
 window.SG.NPCS=NPCS; window.SG.Field=Field;   // 내부 상태 노출(테스트/프로브용) — G·Audio·flow와 같은 결
 window.SG.SAVE_SLOTS=SAVE_SLOTS;
+window.SG.NET=NET; window.SG.netTryEnable=netTryEnable;
 /* NPC_SPR도 같이 내보낸다 — 회귀가 "보스 오라를 가진 spec에 시트를 붙이지 않았는가"를 재기 위해서다.
    시트 경로는 그림을 그리고 바로 return하므로 `spec.boss`의 오라를 **그리지 않는다**(실측: 그라디언트 3 → 0). */
 window.SG.NPC_SPR=NPC_SPR;
