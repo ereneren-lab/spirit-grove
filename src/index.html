@@ -121,6 +121,17 @@
   .pick-card .ds{font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.5}
   .type-tag{display:inline-block;font-size:10px;font-weight:800;color:#1a1626;padding:2px 8px;border-radius:999px;margin-top:7px;letter-spacing:.4px}
   /* .type-tag.t-<type> 은 TYPES에서 생성 — injectPalette() */
+  /* ===== H5-D 접근성 ===== */
+  /* 글자 크기: 읽기 표면(대사·설정/오버레이 본문)만 키운다 — 전투 HUD 레이아웃은 건드리지 않아 안전 */
+  html.fs-l .dlg-text{font-size:16px} html.fs-xl .dlg-text{font-size:18.5px}
+  html.fs-l .dlg-name{font-size:14px} html.fs-xl .dlg-name{font-size:15.5px}
+  html.fs-l .ov-body{font-size:15px} html.fs-xl .ov-body{font-size:16.5px}
+  html.fs-l .goal .gnm{font-size:13.5px} html.fs-xl .goal .gnm{font-size:15px}
+  /* 색약 보정: 색만으로 구분되던 신호에 형태 채널을 더한다. HP 위험/주의는 줄무늬 패턴으로,
+     타입 태그는 진한 외곽선으로 — 적록·청황 색각이상에서도 구분되게 한다(색은 그대로 유지). */
+  html.cb .hpfill.hpwarn, html.cb .mon-card .mini-hp i.hpwarn{ background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.4) 0 3px,transparent 3px 7px); }
+  html.cb .hpfill.hpcrit, html.cb .mon-card .mini-hp i.hpcrit{ background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 2px,transparent 2px 5px); }
+  html.cb .type-tag{ box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.6); text-shadow:0 0 1px rgba(255,255,255,.35); }
   .st-badge{display:inline-block;font-size:9px;font-weight:800;color:#1a1626;padding:1px 6px;border-radius:6px;margin-left:5px}
   /* .b-<status> 는 STATUSES에서 생성 — injectPalette() */
   #evoOverlay .evo-art{width:min(58vw,230px);height:min(58vw,230px);display:flex;align-items:center;justify-content:center;position:relative}
@@ -929,6 +940,12 @@
           <div class="seg" id="segMotion"><button data-v="0" class="on">보통</button><button data-v="1">최소</button></div></div>
         <div class="set-item"><label>정령 따라다니기</label><div class="note">선두 정령이 맵에서 뒤를 따라와요</div>
           <div class="seg" id="segFollower"><button data-v="all" class="on">항상</button><button data-v="out">실외만</button><button data-v="off">끄기</button></div></div>
+        <div class="set-item"><label>🔎 글자 크기</label><div class="note">대사·설정·목표 글자를 키워요(저시력 지원). 전투 화면 배치는 그대로예요.</div>
+          <div class="seg" id="segFont"><button data-v="m" class="on">보통</button><button data-v="l">크게</button><button data-v="xl">더 크게</button></div></div>
+        <div class="set-item"><label>🎨 색약 보정</label><div class="note">체력바 위험/주의를 줄무늬로, 타입 태그를 진한 외곽선으로 — 색만으로 구분되던 신호를 형태로도 보여줘요.</div>
+          <div class="seg" id="segColorblind"><button data-v="0" class="on">끔</button><button data-v="1">켬</button></div></div>
+        <div class="set-item"><label>💬 대사 자동 진행</label><div class="note">대사가 다 나오면 잠시 뒤 저절로 다음으로 넘어가요(손 안 대고 읽기). 전투 속도에 맞춰 머무는 시간이 달라져요.</div>
+          <div class="seg" id="segAutoAdv"><button data-v="0" class="on">끔</button><button data-v="1">켬</button></div></div>
         <div class="set-item"><label>🎯 챌린지 룰</label><div class="note">언제든 켜고 끌 수 있어요. 뉴게임+는 챔피언 등극 후에 열려요.</div>
           <div id="challengeBox" style="display:flex;flex-direction:column;gap:7px;margin-top:2px"></div></div>
         <button class="btn ghost" id="artBtn" style="color:#c9a8ff">🎨 정령 아트 가져오기</button>
@@ -1045,7 +1062,7 @@ function anySave(){ for(let i=1;i<=SAVE_SLOTS;i++) if(!slotInfo(i).empty)return 
 
 /* ===== CONFIG ===== */
 const DIFF={easy:{lvl:-3,dmg:0.6,catch:0.18,nm:"쉬움"},normal:{lvl:0,dmg:0.8,catch:0.05,nm:"보통"},hard:{lvl:2,dmg:1.12,catch:-0.06,nm:"어려움"}};
-const CONFIG={difficulty:"normal",textSpeed:1,volume:0.7,reduceMotion:false,follower:"all",battleText:"auto",gridMove:false};
+const CONFIG={difficulty:"normal",textSpeed:1,volume:0.7,reduceMotion:false,follower:"all",battleText:"auto",gridMove:false,uiFont:"m",colorblind:false,autoAdvance:false};   // H5-D 접근성: uiFont(m/l/xl 글자크기)·colorblind(색약 보정)·autoAdvance(대사 자동 진행)
 let SKIP=false;
 // 전투 메시지 beats를 기본적으로 더 오래 머물게 하는 배율. "전투가 너무 빠르고 정신없다"는 피드백 →
 // 히트 애니(fxT/wait)는 쫀득하게 두고 **메시지 대기(mw)만** 늘려 "쫀득한 타격 → 텍스트가 잠깐 머묾 → 다음"
@@ -3348,21 +3365,27 @@ function healFx(onDone){
   setTimeout(()=>{ ov.classList.remove("show"); setTimeout(()=>ov.remove(),320);
     if(G)G.busy=false; if(onDone)onDone(); }, litDone+950);
 }
-let _dlgQueue=null,_dlgIdx=0,_dlgCb=null,_dlgTimer=null,_dlgTyping=false;
+let _dlgQueue=null,_dlgIdx=0,_dlgCb=null,_dlgTimer=null,_dlgTyping=false,_dlgAutoTimer=null;
+// H5-D 접근성: 대사 자동 진행 — 페이지 타이핑이 끝나면 읽을 시간을 준 뒤 스스로 다음 장으로 넘어간다(손 안 대고 읽기).
+function _dlgClearAuto(){ if(_dlgAutoTimer){ clearTimeout(_dlgAutoTimer); _dlgAutoTimer=null; } }
+function _dlgAutoSchedule(text){ _dlgClearAuto(); if(!CONFIG.autoAdvance||!_dlgQueue)return;
+  const len=String(text||"").replace(/<[^>]+>/g,"").length;
+  const ms=Math.min(6500, 800+len*55)*(CONFIG.textSpeed||1);   // 길이·전투속도 비례(더 느긋할수록 오래 머문다)
+  _dlgAutoTimer=setTimeout(()=>{ _dlgAutoTimer=null; if(_dlgQueue&&!_dlgTyping)advanceDialog(); }, ms); }
 function showDialog(pages,onDone){ if(!Array.isArray(pages))pages=[pages];
   _dlgQueue=pages.map(p=>typeof p==="string"?{name:"",text:p}:p); _dlgIdx=0; _dlgCb=onDone||null; G.busy=true;
   $("dialogBox").classList.add("show"); _renderDlgPage(); }
 // 포켓몬식 타이핑: 태그 제거한 평문을 한 글자씩 → 완료 시 서식(innerHTML) 적용 + ▼ 커서. 탭/A로 즉시완성→진행.
 function _renderDlgPage(){ const p=_dlgQueue[_dlgIdx]; const nm=$("dlgName"); nm.textContent=p.name||""; nm.style.display=p.name?"block":"none";
-  const txt=$("dlgText"), cue=$("dlgNext"); if(_dlgTimer){ clearInterval(_dlgTimer); _dlgTimer=null; } cue.style.display="none";
+  const txt=$("dlgText"), cue=$("dlgNext"); if(_dlgTimer){ clearInterval(_dlgTimer); _dlgTimer=null; } _dlgClearAuto(); cue.style.display="none";
   const full=fixJosa(String(p.text||""));
-  if(CONFIG.reduceMotion){ txt.innerHTML=full; _dlgTyping=false; cue.style.display="block"; return; }
+  if(CONFIG.reduceMotion){ txt.innerHTML=full; _dlgTyping=false; cue.style.display="block"; _dlgAutoSchedule(full); return; }
   const chars=[...full.replace(/<[^>]+>/g,"")]; txt.textContent=""; _dlgTyping=true; let i=0;
   const speed=Math.max(12, Math.round(30*(CONFIG.textSpeed||1)));
-  _dlgTimer=setInterval(()=>{ if(i>=chars.length){ clearInterval(_dlgTimer); _dlgTimer=null; _dlgTyping=false; txt.innerHTML=full; cue.style.display="block"; return; }
+  _dlgTimer=setInterval(()=>{ if(i>=chars.length){ clearInterval(_dlgTimer); _dlgTimer=null; _dlgTyping=false; txt.innerHTML=full; cue.style.display="block"; _dlgAutoSchedule(full); return; }
     txt.textContent+=chars[i]; if(i%2===0 && Audio.sfx)Audio.sfx("type"); i++; }, speed); }
-function _dlgComplete(){ if(!_dlgTyping)return false; if(_dlgTimer){ clearInterval(_dlgTimer); _dlgTimer=null; } $("dlgText").innerHTML=String(_dlgQueue[_dlgIdx].text||""); _dlgTyping=false; $("dlgNext").style.display="block"; return true; }
-function advanceDialog(){ if(!_dlgQueue)return; if(_dlgComplete())return;   // 타이핑 중이면 먼저 즉시완성
+function _dlgComplete(){ if(!_dlgTyping)return false; if(_dlgTimer){ clearInterval(_dlgTimer); _dlgTimer=null; } const _t=String(_dlgQueue[_dlgIdx].text||""); $("dlgText").innerHTML=_t; _dlgTyping=false; $("dlgNext").style.display="block"; _dlgAutoSchedule(_t); return true; }
+function advanceDialog(){ if(!_dlgQueue)return; _dlgClearAuto(); if(_dlgComplete())return;   // 타이핑 중이면 먼저 즉시완성
   _dlgIdx++;
   if(_dlgIdx>=_dlgQueue.length){ if(_dlgTimer){clearInterval(_dlgTimer);_dlgTimer=null;} _dlgTyping=false; $("dialogBox").classList.remove("show"); _dlgQueue=null; G.busy=false; const cb=_dlgCb; _dlgCb=null; Audio.sfx&&Audio.sfx("blip"); if(cb)cb(); }
   else { Audio.sfx&&Audio.sfx("blip"); _renderDlgPage(); } }
@@ -7776,7 +7799,7 @@ function serialize(){ return {v:4, ts:_nowMs(), pe:G.playerEmoji, ps:G.styleIdx|
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], sdx:[...(G.shinyDex||[])], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, rl:G.rules||{hardcore:false,nuzlocke:false}, ngp:G.ngPlus||0, grave:G.graveyard||[], hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, tbs:G.towerBestSet||0, tsn:G.towerSeason||{key:"",best:0}, trec:G.towerRecords||[], dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0} }; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, rl:G.rules||{hardcore:false,nuzlocke:false}, ngp:G.ngPlus||0, grave:G.graveyard||[], hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, tbs:G.towerBestSet||0, tsn:G.towerSeason||{key:"",best:0}, trec:G.towerRecords||[], dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0,uf:CONFIG.uiFont||"m",cb:CONFIG.colorblind?1:0,aa:CONFIG.autoAdvance?1:0} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp,tox:m._tox||0}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
   recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; m._tox=p.tox||0; if(p.nick)m.nick=p.nick; return m; }
@@ -7789,7 +7812,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
   if(!s.party.length)return false;
-  if(o.cfg){ CONFIG.difficulty=o.cfg.d||"normal"; CONFIG.textSpeed=o.cfg.t||1; CONFIG.volume=o.cfg.v!=null?o.cfg.v:0.7; CONFIG.reduceMotion=!!o.cfg.m; CONFIG.follower=o.cfg.f||"all"; CONFIG.battleText=o.cfg.bt||"auto"; CONFIG.gridMove=!!o.cfg.gm; if(o.cfg&&o.cfg.gmini!=null)CONFIG.goalMini=!!o.cfg.gmini; Audio.setVolume(CONFIG.volume); }
+  if(o.cfg){ CONFIG.difficulty=o.cfg.d||"normal"; CONFIG.textSpeed=o.cfg.t||1; CONFIG.volume=o.cfg.v!=null?o.cfg.v:0.7; CONFIG.reduceMotion=!!o.cfg.m; CONFIG.follower=o.cfg.f||"all"; CONFIG.battleText=o.cfg.bt||"auto"; CONFIG.gridMove=!!o.cfg.gm; if(o.cfg&&o.cfg.gmini!=null)CONFIG.goalMini=!!o.cfg.gmini; CONFIG.uiFont=o.cfg.uf||"m"; CONFIG.colorblind=!!o.cfg.cb; CONFIG.autoAdvance=!!o.cfg.aa; applyA11y(); Audio.setVolume(CONFIG.volume); }
   G=s; return true; }
 // ⚠️ 본가처럼 전투 중에는 저장하지 않는다.
 // serialize는 inBattle/foe/trainer를 담지 않으므로, 전투 중 저장이 남아 있으면
@@ -7827,11 +7850,26 @@ function applySettingsUI(){ { const _sl=$("slotLabel"); if(_sl)_sl.textContent=`
   document.querySelectorAll("#segMotion button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.reduceMotion));
   document.querySelectorAll("#segFollower button").forEach(b=>b.classList.toggle("on",b.dataset.v===(CONFIG.follower||"all")));
   document.querySelectorAll("#segBattleText button").forEach(b=>b.classList.toggle("on",b.dataset.v===(CONFIG.battleText||"auto")));
-  document.querySelectorAll("#segGridMove button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.gridMove)); }
+  document.querySelectorAll("#segGridMove button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.gridMove));
+  document.querySelectorAll("#segFont button").forEach(b=>b.classList.toggle("on",b.dataset.v===(CONFIG.uiFont||"m")));
+  document.querySelectorAll("#segColorblind button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.colorblind));
+  document.querySelectorAll("#segAutoAdv button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.autoAdvance));
+  applyA11y(); }
+// H5-D 접근성 적용 — <html>에 클래스만 붙인다(글자 크기·색약). 전투/입력 로직은 건드리지 않는다.
+function applyA11y(){ const r=(typeof document!=="undefined")&&document.documentElement; if(!r)return;
+  r.classList.toggle("fs-l", CONFIG.uiFont==="l");
+  r.classList.toggle("fs-xl", CONFIG.uiFont==="xl");
+  r.classList.toggle("cb", !!CONFIG.colorblind); }
 document.querySelectorAll("#segBattleText button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.battleText=b.dataset.v; SKIP=false; Audio.sfx("blip");
   document.querySelectorAll("#segBattleText button").forEach(x=>x.classList.toggle("on",x===b)); saveGame(); }));
 document.querySelectorAll("#segGridMove button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.gridMove=b.dataset.v==="1"; Audio.sfx("blip");
   document.querySelectorAll("#segGridMove button").forEach(x=>x.classList.toggle("on",x===b)); saveGame(); }));
+document.querySelectorAll("#segFont button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.uiFont=b.dataset.v; Audio.sfx("blip");
+  document.querySelectorAll("#segFont button").forEach(x=>x.classList.toggle("on",x===b)); applyA11y(); saveGame(); }));
+document.querySelectorAll("#segColorblind button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.colorblind=b.dataset.v==="1"; Audio.sfx("blip");
+  document.querySelectorAll("#segColorblind button").forEach(x=>x.classList.toggle("on",x===b)); applyA11y(); saveGame(); }));
+document.querySelectorAll("#segAutoAdv button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.autoAdvance=b.dataset.v==="1"; Audio.sfx("blip");
+  document.querySelectorAll("#segAutoAdv button").forEach(x=>x.classList.toggle("on",x===b)); saveGame(); }));
 document.querySelectorAll("#segMotion button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.reduceMotion=b.dataset.v==="1"; Audio.sfx("blip");
   document.querySelectorAll("#segMotion button").forEach(x=>x.classList.toggle("on",x===b)); saveGame(); }));
 document.querySelectorAll("#segFollower button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.follower=b.dataset.v; Audio.sfx("blip");
@@ -7904,7 +7942,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, terrainWalkable, tileAt, npcAvailable, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HOME_POS, HOME_AT, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, towerMenu, towerRentalPick, towerRecords, towerBegin, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, towerRank, towerSeasonBest, towerRecordRun, TOWER_RANKS, BOSS_TRIALS, bossTrialMenu, bossTrialStart, bossTrialWin, bossTrialEnd, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS,
   startHotSeat, pvpSelect, pvpRenderSelect, pvpPromptChoice, pvpChoose, pvpSwitchList, pvpResolve, pvpActive, pvpAlive, PVP_RENTAL, getPVP:()=>PVP,
   openTradeCode, tradeHome, tradeExportList, tradeShowCode, tradeImportUI, tradeCodeFor, parseTradeCode, qrModules, drawQR, qrcode,
-  openAchievements, renderAchievements, claimAch, achDone, achStats, achClaimed, ACHIEVEMENTS, toggleRule, startNewGamePlus, renderChallengeBox,
+  openAchievements, renderAchievements, claimAch, achDone, achStats, achClaimed, ACHIEVEMENTS, toggleRule, startNewGamePlus, renderChallengeBox, applyA11y,
   openDaily, renderDaily, claimDaily, dailyStatus, dailyReward, dailyTheme, dailyKey, dailyPending, DAILY_THEMES};
 
 /* ===================== INIT ===================== */
