@@ -1324,7 +1324,10 @@ const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"i
   racoonmon:"guts",lumbeast:"intimidate",
   frostpup:"icebody",glacibear:"thickfat",snowl:"insomnia",cryogon:"icebody",iceling:"icebody",frostwyrm:"icebody",glaciarch:"sturdy",
   drakeling:"guts",wyverna:"intimidate",skydrake:"intimidate",dawnwyrm:"sturdy",
-  pebblet:"sturdy",megalith:"sturdy",burrowlord:"roughskin",dustbunny:"immunity",thumplord:"hugepower"};
+  pebblet:"sturdy",megalith:"sturdy",burrowlord:"roughskin",dustbunny:"immunity",thumplord:"hugepower",
+  // H3-9 네이티브 라인 12종 — 편중 상한(≤13) 안에서 배정: 격투=근성/급소, 악=위협(포식자), 강철=옹골참 등.
+  pummelpup:"sniper",taekwarrior:"guts",psykit:"insomnia",mystfox:"insomnia",pixibud:"naturalcure",blossfae:"naturalcure",
+  wispkin:"levitate",lanternox:"levitate",nightkit:"intimidate",voidpanther:"intimidate",coglet:"sturdy",gearclad:"sturdy"};
 /* ===== 상태이상 단일 출처 =====
    ⚠️ 상태를 추가할 땐 여기만 고친다. 예전엔 STATUS_KO·STATUS_CLS·_MV_STATUS_KO·
    STATUS_TYPE_IMMUNE·연출 글리프 2곳·.b-* CSS·.dbst.b-* CSS가 따로 놀아서
@@ -1728,6 +1731,19 @@ const DEX=[
   {id:"shadowlord",name:"흑요마",em:"👁️",type:"ghost",type2:"rock",tier:4,secret:true,legend:true,base:{hp:110,atk:29,def:33,spd:33,spa:41,spDef:33},moves:["shadowball","crush","toxic","lullaby"],learn:[[40,"ominouswind"]]},
   {id:"dawnguard",name:"오로르",em:"🕊️",type:"flying",tier:4,secret:true,legend:true,base:{hp:110,atk:39,def:37,spd:33,spa:28,spDef:34},moves:["skyrush","wingatk","crush","recover"],learn:[]},
   {id:"dawnwyrm",name:"여명룡",em:"🐉",type:"flying",type2:"dragon",tier:4,secret:true,legend:true,base:{hp:118,atk:37,def:35,spd:35,spa:37,spDef:35},moves:["skyrush","dragonpulse","crush","recover"],learn:[]},
+  /* ===== H3-9 타입별 네이티브 라인 6종(12정령) — 재타이핑이 아닌 고유 정령. 아트 대기(창작 SVG 플레이스홀더). ===== */
+  {id:"pummelpup",name:"도장강아지",em:"🐕",type:"fight",tier:1,base:{hp:50,atk:16,def:13,spd:14,spa:9,spDef:12},moves:["tackle","growl"],learn:[[8,"karatechop"],[14,"machpunch"],[20,"focusenergy"]],evolveTo:"taekwarrior",evolveLv:30},
+  {id:"taekwarrior",name:"태권무제",em:"🥋",type:"fight",tier:3,base:{hp:80,atk:30,def:22,spd:26,spa:12,spDef:18},moves:["karatechop","machpunch","closecombat","focusenergy"],learn:[[40,"aurasphere"]]},
+  {id:"psykit",name:"요술여우",em:"🦊",type:"psychic",tier:1,base:{hp:46,atk:10,def:12,spd:16,spa:20,spDef:14},moves:["tackle","confusion"],learn:[[10,"psybeam"],[18,"zenheadbutt"]],evolveTo:"mystfox",evolveLv:32},
+  {id:"mystfox",name:"구미술호",em:"🦊",type:"psychic",tier:3,base:{hp:76,atk:16,def:20,spd:28,spa:30,spDef:20},moves:["psybeam","psystrike","confusion","zenheadbutt"],learn:[[40,"recover"]]},
+  {id:"pixibud",name:"요정봉오리",em:"🌸",type:"fairy",tier:1,base:{hp:50,atk:9,def:13,spd:13,spa:18,spDef:16},moves:["tackle","fairywind"],learn:[[12,"dazzlinggleam"],[20,"growl"]],evolveTo:"blossfae",evolveLv:30},
+  {id:"blossfae",name:"꽃요정",em:"🧚",type:"fairy",tier:3,base:{hp:76,atk:14,def:20,spd:26,spa:30,spDef:24},moves:["fairywind","dazzlinggleam","moonblast","playrough"],learn:[[40,"recover"]]},
+  {id:"wispkin",name:"도깨비불",em:"👻",type:"ghost",tier:1,base:{hp:44,atk:10,def:12,spd:20,spa:20,spDef:14},moves:["lick","ominouswind"],learn:[[12,"shadowsneak"],[22,"shadowball"]],evolveTo:"lanternox",evolveLv:31},
+  {id:"lanternox",name:"청사초롱귀",em:"🏮",type:"ghost",tier:3,base:{hp:72,atk:16,def:22,spd:26,spa:32,spDef:22},moves:["shadowball","ominouswind","shadowsneak","lick"],learn:[[40,"lullaby"]]},
+  {id:"nightkit",name:"그믐고양이",em:"🐈‍⬛",type:"dark",tier:1,base:{hp:46,atk:16,def:12,spd:18,spa:12,spDef:12},moves:["tackle","growl"],learn:[[10,"suckerpunch"],[18,"crunch"]],evolveTo:"voidpanther",evolveLv:32},
+  {id:"voidpanther",name:"심연표범",em:"🐆",type:"dark",tier:3,base:{hp:76,atk:30,def:20,spd:30,spa:14,spDef:18},moves:["crunch","suckerpunch","nightburst","darkpulse"],learn:[[40,"swordsdance"]]},
+  {id:"coglet",name:"톱니벌레",em:"⚙️",type:"steel",tier:1,base:{hp:50,atk:15,def:20,spd:10,spa:9,spDef:14},moves:["tackle","metalclaw"],learn:[[14,"bulletpunch"],[22,"mirrorshot"]],evolveTo:"gearclad",evolveLv:30},
+  {id:"gearclad",name:"강철갑충",em:"🛡️",type:"steel",type2:"bug",tier:3,base:{hp:80,atk:26,def:34,spd:14,spa:18,spDef:22},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[40,"harden"]]},
 ];
 const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);
@@ -6823,34 +6839,34 @@ $("confirmStarter").addEventListener("click",()=>{ if(!pickedStarter)return;
 // 풀을 고치면 서식지 정보도 자동으로 따라온다 — 하드코딩하면 또 어긋난다.
 const ENC_POOLS={
   snow:["iceling","frostpup","frostfish","dustbunny","frostwyrm","glacibear","drakeling","mossback","snowl","cryogon"],
-  marsh:["swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"],
+  marsh:["wispkin","swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"],
   skyridge:["zapfinch","voltfalcon","thundwyrm","voltsnake","voltrat","sandwhirl","stormhawk","blossomhawk"],
-  mine:["pebblet","boulderin","burrowmouse","sandwhirl","mossback","hedgemoss"],
+  mine:["coglet","pebblet","boulderin","burrowmouse","sandwhirl","mossback","hedgemoss"],
   hillpath:["dustbunny","racoonmon","sprigfawn","petalwing","seedbean","thunderowl"],   // 언덕 오솔길 = 노말·풀·비행
   pier:["shellow","otterwave","nipling","dewdrop","puddlet","jellure"],                 // 잔교 = 물가
   frostpass:["frostpup","iceling","frostfish","snowl","sharkfin","pebblet"],            // 고갯길 = 얼음
   fireflyway:["glowfly","dustbunny","bunnyhop","sparkmouse","sprigfawn","shellow"],   // 오솔길 = 초반 소형종
-  mosshollow:["mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing"],     // 골짜기 = 이끼·숲
+  mosshollow:["pixibud","mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing"],     // 골짜기 = 이끼·숲
   fallspath:["riverine","gullian","sandwhirl","tidewhale","pebblet","dewdrop"],         // 벼랑길 = 폭포(물·바위·비행)
    // 언덕 오솔길 = 노말·풀·비행(전부 실존 종)   // 광산 = 바위·땅 계열(전부 실존 종)
   
-  ruins:["terrapin","thumplord","lumbeast","wyverna","pebblet","boulderin","burrowmouse","mossback","hedgemoss","sandwhirl"],
+  ruins:["pummelpup","terrapin","thumplord","lumbeast","wyverna","pebblet","boulderin","burrowmouse","mossback","hedgemoss","sandwhirl"],
   crater:["foxfire","emberwolf","blazelion","cindercat","cindercub","pyrewolf","emberfly","pyrmoth","lavakit","magmadon"],
-  garden:["glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop"],
+  garden:["psykit","glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop"],
   isle:["stormhawk","tigerflame","magmahound","krakentide","tidewhale","harelord","emberdrake","grovespirit","palmore","emberlix","crablord"],
   coast:["shellow","otterwave","frostfish","tidewhale","racoonmon","bunnyhop","stormhawk","nipling","gullian","jellure"],
   surf:["shellow","otterwave","frostfish","swampfrog","tidewhale","nipling","jellure","gullian"],
   fishRare:["tidewhale","krakentide","riverdrake","sharkfin","crablord"],
   fish:["shellow","frostfish","otterwave","swampfrog","jellure","nipling"],
   lava:["pebblet","lavakit","burrowmouse","pebblet","lavakit","boulderin","magmadon","crystalgon"],
-  cave:["hedgemoss","racoonmon","sparkmouse","voltbeetle","swampfrog"],
+  cave:["nightkit","hedgemoss","racoonmon","sparkmouse","voltbeetle","swampfrog"],
 };
 // 시간대 한정 출현. 도감 설명문(FLAVOR)의 생태와 일치시킨다 —
 // "밤에만 활동한다"고 써놓고 낮에 나오면 도감이 거짓말이 된다.
 // ⚠️ 늘릴 땐 낮/밤 각 티어 풀이 비지 않는지 확인할 것(pickWild가 티어로 먼저 거른다).
 const NIGHT_MONS=new Set(["lunarmoth", "thunderowl", "swampfrog", "emberwolf", "tigerflame", "vinesnake", "emberlix", "moonytide", "pyrewolf", "glowfly", "arcmoth"]);
 const SEA_MONS=new Set(["nipling","crablord","gullian","palmore","jellure","emberlix"]);
-const NO_WILD=new Set(["skydrake","tidalore","megalith"]);
+const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox","blossfae","lanternox","voidpanther","gearclad"]);
 const DAY_MONS=new Set(["sprigfawn", "stormhawk", "cindercat", "leafdrake", "palmore", "seedbean", "mossback", "sproutcat", "glimmertide"]);
 function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
   const deep=depth>=0.82;
@@ -9804,6 +9820,19 @@ const FLAVOR={
   glaciarch:{cat:"극빙군주",h:5.0,w:800,t:"울음소리 한 번에 바다가 얼어붙었다 전해진다. 오랜 빙하 아래에서 잠들어 있다."},
   aqualord:{cat:"대양군주",h:5.4,w:980,t:"몸을 뒤척이면 해류의 방향이 바뀐다고 한다. 바다의 균형을 지키는 오랜 존재."},
   dawnwyrm:{cat:"새벽용",h:6.0,w:900,t:"첫 햇살을 타고 하늘 끝에서 내려온다 전해진다. 그 날갯짓이 새 시대를 연다고 한다."},
+  /* H3-9 네이티브 라인 12종 — 진화 시 키·무게가 커진다(dex_flavor_test 불변식). */
+  pummelpup:{cat:"권술강아지",h:0.5,w:9,t:"작은 앞발에 붕대를 감고 하루 종일 허공에 주먹을 지른다. 겁 없이 큰 상대에게도 달려든다."},
+  taekwarrior:{cat:"태권무사",h:1.6,w:62,t:"낡은 검은 띠를 두르고 도장을 지킨다. 한 발차기에 바위가 갈라진다 전해진다."},
+  psykit:{cat:"요술여우",h:0.4,w:6,t:"이마의 세 번째 눈으로 상대의 마음을 살짝 엿본다. 심심하면 작은 환영으로 장난친다."},
+  mystfox:{cat:"구미술호",h:1.2,w:28,t:"아홉 꼬리가 각기 다른 술법을 부린다. 달 밝은 밤 홀로 오래된 술수를 수련한다."},
+  pixibud:{cat:"꽃봉오리",h:0.3,w:3,t:"반쯤 벌어진 꽃봉오리 사이로 얼굴을 내민다. 기분이 좋으면 은은한 꽃가루를 흩뿌린다."},
+  blossfae:{cat:"꽃요정",h:0.9,w:11,t:"만개한 꽃잎 치마를 두르고 화원을 돌본다. 시든 풀도 그 손길에 다시 피어난다."},
+  wispkin:{cat:"도깨비불",h:0.5,w:2,t:"밤길에 떠도는 장난스러운 불꽃. 길 잃은 나그네를 골리다가도 몰래 길을 밝혀 준다."},
+  lanternox:{cat:"초롱요괴",h:1.5,w:9,t:"청사초롱을 든 오래된 혼령. 그 불빛을 따라가면 이승과 저승의 경계가 흐려진다."},
+  nightkit:{cat:"그믐고양이",h:0.4,w:5,t:"그믐밤에만 모습을 드러내는 검은 새끼 고양이. 이마의 초승달 무늬가 희미하게 빛난다."},
+  voidpanther:{cat:"심연표범",h:1.4,w:55,t:"어둠에 녹아드는 표범. 발소리 없이 다가와 상대의 그림자부터 덮친다."},
+  coglet:{cat:"톱니벌레",h:0.3,w:10,t:"등딱지가 통째로 톱니바퀴다. 종일 딸깍이며 무언가를 조립하듯 돌아다닌다."},
+  gearclad:{cat:"강철갑충",h:1.5,w:120,t:"맞물린 강판과 기어로 뒤덮인 요새 같은 갑충. 한번 버티면 좀처럼 밀리지 않는다."},
 };
 function ddAbility(sp){ return sp.ability||ABILITY_OVERRIDE[sp.id]||DEFAULT_ABILITY[sp.type]||"guts"; }
 function openDetail(id){ const sp=byId(id); Audio.sfx("blip"); $("ddTitle").textContent=sp.name;

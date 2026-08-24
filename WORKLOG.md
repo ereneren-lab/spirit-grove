@@ -271,6 +271,23 @@ a~z·A~Z 중 남은 글자는 `t` **하나뿐**이다. 그래서 이번부터 **
 
 ## 세션 기록 (최신이 위)
 
+### 2026-08-24 (H3-9) — **타입별 네이티브 라인 12종 데이터 통합** (아트 대기·SVG 플레이스홀더)
+
+**유저**: "데이터 미리 넣고 SVG 플레이스홀더로 진행해줘"
+
+재타이핑이 아닌 **고유 정령** 6라인(12종)을 게임에 통합. 아트가 없어 `creatureVisual`이 절차적 SVG로 렌더.
+- **DEX 86 → 98종**. 격투(도장강아지→태권무제)·에스퍼(요술여우→구미술호)·페어리(요정봉오리→꽃요정)·
+  고스트(도깨비불→청사초롱귀)·악(그믐고양이→심연표범)·강철(톱니벌레→강철갑충).
+- 1단 6종 = 테마 야생 풀(ruins/garden/mosshollow/marsh/cave/mine), 최종 6종 = `NO_WILD`(진화로만).
+- 특성은 **편중 상한(≤13)** 때문에 조정: 격투=근성/급소, 악=위협, 페어리=자연회복, 고스트=부유, 강철=옹골참.
+- FLAVOR 12종(진화 시 키·무게 증가 불변식), ABILITY_OVERRIDE 12종.
+
+⚠️ **하드코딩 카운트 landmine**: `dex_flavor`·`rules_unit`이 `DEX===86`을 단정 → 98로 갱신.
+⚠️ **아트 없이도 안 깨진다**: manifest 미등록 → PAINT_ART 없음 → `creatureSVG` 폴백. 아트 도착 시 manifest에 id만 추가하면 교체.
+
+**회귀 전부 통과**: rules_unit·dex_flavor·ability_expand·dead_content·dexnew·balance·league·region_content·
+content_pack·palette_source·movecat·type_chart·newtypes·evo·onboarding·save_slot·text_quality.
+
 ### 2026-08-21 (H4b) — **데일리 보너스** (요일 테마 · 연속 출석 스트릭)
 
 **유저**: "다음 가자" (H4 시즌/이벤트의 로컬 슬라이스)

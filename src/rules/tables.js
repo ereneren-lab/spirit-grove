@@ -100,7 +100,10 @@ const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"i
   racoonmon:"guts",lumbeast:"intimidate",
   frostpup:"icebody",glacibear:"thickfat",snowl:"insomnia",cryogon:"icebody",iceling:"icebody",frostwyrm:"icebody",glaciarch:"sturdy",
   drakeling:"guts",wyverna:"intimidate",skydrake:"intimidate",dawnwyrm:"sturdy",
-  pebblet:"sturdy",megalith:"sturdy",burrowlord:"roughskin",dustbunny:"immunity",thumplord:"hugepower"};
+  pebblet:"sturdy",megalith:"sturdy",burrowlord:"roughskin",dustbunny:"immunity",thumplord:"hugepower",
+  // H3-9 네이티브 라인 12종 — 편중 상한(≤13) 안에서 배정: 격투=근성/급소, 악=위협(포식자), 강철=옹골참 등.
+  pummelpup:"sniper",taekwarrior:"guts",psykit:"insomnia",mystfox:"insomnia",pixibud:"naturalcure",blossfae:"naturalcure",
+  wispkin:"levitate",lanternox:"levitate",nightkit:"intimidate",voidpanther:"intimidate",coglet:"sturdy",gearclad:"sturdy"};
 /* ===== 상태이상 단일 출처 =====
    ⚠️ 상태를 추가할 땐 여기만 고친다. 예전엔 STATUS_KO·STATUS_CLS·_MV_STATUS_KO·
    STATUS_TYPE_IMMUNE·연출 글리프 2곳·.b-* CSS·.dbst.b-* CSS가 따로 놀아서

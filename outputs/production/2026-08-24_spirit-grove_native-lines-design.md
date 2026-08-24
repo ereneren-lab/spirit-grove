@@ -161,7 +161,17 @@ Hard faceted metal highlights, rivets, plate seams — no glow, no gradient.
 
 ---
 
-## 통합 순서 제안 (아트 도착 후 · 타입 1개씩)
+## ✅ 통합 완료 (2026-08-24) — 아트 대기(SVG 플레이스홀더)
+
+12종 전부 **게임에 데이터 통합됨**. 아트가 없어 `creatureVisual`이 절차적 **SVG 플레이스홀더**로 렌더한다.
+- DEX 86 → **98종**. 1단 6종은 테마 야생 풀(격투=고대유적·에스퍼=달빛화원·페어리=이끼골짜기·고스트=안개늪지·악=수정동굴·강철=버려진갱도), 최종 6종은 `NO_WILD`(진화로만).
+- **특성 배정은 편중 상한(≤13) 때문에 문서안에서 일부 조정**: `pummelpup`→급소(sniper), `nightkit`/`voidpanther`→위협(intimidate)(포식자 컨셉). 나머지는 문서대로.
+- FLAVOR(분류·키·무게·설명) 12종 추가(진화 시 키·무게 증가 불변식 준수). 회귀 `dex_flavor`·`rules_unit` 카운트 86→98.
+- 전 회귀 통과: balance·league·dead_content·ability_expand·region_content·evo·palette_source·type_chart·newtypes.
+
+**아트 도착 시**: 파일명 자유로 업로드 → id 매핑·96px 변환 → `manifest.json` paint에 id 추가하면 SVG가 픽셀아트로 교체된다(코드 수정 불필요).
+
+## 통합 순서 (참고 · 이미 위 순서로 완료)
 1. 아트 업로드 → id 매핑·96px 변환(파이프라인 그대로).
 2. `src/rules/dex.js`에 2종 dex 엔트리 추가(위 스펙·학습셋), `assets/manifest.json` paint에 id 2개.
 3. 야생 스폰 풀(`ENC_POOLS`)에 1단 편입 → `balance_test`·`region_content_test`·`dexnew_test` 재측정.

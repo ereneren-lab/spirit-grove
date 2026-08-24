@@ -3840,34 +3840,34 @@ $("confirmStarter").addEventListener("click",()=>{ if(!pickedStarter)return;
 // 풀을 고치면 서식지 정보도 자동으로 따라온다 — 하드코딩하면 또 어긋난다.
 const ENC_POOLS={
   snow:["iceling","frostpup","frostfish","dustbunny","frostwyrm","glacibear","drakeling","mossback","snowl","cryogon"],
-  marsh:["swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"],
+  marsh:["wispkin","swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"],
   skyridge:["zapfinch","voltfalcon","thundwyrm","voltsnake","voltrat","sandwhirl","stormhawk","blossomhawk"],
-  mine:["pebblet","boulderin","burrowmouse","sandwhirl","mossback","hedgemoss"],
+  mine:["coglet","pebblet","boulderin","burrowmouse","sandwhirl","mossback","hedgemoss"],
   hillpath:["dustbunny","racoonmon","sprigfawn","petalwing","seedbean","thunderowl"],   // 언덕 오솔길 = 노말·풀·비행
   pier:["shellow","otterwave","nipling","dewdrop","puddlet","jellure"],                 // 잔교 = 물가
   frostpass:["frostpup","iceling","frostfish","snowl","sharkfin","pebblet"],            // 고갯길 = 얼음
   fireflyway:["glowfly","dustbunny","bunnyhop","sparkmouse","sprigfawn","shellow"],   // 오솔길 = 초반 소형종
-  mosshollow:["mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing"],     // 골짜기 = 이끼·숲
+  mosshollow:["pixibud","mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing"],     // 골짜기 = 이끼·숲
   fallspath:["riverine","gullian","sandwhirl","tidewhale","pebblet","dewdrop"],         // 벼랑길 = 폭포(물·바위·비행)
    // 언덕 오솔길 = 노말·풀·비행(전부 실존 종)   // 광산 = 바위·땅 계열(전부 실존 종)
   
-  ruins:["terrapin","thumplord","lumbeast","wyverna","pebblet","boulderin","burrowmouse","mossback","hedgemoss","sandwhirl"],
+  ruins:["pummelpup","terrapin","thumplord","lumbeast","wyverna","pebblet","boulderin","burrowmouse","mossback","hedgemoss","sandwhirl"],
   crater:["foxfire","emberwolf","blazelion","cindercat","cindercub","pyrewolf","emberfly","pyrmoth","lavakit","magmadon"],
-  garden:["glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop"],
+  garden:["psykit","glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop"],
   isle:["stormhawk","tigerflame","magmahound","krakentide","tidewhale","harelord","emberdrake","grovespirit","palmore","emberlix","crablord"],
   coast:["shellow","otterwave","frostfish","tidewhale","racoonmon","bunnyhop","stormhawk","nipling","gullian","jellure"],
   surf:["shellow","otterwave","frostfish","swampfrog","tidewhale","nipling","jellure","gullian"],
   fishRare:["tidewhale","krakentide","riverdrake","sharkfin","crablord"],
   fish:["shellow","frostfish","otterwave","swampfrog","jellure","nipling"],
   lava:["pebblet","lavakit","burrowmouse","pebblet","lavakit","boulderin","magmadon","crystalgon"],
-  cave:["hedgemoss","racoonmon","sparkmouse","voltbeetle","swampfrog"],
+  cave:["nightkit","hedgemoss","racoonmon","sparkmouse","voltbeetle","swampfrog"],
 };
 // 시간대 한정 출현. 도감 설명문(FLAVOR)의 생태와 일치시킨다 —
 // "밤에만 활동한다"고 써놓고 낮에 나오면 도감이 거짓말이 된다.
 // ⚠️ 늘릴 땐 낮/밤 각 티어 풀이 비지 않는지 확인할 것(pickWild가 티어로 먼저 거른다).
 const NIGHT_MONS=new Set(["lunarmoth", "thunderowl", "swampfrog", "emberwolf", "tigerflame", "vinesnake", "emberlix", "moonytide", "pyrewolf", "glowfly", "arcmoth"]);
 const SEA_MONS=new Set(["nipling","crablord","gullian","palmore","jellure","emberlix"]);
-const NO_WILD=new Set(["skydrake","tidalore","megalith"]);
+const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox","blossfae","lanternox","voidpanther","gearclad"]);
 const DAY_MONS=new Set(["sprigfawn", "stormhawk", "cindercat", "leafdrake", "palmore", "seedbean", "mossback", "sproutcat", "glimmertide"]);
 function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
   const deep=depth>=0.82;
@@ -6736,6 +6736,19 @@ const FLAVOR={
   glaciarch:{cat:"극빙군주",h:5.0,w:800,t:"울음소리 한 번에 바다가 얼어붙었다 전해진다. 오랜 빙하 아래에서 잠들어 있다."},
   aqualord:{cat:"대양군주",h:5.4,w:980,t:"몸을 뒤척이면 해류의 방향이 바뀐다고 한다. 바다의 균형을 지키는 오랜 존재."},
   dawnwyrm:{cat:"새벽용",h:6.0,w:900,t:"첫 햇살을 타고 하늘 끝에서 내려온다 전해진다. 그 날갯짓이 새 시대를 연다고 한다."},
+  /* H3-9 네이티브 라인 12종 — 진화 시 키·무게가 커진다(dex_flavor_test 불변식). */
+  pummelpup:{cat:"권술강아지",h:0.5,w:9,t:"작은 앞발에 붕대를 감고 하루 종일 허공에 주먹을 지른다. 겁 없이 큰 상대에게도 달려든다."},
+  taekwarrior:{cat:"태권무사",h:1.6,w:62,t:"낡은 검은 띠를 두르고 도장을 지킨다. 한 발차기에 바위가 갈라진다 전해진다."},
+  psykit:{cat:"요술여우",h:0.4,w:6,t:"이마의 세 번째 눈으로 상대의 마음을 살짝 엿본다. 심심하면 작은 환영으로 장난친다."},
+  mystfox:{cat:"구미술호",h:1.2,w:28,t:"아홉 꼬리가 각기 다른 술법을 부린다. 달 밝은 밤 홀로 오래된 술수를 수련한다."},
+  pixibud:{cat:"꽃봉오리",h:0.3,w:3,t:"반쯤 벌어진 꽃봉오리 사이로 얼굴을 내민다. 기분이 좋으면 은은한 꽃가루를 흩뿌린다."},
+  blossfae:{cat:"꽃요정",h:0.9,w:11,t:"만개한 꽃잎 치마를 두르고 화원을 돌본다. 시든 풀도 그 손길에 다시 피어난다."},
+  wispkin:{cat:"도깨비불",h:0.5,w:2,t:"밤길에 떠도는 장난스러운 불꽃. 길 잃은 나그네를 골리다가도 몰래 길을 밝혀 준다."},
+  lanternox:{cat:"초롱요괴",h:1.5,w:9,t:"청사초롱을 든 오래된 혼령. 그 불빛을 따라가면 이승과 저승의 경계가 흐려진다."},
+  nightkit:{cat:"그믐고양이",h:0.4,w:5,t:"그믐밤에만 모습을 드러내는 검은 새끼 고양이. 이마의 초승달 무늬가 희미하게 빛난다."},
+  voidpanther:{cat:"심연표범",h:1.4,w:55,t:"어둠에 녹아드는 표범. 발소리 없이 다가와 상대의 그림자부터 덮친다."},
+  coglet:{cat:"톱니벌레",h:0.3,w:10,t:"등딱지가 통째로 톱니바퀴다. 종일 딸깍이며 무언가를 조립하듯 돌아다닌다."},
+  gearclad:{cat:"강철갑충",h:1.5,w:120,t:"맞물린 강판과 기어로 뒤덮인 요새 같은 갑충. 한번 버티면 좀처럼 밀리지 않는다."},
 };
 function ddAbility(sp){ return sp.ability||ABILITY_OVERRIDE[sp.id]||DEFAULT_ABILITY[sp.type]||"guts"; }
 function openDetail(id){ const sp=byId(id); Audio.sfx("blip"); $("ddTitle").textContent=sp.name;

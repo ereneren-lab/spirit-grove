@@ -95,6 +95,19 @@ const DEX=[
   {id:"shadowlord",name:"흑요마",em:"👁️",type:"ghost",type2:"rock",tier:4,secret:true,legend:true,base:{hp:110,atk:29,def:33,spd:33,spa:41,spDef:33},moves:["shadowball","crush","toxic","lullaby"],learn:[[40,"ominouswind"]]},
   {id:"dawnguard",name:"오로르",em:"🕊️",type:"flying",tier:4,secret:true,legend:true,base:{hp:110,atk:39,def:37,spd:33,spa:28,spDef:34},moves:["skyrush","wingatk","crush","recover"],learn:[]},
   {id:"dawnwyrm",name:"여명룡",em:"🐉",type:"flying",type2:"dragon",tier:4,secret:true,legend:true,base:{hp:118,atk:37,def:35,spd:35,spa:37,spDef:35},moves:["skyrush","dragonpulse","crush","recover"],learn:[]},
+  /* ===== H3-9 타입별 네이티브 라인 6종(12정령) — 재타이핑이 아닌 고유 정령. 아트 대기(창작 SVG 플레이스홀더). ===== */
+  {id:"pummelpup",name:"도장강아지",em:"🐕",type:"fight",tier:1,base:{hp:50,atk:16,def:13,spd:14,spa:9,spDef:12},moves:["tackle","growl"],learn:[[8,"karatechop"],[14,"machpunch"],[20,"focusenergy"]],evolveTo:"taekwarrior",evolveLv:30},
+  {id:"taekwarrior",name:"태권무제",em:"🥋",type:"fight",tier:3,base:{hp:80,atk:30,def:22,spd:26,spa:12,spDef:18},moves:["karatechop","machpunch","closecombat","focusenergy"],learn:[[40,"aurasphere"]]},
+  {id:"psykit",name:"요술여우",em:"🦊",type:"psychic",tier:1,base:{hp:46,atk:10,def:12,spd:16,spa:20,spDef:14},moves:["tackle","confusion"],learn:[[10,"psybeam"],[18,"zenheadbutt"]],evolveTo:"mystfox",evolveLv:32},
+  {id:"mystfox",name:"구미술호",em:"🦊",type:"psychic",tier:3,base:{hp:76,atk:16,def:20,spd:28,spa:30,spDef:20},moves:["psybeam","psystrike","confusion","zenheadbutt"],learn:[[40,"recover"]]},
+  {id:"pixibud",name:"요정봉오리",em:"🌸",type:"fairy",tier:1,base:{hp:50,atk:9,def:13,spd:13,spa:18,spDef:16},moves:["tackle","fairywind"],learn:[[12,"dazzlinggleam"],[20,"growl"]],evolveTo:"blossfae",evolveLv:30},
+  {id:"blossfae",name:"꽃요정",em:"🧚",type:"fairy",tier:3,base:{hp:76,atk:14,def:20,spd:26,spa:30,spDef:24},moves:["fairywind","dazzlinggleam","moonblast","playrough"],learn:[[40,"recover"]]},
+  {id:"wispkin",name:"도깨비불",em:"👻",type:"ghost",tier:1,base:{hp:44,atk:10,def:12,spd:20,spa:20,spDef:14},moves:["lick","ominouswind"],learn:[[12,"shadowsneak"],[22,"shadowball"]],evolveTo:"lanternox",evolveLv:31},
+  {id:"lanternox",name:"청사초롱귀",em:"🏮",type:"ghost",tier:3,base:{hp:72,atk:16,def:22,spd:26,spa:32,spDef:22},moves:["shadowball","ominouswind","shadowsneak","lick"],learn:[[40,"lullaby"]]},
+  {id:"nightkit",name:"그믐고양이",em:"🐈‍⬛",type:"dark",tier:1,base:{hp:46,atk:16,def:12,spd:18,spa:12,spDef:12},moves:["tackle","growl"],learn:[[10,"suckerpunch"],[18,"crunch"]],evolveTo:"voidpanther",evolveLv:32},
+  {id:"voidpanther",name:"심연표범",em:"🐆",type:"dark",tier:3,base:{hp:76,atk:30,def:20,spd:30,spa:14,spDef:18},moves:["crunch","suckerpunch","nightburst","darkpulse"],learn:[[40,"swordsdance"]]},
+  {id:"coglet",name:"톱니벌레",em:"⚙️",type:"steel",tier:1,base:{hp:50,atk:15,def:20,spd:10,spa:9,spDef:14},moves:["tackle","metalclaw"],learn:[[14,"bulletpunch"],[22,"mirrorshot"]],evolveTo:"gearclad",evolveLv:30},
+  {id:"gearclad",name:"강철갑충",em:"🛡️",type:"steel",type2:"bug",tier:3,base:{hp:80,atk:26,def:34,spd:14,spa:18,spDef:22},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[40,"harden"]]},
 ];
 const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);
