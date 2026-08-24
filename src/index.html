@@ -946,6 +946,9 @@
           <div class="seg" id="segColorblind"><button data-v="0" class="on">끔</button><button data-v="1">켬</button></div></div>
         <div class="set-item"><label>💬 대사 자동 진행</label><div class="note">대사가 다 나오면 잠시 뒤 저절로 다음으로 넘어가요(손 안 대고 읽기). 전투 속도에 맞춰 머무는 시간이 달라져요.</div>
           <div class="seg" id="segAutoAdv"><button data-v="0" class="on">끔</button><button data-v="1">켬</button></div></div>
+        <div class="set-item"><label>⌨️ 키 설정 (키보드)</label><div class="note">이동·확인·취소 키를 바꿔요. '재설정'을 누르고 원하는 키를 누르면 돼요(Esc로 취소). 화면 터치·방향 버튼은 그대로 동작해요.</div>
+          <div id="keymapBox" style="display:flex;flex-direction:column;gap:3px;margin-top:2px"></div>
+          <button class="btn ghost" id="keymapReset" style="margin-top:8px;font-size:12px;padding:8px">키를 기본값으로 되돌리기</button></div>
         <div class="set-item"><label>🎯 챌린지 룰</label><div class="note">언제든 켜고 끌 수 있어요. 뉴게임+는 챔피언 등극 후에 열려요.</div>
           <div id="challengeBox" style="display:flex;flex-direction:column;gap:7px;margin-top:2px"></div></div>
         <button class="btn ghost" id="artBtn" style="color:#c9a8ff">🎨 정령 아트 가져오기</button>
@@ -1062,7 +1065,18 @@ function anySave(){ for(let i=1;i<=SAVE_SLOTS;i++) if(!slotInfo(i).empty)return 
 
 /* ===== CONFIG ===== */
 const DIFF={easy:{lvl:-3,dmg:0.6,catch:0.18,nm:"쉬움"},normal:{lvl:0,dmg:0.8,catch:0.05,nm:"보통"},hard:{lvl:2,dmg:1.12,catch:-0.06,nm:"어려움"}};
-const CONFIG={difficulty:"normal",textSpeed:1,volume:0.7,reduceMotion:false,follower:"all",battleText:"auto",gridMove:false,uiFont:"m",colorblind:false,autoAdvance:false};   // H5-D 접근성: uiFont(m/l/xl 글자크기)·colorblind(색약 보정)·autoAdvance(대사 자동 진행)
+const CONFIG={difficulty:"normal",textSpeed:1,volume:0.7,reduceMotion:false,follower:"all",battleText:"auto",gridMove:false,uiFont:"m",colorblind:false,autoAdvance:false,keymap:null};   // H5-D 접근성: uiFont(m/l/xl 글자크기)·colorblind(색약 보정)·autoAdvance(대사 자동 진행)·keymap(키 리매핑, null=기본)
+// H5-D 키 리매핑 — 논리 액션 → 키 목록. 기본은 화살표+WASD 이중 바인딩과 기존 확인/취소 키를 그대로 보존.
+// CONFIG.keymap이 null이면 이 기본을 쓰고, 사용자가 한 번이라도 재설정하면 전체 맵을 materialize해 CONFIG.keymap에 담는다.
+const DEFAULT_KEYMAP={up:["arrowup","w"],down:["arrowdown","s"],left:["arrowleft","a"],right:["arrowright","d"],confirm:["enter"," ","z"],cancel:["x","escape","backspace"],run:["shift"]};
+const KEY_ACTION_ORDER=["up","down","left","right","confirm","cancel","run"];
+function effKeymap(){ const km={}; for(const a of KEY_ACTION_ORDER){ const ov=CONFIG.keymap&&CONFIG.keymap[a]; km[a]=(ov&&ov.length!=null)?ov.slice():DEFAULT_KEYMAP[a].slice(); } return km; }
+function keyAction(raw){ const k=(raw||"").toLowerCase(); const km=effKeymap(); for(const a of KEY_ACTION_ORDER){ if(km[a].indexOf(k)>=0)return a; } return null; }
+function bindKey(action,k){ if(KEY_ACTION_ORDER.indexOf(action)<0||!k)return; k=k.toLowerCase();
+  const km=effKeymap();                                  // 전체를 materialize → 이후 명시적 커스텀 맵
+  for(const a of KEY_ACTION_ORDER)km[a]=km[a].filter(x=>x!==k);   // 충돌 방지: 다른 액션에서 그 키를 뗀다
+  km[action]=[k]; CONFIG.keymap=km; if(typeof saveGame==="function")saveGame(); }
+function resetKeymap(){ CONFIG.keymap=null; if(typeof saveGame==="function")saveGame(); }
 let SKIP=false;
 // 전투 메시지 beats를 기본적으로 더 오래 머물게 하는 배율. "전투가 너무 빠르고 정신없다"는 피드백 →
 // 히트 애니(fxT/wait)는 쫀득하게 두고 **메시지 대기(mw)만** 늘려 "쫀득한 타격 → 텍스트가 잠깐 머묾 → 다음"
@@ -3422,15 +3436,31 @@ function toggleRun(){ G.running=!G.running; if(Field)Field.moveSpeed=G.running?1
 const CANCELABLE_OVERLAYS=["buyOverlay","dexDetailOverlay","dexOverlay","statsOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","achOverlay","towerOverlay","dailyOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay","tradeOverlay","minimap"];
 function anyOverlayOpen(){ for(const id of CANCELABLE_OVERLAYS){ const el=$(id); if(el&&el.classList.contains("active"))return id; } return null; }
 function cancelBtn(){ if(dialogActive()){ advanceDialog(); return; } const id=anyOverlayOpen(); if(id){ closeOverlay(id); if(Audio&&Audio.sfx)Audio.sfx("blip"); } }
-document.addEventListener("keydown",e=>{ if(!$("map").classList.contains("active"))return; const k=e.key.toLowerCase();
-  if(k==="x"||k==="escape"||k==="backspace"){ e.preventDefault(); cancelBtn(); return; }
-  if(dialogActive()){ if(k===" "||k==="enter"||k==="z"||e.key.startsWith("Arrow")){ e.preventDefault(); advanceDialog(); } return; }
+function _isDir(a){ return a==="up"||a==="down"||a==="left"||a==="right"; }
+document.addEventListener("keydown",e=>{ if(!$("map").classList.contains("active"))return; const act=keyAction(e.key);
+  if(act==="cancel"){ e.preventDefault(); cancelBtn(); return; }
+  if(dialogActive()){ if(act==="confirm"||_isDir(act)){ e.preventDefault(); advanceDialog(); } return; }
   if(anyOverlayOpen())return;
-  const m={arrowup:"up",w:"up",arrowdown:"down",s:"down",arrowleft:"left",a:"left",arrowright:"right",d:"right"};
-  if(k==="shift"){e.preventDefault(); toggleRun(); return;} if(k==="enter"||k===" "||k==="z"){e.preventDefault(); interact(); return;} if(m[k]){e.preventDefault(); heldDir=m[k]; move(m[k]);} });
-document.addEventListener("keyup",e=>{ const k=e.key.toLowerCase();
-  const m={arrowup:"up",w:"up",arrowdown:"down",s:"down",arrowleft:"left",a:"left",arrowright:"right",d:"right"};
-  if(m[k]&&heldDir===m[k])heldDir=null; });
+  if(act==="run"){ e.preventDefault(); toggleRun(); return; }
+  if(act==="confirm"){ e.preventDefault(); interact(); return; }
+  if(_isDir(act)){ e.preventDefault(); heldDir=act; move(act); } });
+document.addEventListener("keyup",e=>{ const act=keyAction(e.key); if(_isDir(act)&&heldDir===act)heldDir=null; });
+// H5-D 키 리매핑 — 캡처 단계에서 재설정 중인 키를 가로챈다(다른 핸들러보다 먼저 실행돼 이동/취소가 끼어들지 않게).
+let _rebindAction=null;
+document.addEventListener("keydown",e=>{ if(!_rebindAction)return; e.preventDefault(); e.stopImmediatePropagation();
+  const k=(e.key||"").toLowerCase();
+  if(k==="escape"){ _rebindAction=null; renderKeymap(); return; }   // 취소
+  bindKey(_rebindAction,k); _rebindAction=null; renderKeymap(); }, true);
+function prettyKey(k){ const M={" ":"Space","arrowup":"↑","arrowdown":"↓","arrowleft":"←","arrowright":"→","escape":"Esc","backspace":"⌫","enter":"Enter","shift":"Shift"}; return M[k]||(k.length===1?k.toUpperCase():k); }
+const _KEYMAP_LABEL={up:"위로",down:"아래로",left:"왼쪽",right:"오른쪽",confirm:"확인·상호작용",cancel:"취소·뒤로",run:"달리기"};
+function renderKeymap(){ const box=$("keymapBox"); if(!box)return; const km=effKeymap(); box.innerHTML="";
+  for(const a of KEY_ACTION_ORDER){ const capturing=_rebindAction===a;
+    const row=document.createElement("div"); row.style.cssText="display:flex;align-items:center;gap:8px;padding:2px 0";
+    const keys=km[a].map(prettyKey).join(", ")||"(없음)";
+    row.innerHTML=`<div style="flex:1;font-size:12px">${_KEYMAP_LABEL[a]}</div><div style="font-size:11px;color:${capturing?'#7fd16f':'var(--muted)'};min-width:96px;text-align:right">${capturing?"키를 누르세요…":keys}</div>`;
+    const btn=document.createElement("button"); btn.className="pick"; btn.textContent=capturing?"취소":"재설정"; btn.style.marginLeft="6px";
+    btn.addEventListener("click",()=>{ Audio.sfx&&Audio.sfx("blip"); _rebindAction=capturing?null:a; renderKeymap(); });
+    row.appendChild(btn); box.appendChild(row); } }
 /* ===================== 목표 트래커 =====================
    "지금 뭘 해야 하지?"를 화면에 붙박아 둔다. 진행 사슬: 체육관 4곳 → 정령 리그 → 챔피언 → 도감.
    좌표는 실제 게이트 타일에서 가져온다(GYM_AT / 리그 U 타일). 탭하면 그 지점까지 자동 이동. */
@@ -4851,11 +4881,10 @@ function battleNav(dir){ const btns=battleMenuBtns(); if(!btns.length)return; co
   if(i!==_bfi){ battleFocus(i); Audio.sfx&&Audio.sfx("type"); } }
 function battleSelect(){ const b=battleMenuBtns()[_bfi]; if(b&&!b.disabled)b.click(); }
 function battleBack(){ const vm=$("moveMenu"); if(vm&&getComputedStyle(vm).display!=="none"){ const bk=$("moveBackBtn"); if(bk)bk.click(); } }
-document.addEventListener("keydown",e=>{ if(!battleNavActive())return; const k=e.key.toLowerCase();
-  const arrow={arrowup:"up",w:"up",arrowdown:"down",s:"down",arrowleft:"left",a:"left",arrowright:"right",d:"right"}[k];
-  if(arrow){ e.preventDefault(); battleNav(arrow); return; }
-  if(k==="enter"||k===" "||k==="z"){ e.preventDefault(); battleSelect(); return; }
-  if(k==="x"||k==="escape"||k==="backspace"){ e.preventDefault(); battleBack(); return; } });
+document.addEventListener("keydown",e=>{ if(!battleNavActive())return; const act=keyAction(e.key);
+  if(_isDir(act)){ e.preventDefault(); battleNav(act); return; }
+  if(act==="confirm"){ e.preventDefault(); battleSelect(); return; }
+  if(act==="cancel"){ e.preventDefault(); battleBack(); return; } });
 
 /* FX */
 function spriteEl(side){ return side==="me"?$("meSprite"):$("foeSprite"); }
@@ -7799,7 +7828,7 @@ function serialize(){ return {v:4, ts:_nowMs(), pe:G.playerEmoji, ps:G.styleIdx|
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], sdx:[...(G.shinyDex||[])], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, rl:G.rules||{hardcore:false,nuzlocke:false}, ngp:G.ngPlus||0, grave:G.graveyard||[], hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, tbs:G.towerBestSet||0, tsn:G.towerSeason||{key:"",best:0}, trec:G.towerRecords||[], dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0,uf:CONFIG.uiFont||"m",cb:CONFIG.colorblind?1:0,aa:CONFIG.autoAdvance?1:0} }; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, rl:G.rules||{hardcore:false,nuzlocke:false}, ngp:G.ngPlus||0, grave:G.graveyard||[], hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, tbs:G.towerBestSet||0, tsn:G.towerSeason||{key:"",best:0}, trec:G.towerRecords||[], dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0,uf:CONFIG.uiFont||"m",cb:CONFIG.colorblind?1:0,aa:CONFIG.autoAdvance?1:0,km:CONFIG.keymap||null} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp,tox:m._tox||0}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
   recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; m._tox=p.tox||0; if(p.nick)m.nick=p.nick; return m; }
@@ -7812,7 +7841,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
   if(!s.party.length)return false;
-  if(o.cfg){ CONFIG.difficulty=o.cfg.d||"normal"; CONFIG.textSpeed=o.cfg.t||1; CONFIG.volume=o.cfg.v!=null?o.cfg.v:0.7; CONFIG.reduceMotion=!!o.cfg.m; CONFIG.follower=o.cfg.f||"all"; CONFIG.battleText=o.cfg.bt||"auto"; CONFIG.gridMove=!!o.cfg.gm; if(o.cfg&&o.cfg.gmini!=null)CONFIG.goalMini=!!o.cfg.gmini; CONFIG.uiFont=o.cfg.uf||"m"; CONFIG.colorblind=!!o.cfg.cb; CONFIG.autoAdvance=!!o.cfg.aa; applyA11y(); Audio.setVolume(CONFIG.volume); }
+  if(o.cfg){ CONFIG.difficulty=o.cfg.d||"normal"; CONFIG.textSpeed=o.cfg.t||1; CONFIG.volume=o.cfg.v!=null?o.cfg.v:0.7; CONFIG.reduceMotion=!!o.cfg.m; CONFIG.follower=o.cfg.f||"all"; CONFIG.battleText=o.cfg.bt||"auto"; CONFIG.gridMove=!!o.cfg.gm; if(o.cfg&&o.cfg.gmini!=null)CONFIG.goalMini=!!o.cfg.gmini; CONFIG.uiFont=o.cfg.uf||"m"; CONFIG.colorblind=!!o.cfg.cb; CONFIG.autoAdvance=!!o.cfg.aa; CONFIG.keymap=(o.cfg.km&&typeof o.cfg.km==="object")?o.cfg.km:null; applyA11y(); Audio.setVolume(CONFIG.volume); }
   G=s; return true; }
 // ⚠️ 본가처럼 전투 중에는 저장하지 않는다.
 // serialize는 inBattle/foe/trainer를 담지 않으므로, 전투 중 저장이 남아 있으면
@@ -7854,6 +7883,7 @@ function applySettingsUI(){ { const _sl=$("slotLabel"); if(_sl)_sl.textContent=`
   document.querySelectorAll("#segFont button").forEach(b=>b.classList.toggle("on",b.dataset.v===(CONFIG.uiFont||"m")));
   document.querySelectorAll("#segColorblind button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.colorblind));
   document.querySelectorAll("#segAutoAdv button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="1")===!!CONFIG.autoAdvance));
+  _rebindAction=null; renderKeymap();
   applyA11y(); }
 // H5-D 접근성 적용 — <html>에 클래스만 붙인다(글자 크기·색약). 전투/입력 로직은 건드리지 않는다.
 function applyA11y(){ const r=(typeof document!=="undefined")&&document.documentElement; if(!r)return;
@@ -7870,6 +7900,7 @@ document.querySelectorAll("#segColorblind button").forEach(b=>b.addEventListener
   document.querySelectorAll("#segColorblind button").forEach(x=>x.classList.toggle("on",x===b)); applyA11y(); saveGame(); }));
 document.querySelectorAll("#segAutoAdv button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.autoAdvance=b.dataset.v==="1"; Audio.sfx("blip");
   document.querySelectorAll("#segAutoAdv button").forEach(x=>x.classList.toggle("on",x===b)); saveGame(); }));
+{ const _kr=$("keymapReset"); if(_kr)_kr.addEventListener("click",()=>{ Audio.sfx&&Audio.sfx("blip"); resetKeymap(); _rebindAction=null; renderKeymap(); toast&&toast("키를 기본값으로 되돌렸다"); }); }
 document.querySelectorAll("#segMotion button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.reduceMotion=b.dataset.v==="1"; Audio.sfx("blip");
   document.querySelectorAll("#segMotion button").forEach(x=>x.classList.toggle("on",x===b)); saveGame(); }));
 document.querySelectorAll("#segFollower button").forEach(b=>b.addEventListener("click",()=>{ CONFIG.follower=b.dataset.v; Audio.sfx("blip");
@@ -7943,7 +7974,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, terrainWalkable, tileAt, npcAvailable, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HOME_POS, HOME_AT, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, towerMenu, towerRentalPick, towerRecords, towerBegin, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, towerRank, towerSeasonBest, towerRecordRun, TOWER_RANKS, BOSS_TRIALS, bossTrialMenu, bossTrialStart, bossTrialWin, bossTrialEnd, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS,
   startHotSeat, pvpSelect, pvpRenderSelect, pvpPromptChoice, pvpChoose, pvpSwitchList, pvpResolve, pvpActive, pvpAlive, PVP_RENTAL, getPVP:()=>PVP,
   openTradeCode, tradeHome, tradeExportList, tradeShowCode, tradeImportUI, tradeCodeFor, parseTradeCode, qrModules, drawQR, qrcode,
-  openAchievements, renderAchievements, claimAch, achDone, achStats, achClaimed, ACHIEVEMENTS, toggleRule, startNewGamePlus, renderChallengeBox, applyA11y,
+  openAchievements, renderAchievements, claimAch, achDone, achStats, achClaimed, ACHIEVEMENTS, toggleRule, startNewGamePlus, renderChallengeBox, applyA11y, keyAction, effKeymap, bindKey, resetKeymap, renderKeymap, DEFAULT_KEYMAP, KEY_ACTION_ORDER,
   openDaily, renderDaily, claimDaily, dailyStatus, dailyReward, dailyTheme, dailyKey, dailyPending, DAILY_THEMES};
 
 /* ===================== INIT ===================== */
