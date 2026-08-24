@@ -828,6 +828,10 @@
       <div class="ov-head"><h3>🎖️ 도전과제</h3><button class="closex" data-close="achOverlay">✕</button></div>
       <div class="ov-body" id="achBody"></div>
     </div>
+    <div class="overlay" id="towerOverlay">
+      <div class="ov-head"><h3>🗼 연전 도장</h3><button class="closex" data-close="towerOverlay">✕</button></div>
+      <div class="sheet" style="max-width:420px"><div id="towerBody"></div></div>
+    </div>
     <div class="overlay" id="dailyOverlay">
       <div class="ov-head"><h3>🎁 오늘의 보너스</h3><button class="closex" data-close="dailyOverlay">✕</button></div>
       <div class="sheet" style="max-width:380px"><div id="dailyBody"></div>
@@ -4730,7 +4734,7 @@ const STARTPOS={x:8,y:48};
 let G=null;
 function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box:[],active:0,caught:new Set(),seen:new Set(),
   items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},lastHeal:null,repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),flySpots:new Set(),hasFly:false,mineSeen:false,hillSeen:false,pierSeen:false,frostSeen:false,seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
-  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],achClaimed:[],dailyLast:null,dailyStreak:0,shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,rodTier:0,lakeDone:false,lakeSignSeen:false,deepwoodsSeen:false,snowSeen:false,snowDone:false,marshSeen:false,skySeen:false,ruinsSeen:false,craterSeen:false,gardenSeen:false,seaBossDone:false,skyBossDone:false,ruinsBossDone:false,towerBest:0,towerStreak:0,towerRun:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,berries:{},heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
+  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],achClaimed:[],dailyLast:null,dailyStreak:0,shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,rodTier:0,lakeDone:false,lakeSignSeen:false,deepwoodsSeen:false,snowSeen:false,snowDone:false,marshSeen:false,skySeen:false,ruinsSeen:false,craterSeen:false,gardenSeen:false,seaBossDone:false,skyBossDone:false,ruinsBossDone:false,towerBest:0,towerBestSet:0,towerSeason:{key:"",best:0},towerRecords:[],towerStreak:0,towerRun:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,berries:{},heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
 function activeMon(){return G.party[G.active];}
 function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
 function updateDexPill(){$("dexPill").textContent=`📖 ${G.caught.size}/${DEX.length}${G.dexMaster?" 🏆":""}`;}
@@ -6367,7 +6371,7 @@ function updateRunBtn(){ const b=$("runBtn"); if(b)b.textContent=(G&&G.running)?
 function toggleRun(){ G.running=!G.running; if(Field)Field.moveSpeed=G.running?11.4:6.8; updateRunBtn(); flashHint(G.running?"👟 달리기 켜짐":"🚶 걷기 모드"); }
 /* ⚠️ 여기 빠진 패널은 **Escape·B·✕(가려지면)로 못 닫는다.** 지도(minimap)가 목록 밖이라
    가로에서 버튼이 화면 밖으로 밀렸을 때 리로드 말곤 탈출로가 없었다(유저 제보). 새 패널을 만들면 여기 등록할 것. */
-const CANCELABLE_OVERLAYS=["buyOverlay","dexDetailOverlay","dexOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","achOverlay","dailyOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay","tradeOverlay","minimap"];
+const CANCELABLE_OVERLAYS=["buyOverlay","dexDetailOverlay","dexOverlay","bagOverlay","pcOverlay","summaryOverlay","cardOverlay","achOverlay","towerOverlay","dailyOverlay","daycareOverlay","mxOverlay","shopOverlay","warpOverlay","setOverlay","artOverlay","tradeOverlay","minimap"];
 function anyOverlayOpen(){ for(const id of CANCELABLE_OVERLAYS){ const el=$(id); if(el&&el.classList.contains("active"))return id; } return null; }
 function cancelBtn(){ if(dialogActive()){ advanceDialog(); return; } const id=anyOverlayOpen(); if(id){ closeOverlay(id); if(Audio&&Audio.sfx)Audio.sfx("blip"); } }
 document.addEventListener("keydown",e=>{ if(!$("map").classList.contains("active"))return; const k=e.key.toLowerCase();
@@ -9380,11 +9384,63 @@ function towerPool(){ return DEX.filter(d=>d.tier===3).map(d=>d.id); }   // tier
 function pickTowerTeam(lvl){ const pool=towerPool(); const team=[],used=new Set();
   while(team.length<3 && used.size<pool.length){ const id=pool[ri(0,pool.length-1)]; if(used.has(id))continue; used.add(id); team.push([id,lvl]); }
   return team; }
+/* H5-A: 연승 최고기록으로 랭크를 매긴다(파티·세트룰 공통 기준은 각 모드 최고기록). */
+const TOWER_RANKS=[{min:0,ic:"🪵",ko:"무급"},{min:7,ic:"🥉",ko:"브론즈"},{min:14,ic:"🥈",ko:"실버"},{min:21,ic:"🥇",ko:"골드"},{min:28,ic:"💠",ko:"플래티넘"},{min:35,ic:"💎",ko:"다이아"},{min:49,ic:"👑",ko:"마스터"}];
+function towerRank(streak){ let r=TOWER_RANKS[0]; for(const x of TOWER_RANKS)if((streak||0)>=x.min)r=x; const nx=TOWER_RANKS.find(x=>x.min>(streak||0)); return {ic:r.ic,ko:r.ko,next:nx?nx.min:null,nextKo:nx?nx.ko:null}; }
+function towerSeasonKey(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1); }
+function towerSeasonBest(){ const k=towerSeasonKey(); const s=G.towerSeason||{key:"",best:0}; return s.key===k?s.best:0; }
+function towerBumpSeason(streak){ const k=towerSeasonKey(); const s=G.towerSeason||{key:"",best:0};
+  if(s.key!==k){ G.towerSeason={key:k,best:streak}; } else if(streak>s.best){ G.towerSeason={key:k,best:streak}; } }
 function openTower(){
   if(!G.champion){ showDialog({name:"도장의 관장 세라",text:"이곳은 <b>연전 도장</b>. 챔피언이 된 자만이 문을 넘을 수 있다. 리그를 제패하고 다시 오라."}); return; }
-  const best=G.towerBest||0;
-  if(confirm(`🗼 연전 도장\n최고 기록: ${best}연승\n\n회복 없이 도전자들과 연이어 싸운다. 지면 그 자리에서 종료(번 돈은 남는다).\n도전할까?`)){
-    healParty(true); G.towerStreak=0; G.towerRun=true; startTowerBattle(); } }
+  Audio.sfx&&Audio.sfx("blip"); openOverlay("towerOverlay"); towerMenu(); }
+function towerMenu(){ const body=$("towerBody"); const rk=towerRank(G.towerBest||0);
+  body.innerHTML=`
+    <div style="text-align:center;padding:4px 4px 12px">
+      <div style="font-size:40px">${rk.ic}</div>
+      <div style="font-size:16px;font-weight:800;margin-top:2px">${rk.ko} 랭크</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">${rk.next!=null?`다음 <b>${rk.nextKo}</b>까지 ${rk.next}연승`:"최고 랭크 달성!"}</div>
+    </div>
+    <div style="display:flex;gap:8px;text-align:center;margin-bottom:12px">
+      <div style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--muted)">파티 최고</div><div style="font-size:17px;font-weight:800">${G.towerBest||0}</div></div>
+      <div style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--muted)">세트룰 최고</div><div style="font-size:17px;font-weight:800">${G.towerBestSet||0}</div></div>
+      <div style="flex:1;background:rgba(127,209,174,.08);border:1px solid rgba(127,209,174,.22);border-radius:10px;padding:8px"><div style="font-size:10px;color:var(--muted)">이번 달</div><div style="font-size:17px;font-weight:800;color:#7fd16f">${towerSeasonBest()}</div></div>
+    </div>
+    <button class="dbmv" id="towerParty" style="width:100%;margin-bottom:8px">🗼 파티 모드 — 내 정령으로 도전</button>
+    <button class="dbmv" id="towerSet" style="width:100%;margin-bottom:8px;background:#31456a;border-color:#7fd16f">⚖️ 세트 룰 — Lv50 렌탈 3마리(순수 실력)</button>
+    <button class="dbmv" id="towerRec" style="width:100%">📜 기록 보기</button>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6">회복 없이 연이어 싸운다. 지면 그 자리에서 종료(번 돈은 남는다). 7연승마다 상대 레벨이 오른다.</div>`;
+  $("towerParty").onclick=()=>{ closeOverlay("towerOverlay"); towerBegin("party"); };
+  $("towerSet").onclick=()=>{ towerRentalPick(); };
+  $("towerRec").onclick=()=>{ towerRecords(); };
+}
+function towerRecords(){ const body=$("towerBody"); const recs=(G.towerRecords||[]);
+  body.innerHTML=`<div class="dbprompt" style="margin-bottom:10px">📜 명예의 기록 (상위 ${Math.min(recs.length,8)})</div>`+
+    (recs.length?`<div style="display:flex;flex-direction:column;gap:5px">`+recs.slice(0,8).map((r,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid var(--line)">
+        <div style="font-size:14px;font-weight:800;width:20px">${i+1}</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700">${r.streak}연승 <span style="font-size:10px;color:var(--muted)">· ${r.mode==="set"?"세트룰":"파티"}</span></div>
+        <div style="font-size:10px;color:var(--muted)">${(r.team||[]).join(" · ")}</div></div>
+      </div>`).join("")+`</div>`
+      :`<div style="color:var(--muted);text-align:center;padding:22px;font-size:13px">아직 기록이 없어. 도전해봐!</div>`)+
+    `<button class="dbmv" id="towerBack" style="width:100%;margin-top:10px">← 뒤로</button>`;
+  $("towerBack").onclick=towerMenu;
+}
+function towerRentalPick(){ const body=$("towerBody"); if(!G._towerSel)G._towerSel=[];
+  body.innerHTML=`<div class="dbprompt" style="margin-bottom:8px">렌탈 정령 3마리 선택 (${G._towerSel.length}/3) · Lv50</div>
+    <div class="pvpgrid">`+PVP_RENTAL.map((id,i)=>{ const sp=byId(id); const on=G._towerSel.includes(i);
+      return `<button class="pvppick${on?' on':''}" data-i="${i}"><span class="pe">${sp.em||"❔"}</span><span class="pn">${sp.name}</span><span class="pt">${tkLabel(sp.type)}${sp.type2?"·"+tkLabel(sp.type2):""}</span></button>`; }).join("")+`</div>`+
+    (G._towerSel.length===3?`<button class="dbmv" id="towerGo" style="width:100%;margin-top:8px;background:#2f7d63;border:none;color:#fff">⚖️ 세트룰 도전 시작</button>`:`<div class="dbprompt" style="margin-top:8px;opacity:.6">3마리를 고르면 시작할 수 있어요</div>`)+
+    `<button class="dbmv" id="towerBack" style="width:100%;margin-top:6px">← 뒤로</button>`;
+  body.querySelectorAll(".pvppick").forEach(b=>b.onclick=()=>{ const i=+b.dataset.i; const at=G._towerSel.indexOf(i);
+    if(at>=0)G._towerSel.splice(at,1); else if(G._towerSel.length<3)G._towerSel.push(i); Audio.sfx&&Audio.sfx("blip"); towerRentalPick(); });
+  const go=$("towerGo"); if(go)go.onclick=()=>{ const team=G._towerSel.map(i=>{ const m=makeMon(PVP_RENTAL[i],50); m.hp=m.maxHp; return m; }); G._towerSel=[]; closeOverlay("towerOverlay"); towerBegin("set",team); };
+  const bk=$("towerBack"); if(bk)bk.onclick=towerMenu;
+}
+function towerBegin(mode,setTeam){
+  G._towerMode=mode;
+  if(mode==="set"){ G._partyBackup=G.party; G.party=setTeam; G.active=0; }
+  healParty(true); G.towerStreak=0; G.towerRun=true; startTowerBattle(); }
 function startTowerBattle(){
   const streak=G.towerStreak||0;
   const lvl=50+Math.min(Math.floor(streak/7),10);   // 50 → 60 (7연승마다 +1)
@@ -9393,19 +9449,30 @@ function startTowerBattle(){
   G.foe=trainerMon(0); G.seen.add(G.foe.id); G.inBattle=true; G.busy=false;
   // transitionToBattle은 파티 휘발 상태(랭크·혼란 등)만 리셋하고 HP/PP는 건드리지 않는다 → 회복 없는 연전이 성립.
   transitionToBattle(()=>{ setMsg(`<b>${nm}</b> — ${streak+1}번째 상대!`); Audio.startMusic("battle"); }); }
+function _towerBestRef(){ return G._towerMode==="set"?"towerBestSet":"towerBest"; }
 async function towerWin(){
   G.towerStreak=(G.towerStreak||0)+1;
   const reward=120+G.towerStreak*30; G.money+=reward; updateMoney();
-  const rec=G.towerStreak>(G.towerBest||0); if(rec)G.towerBest=G.towerStreak;
+  const bref=_towerBestRef(); const rec=G.towerStreak>(G[bref]||0); if(rec)G[bref]=G.towerStreak;
+  towerBumpSeason(G.towerStreak);
   Audio.sfx("win"); Audio.startMusic("victory",true);
   setMsg(`🗼 <b>${G.towerStreak}연승!</b> 💰 ${reward} 획득${rec?" · 최고 기록 갱신!":""}`); await mw(1100);
   if(G.towerStreak%7===0){ G.items.candy=(G.items.candy||0)+1; setMsg(`🎉 ${G.towerStreak}연승 돌파 — 정령 사탕 ×1 보너스!`); await mw(1300); }
   startTowerBattle(); }
+function towerRecordRun(streak,mode){ if(streak<=0)return;
+  G.towerRecords=G.towerRecords||[];
+  const team=(G.party||[]).filter(m=>m&&!m.isEgg).map(m=>m.nick||m.name).slice(0,3);
+  G.towerRecords.push({streak,mode,team,at:towerSeasonKey()});
+  G.towerRecords.sort((a,b)=>b.streak-a.streak); G.towerRecords=G.towerRecords.slice(0,8); }
 async function endTowerRun(){
-  const s=G.towerStreak||0;
+  const s=G.towerStreak||0; const mode=G._towerMode||"party"; const bref=_towerBestRef();
   Audio.stopMusic(); Audio.sfx("defeat");
-  setMsg(`🗼 도전 종료 — <b>${s}연승</b>. ${s>0&&s>=(G.towerBest||0)?"최고 기록이다!":"다음엔 더 멀리."}`); await mw(1500);
-  G.towerRun=false; G.trainer=null; healParty(true); endBattle(); }   // 제자리(도장 관장 옆)에서 눈뜬다 — blackout 워프 없음
+  setMsg(`🗼 도전 종료 — <b>${s}연승</b>. ${s>0&&s>=(G[bref]||0)?"최고 기록이다!":"다음엔 더 멀리."}`); await mw(1500);
+  towerRecordRun(s,mode);
+  G.towerRun=false; G.trainer=null; healParty(true);
+  if(G._towerMode==="set"&&G._partyBackup){ G.party=G._partyBackup; G._partyBackup=null; G.active=0; }   // 세트룰: 원래 파티 복원
+  G._towerMode=null;
+  endBattle(); }   // 제자리(도장 관장 옆)에서 눈뜬다 — blackout 워프 없음
 
 function blackout(){ healParty(true); G.trainer=null; G.inBattle=false; G.busy=false; G.surfing=false;
   if(G.indoor && typeof _exitInterior==="function"){ _exitInterior(); }   // 즉시판: 아래서 G.pos를 덮어쓰므로 지연 페이드 쓰면 안 됨
@@ -9686,6 +9753,22 @@ async function chooseSwitch(i){ if(i===G.active||!G.party[i]||G.party[i].hp<=0)r
 $("openDex").addEventListener("click",()=>{Audio.sfx("blip");renderDex();openOverlay("dexOverlay");});
 $("openCard").addEventListener("click",()=>{Audio.sfx("blip");openTrainerCard();});
 let _dexFilter={type:null,uncaught:false};
+let _dexSort="dex", _dexSearch="", _dexKeepFocus=false;
+// H5-B: 정령 정렬 비교 함수(도감·박스 공용). 종 스펙(sp)과 개체(m·있으면)로 정렬한다.
+let _boxSort="get", _boxSearch="", _boxKeepFocus=false;
+const SORT_MODES={
+  dex:  {ko:"도감순", cmp:(a,b)=>a.i-b.i},
+  get:  {ko:"획득순", cmp:(a,b)=>a.i-b.i},
+  name: {ko:"이름",   cmp:(a,b)=>(a.nm).localeCompare(b.nm,"ko")},
+  type: {ko:"타입",   cmp:(a,b)=>(TYPE_LIST.indexOf(a.sp.type)-TYPE_LIST.indexOf(b.sp.type))||a.i-b.i},
+  level:{ko:"레벨↓",  cmp:(a,b)=>((b.m&&b.m.level||0)-(a.m&&a.m.level||0))||a.i-b.i},
+  iv:   {ko:"개체값↓",cmp:(a,b)=>((b.m?ivTotal(b.m):-1)-(a.m?ivTotal(a.m):-1))||a.i-b.i},
+  shiny:{ko:"이로치",  cmp:(a,b)=>((b.m&&b.m.shiny?1:0)-(a.m&&a.m.shiny?1:0))||a.i-b.i},
+  caught:{ko:"포획",  cmp:(a,b)=>((b.caught?1:0)-(a.caught?1:0))||a.i-b.i},
+};
+function searchHit(q,sp,m){ if(!q)return true; q=q.trim().toLowerCase(); if(!q)return true;
+  const nm=(m&&m.nick?m.nick:sp.name)||""; return nm.toLowerCase().includes(q) || (sp.name||"").toLowerCase().includes(q)
+    || (TYPE_KO[sp.type]||"").includes(q) || (sp.type2&&(TYPE_KO[sp.type2]||"").includes(q)); }
 function renderTrainerCard(){ const b=$("cardBody"); if(!b)return;
   const sec=G.playSec||0; const hh=Math.floor(sec/3600), mm=Math.floor((sec%3600)/60);
   const fb=(typeof forestBadges==="function")?forestBadges():0; const isle=(G.badges||[]).includes("L");
@@ -9729,7 +9812,21 @@ function renderDex(){ $("dexCaught").textContent=G.caught.size; $("dexParty").te
     TYPE_LIST.forEach(t=>bar.appendChild(mk(TYPE_KO[t],_dexFilter.type===t,()=>{_dexFilter.type=_dexFilter.type===t?null:t;})));
     bar.appendChild(mk("미포획",_dexFilter.uncaught,()=>{_dexFilter.uncaught=!_dexFilter.uncaught;}));
     body.appendChild(bar); }
-  const _list=DEX.filter(sp=>{ if(_dexFilter.type&&sp.type!==_dexFilter.type)return false; if(_dexFilter.uncaught&&G.caught.has(sp.id))return false; return true; });
+  /* H5-B: 검색 + 정렬 바 */
+  { const bar2=document.createElement("div"); bar2.style.cssText="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:9px";
+    const inp=document.createElement("input"); inp.id="dexSearchInput"; inp.type="search"; inp.placeholder="🔍 이름·타입 검색"; inp.value=_dexSearch;
+    inp.style.cssText="flex:1;min-width:120px;font-size:12px;padding:5px 9px;border-radius:11px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:inherit";
+    inp.addEventListener("input",()=>{ _dexSearch=inp.value; _dexKeepFocus=true; renderDex(); });
+    bar2.appendChild(inp);
+    ["dex","name","type","caught"].forEach(k=>{ const b=document.createElement("button"); b.textContent=SORT_MODES[k].ko;
+      b.style.cssText="font-size:11px;padding:4px 9px;border-radius:13px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.18);background:"+(_dexSort===k?"rgba(127,209,174,.32)":"rgba(255,255,255,.05)");
+      b.addEventListener("click",()=>{ Audio.sfx("blip"); _dexSort=k; renderDex(); }); bar2.appendChild(b); });
+    body.appendChild(bar2); }
+  let _list=DEX.map((sp,i)=>({sp,i,nm:sp.name,caught:G.caught.has(sp.id),m:G.party.find(x=>x.id===sp.id)}))
+    .filter(o=>{ if(_dexFilter.type&&o.sp.type!==_dexFilter.type&&o.sp.type2!==_dexFilter.type)return false;
+      if(_dexFilter.uncaught&&o.caught)return false; if(!searchHit(_dexSearch,o.sp,o.m))return false; return true; })
+    .sort(SORT_MODES[_dexSort].cmp).map(o=>o.sp);
+  if(_dexKeepFocus){ _dexKeepFocus=false; setTimeout(()=>{ const el=$("dexSearchInput"); if(el){ el.focus(); const v=el.value; el.value=""; el.value=v; } },0); }
   if(!_list.length){ const e=document.createElement("div"); e.style.cssText="color:var(--muted);text-align:center;padding:22px;font-size:13px"; e.textContent="조건에 맞는 정령이 없어"; body.appendChild(e); }
   _list.forEach(sp=>{ const inParty=G.party.find(m=>m.id===sp.id),caught=G.caught.has(sp.id),seen=G.seen.has(sp.id);
     const card=document.createElement("div"); card.className="mon-card"+(inParty&&G.party[G.active].id===sp.id?" active-mon":""); card.style.cursor=(caught||seen)?"pointer":"default";
@@ -10382,9 +10479,26 @@ function statusChipHtml(m){ if(!m)return "";
   if(!m.status)return "";
   return ` <span class="type-tag ${STATUS_CLS[m.status]||""}" style="font-size:9px">${STATUS_KO[m.status]||m.status}</span>`; }
 function renderPC(){ const body=$("pcBody"); body.innerHTML="";
-  const list=pcTab==="party"?G.party:G.box;
-  if(!list.length){ body.innerHTML=`<div style="color:var(--muted);text-align:center;padding:30px;font-size:13px">${pcTab==="party"?"파티가 비어있다":"보관함이 비어있다"}</div>`; return; }
-  list.forEach((m,i)=>{ recalc(m); const card=document.createElement("div"); card.className="mon-card"+(pcTab==="party"&&i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"");
+  const raw=pcTab==="party"?G.party:G.box;
+  // 표시 목록 = {m, i(실제 인덱스)}. 박스 탭에만 검색·정렬을 적용(파티는 순서가 의미라 유지).
+  let disp=raw.map((m,i)=>({m,i}));
+  if(pcTab==="box"){
+    const bar=document.createElement("div"); bar.style.cssText="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:9px";
+    const inp=document.createElement("input"); inp.id="boxSearchInput"; inp.type="search"; inp.placeholder="🔍 이름·타입 검색"; inp.value=_boxSearch;
+    inp.style.cssText="flex:1;min-width:120px;font-size:12px;padding:5px 9px;border-radius:11px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:inherit";
+    inp.addEventListener("input",()=>{ _boxSearch=inp.value; _boxKeepFocus=true; renderPC(); });
+    bar.appendChild(inp);
+    ["get","level","name","type","iv","shiny"].forEach(k=>{ const b=document.createElement("button"); b.textContent=SORT_MODES[k].ko;
+      b.style.cssText="font-size:11px;padding:4px 9px;border-radius:13px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.18);background:"+(_boxSort===k?"rgba(127,209,174,.32)":"rgba(255,255,255,.05)");
+      b.addEventListener("click",()=>{ Audio.sfx("blip"); _boxSort=k; renderPC(); }); bar.appendChild(b); });
+    body.appendChild(bar);
+    disp=disp.filter(o=>{ const sp=byId(o.m.id); return sp&&searchHit(_boxSearch,sp,o.m); })
+      .map(o=>({...o,sp:byId(o.m.id),nm:(o.m.nick||o.m.name),caught:true}))
+      .sort(SORT_MODES[_boxSort].cmp);
+    if(_boxKeepFocus){ _boxKeepFocus=false; setTimeout(()=>{ const el=$("boxSearchInput"); if(el){ el.focus(); const v=el.value; el.value=""; el.value=v; } },0); }
+  }
+  if(!disp.length){ const e=document.createElement("div"); e.style.cssText="color:var(--muted);text-align:center;padding:30px;font-size:13px"; e.textContent=(pcTab==="party"?"파티가 비어있다":(_boxSearch?"조건에 맞는 정령이 없어":"보관함이 비어있다")); body.appendChild(e); return; }
+  disp.forEach(({m,i})=>{ recalc(m); const card=document.createElement("div"); card.className="mon-card"+(pcTab==="party"&&i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"");
     let actions="";
     if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
     else { const canWith=G.party.length<6; actions=`<button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel" title="놓아주기" aria-label="놓아주기">방생</button>`; }
@@ -10581,7 +10695,7 @@ function serialize(){ return {v:4, ts:_nowMs(), pe:G.playerEmoji, ps:G.styleIdx|
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0} }; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, tbs:G.towerBestSet||0, tsn:G.towerSeason||{key:"",best:0}, trec:G.towerRecords||[], dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0} }; }
 function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp,tox:m._tox||0}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
   recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; m._tox=p.tox||0; if(p.nick)m.nick=p.nick; return m; }
@@ -10589,7 +10703,7 @@ function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.playerEmoji=o.pe||"🧑‍🔬"; s.styleIdx=o.ps||0; s.active=o.active||0;
   s.items=Object.assign({ball:0,greatball:0,potion:0,revive:0,antidote:0,hyperpotion:0,repel:0,candy:0,xatk:0,xdef:0,xspd:0},o.items||{});
   s.money=o.money!=null?o.money:600; s.pos=o.pos||{x:STARTPOS.x,y:STARTPOS.y}; s.lastHeal=o.lh||null; s.repel=o.repel||0;   // 구세이브는 null → blackout이 STARTPOS로 폴백
-  s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.flySpots=new Set(o.flySpots||[]); s.hasFly=!!o.hasFly; s.mineSeen=!!o.mineSeen; s.hillSeen=!!o.hillSeen; s.pierSeen=!!o.pierSeen; s.frostSeen=!!o.frostSeen; s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.achClaimed=o.ac||[]; s.dailyLast=o.dl||null; s.dailyStreak=o.dst||0; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.lavaSeen=!!o.lavaSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.rodTier=(o.rodTier!=null)?o.rodTier:(o.hasRod?1:0); s.lakeDone=!!o.lakeDone; s.lakeSignSeen=!!o.lakeSignSeen; s.deepwoodsSeen=!!o.deepwoodsSeen; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.skySeen=!!o.skySeen; s.ruinsSeen=!!o.ruinsSeen; s.craterSeen=!!o.craterSeen; s.gardenSeen=!!o.gardenSeen; s.seaBossDone=!!o.seaBossDone; s.skyBossDone=!!o.skyBossDone; s.ruinsBossDone=!!o.ruinsBossDone; s.towerBest=o.tb||0; s.dexMaster=!!o.dexMaster; s.shinyCharm=!!o.shinyCharm; s.berries=o.berries||{}; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
+  s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.flySpots=new Set(o.flySpots||[]); s.hasFly=!!o.hasFly; s.mineSeen=!!o.mineSeen; s.hillSeen=!!o.hillSeen; s.pierSeen=!!o.pierSeen; s.frostSeen=!!o.frostSeen; s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.achClaimed=o.ac||[]; s.dailyLast=o.dl||null; s.dailyStreak=o.dst||0; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.lavaSeen=!!o.lavaSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.rodTier=(o.rodTier!=null)?o.rodTier:(o.hasRod?1:0); s.lakeDone=!!o.lakeDone; s.lakeSignSeen=!!o.lakeSignSeen; s.deepwoodsSeen=!!o.deepwoodsSeen; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.skySeen=!!o.skySeen; s.ruinsSeen=!!o.ruinsSeen; s.craterSeen=!!o.craterSeen; s.gardenSeen=!!o.gardenSeen; s.seaBossDone=!!o.seaBossDone; s.skyBossDone=!!o.skyBossDone; s.ruinsBossDone=!!o.ruinsBossDone; s.towerBest=o.tb||0; s.towerBestSet=o.tbs||0; s.towerSeason=o.tsn||{key:"",best:0}; s.towerRecords=o.trec||[]; s.dexMaster=!!o.dexMaster; s.shinyCharm=!!o.shinyCharm; s.berries=o.berries||{}; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
   s.hallOfFame=Array.isArray(o.hof)?o.hof:[]; s.trades=o.trades||{};
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
@@ -10694,7 +10808,7 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
   getCooldown:()=>encCooldown,
   getDB:()=>DB, dbReplace,   // 듀오 배틀 상태 + 벤치 교대. held_effect_test [5]가 듀오 상대의 지닌물건 풀을 검사한다.
   walkTo:(x,y)=>{ gamePath=bfsPath(G.pos.x,G.pos.y,x,y)||[]; if(gamePath.length&&Field.setDest)Field.setDest(x,y); pathStep(); return gamePath.length; },
-  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, terrainWalkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HOME_POS, HOME_AT, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS,
+  setField:()=>{}, getField:()=>"2d", Coach, currentGoal, updateGoal, hasLegendary, findTile, altarStage, WILD_FLOOR, region, GATE_ROWS, showPlace, fixJosa, flashHint, announceRegion, PLACARD_SKIP, PLACE_SUB, trainerDefeated, winBattle, faintMine, evolveScene, startDouble, dbRender, showDialog, advanceDialog, dialogActive, showMain, sailToIsle, sailToCoast, enterInterior, exitInterior, INTERIORS, GYM_AT, GUARD_TILES, walkable, terrainWalkable, tileAt, startMarshEncounter, startMineEncounter, startHillEncounter, startPierEncounter, startFrostEncounter, startHollowEncounter, startFallsEncounter, startFireflyEncounter, INTERIORS, ENC_POOLS, HABITAT_KO, fieldMusic, ROUTE_AT, startSkyEncounter, startRuinsEncounter, startCraterEncounter, startGardenEncounter, gardenPool, dayPhase, dayCycle, startSkyBoss, startSeaBoss, startRuinsBoss, HABITAT_KO, chooseSwitch, nurseHeal, hallService, tradeNPC, TRADES, ivTotal, ivBest, groundItemAt, GROUND_ITEMS, findHint, ENC_POOLS, recordHallOfFame, showHallOfFame, confusionSelfHit, wildHeld, tryRun, moveFx, statusMoveFx, doBatonPass, doPhaseOut, openSwitch, renderTrainerCard, critChance, critStage, applyItemEffect, foeMaybeSwitch, trainerMon, trainerNextAlive, matchupScore, bestEffAgainst, dispName, statusBlockReason, setStatusFields, dbStatus, blackout, markHeal, STARTPOS, HOME_POS, HOME_AT, HIDDEN, hiddenAt, applyStatus, doMove, serialize, deserialize, multiHits, SHOP, renderShop, openShop, saveGame, forestBadges, serMon, reviveMon, owWeather, setOwWeather, setWeather, drawWeatherFx, pickWild, startEncounter, REGION_WEATHER, OW_BATTLE_WEATHER, openExchange, exchangeBuy, renderExchange, PREMIUM, talkNPC, NPCS, openTower, towerMenu, towerRentalPick, towerRecords, towerBegin, startTowerBattle, towerWin, endTowerRun, towerPool, pickTowerTeam, towerRank, towerSeasonBest, towerRecordRun, TOWER_RANKS, pickupGroundItem, interact, flyList, flySpotLabel, renderWarp, openWarp, trainerSpr, trainerIntroSprite, battleIntroTrainer, openSlots, renderSlots, slotInfo, slotKey, setSlot, anySave, loadGame, fieldMoveScene, cutObstacle, pushBoulder, itemNeedsTarget, renderItemTarget, openBallPicker, renderBallPicker, rivalTeam, startTrainer, berryAt, berryRipe, harvestBerry, BERRY_TREES, QUESTS, questForGiver, handleQuestTalk, BALLS, ballBonus, statusCatchBonus, battleUseItem, bagPocket, ITEM_KO, startFishEncounter, ENC_POOLS, itemName, BAG_ITEMS,
   startHotSeat, pvpSelect, pvpRenderSelect, pvpPromptChoice, pvpChoose, pvpSwitchList, pvpResolve, pvpActive, pvpAlive, PVP_RENTAL, getPVP:()=>PVP,
   openTradeCode, tradeHome, tradeExportList, tradeShowCode, tradeImportUI, tradeCodeFor, parseTradeCode, qrModules, drawQR, qrcode,
   openAchievements, renderAchievements, claimAch, achDone, achStats, achClaimed, ACHIEVEMENTS,

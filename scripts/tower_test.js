@@ -34,7 +34,7 @@ let FAIL=false; const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)FA
   console.log("[3] 도전 시작 — 회복·연승0·전투 진입");
   const start=await p.evaluate(async()=>{ const S=window.SG,F=S.flow,G=S.G();
     G.champion=true; G.party.forEach(m=>m.hp=Math.floor(m.maxHp*0.3));   // 다친 상태로 시작
-    F.openTower();   // dialog accept → healParty + startTowerBattle
+    F.towerBegin("party");   // H5-A: 파티 모드 도전 시작(healParty + startTowerBattle)
     await new Promise(r=>setTimeout(r,600));   // transitionToBattle 스왑 대기
     return { run:!!G.towerRun, streak:G.towerStreak, inBattle:!!G.inBattle,
              isTower:!!(G.trainer&&G.trainer.tower), teamN:G.trainer?G.trainer.team.length:0,
