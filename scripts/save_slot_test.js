@@ -1,7 +1,7 @@
 // 리포트(저장 슬롯) 회귀 (유저: "포켓몬처럼 게임 저장/여러 플레이 진행할 수 있게 리포트 만들어줘").
 //
 // 예전: 저장 키가 하나뿐이라 플레이를 **하나만** 굴릴 수 있었다(새 게임 = 기존 기록 소멸).
-// 지금: 3칸. 새 게임/이어하기 둘 다 리포트 화면을 거치고, 저장은 현재 칸에만 쓰인다.
+// 지금: 6칸(H5-D 확장). 새 게임/이어하기 둘 다 리포트 화면을 거치고, 저장은 현재 칸에만 쓰인다.
 //
 // ⚠️ 이 프로젝트의 저장 원칙: **구세이브를 무효화하지 않는다** → 1번 칸은 기존 키를 그대로 쓴다.
 //    (이걸 어기면 이미 플레이 중인 사람의 기록이 사라진다.) 대조군으로 고정한다.
@@ -19,6 +19,19 @@ const { chromium } = require("playwright"); const path=require("path");
   const keys=await p.evaluate(()=>({ s1:window.SG.flow.slotKey(1), s2:window.SG.flow.slotKey(2), s3:window.SG.flow.slotKey(3) }));
   ok(keys.s1==="spiritGroveSave_v4", `1번 = 기존 키 (${keys.s1})`);
   ok(keys.s2!==keys.s1 && keys.s3!==keys.s1 && keys.s2!==keys.s3, `2·3번은 별도 키 (${keys.s2} / ${keys.s3})`);
+
+  console.log("\n[1b] H5-D 확장: 6칸 · 4~6번도 별개 키 + 실제 저장 왕복");
+  const ext=await p.evaluate(()=>{ const S=window.SG,F=S.flow;
+    const N=S.SAVE_SLOTS; const keys=[]; for(let n=1;n<=N;n++)keys.push(F.slotKey(n));
+    const uniq=new Set(keys).size===keys.length;
+    // 6번 칸에 저장 → 요약이 읽히고 1번을 안 건드린다
+    F.setSlot(6); const G=S.freshState(); G.party=[S.makeMon("gearclad",50)]; G.money=666; S.setG(G); F.saveGame();
+    const s6=F.slotInfo(6);
+    return { N, uniq, keptClamp:F.slotKey(6)===keys[5], s6empty:s6.empty, s6money:s6.money }; });
+  ok(ext.N===6, `저장 슬롯이 6칸이다 (${ext.N})`);
+  ok(ext.uniq, "1~6번 모두 서로 다른 저장 키를 쓴다");
+  ok(!ext.s6empty && ext.s6money===666, `6번 칸에 저장·요약이 정상 왕복된다 (${ext.s6money})`);
+  await p.evaluate(()=>{ try{ localStorage.removeItem(window.SG.flow.slotKey(6)); }catch(e){} window.SG.flow.setSlot(1); });
 
   console.log("\n[2] 서로 다른 칸에 서로 다른 플레이가 남는다");
   const mk=async(slot,lv,money)=>p.evaluate(([n,l,m])=>{ const S=window.SG;
@@ -55,8 +68,10 @@ const { chromium } = require("playwright"); const path=require("path");
       txt:rows.map(r=>(r.querySelector(".nm")||{}).textContent||""),
       btns:rows.map(r=>(r.querySelector(".pick")||{}).textContent||"") }; });
   ok(ui.open, "리포트 오버레이가 열린다");
-  ok(ui.rows===3, `칸이 3개다 (${ui.rows})`);
-  ok(ui.btns.every(t=>/이어하기/.test(t)), `쓰여 있는 칸은 '이어하기' (${ui.btns.join(",")})`);
+  ok(ui.rows===6, `칸이 6개다 (${ui.rows})`);   // H5-D 확장
+  // 앞 3칸은 기록이 있어 '이어하기', 뒤 3칸은 비어 '—'
+  ok(ui.btns.slice(0,3).every(t=>/이어하기/.test(t)), `쓰여 있는 칸은 '이어하기' (${ui.btns.slice(0,3).join(",")})`);
+  ok(ui.btns.slice(3).every(t=>/—|-/.test(t)), `빈 칸은 이어하기 불가 표시 (${ui.btns.slice(3).join(",")})`);
   // ⚠️ 캐릭터 이름 필드는 CHARS[].nm 이다(name 아님) — 잘못 짚으면 카드에 "undefined"가 뜬다(실제로 겪음)
   ok(ui.txt.every(t=>!/undefined/.test(t)), `카드에 undefined가 없다 ("${ui.txt[0]}")`);
 
