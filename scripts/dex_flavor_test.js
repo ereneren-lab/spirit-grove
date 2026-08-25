@@ -55,7 +55,7 @@ const { chromium } = require("playwright"); const path=require("path");
     return out;
   });
 
-  ok(r.dex===98, `DEX 98종 (${r.dex})`);
+  ok(r.dex===100, `DEX 100종 (${r.dex})`);
   ok(r.missing.length===0, `FLAVOR가 전 종 커버 — 폴백 분류 0건 (누락 ${r.missing.length}${r.missing.length?": "+r.missing.slice(0,5):""})`);
   ok(r.shrink.length===0, `진화하면 키·무게가 커진다 (역행 ${r.shrink.length}건${r.shrink.length?": "+r.shrink.slice(0,3):""})`);
   // 집게왕은 섬·낚시(대물) 풀 소속(해안 아님). 바다 전용이라 오버월드 표기가 붙으면 안 된다.

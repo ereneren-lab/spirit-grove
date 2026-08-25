@@ -108,6 +108,10 @@ const DEX=[
   {id:"voidpanther",name:"심연표범",em:"🐆",type:"dark",tier:3,base:{hp:76,atk:30,def:20,spd:30,spa:14,spDef:18},moves:["crunch","suckerpunch","nightburst","darkpulse"],learn:[[40,"swordsdance"]]},
   {id:"coglet",name:"톱니벌레",em:"⚙️",type:"steel",tier:1,base:{hp:50,atk:15,def:20,spd:10,spa:9,spDef:14},moves:["tackle","metalclaw"],learn:[[14,"bulletpunch"],[22,"mirrorshot"]],evolveTo:"gearclad",evolveLv:30},
   {id:"gearclad",name:"강철갑충",em:"🛡️",type:"steel",type2:"bug",tier:3,base:{hp:80,atk:26,def:34,spd:14,spa:18,spDef:22},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[40,"harden"]]},
+  /* 벌레(bug) 프라이머리 라인 — 기존엔 bug가 gearclad의 2차 타입으로만 존재했다(순수/1차 bug 종 0).
+     숲·정원 계열에 나비 라인을 얹어 타입 커버를 채운다. 아트는 SVG 플레이스홀더(매니페스트 미등록 → creatureSVG 폴백). */
+  {id:"sporelet",name:"홀씨벌레",em:"🐛",type:"bug",tier:1,base:{hp:45,atk:14,def:16,spd:15,spa:18,spDef:14},moves:["tackle","bugbite"],learn:[[8,"absorb"],[12,"bugbuzz"],[16,"gust"]],evolveTo:"gustmoth",evolveLv:18},
+  {id:"gustmoth",name:"숲바람나방",em:"🦋",type:"bug",type2:"flying",tier:3,base:{hp:70,atk:22,def:22,spd:30,spa:34,spDef:26},moves:["bugbite","bugbuzz","gust","absorb"],learn:[[30,"peck"]]},
 ];
 const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);
