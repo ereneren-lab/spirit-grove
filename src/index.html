@@ -2205,9 +2205,27 @@ const _TSPR_OUT=["#5a6f8a","#8a5a5a","#4f7a5a","#6a5a8a","#8a6a3a","#3a6a8a","#7
 const _TSPR_HAIR=["#3a2f24","#2a2a33","#4a3320","#5a3a2a","#2a3a3a","#3f2a3a"];
 const _TSPR_SKIN=["#e8c39a","#e0bd96","#d8a878","#f0d0b0","#c99a6e"];
 const _TSPR_HAT=[null,"cap","hood","straw"];
+/* 🎨 배틀·타일에만 등장(오버월드 NPC 아님)해서 NPC_ARCH를 못 받고, 손튜닝 spr도 없어 **해시 절차적 랜덤 형체**로
+   나오던 트레이너 → 여기서 성격에 맞는 픽셀 시트를 배정한다(제단 수호자·지역 가드·설산 주인).
+   📌 관장 1~4·군주 X는 **손튜닝 spr**(밀짚모자 풀관장·후드+지팡이 주술사·군주 오라 등)이 이미 개성 있어 그대로 둔다
+      — 여기 넣으면 t.spr이 먼저 반환돼 어차피 적용도 안 된다(개성 있는 손그림 > 재활용 시트).
+   ⚠️ 절차적 색(테마 팔레트)은 지우지 않고 sheet만 얹는다 — 시트 디코드 전이면 그 색으로 폴백(회색 인형 방지).
+   ⚠️ 시트 이름은 manifest.json의 npc_sheet에 실재하는 것만 쓴다(없으면 npcSheet가 null→절차적 폴백). */
+const TRAINER_ARCH={
+  "5":"guard", "6":"guard_f",                                // 제단 수호자 여명·황혼
+  "h":"miner", "r":"miner", "u":"miner",                     // 유적 수호자·동굴 탐사가·용암 광부
+  "v":"scholar_f", "y":"falconer",                           // 늪지 약초꾼 · 폭풍지기(창공)
+  "SNOW":"snowMaster" };                                     // 설산의 주인 — 전용 시트 실재
 function trainerSpr(key){
-  const t=(typeof TRAINERS!=="undefined")?TRAINERS[key]:null; if(!t)return null;
+  const t=(typeof TRAINERS!=="undefined")?TRAINERS[key]:null;
+  // ⚠️ TRAINERS에 없는 배틀키(예: 쌍둥이 DUO — 더블배틀은 NPC의 duoTeam으로 돌아 TRAINERS 항목이 없다)도
+  //    오버월드 NPC 스프라이트를 그대로 인트로에 세운다. 없으면 null(인트로 스프라이트 생략).
+  if(!t){ if(typeof NPCS!=="undefined"){ const npc=NPCS.find(n=>n&&n.battleKey===key&&n.spr); if(npc&&npc.spr)return npc.spr; } return null; }
   if(t.spr)return t.spr; if(t._spr)return t._spr;
+  // ⚠️ 배틀 인트로가 '옛날 절차적 형체'로 나오던 원인: 오버월드 NPC는 NPC_ARCH로 픽셀 시트(spr.sheet)를
+  //    받는데(4760), 배틀은 여기서 시트 없는 절차적 스펙을 새로 만들어 썼다 → 같은 인물이 배틀에서만 블록형.
+  //    → 같은 battleKey의 오버월드 NPC 스펙(시트 포함)을 그대로 재사용해 오버월드와 일치시킨다.
+  if(typeof NPCS!=="undefined"){ const npc=NPCS.find(n=>n&&n.battleKey===key&&n.spr); if(npc&&npc.spr){ t._spr=npc.spr; return npc.spr; } }
   let hsh=0; const str=key+"|"+(t.name||"");
   for(let i=0;i<str.length;i++)hsh=(hsh*31+str.charCodeAt(i))>>>0;
   const league="ijklq".indexOf(key)>=0;
@@ -2224,6 +2242,8 @@ function trainerSpr(key){
         skin:_TSPR_SKIN[(hsh>>6)%_TSPR_SKIN.length], hair:_TSPR_HAIR[(hsh>>9)%_TSPR_HAIR.length],
         hatc:_TSPR_OUT[(hsh>>12)%_TSPR_OUT.length], boots:"#3a3548",
         spiky:!!((hsh>>15)&1), boss:league||!!t.boss };
+  // 픽셀 시트가 배정된 트레이너면 절차적 색은 폴백으로 남기고 sheet를 얹는다(위 주석 참고).
+  if(typeof TRAINER_ARCH!=="undefined" && TRAINER_ARCH[key] && !spr.sheet) spr.sheet=TRAINER_ARCH[key];
   t._spr=spr; return spr;
 }
 const GUARD_TILES="789abcdef0ijklqruvyh*?";   // y = 뇌명 봉우리 폭풍지기, h = 유적 수호자, * = 분화구 화산 감시자
