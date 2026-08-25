@@ -1391,7 +1391,7 @@ const HELD_ITEMS={
 TYPE_LIST.forEach(t=>{ HELD_ITEMS["charm_"+t]={ko:TYPE_KO[t]+"부적",em:TYPE_ICON[t]||"🔮",desc:TYPE_KO[t]+" 타입 기술 위력 +20%",boost:t}; });
 // 종별 특성 지정. 없으면 DEFAULT_ABILITY[type] → "guts" 폴백이라
 // 지정을 안 하면 같은 타입 정령이 죄다 같은 특성이 된다. 라인마다 흩뿌릴 것.
-const ABILITY_OVERRIDE={magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate",emberfly:"flamebody",pyrmoth:"flamebody",cindercat:"flamebody",lavakit:"flamebody",boulderin:"roughskin",crablord:"roughskin",hedgemoss:"roughskin",otterwave:"swiftswim",sharkfin:"swiftswim",frostfish:"swiftswim",nipling:"swiftswim",seedbean:"chlorophyll",sproutcat:"chlorophyll",palmore:"chlorophyll",leafwyrm:"chlorophyll",thunderowl:"insomnia",lunarmoth:"insomnia",swampfrog:"immunity",burrowmouse:"immunity",tidalore:"waterveil",shellow:"waterveil",stormhawk:"sniper",sandwhirl:"sniper",sprigfawn:"naturalcure",bunnyhop:"naturalcure",dewdrop:"naturalcure",tigerflame:"hugepower",magmadon:"hugepower",
+const ABILITY_OVERRIDE={sporelet:"sturdy",gustmoth:"levitate",magmahound:"thickfat",tidewhale:"thickfat",riverdrake:"intimidate",blazelion:"intimidate",krakentide:"intimidate",grovespirit:"thickfat",shadowlord:"intimidate",dawnguard:"sturdy",voltrat:"static",harelord:"guts",jellure:"levitate",emberfly:"flamebody",pyrmoth:"flamebody",cindercat:"flamebody",lavakit:"flamebody",boulderin:"roughskin",crablord:"roughskin",hedgemoss:"roughskin",otterwave:"swiftswim",sharkfin:"swiftswim",frostfish:"swiftswim",nipling:"swiftswim",seedbean:"chlorophyll",sproutcat:"chlorophyll",palmore:"chlorophyll",leafwyrm:"chlorophyll",thunderowl:"insomnia",lunarmoth:"insomnia",swampfrog:"immunity",burrowmouse:"immunity",tidalore:"waterveil",shellow:"waterveil",stormhawk:"sniper",sandwhirl:"sniper",sprigfawn:"naturalcure",bunnyhop:"naturalcure",dewdrop:"naturalcure",tigerflame:"hugepower",magmadon:"hugepower",
   // 2026-08-20 갭 B: 미배정 47종 특성 지정(엔진 기구현 21종 풀 안에서 종 컨셉·역할별 분산 — ability_expand_test 편중 상한 13종 준수)
   foxfire:"blaze",emberwolf:"intimidate",cindercub:"blaze",pyrewolf:"intimidate",emberdrake:"flamebody",emberlix:"flamebody",
   puddlet:"torrent",riverine:"swiftswim",gullian:"swiftswim",glimmertide:"swiftswim",moonytide:"naturalcure",aqualord:"intimidate",
@@ -1820,6 +1820,10 @@ const DEX=[
   {id:"voidpanther",name:"심연표범",em:"🐆",type:"dark",tier:3,base:{hp:76,atk:30,def:20,spd:30,spa:14,spDef:18},moves:["crunch","suckerpunch","nightburst","darkpulse"],learn:[[40,"swordsdance"]]},
   {id:"coglet",name:"톱니벌레",em:"⚙️",type:"steel",tier:1,base:{hp:50,atk:15,def:20,spd:10,spa:9,spDef:14},moves:["tackle","metalclaw"],learn:[[14,"bulletpunch"],[22,"mirrorshot"]],evolveTo:"gearclad",evolveLv:30},
   {id:"gearclad",name:"강철갑충",em:"🛡️",type:"steel",type2:"bug",tier:3,base:{hp:80,atk:26,def:34,spd:14,spa:18,spDef:22},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[40,"harden"]]},
+  /* 벌레(bug) 프라이머리 라인 — 기존엔 bug가 gearclad의 2차 타입으로만 존재했다(순수/1차 bug 종 0).
+     숲·정원 계열에 나비 라인을 얹어 타입 커버를 채운다. 아트는 SVG 플레이스홀더(매니페스트 미등록 → creatureSVG 폴백). */
+  {id:"sporelet",name:"홀씨벌레",em:"🐛",type:"bug",tier:1,base:{hp:45,atk:14,def:16,spd:15,spa:18,spDef:14},moves:["tackle","bugbite"],learn:[[8,"absorb"],[12,"bugbuzz"],[16,"gust"]],evolveTo:"gustmoth",evolveLv:18},
+  {id:"gustmoth",name:"숲바람나방",em:"🦋",type:"bug",type2:"flying",tier:3,base:{hp:70,atk:22,def:22,spd:30,spa:34,spDef:26},moves:["bugbite","bugbuzz","gust","absorb"],learn:[[30,"peck"]]},
 ];
 const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);
@@ -6962,13 +6966,13 @@ const ENC_POOLS={
   pier:["shellow","otterwave","nipling","dewdrop","puddlet","jellure"],                 // 잔교 = 물가
   frostpass:["frostpup","iceling","frostfish","snowl","sharkfin","pebblet"],            // 고갯길 = 얼음
   fireflyway:["glowfly","dustbunny","bunnyhop","sparkmouse","sprigfawn","shellow"],   // 오솔길 = 초반 소형종
-  mosshollow:["pixibud","mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing"],     // 골짜기 = 이끼·숲
+  mosshollow:["pixibud","mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing","sporelet"],     // 골짜기 = 이끼·숲 (+홀씨벌레)
   fallspath:["riverine","gullian","sandwhirl","tidewhale","pebblet","dewdrop"],         // 벼랑길 = 폭포(물·바위·비행)
    // 언덕 오솔길 = 노말·풀·비행(전부 실존 종)   // 광산 = 바위·땅 계열(전부 실존 종)
   
   ruins:["pummelpup","terrapin","thumplord","lumbeast","wyverna","pebblet","boulderin","burrowmouse","mossback","hedgemoss","sandwhirl"],
   crater:["foxfire","emberwolf","blazelion","cindercat","cindercub","pyrewolf","emberfly","pyrmoth","lavakit","magmadon"],
-  garden:["psykit","glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop"],
+  garden:["psykit","glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop","sporelet","gustmoth"],
   isle:["stormhawk","tigerflame","magmahound","krakentide","tidewhale","harelord","emberdrake","grovespirit","palmore","emberlix","crablord"],
   coast:["shellow","otterwave","frostfish","tidewhale","racoonmon","bunnyhop","stormhawk","nipling","gullian","jellure"],
   surf:["shellow","otterwave","frostfish","swampfrog","tidewhale","nipling","jellure","gullian"],
@@ -10154,6 +10158,8 @@ const FLAVOR={
   aqualord:{cat:"대양군주",h:5.4,w:980,t:"몸을 뒤척이면 해류의 방향이 바뀐다고 한다. 바다의 균형을 지키는 오랜 존재."},
   dawnwyrm:{cat:"새벽용",h:6.0,w:900,t:"첫 햇살을 타고 하늘 끝에서 내려온다 전해진다. 그 날갯짓이 새 시대를 연다고 한다."},
   /* H3-9 네이티브 라인 12종 — 진화 시 키·무게가 커진다(dex_flavor_test 불변식). */
+  sporelet:{cat:"홀씨벌레",h:0.3,w:3,t:"등에 돋은 이끼 홀씨로 숲 냄새를 풍긴다. 위험하면 홀씨를 터뜨려 잠깐 몸을 숨긴다."},
+  gustmoth:{cat:"숲바람나방",h:1.1,w:12,t:"날갯짓 한 번에 숲의 잔바람을 일으킨다. 밤이면 달빛을 받아 인분이 은은하게 빛난다."},
   pummelpup:{cat:"권술강아지",h:0.5,w:9,t:"작은 앞발에 붕대를 감고 하루 종일 허공에 주먹을 지른다. 겁 없이 큰 상대에게도 달려든다."},
   taekwarrior:{cat:"태권무사",h:1.6,w:62,t:"낡은 검은 띠를 두르고 도장을 지킨다. 한 발차기에 바위가 갈라진다 전해진다."},
   psykit:{cat:"요술여우",h:0.4,w:6,t:"이마의 세 번째 눈으로 상대의 마음을 살짝 엿본다. 심심하면 작은 환영으로 장난친다."},
