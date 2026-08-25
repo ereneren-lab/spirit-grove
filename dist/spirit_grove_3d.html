@@ -10318,7 +10318,7 @@ function renderBag(){ const body=$("bagBody"); body.innerHTML="";
   let items=(G.inBattle?BAG_ITEMS.filter(it=>it.use&&it.where!=="map"):BAG_ITEMS.filter(it=>!it.use||it.where!=="battle")).filter(it=>bagPocket(it)===G._bagTab);
   const _ownedN=items.filter(it=>(G.items[it.key]||0)>0).length, _hiddenN=items.length-_ownedN;
   if(!G._bagShowAll)items=items.filter(it=>(G.items[it.key]||0)>0);
-  if(_hiddenN>0){ const tg=document.createElement("button"); tg.className="bag-tab"; tg.style.cssText="margin:0 0 6px;font-size:11px";
+  if(_hiddenN>0){ const tg=document.createElement("button"); tg.className="bag-tab"; tg.style.cssText="flex:0 0 auto;margin:0 0 6px;font-size:11px";   /* ⚠️ .bag-tab는 flex:1이라 세로 flex 컨테이너(세로모드 가방)의 직계일 때 425px로 늘어난다 → 안 늘어나게 고정 */
     tg.textContent=G._bagShowAll?`가진 것만 보기`:`안 가진 것도 보기 (${_hiddenN})`;
     tg.addEventListener("click",()=>{ Audio.sfx("blip"); G._bagShowAll=!G._bagShowAll; renderBag(); }); body.appendChild(tg); }
   if(!items.length){ const _e=document.createElement("div"); _e.style.cssText="text-align:center;color:var(--muted);padding:22px 8px;font-size:12px"; _e.textContent="이 주머니는 비어있다."; body.appendChild(_e); }
