@@ -1825,7 +1825,7 @@ const STARTPOS={x:8,y:48};
 let G=null;
 function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box:[],active:0,caught:new Set(),seen:new Set(),shinyDex:new Set(),
   items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},lastHeal:null,repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),flySpots:new Set(),hasFly:false,mineSeen:false,hillSeen:false,pierSeen:false,frostSeen:false,seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
-  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],achClaimed:[],dailyLast:null,dailyStreak:0,shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,rules:{hardcore:false,nuzlocke:false},ngPlus:0,graveyard:[],hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,rodTier:0,lakeDone:false,lakeSignSeen:false,deepwoodsSeen:false,snowSeen:false,snowDone:false,marshSeen:false,skySeen:false,ruinsSeen:false,craterSeen:false,gardenSeen:false,seaBossDone:false,skyBossDone:false,ruinsBossDone:false,towerBest:0,towerBestSet:0,towerSeason:{key:"",best:0},towerRecords:[],towerStreak:0,towerRun:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,berries:{},heldStock:{oranberry:1,leftovers:1},wild:false,weather:null}; }
+  inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],achClaimed:[],dailyLast:null,dailyStreak:0,shadowDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,rules:{hardcore:false,nuzlocke:false},ngPlus:0,graveyard:[],hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,rodTier:0,lakeDone:false,lakeSignSeen:false,deepwoodsSeen:false,snowSeen:false,snowDone:false,marshSeen:false,skySeen:false,ruinsSeen:false,craterSeen:false,gardenSeen:false,seaBossDone:false,skyBossDone:false,ruinsBossDone:false,towerBest:0,towerBestSet:0,towerSeason:{key:"",best:0},towerRecords:[],towerStreak:0,towerRun:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,berries:{},heldStock:{oranberry:1,leftovers:1},wild:false,weather:null,_uidSeq:0,teamPresets:[]}; }
 function activeMon(){return G.party[G.active];}
 function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
 function updateDexPill(){$("dexPill").textContent=`📖 ${G.caught.size}/${DEX.length}${G.dexMaster?" 🏆":""}`;}
@@ -7649,6 +7649,27 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
       act.appendChild(mkA("해제","",n===0,()=>{ _boxSel.clear(); renderPC(); }));
       body.appendChild(act); }
   }
+  if(pcTab==="party"){
+    // 파티 프리셋 — 현재 파티를 이름 붙여 저장 / 원터치 편성(타워·PvP·시련·챌린지용 팀 전환)
+    const pw=document.createElement("div"); pw.style.cssText="margin-bottom:9px;padding:8px 9px;border:1px solid rgba(127,209,174,.22);border-radius:11px;background:rgba(127,209,174,.05)";
+    const head=document.createElement("div"); head.style.cssText="display:flex;align-items:center;gap:6px;margin-bottom:6px";
+    head.innerHTML=`<span style="font-size:12px;font-weight:700;flex:1">💾 팀 프리셋</span>`;
+    const saveBtn=document.createElement("button"); saveBtn.textContent="＋ 현재 파티 저장"; saveBtn.style.cssText="font-size:11px;padding:4px 10px;border-radius:11px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.18);background:rgba(127,209,174,.16)";
+    saveBtn.addEventListener("click",()=>{ Audio.sfx&&Audio.sfx("blip"); const nm=prompt("팀 이름 (최대 12자)",""); if(nm===null)return; if(savePreset(nm))renderPC(); });
+    head.appendChild(saveBtn); pw.appendChild(head);
+    const list=G.teamPresets||[];
+    if(!list.length){ const e=document.createElement("div"); e.style.cssText="font-size:11px;color:var(--muted)"; e.textContent="저장한 팀이 없어. 지금 파티를 저장해 두면 한 번에 편성할 수 있어."; pw.appendChild(e); }
+    else { const rows=document.createElement("div"); rows.style.cssText="display:flex;flex-direction:column;gap:5px";
+      list.forEach((pre,i)=>{ const row=document.createElement("div"); row.style.cssText="display:flex;align-items:center;gap:6px;font-size:12px";
+        const info=document.createElement("button"); info.style.cssText="flex:1;text-align:left;font-size:12px;padding:5px 9px;border-radius:9px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05)";
+        info.innerHTML=`<b>${pre.name}</b> <span style="font-size:10px;color:var(--muted)">${(pre.team||[]).join(" · ")}</span>`;
+        info.addEventListener("click",()=>{ Audio.sfx&&Audio.sfx("blip"); loadPreset(i); });
+        const del=document.createElement("button"); del.textContent="🗑"; del.style.cssText="font-size:12px;padding:5px 8px;border-radius:9px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.15);background:rgba(240,120,120,.12)";
+        del.addEventListener("click",()=>{ Audio.sfx&&Audio.sfx("blip"); if(confirm(`프리셋 "${pre.name}"을(를) 지울까?`))deletePreset(i); });
+        row.appendChild(info); row.appendChild(del); rows.appendChild(row); });
+      pw.appendChild(rows); }
+    body.appendChild(pw);
+  }
   if(!disp.length){ const e=document.createElement("div"); e.style.cssText="color:var(--muted);text-align:center;padding:30px;font-size:13px"; e.textContent=(pcTab==="party"?"파티가 비어있다":(_boxSearch?"조건에 맞는 정령이 없어":"보관함이 비어있다")); body.appendChild(e); return; }
   const selMode=(pcTab==="box"&&_boxSelMode);
   disp.forEach(({m,i})=>{ recalc(m); const sel=selMode&&_boxSel.has(m); const card=document.createElement("div"); card.className="mon-card"+(pcTab==="party"&&i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"")+(sel?" active-mon":"");
@@ -7695,6 +7716,29 @@ function boxReleaseSel(){ const chosen=G.box.filter(m=>_boxSel.has(m)); if(!chos
   if(!confirm(`선택한 ${chosen.length}마리를 모두 방생할까? 되돌릴 수 없어.`))return;
   for(const m of chosen){ const idx=G.box.indexOf(m); if(idx>=0)G.box.splice(idx,1); _boxSel.delete(m); }
   flashHint(`🕊️ ${chosen.length}마리를 풀어주었다`); renderPC(); updateDexPill(); saveGame(); }
+
+// ===== 파티 프리셋(팀 저장/불러오기) =====
+// 정령마다 영속 uid를 부여하고(프리셋은 uid 목록으로 저장), 불러오면 파티+박스에서 그 정령들을 찾아
+// 파티로 끌어온다. 정령 손실 없음(파티+박스 합 보존) · 방생/교환으로 사라진 정령은 조용히 건너뛴다.
+const MAX_PRESETS=8;
+function ensureUid(m){ if(m&&!m.uid){ G._uidSeq=(G._uidSeq||0)+1; m.uid="m"+G._uidSeq; } return m&&m.uid; }
+function savePreset(name){ const party=(G.party||[]).filter(m=>m&&!m.isEgg); if(!party.length){ toast("저장할 파티가 없어"); return false; }
+  party.forEach(ensureUid); G.teamPresets=G.teamPresets||[];
+  const nm=(name||"").trim()||("팀 "+(G.teamPresets.length+1));
+  G.teamPresets.unshift({name:nm.slice(0,12), uids:party.map(m=>m.uid), team:party.map(m=>m.nick||m.name).slice(0,6)});
+  if(G.teamPresets.length>MAX_PRESETS)G.teamPresets=G.teamPresets.slice(0,MAX_PRESETS);
+  flashHint(`💾 팀 "${nm}" 저장`); saveGame(); return true; }
+function loadPreset(i){ const pre=(G.teamPresets||[])[i]; if(!pre)return;
+  const all=[...(G.party||[]),...(G.box||[])].filter(Boolean);
+  const byUid=new Map(); all.forEach(m=>{ if(m.uid)byUid.set(m.uid,m); });
+  const newParty=pre.uids.map(u=>byUid.get(u)).filter(Boolean).slice(0,6);
+  if(!newParty.length){ toast("이 팀의 정령을 찾을 수 없어(방생·교환됨)"); return; }
+  const rest=all.filter(m=>newParty.indexOf(m)<0);          // 나머지(알 포함)는 전부 박스로
+  G.party=newParty; G.box=rest; G.active=0;
+  const missing=pre.uids.length-newParty.length;
+  flashHint(`📥 팀 "${pre.name}" 편성`+(missing>0?` (${missing}마리는 사라져 제외)`:""));
+  renderPC(); updateDexPill(); saveGame(); }
+function deletePreset(i){ if(!G.teamPresets)return; G.teamPresets.splice(i,1); saveGame(); renderPC(); }
 
 function ivTotal(m){ if(!m.ivs)return 0; return (m.ivs.hp||0)+(m.ivs.atk||0)+(m.ivs.def||0)+(m.ivs.spa||0)+(m.ivs.spDef||0)+(m.ivs.spd||0); }
 function ivRating(m){ const t=ivTotal(m); return t>=168?"최상급 ✨":t>=140?"우수":t>=100?"양호":"평범"; }
@@ -7865,16 +7909,16 @@ function serialize(){ return {v:4, ts:_nowMs(), pe:G.playerEmoji, ps:G.styleIdx|
   box:G.box.map(serMon),
   daycare:G.daycare?{a:serMon(G.daycare.a),b:serMon(G.daycare.b),steps:G.daycare.steps||0,eggReady:!!G.daycare.eggReady}:null,
   active:G.active, hof:G.hallOfFame||[], trades:G.trades||{}, caught:[...G.caught], seen:[...G.seen], sdx:[...(G.shinyDex||[])], items:G.items, money:G.money,
-  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, rl:G.rules||{hardcore:false,nuzlocke:false}, ngp:G.ngPlus||0, grave:G.graveyard||[], hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, tbs:G.towerBestSet||0, tsn:G.towerSeason||{key:"",best:0}, trec:G.towerRecords||[], dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0,uf:CONFIG.uiFont||"m",cb:CONFIG.colorblind?1:0,aa:CONFIG.autoAdvance?1:0,km:CONFIG.keymap||null,on:CONFIG.online?1:0} }; }
-function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp,tox:m._tox||0}; }
+  pos:(G.indoor&&_owBackup)?{x:_owBackup.pos.x,y:_owBackup.pos.y}:G.pos, lh:G.lastHeal||null, repel:G.repel||0, defeated:[...G.defeated], rematchWanted:G.rematchWanted?[...G.rematchWanted]:[], campfires:G.campfires?[...G.campfires]:[], flySpots:G.flySpots?[...G.flySpots]:[], hasFly:!!G.hasFly, mineSeen:!!G.mineSeen, hillSeen:!!G.hillSeen, pierSeen:!!G.pierSeen, frostSeen:!!G.frostSeen, seenTiles:G.seenTiles?[...G.seenTiles]:[], trail:G.trail?[...G.trail]:[], quests:G.quests||{}, questFlags:G.questFlags||{}, badge:G.badge, badges:G.badges||[], found:G.found||[], dexClaimed:G.dexClaimed||[], ac:G.achClaimed||[], dl:G.dailyLast||null, dst:G.dailyStreak||0, shadowDone:!!G.shadowDone, dawnDone:!!G.dawnDone, coastSeen:!!G.coastSeen, lavaSeen:!!G.lavaSeen, hasRod:!!G.hasRod, isleSeen:!!G.isleSeen, shrineSeen:!!G.shrineSeen, legendDone:!!G.legendDone, leagueSeen:!!G.leagueSeen, champion:!!G.champion, rl:G.rules||{hardcore:false,nuzlocke:false}, ngp:G.ngPlus||0, grave:G.graveyard||[], hasCut:!!G.hasCut, hasSurf:!!G.hasSurf, hasStrength:!!G.hasStrength, rodTier:G.rodTier||0, lakeDone:!!G.lakeDone, lakeSignSeen:!!G.lakeSignSeen, deepwoodsSeen:!!G.deepwoodsSeen, snowSeen:!!G.snowSeen, snowDone:!!G.snowDone, marshSeen:!!G.marshSeen, skySeen:!!G.skySeen, ruinsSeen:!!G.ruinsSeen, craterSeen:!!G.craterSeen, gardenSeen:!!G.gardenSeen, seaBossDone:!!G.seaBossDone, skyBossDone:!!G.skyBossDone, ruinsBossDone:!!G.ruinsBossDone, tb:G.towerBest||0, tbs:G.towerBestSet||0, tsn:G.towerSeason||{key:"",best:0}, trec:G.towerRecords||[], dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm, berries:G.berries||{}, running:!!G.running, playSec:G.playSec||0, heldStock:G.heldStock||{}, usq:G._uidSeq||0, tpre:G.teamPresets||[], cfg:{d:CONFIG.difficulty,t:CONFIG.textSpeed,v:CONFIG.volume,m:CONFIG.reduceMotion?1:0,f:CONFIG.follower,bt:CONFIG.battleText,gm:CONFIG.gridMove?1:0,gmini:CONFIG.goalMini?1:0,uf:CONFIG.uiFont||"m",cb:CONFIG.colorblind?1:0,aa:CONFIG.autoAdvance?1:0,km:CONFIG.keymap||null,on:CONFIG.online?1:0} }; }
+function serMon(m){ if(!m)return null; if(m.isEgg)return {egg:1,sp:m.species,hatch:m.hatch,ivI:m.ivInherit,natI:m.natureInherit,mvI:m.moveInherit}; return {id:m.id,lv:m.level,xp:m.xp,hp:m.hp,status:m.status,nick:m.nick,nature:m.nature,shiny:m.shiny,held:m.held,friend:m.friendship,iv:m.ivs,ev:m.evs,gen:m.gender,mv:m.moves,pp:m.pp,tox:m._tox||0,uid:m.uid}; }
 function reviveMon(p){ if(!p)return null; if(p.egg)return {isEgg:true,species:p.sp,hatch:p.hatch||10,ivInherit:p.ivI,natureInherit:p.natI,moveInherit:p.mvI||[],id:p.sp,name:"알",em:"🥚",level:1,hp:1,maxHp:1,moves:[],pp:{},stages:newStages()}; const m=makeMon(p.id,p.lv); m.xp=p.xp||0; if(p.nature)m.nature=p.nature; m.shiny=!!p.shiny; m.held=p.held||null; m.friendship=p.friend||0; m.ivs=p.iv||{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15}; m.evs=p.ev||{hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; if(p.gen)m.gender=p.gen; if(Array.isArray(p.mv)&&p.mv.length){ m.moves=p.mv.slice(0,4); m.pp={}; for(const k of m.moves){ m.pp[k]=(p.pp&&p.pp[k]!=null)?p.pp[k]:(MOVES[k]?MOVES[k].pp:0); } }   // 커스텀 기술셋/PP 복원(구세이브는 makeMon 기본값 유지)
-  recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; m._tox=p.tox||0; if(p.nick)m.nick=p.nick; return m; }
+  recalc(m); m.hp=clamp(p.hp!=null?p.hp:m.maxHp,0,m.maxHp); m.status=p.status||null; m._tox=p.tox||0; if(p.nick)m.nick=p.nick; if(p.uid)m.uid=p.uid; return m; }
 function deserialize(o){ if(!o||o.v!==4)return false; const s=freshState();
   s.playerEmoji=o.pe||"🧑‍🔬"; s.styleIdx=o.ps||0; s.active=o.active||0;
   s.items=Object.assign({ball:0,greatball:0,potion:0,revive:0,antidote:0,hyperpotion:0,repel:0,candy:0,xatk:0,xdef:0,xspd:0},o.items||{});
   s.money=o.money!=null?o.money:600; s.pos=o.pos||{x:STARTPOS.x,y:STARTPOS.y}; s.lastHeal=o.lh||null; s.repel=o.repel||0;   // 구세이브는 null → blackout이 STARTPOS로 폴백
   s.caught=new Set(o.caught||[]); s.seen=new Set(o.seen||[]); s.shinyDex=new Set(o.sdx||[]); s.defeated=new Set(o.defeated||[]); s.rematchWanted=new Set(o.rematchWanted||[]); s.campfires=new Set(o.campfires||[]); s.flySpots=new Set(o.flySpots||[]); s.hasFly=!!o.hasFly; s.mineSeen=!!o.mineSeen; s.hillSeen=!!o.hillSeen; s.pierSeen=!!o.pierSeen; s.frostSeen=!!o.frostSeen; s.seenTiles=new Set(o.seenTiles||[]); s.trail=new Set(o.trail||[]); s.badge=!!o.badge; s.badges=o.badges||[]; s.quests=o.quests||{}; s.questFlags=o.questFlags||{}; s.found=o.found||[]; s.dexClaimed=o.dexClaimed||[]; s.achClaimed=o.ac||[]; s.dailyLast=o.dl||null; s.dailyStreak=o.dst||0; s.shadowDone=!!o.shadowDone; s.dawnDone=!!o.dawnDone; s.coastSeen=!!o.coastSeen; s.lavaSeen=!!o.lavaSeen; s.hasRod=!!o.hasRod; s.isleSeen=!!o.isleSeen; s.shrineSeen=!!o.shrineSeen; s.legendDone=!!o.legendDone; s.leagueSeen=!!o.leagueSeen; s.champion=!!o.champion; s.rules=o.rl||{hardcore:false,nuzlocke:false}; s.ngPlus=o.ngp||0; s.graveyard=o.grave||[]; s.hasCut=!!o.hasCut; s.hasSurf=!!o.hasSurf; s.hasStrength=!!o.hasStrength; s.rodTier=(o.rodTier!=null)?o.rodTier:(o.hasRod?1:0); s.lakeDone=!!o.lakeDone; s.lakeSignSeen=!!o.lakeSignSeen; s.deepwoodsSeen=!!o.deepwoodsSeen; s.snowSeen=!!o.snowSeen; s.snowDone=!!o.snowDone; s.marshSeen=!!o.marshSeen; s.skySeen=!!o.skySeen; s.ruinsSeen=!!o.ruinsSeen; s.craterSeen=!!o.craterSeen; s.gardenSeen=!!o.gardenSeen; s.seaBossDone=!!o.seaBossDone; s.skyBossDone=!!o.skyBossDone; s.ruinsBossDone=!!o.ruinsBossDone; s.towerBest=o.tb||0; s.towerBestSet=o.tbs||0; s.towerSeason=o.tsn||{key:"",best:0}; s.towerRecords=o.trec||[]; s.dexMaster=!!o.dexMaster; s.shinyCharm=!!o.shinyCharm; s.berries=o.berries||{}; s.running=!!o.running; s.playSec=o.playSec||0; s.heldStock=o.heldStock||{oranberry:1,leftovers:1};
-  s.hallOfFame=Array.isArray(o.hof)?o.hof:[]; s.trades=o.trades||{};
+  s.hallOfFame=Array.isArray(o.hof)?o.hof:[]; s.trades=o.trades||{}; s._uidSeq=o.usq||0; s.teamPresets=Array.isArray(o.tpre)?o.tpre:[];
   s.party=(o.party||[]).map(reviveMon).filter(Boolean); s.box=(o.box||[]).map(reviveMon).filter(Boolean);
   if(o.daycare){ s.daycare={a:o.daycare.a?reviveMon(o.daycare.a):null, b:o.daycare.b?reviveMon(o.daycare.b):null, steps:o.daycare.steps||0, eggReady:!!o.daycare.eggReady}; } else { s.daycare={a:null,b:null,steps:0,eggReady:false}; }
   if(!s.party.length)return false;
@@ -8013,7 +8057,7 @@ window.SG.TERRAIN_TINT=TERRAIN_TINT; window.SG.terrainTinted=terrainTinted;
 window.SG.FLAVOR=FLAVOR;
 Object.assign(window.SG,{NPC_ARCH,NPC_SHEET_ART,npcSheet,NATURES,NATURE_BY_K,STAT_KO,WILD_HELD,TRAINER_HELD,DOOR_TILES,NATURE_ENTRY,CHAR_HOME,ORIGIN_STORY,INTERIOR_NPC_MSG,EFF,TYPES,TYPE_LIST,TYPE_KO,TYPE_CLASS,TYPE_COLOR,TYPE_ICON,SPEC_TYPES,STATUSES,STATUS_LIST,STATUS_KO,STATUS_CLS,STATUS_TYPE_IMMUNE,_MV_STATUS_KO,TYPE_PARTICLE,SIGFX,GYM_AT,QUESTS,GUARD_TILES,GROUND_ITEMS,NPCS,DEFAULT_ABILITY,ABILITY_OVERRIDE,ABILITY_KO,ABILITY_DESC,NIGHT_MONS,DAY_MONS,SEA_MONS,NO_WILD,ENC_POOLS,TYPE_COLOR,
   canBreed,makeEgg,hatchEgg,baseForm,eggMoves,PRE_EVO});
-window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,sendOutAnim,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,boxAutoSort,boxWithdrawSel,boxReleaseSel,drawTopo,
+window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants,setupBattleUI,sendOutAnim,tryCatch,tryRun,openShop,renderShop,openPC,renderPC,pcAction,boxAutoSort,boxWithdrawSel,boxReleaseSel,savePreset,loadPreset,deletePreset,ensureUid,drawTopo,
   enterMap,saveGame,loadGame,serialize,deserialize,renderDex,openDetail,renderBag,markShinyDex,collectStats,openDexStats,renderDexStats,openBattleBag,battleUseItem,applyStatus,applyStage,
   learnMoveFlow,healFx,showEnding,evolveCheck,startShadowBoss,startDawnBoss,checkDexRewards,openLog,healParty,bfsPath,pathStep,stopPath,playStory,getPath:()=>gamePath.slice(),openWarp,warpTo,renderWarp,useItem,showMoves,
   getCooldown:()=>encCooldown,
