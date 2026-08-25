@@ -54,17 +54,36 @@ def to_square_center(sp, margin=0.06):
     return sq
 
 
-def convert(src, dst, size, colors, bgthresh, margin):
+def convert(src, dst, size, colors, bgthresh, margin, hires=False, quality=90):
+    """도트화(dotize) 또는 고해상(hires) 변환.
+
+    ⚠️ 유저 제보: "정령이 너무 픽셀화돼 흐릿하게 보인다." 원인은 1254px 원본을 96px 논리해상도로
+       줄여(dotize) 원래의 ~180px 도트 그리드보다 더 뭉갠 것 — 폰 고DPI에서 확대되며 블록·최근접
+       보간 얼룩이 겹쳐 흐리게 보였다. hires 모드는 팔레트 축소 없이 고품질(LANCZOS)로 큰 변으로
+       내려 **부드럽게** 표시(image-rendering:auto)하도록 원화를 최대한 보존한다.
+    """
     im = drop_soft_alpha(strip_background(Image.open(src).convert("RGBA"), bgthresh))
-    out = dotize(to_square_center(im, margin), size, colors)
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    out.save(dst, "WEBP", lossless=True)
-    n = len(out.convert("RGB").getcolors(maxcolors=10 ** 6) or [])
+    sq = to_square_center(im, margin)
+    if hires:
+        # 큰 변을 size 로 맞춘 고품질 축소(원본이 더 크면 다운스케일, 작으면 그대로).
+        if max(sq.size) > size:
+            sq = sq.resize((size, size), Image.LANCZOS)
+        out = sq
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        # 투명 알파 보존 + 손실 압축(용량↓). q90 은 육안 무손실 수준.
+        out.save(dst, "WEBP", quality=quality, method=6)
+        mode = f"hires q{quality}"
+    else:
+        out = dotize(sq, size, colors)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        out.save(dst, "WEBP", lossless=True)
+        mode = f"색 {len(out.convert('RGB').getcolors(maxcolors=10 ** 6) or [])}종"
     try:
         shown = dst.relative_to(ROOT)
     except ValueError:
         shown = dst
-    print(f"     → {shown}  {out.width}x{out.height} · 색 {n}종")
+    kb = dst.stat().st_size // 1024
+    print(f"     → {shown}  {out.width}x{out.height} · {mode} · {kb}KB")
 
 
 def main():
@@ -75,6 +94,9 @@ def main():
     ap.add_argument("--colors", type=int, default=24)
     ap.add_argument("--bgthresh", type=int, default=45, help="배경 flood-fill 허용 오차")
     ap.add_argument("--margin", type=float, default=0.06, help="사방 여백 비율")
+    ap.add_argument("--hires", action="store_true",
+                    help="도트화 없이 고품질 축소(부드러운 표시용). --size 256 권장. image-rendering:auto 와 짝.")
+    ap.add_argument("--quality", type=int, default=90, help="hires 모드 webp 품질(1~100)")
     a = ap.parse_args()
 
     src, out = ROOT / a.src, ROOT / a.out
@@ -98,7 +120,7 @@ def main():
         if ids and cid not in ids:
             unknown.append(cid)
             print(f"  ⚠️ manifest 의 paint 에 없는 id 다 — 오타면 게임에서 폴백만 보인다. 확인할 것.")
-        convert(f, out / f"{cid}.webp", a.size, a.colors, a.bgthresh, a.margin)
+        convert(f, out / f"{cid}.webp", a.size, a.colors, a.bgthresh, a.margin, a.hires, a.quality)
         ok.append(cid)
 
     print(f"\n{'='*54}")

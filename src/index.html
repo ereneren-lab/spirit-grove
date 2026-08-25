@@ -111,8 +111,10 @@
   .em svg{width:1.15em;height:1.15em;vertical-align:middle;display:inline-block;overflow:visible}
   /* ⚠️ 크리처 아트(img.cart)는 원본 360px라 크기 제약 없는 컨테이너를 뚫는다(요약 화면에서 능력치 바를 덮었다).
      기본 제약으로 컨테이너에 맞춘다 — .crit/.em은 더 구체적이라 그대로 오버라이드된다. */
-  /* ⚠️ 정령 아트가 64px 도트다 — 어디서 확대되든 보간하면 뭉개진다(도감·파티·전투 전부 이 클래스를 쓴다). */
-  img.cart{max-width:100%;max-height:100%;object-fit:contain;display:block;margin:0 auto;image-rendering:pixelated}
+  /* 정령 아트 = 256px 고해상 원화(1254px 원본을 고품질 축소). 유저 제보 "너무 픽셀화돼 흐릿하다" 대응:
+     96px 도트를 폰 고DPI에서 최근접 확대하면 블록·얼룩이 겹쳐 흐리게 보였다 → 고해상 + **부드러운 보간**으로
+     선명하게 표시한다(도감·파티·전투 전부 이 클래스). ⚠️ pixelated 로 되돌리지 말 것 — 흐림의 원인이었다. */
+  img.cart{max-width:100%;max-height:100%;object-fit:contain;display:block;margin:0 auto;image-rendering:auto}
   .em img.cart{width:1.15em;height:1.15em;vertical-align:middle;object-fit:contain}
   .crit img.cart{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1}
   .crit.shiny img.cart{filter:hue-rotate(150deg) saturate(1.4) brightness(1.05)}
@@ -226,9 +228,9 @@
   .teamdots{display:flex;gap:4px;margin-top:6px}
   .teamdots i{width:8px;height:8px;border-radius:50%;background:var(--mint);opacity:.9}
   .teamdots i.dead{background:#5a5270}
-  /* ⚠️ 정령 아트가 64px 도트라 **보간하면 뭉개진다**(원본이 페인터리였을 땐 문제가 없었다).
-     전투 스프라이트는 104~118px로 확대되므로 최근접으로 그려야 도트가 산다. */
-  .sprite{font-size:62px;text-align:center;filter:drop-shadow(0 6px 10px rgba(0,0,0,.4));will-change:transform;z-index:2;image-rendering:pixelated}
+  /* 정령 아트가 256px 고해상이 되며 전투 스프라이트도 부드러운 보간이 선명하다(예전 64px 도트 땐 최근접이 필요했다).
+     이모지 폴백(font-size:62px)은 래스터가 아니라 이 설정과 무관하다. */
+  .sprite{font-size:62px;text-align:center;filter:drop-shadow(0 6px 10px rgba(0,0,0,.4));will-change:transform;z-index:2;image-rendering:auto}
   .sprite.foe{position:absolute;top:13%;right:13%;width:104px;height:104px;transform-origin:50% 90%}
   .sprite.me{position:absolute;bottom:15%;left:11%;width:118px;height:118px;transform-origin:50% 90%}
   .sprite.foe{animation:floatF 3s ease-in-out infinite}
