@@ -97,8 +97,12 @@
   .pick-view{padding:22px 20px;gap:13px;justify-content:center;background:radial-gradient(620px 360px at 50% 22%, rgba(127,209,174,.09), transparent 72%)}
   .pick-view h3{text-align:center;font-size:19px;font-weight:800}
   .pick-view p.lead{text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6;margin-bottom:4px}
-  .pick-row{display:flex;gap:11px}
-  .pick-card{flex:1;background:var(--panel);border:1.5px solid var(--line);border-radius:var(--r);padding:16px 10px;text-align:center;cursor:pointer;transition:transform .15s,border-color .15s,background .15s}
+  /* ⚠️ 캐릭터는 4장(리오·미나·토리·엘). 예전엔 flex:1 단일 행이라 좁은 화면에서 4번째가 잘려
+     '보이지도, 옆으로 밀리지도' 않았다(유저 제보). → 줄바꿈 허용 + min-width:0으로 좁으면 2×2로 접힌다. */
+  .pick-row{display:flex;flex-wrap:wrap;gap:11px;justify-content:center}
+  .pick-card{flex:1 1 128px;min-width:0;max-width:220px;background:var(--panel);border:1.5px solid var(--line);border-radius:var(--r);padding:16px 10px;text-align:center;cursor:pointer;transition:transform .15s,border-color .15s,background .15s}
+  /* 스타터는 3장 — 좁은 화면에서도 한 줄(3-across) 유지(basis를 낮춰 줄바꿈 방지). 캐릭터(4장)만 2×2로 접힌다. */
+  #starterRow .pick-card{flex-basis:92px}
   .pick-card:active{transform:scale(.97)}
   .pick-card.sel{border-color:var(--mint);background:var(--panel2);box-shadow:0 0 0 3px rgba(127,209,174,.18)}
   .pick-card .em{font-size:46px;display:block;margin-bottom:6px}
