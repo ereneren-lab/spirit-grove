@@ -72,7 +72,9 @@
      360에서 26px — iOS/Android 권장 44pt 미달. 전체 감사 F-12).
      시각 크기는 그대로 두고 **히트 영역만** 넓힌다(가상 요소) — 안 그러면 상단바가 더 두꺼워진다. */
   .iconbtn{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--cream);font-size:14px;cursor:pointer;display:grid;place-items:center;position:relative}
-  .iconbtn::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:44px;height:44px}
+  /* 보이지 않는 히트영역 확장 — 시각 버튼보다 크게 눌린다(≈44px 높이). ⚠️ 가로는 40px로 제한: 상단 두 버튼이
+     4px 간격일 때 44px면 히트영역이 서로 겹쳐 오탭났다(QA 실측). 폭을 34로 좁혀(간격+버튼폭 이내) 겹침 제거, 높이는 44 유지. */
+  .iconbtn::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:34px;height:44px}
   .iconbtn:active{background:var(--panel2)}
   .screen{flex:1;position:relative;overflow:hidden}
   .view{position:absolute;inset:0;display:none;flex-direction:column}
@@ -604,12 +606,12 @@
   /* ⚠️ 세로 블록이 `.topbar .pill`(특이도 0,2,0)이라 여기 `.pill`(0,1,0)은 덮어쓰지 못한다 —
      좁은 폰 전용 축소가 조용히 무시됐다(실측으로 발견). 같은 특이도로 맞춘다. */
   .topbar .pill{font-size:10px;padding:4px 6px}
-  .topbar .iconbtn{width:28px;height:28px;font-size:13px}
+  .topbar .iconbtn{width:29px;height:29px;font-size:13px}
 }
 @media (max-width:360px){
   .top-right{gap:4px}
   .topbar .pill{font-size:9.5px;padding:3px 5px}
-  .topbar .iconbtn{width:26px;height:26px;font-size:12px}
+  .topbar .iconbtn{width:27px;height:27px;font-size:12px}
 }
 /* 폰 가로모드: 게임보이식 핸드헬드 — 맵은 가운데 밴드, 컨트롤은 양옆 고정 거터(맵을 안 가림).
    유저 피드백: 버튼이 맵 위에 떠서 어수선(오버레이)했다 → 겹침 없는 거터 배치로. 세로일 땐 무시. */
