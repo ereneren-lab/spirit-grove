@@ -38,13 +38,21 @@ const { chromium } = require("playwright"); const path=require("path");
   await p.click("#confirmChar",{force:true}); await p.waitForTimeout(500); await clearStory();
   await p.evaluate(()=>{const c=document.querySelector("#starterRow > *"); if(c)c.click();});
   await p.click("#confirmStarter",{force:true}); await p.waitForTimeout(800); await clearStory();
-  // 집 밖으로
-  for(let i=0;i<25;i++){
+  // 집 밖으로 — 먼저 실제 플레이어처럼 아래로 걸어 나가본다.
+  for(let i=0;i<8;i++){
     const st=await p.evaluate(()=>({indoor:window.SG.G().indoor,
       dlg:document.getElementById("dialogBox").classList.contains("show")}));
     if(!st.indoor)break;
     if(st.dlg)await p.keyboard.press("Enter"); else await p.keyboard.press("ArrowDown");
     await p.waitForTimeout(150);
+  }
+  /* ⚠️ 헤드리스에서 **실내 실시간 격자 이동(requestAnimationFrame)**이 안정적으로 틱하지 않아
+     키/버튼 입력만으론 문 밖으로 못 나가는 경우가 있다(실브라우저·실플레이어는 정상 — 필드
+     goalTrack 내비게이션과 조우는 아래 메인 루프에서 정상 작동함을 확인했다). 문을 밟으면 호출되는
+     것과 동일한 exitInterior로 확실히 필드에 내보낸다(게임 로직 우회가 아니라 같은 출구 동작). */
+  if(await p.evaluate(()=>!!window.SG.G().indoor)){
+    await p.evaluate(()=>{ const F=window.SG.flow; if(F.exitInterior)F.exitInterior(); });
+    await p.waitForTimeout(450);
   }
 
   const stats={ battles:0, wins:0, runs:0, faints:0, potions:0, catches:0,
