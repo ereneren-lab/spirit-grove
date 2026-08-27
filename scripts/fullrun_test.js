@@ -618,15 +618,18 @@ const { chromium } = require("playwright"); const path=require("path");
       if(bumpCnt<=12){ tr("field:bump",st); await p.keyboard.press(bump); await p.waitForTimeout(800); continue; } }
 
     tr("field:goal",st);
-    const tapped=await p.evaluate(()=>{ const el=document.getElementById("goalTrack");
-      if(el&&el.offsetParent){ el.click(); return true; } return false; });
-    if(tapped){ let last=null,still=0;
-      for(let i=0;i<50;i++){ await p.waitForTimeout(210);
-        const q=await p.evaluate(()=>{ const G=window.SG.G();
-          return {k:(G.indoor||"")+G.pos.x+","+G.pos.y, inB:!!G.inBattle, dlg:document.getElementById("dialogBox").classList.contains("show")}; });
-        if(q.inB||q.dlg)break;
-        if(q.k===last){ if(++still>=3)break; } else { still=0; last=q.k; } } }
-    else { for(let i=0;i<4;i++){ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(90); } }
+    /* ⚠️ 옛 로직은 goalTrack 한 번 탭 → "3회 위치 불변" 시 중단이었는데, 헤드리스에선 첫 탭의 rAF 한 칸
+       걷기가 안에 안 끝나 '정지'로 오판 → 바깥 루프 재탭 → 경로 리셋 → 제자리 맴돔(longrun과 같은 버그).
+       → 400ms 간격 재탭. 매 탭이 현재 칸에서 경로를 다시 잡아 한 칸씩 확실히 전진시킨다. */
+    for(let i=0;i<14;i++){
+      const tapped=await p.evaluate(()=>{ const el=document.getElementById("goalTrack");
+        if(el&&el.offsetParent){ el.click(); return true; } return false; });
+      if(!tapped){ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(120); continue; }
+      await p.waitForTimeout(400);
+      const q=await p.evaluate(()=>({ inB:!!window.SG.G().inBattle,
+        dlg:document.getElementById("dialogBox").classList.contains("show"), indoor:window.SG.G().indoor }));
+      if(q.inB||q.dlg||q.indoor)break;
+    }
 
     // 진행 정체 감지(같은 칸에서 계속 맴돌면 기록)
     const key=(st.indoor||"")+st.pos.x+","+st.pos.y+"/"+st.badges;
