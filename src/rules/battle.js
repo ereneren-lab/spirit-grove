@@ -50,7 +50,11 @@ function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&d
   const _hi=att.held&&HELD_ITEMS[att.held];   // 지닌 물건 위력 배율(단일 출처 HELD_ITEMS): powerband/lifeorb/구애/타입부적
   if(_hi){ if(_hi.dmg)abil*=_hi.dmg; if(_hi.boost===move.type)abil*=1.2; }
   if(att.ability==="hugepower" && !isSpec) abil*=1.5;   // 순수한힘: 물리만
-  const lvf=2*att.level/5+2; const stab=(move.type===att.type||(att.type2&&move.type===att.type2))?1.5:1;
+  if(att.ability==="technician" && move.power<=60) abil*=1.5;   // 테크니션: 위력 60 이하 강화
+  if(def.ability==="filter" && eff>1) abil*=0.75;              // 필터: 효과 굉장 피해 경감
+  const lvf=2*att.level/5+2;
+  const _isStab=(move.type===att.type||(att.type2&&move.type===att.type2));
+  const stab=_isStab?(att.ability==="adaptability"?2:1.5):1;   // 적응력: 자속 1.5→2.0
   let wMul=1; if(typeof G!=="undefined"&&G&&G.weather){ if(G.weather==="sun"){ if(move.type==="fire")wMul=1.3; else if(move.type==="water")wMul=0.7; } else if(G.weather==="rain"){ if(move.type==="water")wMul=1.3; else if(move.type==="fire")wMul=0.7; } else if(G.weather==="sand"){ if(move.type==="rock")wMul=1.2; } else if(G.weather==="hail"){ if(move.type==="ice")wMul=1.2; } }
   let scrMul=1; if(typeof G!=="undefined"&&G&&G.screens){ const _ds=(def===G.foe)?"foe":"me"; const _sc=G.screens[_ds]; if(_sc){ if(isSpec&&_sc.light>0)scrMul=0.5; else if(!isSpec&&_sc.reflect>0)scrMul=0.5; } }
   let dmg=Math.floor((lvf*move.power*((A*aMul)/(D*dMul)))/9+2);
