@@ -11,6 +11,8 @@ const MOVES={
   bugbite:{name:"벌레먹기",type:"bug",power:50,acc:100,pp:20,pri:0,cat:"phys"},
   dragonpulse:{name:"용의파동",type:"dragon",power:82,acc:100,pp:10,pri:0,cat:"spec"},
   bugbuzz:{name:"벌레버즈",type:"bug",power:70,acc:100,pp:10,pri:0,cat:"spec"},
+  dragonclaw:{name:"용의발톱",type:"dragon",power:74,acc:100,pp:12,pri:0,cat:"phys"},   // 용 타입 유일의 물리 자속 — 물리 용린(드레이클링·와이번·스카이드레이크 atk16~27)이 살아난다
+  xscissor:{name:"시저크로스",type:"bug",power:68,acc:100,pp:12,pri:0,highCrit:true},   // 물리 벌레 강기(bug은 물리 타입 → 기본 물리). 루나모스·기어클래드의 벌레먹기(50)를 잇는다
   reflect:{name:"리플렉터",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{screen:"reflect"}},
   lightscreen:{name:"빛의장막",type:"normal",power:0,acc:100,pp:20,pri:0,eff:{screen:"light"}},
   leechseed:{name:"씨뿌리기",type:"grass",power:0,acc:90,pp:10,pri:0,eff:{seed:true}},
