@@ -174,22 +174,17 @@ const { chromium } = require("playwright"); const path=require("path");
     // 전멸 감지(파티 전원 기절 → 게임이 마을로 되돌림)
     if(st.aliveCount===0){ stats.faints++; await p.waitForTimeout(600); continue; }
 
-    // 목표 트래커 탭 = 실제 플레이어 조작. 목표 지점으로 자동 이동한다.
-    const tapped=await p.evaluate(()=>{ const el=document.getElementById("goalTrack");
-      if(el && el.offsetParent){ el.click(); return true; } return false; });
-    if(tapped){
-      // ⚠️ 매 루프마다 재탭하면 경로가 계속 리셋돼 제자리를 맴돈다.
-      //    이동이 멈추거나(도착·조우) 전투가 걸릴 때까지 기다린 뒤 다음 판단을 한다.
-      let last=null, still=0;
-      for(let i=0;i<40;i++){
-        await p.waitForTimeout(220);
-        const q=await p.evaluate(()=>{ const G=window.SG.G();
-          return {k:G.pos.x+","+G.pos.y, inB:!!G.inBattle, dlg:document.getElementById("dialogBox").classList.contains("show")}; });
-        if(q.inB||q.dlg)break;
-        if(q.k===last){ if(++still>=3)break; } else { still=0; last=q.k; }
-      }
+    /* 목표 트래커 탭 = 실제 플레이어 조작(목표 지점으로 자동 이동).
+       ⚠️ 헤드리스에선 첫 탭의 경로가 rAF로 한 칸 걷기까지 220ms 안에 안 끝나 "정지"로 오판되기 쉽고,
+          그때 다음 바깥 루프가 재탭하면 경로가 리셋돼 **제자리를 맴돈다**(옛 버그). 그래서 여기서
+          **400ms 간격으로 재탭**한다 — 매 탭이 현재 칸에서 경로를 다시 잡아 한 칸씩 확실히 전진시킨다
+          (프로브로 이동+조우 도달 확인). 전투·대사가 걸리면 즉시 빠진다. */
+    for(let i=0;i<12;i++){
+      await p.evaluate(()=>{ const el=document.getElementById("goalTrack"); if(el&&el.offsetParent)el.click(); });
+      await p.waitForTimeout(400);
+      const q=await p.evaluate(()=>({inB:!!window.SG.G().inBattle, dlg:document.getElementById("dialogBox").classList.contains("show")}));
+      if(q.inB||q.dlg)break;
     }
-    else { for(let i=0;i<4;i++){ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(90); } }
 
     // 진행 표본(30초마다)
     const el=Math.floor((Date.now()-t0)/30000);
