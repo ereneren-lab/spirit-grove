@@ -19,7 +19,10 @@ const { chromium } = require("playwright"); const path=require("path");
   process.on("uncaughtException",bail); process.on("unhandledRejection",bail);
 
   const BUDGET=Number(process.argv[3]||240);
-  b=await chromium.launch();
+  // 헤드리스 rAF 스로틀 방지(백그라운드 판정 시 게임 이동 루프가 느려져 봇이 맴돈다) — 근본 원인 해결.
+  b=await chromium.launch({args:[
+    "--disable-background-timer-throttling","--disable-renderer-backgrounding",
+    "--disable-backgrounding-occluded-windows","--disable-features=CalculateNativeWinOcclusion"]});
   const p=await b.newPage({viewport:{width:430,height:760}});
   const errs=[]; p.on("pageerror",e=>errs.push(e.message));
   await p.goto("file://"+path.resolve(process.argv[2]));

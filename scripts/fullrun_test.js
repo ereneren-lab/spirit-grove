@@ -117,7 +117,12 @@ const { chromium } = require("playwright"); const path=require("path");
 
 (async()=>{
   const BUDGET=Number(process.argv[3]||600);
-  const b=await chromium.launch();
+  /* ⚠️ 헤드리스 Chromium은 페이지가 '백그라운드'로 판정되면 requestAnimationFrame(게임 이동 루프)을
+     스로틀한다 → 키/walkTo 이동이 안 걷혀 봇이 제자리를 맴돈다(goalTrack만 다른 경로로 돌아 유일하게 됐다).
+     아래 플래그로 rAF 스로틀을 끄면 실제 브라우저처럼 이동이 틱한다 — 근본 원인 해결. */
+  const b=await chromium.launch({args:[
+    "--disable-background-timer-throttling","--disable-renderer-backgrounding",
+    "--disable-backgrounding-occluded-windows","--disable-features=CalculateNativeWinOcclusion"]});
   const p=await b.newPage({viewport:{width:430,height:760}});
   const errs=[]; p.on("pageerror",e=>errs.push(e.message));
   const die=async(m)=>{ console.log("❌ "+m); await b.close(); process.exit(1); };
