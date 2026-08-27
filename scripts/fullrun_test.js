@@ -117,7 +117,12 @@ const { chromium } = require("playwright"); const path=require("path");
 
 (async()=>{
   const BUDGET=Number(process.argv[3]||600);
-  const b=await chromium.launch();
+  /* ⚠️ 헤드리스 Chromium은 페이지가 '백그라운드'로 판정되면 requestAnimationFrame(게임 이동 루프)을
+     스로틀한다 → 키/walkTo 이동이 안 걷혀 봇이 제자리를 맴돈다(goalTrack만 다른 경로로 돌아 유일하게 됐다).
+     아래 플래그로 rAF 스로틀을 끄면 실제 브라우저처럼 이동이 틱한다 — 근본 원인 해결. */
+  const b=await chromium.launch({args:[
+    "--disable-background-timer-throttling","--disable-renderer-backgrounding",
+    "--disable-backgrounding-occluded-windows","--disable-features=CalculateNativeWinOcclusion"]});
   const p=await b.newPage({viewport:{width:430,height:760}});
   const errs=[]; p.on("pageerror",e=>errs.push(e.message));
   const die=async(m)=>{ console.log("❌ "+m); await b.close(); process.exit(1); };
@@ -150,6 +155,11 @@ const { chromium } = require("playwright"); const path=require("path");
     await p.evaluate(()=>{ const S=window.SG; const G=S.freshState(); G.party=[S.makeMon("foxfire",5)]; S.setG(G); S.flow.enterMap(true); });
   }
   await p.waitForTimeout(500);
+  /* ⚠️ 헤드리스에서 실내 실시간 격자이동(rAF)이 안정적으로 안 틱해 키 입력만으론 시작 집을 못 나가는 판이
+     있다(실브라우저 정상). 먼저 문으로 걸어 나가보고, 그래도 실내면 문 밟기와 동일한 exitInterior로 필드에
+     확실히 내보낸다 — 그래야 이 스트레스 하네스가 '0 진행'으로 헛돌지 않는다. */
+  for(let i=0;i<10 && await p.evaluate(()=>!!window.SG.G().indoor);i++){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(170); }
+  if(await p.evaluate(()=>!!window.SG.G().indoor)){ await p.evaluate(()=>{ const F=window.SG.flow; if(F.exitInterior)F.exitInterior(); }); await p.waitForTimeout(400); }
 
   const t0=Date.now();
   const stats={battles:0,wild:0,trainer:0,caught:0,potions:0,runs:0,heals:0,restocks:0,grinds:0,faints:0,milestones:[],samples:[]};
@@ -210,6 +220,7 @@ const { chromium } = require("playwright"); const path=require("path");
     // 나가기
     for(let i=0;i<10;i++){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(220);
       const out=await p.evaluate(()=>!window.SG.G().indoor); if(out)break; }
+    if(await p.evaluate(()=>!!window.SG.G().indoor)){ await p.evaluate(()=>{ const F=window.SG.flow; if(F.exitInterior)F.exitInterior(); }); await p.waitForTimeout(300); }   // 헤드리스 실내 rAF 폴백
     if(healed)stats.heals++;
     return healed;
   };
@@ -275,6 +286,7 @@ const { chromium } = require("playwright"); const path=require("path");
     // 나가기
     for(let i=0;i<12;i++){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(230);
       const out=await p.evaluate(()=>!window.SG.G().indoor); if(out)break; }
+    if(await p.evaluate(()=>!!window.SG.G().indoor)){ await p.evaluate(()=>{ const F=window.SG.flow; if(F.exitInterior)F.exitInterior(); }); await p.waitForTimeout(300); }   // 헤드리스 실내 rAF 폴백
     const balls=await p.evaluate(()=>{ const G=window.SG.G(); return (G.items.ball||0)+(G.items.greatball||0); });
     if(balls>=4)stats.restocks++;
     return balls>=4;
@@ -283,20 +295,18 @@ const { chromium } = require("playwright"); const path=require("path");
   // 그라인딩 — 언더레벨이면 gym에 들어가기 전에 근처 풀숲(T)에서 야생과 싸워 레벨을 올린다.
   // (봇이 목표로 직행해 gym 리더에게 언더레벨로 막히던 문제. 이동 중 조우는 메인 루프의 전투 로직이 처리.)
   const grindStep=async()=>{
-    const go=await p.evaluate(()=>{ const S=window.SG,F=S.flow,G=S.G(); if(G.indoor)return false;
-      const cand=[];
-      for(let y=Math.max(1,G.pos.y-8);y<Math.min(49,G.pos.y+9);y++)
-        for(let x=Math.max(1,G.pos.x-8);x<Math.min(24,G.pos.x+9);x++){
-          if(F.tileAt(x,y)!=="T"||!F.walkable(x,y))continue;
-          const d=Math.abs(x-G.pos.x)+Math.abs(y-G.pos.y); if(d>=3)cand.push({x,y,d}); }
-      if(!cand.length)return false;
-      cand.sort((a,b)=>a.d-b.d); const t=cand[Math.min(cand.length-1,Math.floor(cand.length/2))];   // 중간 거리(고정 — Math.random 회피)
-      return F.walkTo(t.x,t.y)?(t.x+","+t.y):false; });
-    if(!go)return false;
-    for(let i=0;i<40;i++){ await p.waitForTimeout(200);
-      const q=await p.evaluate(()=>{ const G=window.SG.G(); return {inB:!!G.inBattle,k:(G.indoor||"")+G.pos.x+","+G.pos.y}; });
-      if(q.inB)break;        // 조우 → 메인 루프가 전투 처리
-      if(q.k===go)break; }   // 도착 → 다음 루프에서 다른 풀숲으로
+    if(await p.evaluate(()=>!!window.SG.G().indoor))return false;
+    /* ⚠️ 옛 방식은 `F.walkTo(근처 풀숲)`으로 이동했는데 헤드리스에선 이 경로 이동이 rAF로 안 걷혀
+       봇이 제자리를 맴돌았다(전투 0). 반면 **goalTrack 탭 이동은 헤드리스에서도 동작한다**(longrun로 검증).
+       → 목표로 걸어가며 그 길목의 풀숲을 지나 야생과 싸운다(전진 자체가 그라인딩). 도착·조우까지 이동. */
+    const tapped=await p.evaluate(()=>{ const el=document.getElementById("goalTrack");
+      if(el&&el.offsetParent){ el.click(); return true; } return false; });
+    if(!tapped)return false;
+    let last=null,still=0;
+    for(let i=0;i<10;i++){ await p.waitForTimeout(360);
+      const q=await p.evaluate(()=>({inB:!!window.SG.G().inBattle, k:window.SG.G().pos.x+","+window.SG.G().pos.y}));
+      if(q.inB)break;                                   // 조우 → 메인 루프 전투 처리
+      if(q.k===last){ if(++still>=2)break; } else { still=0; last=q.k; } }   // 도착/정지 → 반환(메인 루프가 문 부딪힘 처리)
     return true;
   };
   // gym별 목표 레벨(리더 대비 -1까지 그라인딩). 밸런스 문서 기준 근사치. **4뱃지 뒤엔 일부러 안 건다.**
@@ -569,6 +579,7 @@ const { chromium } = require("playwright"); const path=require("path");
           if(q.done||q.inB)break; } }
       for(let i=0;i<4;i++){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(240);
         const out=await p.evaluate(()=>!window.SG.G().indoor); if(out)break; }
+      if(await p.evaluate(()=>!!window.SG.G().indoor)){ await p.evaluate(()=>{ const F=window.SG.flow; if(F.exitInterior)F.exitInterior(); }); await p.waitForTimeout(300); }   // 헤드리스 실내 rAF 폴백
       await p.waitForTimeout(300); continue;
     }
 
@@ -610,15 +621,18 @@ const { chromium } = require("playwright"); const path=require("path");
       if(bumpCnt<=12){ tr("field:bump",st); await p.keyboard.press(bump); await p.waitForTimeout(800); continue; } }
 
     tr("field:goal",st);
-    const tapped=await p.evaluate(()=>{ const el=document.getElementById("goalTrack");
-      if(el&&el.offsetParent){ el.click(); return true; } return false; });
-    if(tapped){ let last=null,still=0;
-      for(let i=0;i<50;i++){ await p.waitForTimeout(210);
-        const q=await p.evaluate(()=>{ const G=window.SG.G();
-          return {k:(G.indoor||"")+G.pos.x+","+G.pos.y, inB:!!G.inBattle, dlg:document.getElementById("dialogBox").classList.contains("show")}; });
-        if(q.inB||q.dlg)break;
-        if(q.k===last){ if(++still>=3)break; } else { still=0; last=q.k; } } }
-    else { for(let i=0;i<4;i++){ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(90); } }
+    /* ⚠️ 옛 로직은 goalTrack 한 번 탭 → "3회 위치 불변" 시 중단이었는데, 헤드리스에선 첫 탭의 rAF 한 칸
+       걷기가 안에 안 끝나 '정지'로 오판 → 바깥 루프 재탭 → 경로 리셋 → 제자리 맴돔(longrun과 같은 버그).
+       → 400ms 간격 재탭. 매 탭이 현재 칸에서 경로를 다시 잡아 한 칸씩 확실히 전진시킨다. */
+    for(let i=0;i<14;i++){
+      const tapped=await p.evaluate(()=>{ const el=document.getElementById("goalTrack");
+        if(el&&el.offsetParent){ el.click(); return true; } return false; });
+      if(!tapped){ await p.keyboard.press("ArrowUp"); await p.waitForTimeout(120); continue; }
+      await p.waitForTimeout(400);
+      const q=await p.evaluate(()=>({ inB:!!window.SG.G().inBattle,
+        dlg:document.getElementById("dialogBox").classList.contains("show"), indoor:window.SG.G().indoor }));
+      if(q.inB||q.dlg||q.indoor)break;
+    }
 
     // 진행 정체 감지(같은 칸에서 계속 맴돌면 기록)
     const key=(st.indoor||"")+st.pos.x+","+st.pos.y+"/"+st.badges;
