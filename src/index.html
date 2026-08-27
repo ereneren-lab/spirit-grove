@@ -3990,12 +3990,12 @@ const ENC_POOLS={
   hillpath:["dustbunny","racoonmon","sprigfawn","petalwing","seedbean","thunderowl"],   // 언덕 오솔길 = 노말·풀·비행
   pier:["shellow","otterwave","nipling","dewdrop","puddlet","jellure"],                 // 잔교 = 물가
   frostpass:["frostpup","iceling","frostfish","snowl","sharkfin","pebblet"],            // 고갯길 = 얼음
-  fireflyway:["glowfly","dustbunny","bunnyhop","sparkmouse","sprigfawn","shellow"],   // 오솔길 = 초반 소형종
-  mosshollow:["pixibud","mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing","sporelet"],     // 골짜기 = 이끼·숲 (+홀씨벌레)
+  fireflyway:["glowfly","dustbunny","bunnyhop","sparkmouse","sprigfawn","shellow","glimmite"],   // 오솔길 = 초반 소형종 (+반디요정)
+  mosshollow:["pixibud","mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing","sporelet","barkfist"],     // 골짜기 = 이끼·숲 (+홀씨벌레·나무주먹몽키)
   fallspath:["riverine","gullian","sandwhirl","tidewhale","pebblet","dewdrop"],         // 벼랑길 = 폭포(물·바위·비행)
    // 언덕 오솔길 = 노말·풀·비행(전부 실존 종)   // 광산 = 바위·땅 계열(전부 실존 종)
   
-  ruins:["pummelpup","terrapin","thumplord","lumbeast","wyverna","pebblet","boulderin","burrowmouse","mossback","hedgemoss","sandwhirl"],
+  ruins:["pummelpup","terrapin","thumplord","lumbeast","wyverna","pebblet","boulderin","burrowmouse","mossback","hedgemoss","sandwhirl","duskbeak"],
   crater:["foxfire","emberwolf","blazelion","cindercat","cindercub","pyrewolf","emberfly","pyrmoth","lavakit","magmadon"],
   garden:["psykit","glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop","sporelet","gustmoth"],
   isle:["stormhawk","tigerflame","magmahound","krakentide","tidewhale","harelord","emberdrake","grovespirit","palmore","emberlix","crablord"],
@@ -4009,7 +4009,7 @@ const ENC_POOLS={
 // 시간대 한정 출현. 도감 설명문(FLAVOR)의 생태와 일치시킨다 —
 // "밤에만 활동한다"고 써놓고 낮에 나오면 도감이 거짓말이 된다.
 // ⚠️ 늘릴 땐 낮/밤 각 티어 풀이 비지 않는지 확인할 것(pickWild가 티어로 먼저 거른다).
-const NIGHT_MONS=new Set(["lunarmoth", "thunderowl", "swampfrog", "emberwolf", "tigerflame", "vinesnake", "emberlix", "moonytide", "pyrewolf", "glowfly", "arcmoth"]);
+const NIGHT_MONS=new Set(["lunarmoth", "thunderowl", "swampfrog", "emberwolf", "tigerflame", "vinesnake", "emberlix", "moonytide", "pyrewolf", "glowfly", "arcmoth", "duskbeak", "glimmite"]);
 const SEA_MONS=new Set(["nipling","crablord","gullian","palmore","jellure","emberlix"]);
 const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox","blossfae","lanternox","voidpanther","gearclad"]);
 const DAY_MONS=new Set(["sprigfawn", "stormhawk", "cindercat", "leafdrake", "palmore", "seedbean", "mossback", "sproutcat", "glimmertide"]);
@@ -7001,6 +7001,12 @@ function renderDex(){ $("dexCaught").textContent=G.caught.size; $("dexParty").te
         if(idx>=0&&m.hp>0){G.active=idx;Audio.sfx("blip");renderDex();}else if(m&&m.hp<=0){flashHint("쓰러진 정령은 선두로 보낼 수 없다");} }); }
     body.appendChild(card); }); }
 const FLAVOR={
+  barkfist:{cat:"숲권 몽키",h:0.6,w:9,t:"이끼 낀 주먹으로 나무를 두드려 리듬을 익힌다. 잎사귀 붕대는 스승에게 물려받은 것."},
+  zenapex:{cat:"권왕 유인원",h:1.6,w:86,t:"숲 가장 깊은 곳에서 홀로 참선한다. 고요히 내지른 주먹 한 방이 바위를 가른다."},
+  glimmite:{cat:"반딧불 요정",h:0.2,w:1,t:"배의 등불을 깜빡여 동료와 신호를 주고받는다. 어두울수록 또렷이 빛난다."},
+  lumenfae:{cat:"빛 요정",h:0.5,w:3,t:"손에 든 작은 등불로 길 잃은 여행자를 이끈다. 달빛 아래서 춤추듯 난다."},
+  duskbeak:{cat:"황혼 까마귀",h:0.3,w:2,t:"해질녘에만 나와 노는 장난꾸러기. 반짝이는 것을 몰래 모으는 버릇이 있다."},
+  ravenveil:{cat:"흑요 까마귀",h:0.9,w:14,t:"그림자에 몸을 감추고 소리 없이 활공한다. 노란 눈은 어둠 속에서도 먹잇감을 놓치지 않는다."},
   foxfire:{cat:"불씨여우",h:0.5,w:7,t:"꼬리 끝 불씨로 어둠 속 길을 밝힌다. 겁은 많지만 동료를 지킬 땐 불꽃이 거세진다."},
   emberwolf:{cat:"불꽃늑대",h:1.1,w:32,t:"무리의 우두머리가 되면 갈기가 불타오른다. 밤새 영역을 돌며 순찰한다."},
   blazelion:{cat:"화염사자",h:1.7,w:90,t:"포효 한 번에 주변 공기가 일렁인다. 화산지대를 다스리는 왕."},

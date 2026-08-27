@@ -112,6 +112,15 @@ const DEX=[
      숲·정원 계열에 나비 라인을 얹어 타입 커버를 채운다. 아트는 SVG 플레이스홀더(매니페스트 미등록 → creatureSVG 폴백). */
   {id:"sporelet",name:"홀씨벌레",em:"🐛",type:"bug",tier:1,base:{hp:45,atk:14,def:16,spd:15,spa:18,spDef:14},moves:["tackle","bugbite"],learn:[[8,"absorb"],[12,"bugbuzz"],[16,"gust"]],evolveTo:"gustmoth",evolveLv:18},
   {id:"gustmoth",name:"숲바람나방",em:"🦋",type:"bug",type2:"flying",tier:3,base:{hp:70,atk:22,def:22,spd:30,spa:34,spDef:26},moves:["bugbite","bugbuzz","gust","absorb"],learn:[[30,"peck"]]},
+  /* 희소 타입 보강 — 격투·페어리·악이 각 2종뿐이라 두 번째 진화 라인을 추가한다(팀 빌딩 다양성).
+     기존 라인과 실루엣이 겹치지 않게 원숭이·반딧불·까마귀로 차별화. 신규 무브 불필요(전부 실존).
+     스탯 총합(3단 190~195)은 기존 3단 대역과 동일 — balance_test 통과 유지. */
+  {id:"barkfist",name:"나무주먹몽키",em:"🐒",type:"fight",tier:1,base:{hp:48,atk:18,def:14,spd:16,spa:9,spDef:12},moves:["tackle","karatechop"],learn:[[10,"machpunch"],[16,"focusenergy"],[24,"closecombat"]],evolveTo:"zenapex",evolveLv:30},
+  {id:"zenapex",name:"참선권왕",em:"🥋",type:"fight",tier:3,base:{hp:80,atk:33,def:24,spd:25,spa:12,spDef:20},moves:["karatechop","closecombat","machpunch","focusenergy"],learn:[[40,"aurasphere"]]},
+  {id:"glimmite",name:"반디요정",em:"✨",type:"fairy",tier:1,base:{hp:46,atk:9,def:12,spd:17,spa:19,spDef:15},moves:["tackle","fairywind"],learn:[[12,"dazzlinggleam"],[20,"confusion"],[26,"moonblast"]],evolveTo:"lumenfae",evolveLv:30},
+  {id:"lumenfae",name:"빛의요정",em:"🧚",type:"fairy",tier:3,base:{hp:74,atk:12,def:20,spd:32,spa:33,spDef:24},moves:["fairywind","dazzlinggleam","moonblast","psybeam"],learn:[[40,"recover"]]},
+  {id:"duskbeak",name:"땅거미새",em:"🐦‍⬛",type:"dark",type2:"flying",tier:1,base:{hp:46,atk:17,def:12,spd:19,spa:11,spDef:12},moves:["tackle","peck"],learn:[[10,"suckerpunch"],[16,"gust"],[22,"crunch"]],evolveTo:"ravenveil",evolveLv:32},
+  {id:"ravenveil",name:"흑요까마귀",em:"🌑",type:"dark",type2:"flying",tier:3,base:{hp:74,atk:31,def:20,spd:33,spa:14,spDef:18},moves:["crunch","suckerpunch","darkpulse","peck"],learn:[[40,"nightburst"]]},
 ];
 const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);
