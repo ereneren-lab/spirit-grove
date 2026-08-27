@@ -35,7 +35,7 @@ const DEX=[
   {id:"tidewhale",name:"무르경",em:"🐋",type:"water",tier:2,base:{hp:74,atk:10,def:16,spd:7,spa:14,spDef:16},moves:["splash","slam"],learn:[[8,"roar"],[16,"toxic"],[18,"hydro"],[23,"nastyplot"],[28,"tsunami"],[31,"harden"],[38,"batonpass"]]},
   {id:"magmahound",name:"마그멍",em:"🐕",type:"fire",tier:2,base:{hp:58,atk:14,def:12,spd:14,spa:19,spDef:12},moves:["ember","slam"],learn:[[8,"toxic"],[14,"roar"],[18,"flare"],[21,"agility"],[27,"harden"],[33,"batonpass"],[40,"nastyplot"]]},
   {id:"stormhawk",name:"회리매",em:"🦅",type:"flying",type2:"elec",tier:3,base:{hp:77,atk:25,def:16,spd:24,spa:17,spDef:16},moves:["gust","wingatk"],learn:[[8,"thunderwave"],[14,"swordsdance"],[21,"recover"],[26,"skyrush"],[27,"lullaby"],[30,"focusenergy"],[33,"confuse"],[40,"growl"]]},
-  {id:"lunarmoth",name:"루나비",em:"🦋",type:"psychic",type2:"bug",tier:3,base:{hp:80,atk:22,def:19,spd:19,spa:16,spDef:19},moves:["gust","psybeam"],learn:[[8,"growl"],[14,"focusenergy"],[18,"bugbite"],[20,"bugbuzz"],[23,"zenheadbutt"],[27,"lullaby"],[30,"doubleteam"],[33,"recover"],[40,"swordsdance"]]},
+  {id:"lunarmoth",name:"루나비",em:"🦋",type:"psychic",type2:"bug",tier:3,base:{hp:80,atk:22,def:19,spd:19,spa:16,spDef:19},moves:["gust","psybeam"],learn:[[8,"growl"],[14,"focusenergy"],[18,"bugbite"],[20,"bugbuzz"],[23,"zenheadbutt"],[27,"lullaby"],[30,"doubleteam"],[33,"recover"],[36,"xscissor"],[40,"swordsdance"]]},
   {id:"nipling",name:"집게공",em:"🦀",type:"water",type2:"steel",tier:1,base:{hp:46,atk:15,def:20,spd:9,spa:7,spDef:13},moves:["tackle","metalclaw"],learn:[[8,"growl"],[12,"crush"],[16,"rockthrow"],[18,"rockslide"],[27,"focusenergy"],[36,"mirrorshot"]],evolveTo:"crablord",evolveLv:28},
   /* ⚠️ 집게왕은 atk25/spa9인데 기본 기술셋에 하이드로펌프(물 특수)가 들어 있었다 —
    물 STAB을 spa9로 쏘느라 크로스촙의 1/3밖에 못 때렸다(실측 125 vs 363). 계열이 타입에 묶여 있어
@@ -68,9 +68,9 @@ const DEX=[
   {id:"cryogon",name:"동결룡",em:"🐋",type:"ice",type2:"dragon",tier:3,base:{hp:84,atk:24,def:28,spd:14,spa:24,spDef:22},moves:["blizzard","rockslide","icebeam","dragonpulse"],learn:[]},
   {id:"iceling",name:"얼음정",em:"🧊",type:"ice",tier:1,base:{hp:48,atk:12,def:16,spd:12,spa:16,spDef:16},moves:["tackle","iceshard"],learn:[[8,"lullaby"],[14,"icebeam"],[18,"recover"],[20,"harden"],[27,"swordsdance"],[36,"doubleteam"]],evolveTo:"frostwyrm",evolveLv:32},
   {id:"frostwyrm",name:"빙하룡",em:"❄️",type:"ice",type2:"dragon",tier:3,base:{hp:82,atk:22,def:26,spd:16,spa:26,spDef:24},moves:["blizzard","icebeam","dragonpulse","harden"],learn:[[8,"swordsdance"],[16,"lullaby"],[23,"recover"],[31,"confuse"],[34,"hailstorm"],[38,"focusenergy"]]},
-  {id:"drakeling",name:"꼬마룡",em:"🦎",type:"dragon",tier:1,base:{hp:50,atk:16,def:14,spd:14,spa:12,spDef:12},moves:["tackle","headbutt","dragonbreath"],learn:[[8,"agility"],[16,"crush"],[18,"batonpass"],[22,"slam"],[27,"harden"],[36,"nastyplot"]],evolveTo:"wyverna",evolveLv:25},
-  {id:"wyverna",name:"비룡",em:"🐉",type:"dragon",tier:2,base:{hp:70,atk:22,def:20,spd:18,spa:16,spDef:16},moves:["crush","dragonbreath","slam","furyswipe"],learn:[[8,"roar"],[18,"toxic"],[27,"nastyplot"],[36,"gust"],[37,"agility"]],evolveTo:"skydrake",evolveLv:42},
-  {id:"skydrake",name:"천공룡",em:"🐲",type:"dragon",type2:"flying",tier:3,base:{hp:88,atk:27,def:24,spd:24,spa:20,spDef:22},moves:["skyrush","crush","wingatk","dragonpulse"],learn:[]},
+  {id:"drakeling",name:"꼬마룡",em:"🦎",type:"dragon",tier:1,base:{hp:50,atk:16,def:14,spd:14,spa:12,spDef:12},moves:["tackle","headbutt","dragonbreath"],learn:[[8,"agility"],[16,"crush"],[18,"batonpass"],[20,"dragonclaw"],[22,"slam"],[27,"harden"],[36,"nastyplot"]],evolveTo:"wyverna",evolveLv:25},
+  {id:"wyverna",name:"비룡",em:"🐉",type:"dragon",tier:2,base:{hp:70,atk:22,def:20,spd:18,spa:16,spDef:16},moves:["crush","dragonbreath","slam","furyswipe"],learn:[[8,"roar"],[18,"toxic"],[24,"dragonclaw"],[27,"nastyplot"],[36,"gust"],[37,"agility"]],evolveTo:"skydrake",evolveLv:42},
+  {id:"skydrake",name:"천공룡",em:"🐲",type:"dragon",type2:"flying",tier:3,base:{hp:88,atk:27,def:24,spd:24,spa:20,spDef:22},moves:["skyrush","crush","wingatk","dragonclaw"],learn:[[34,"dragonpulse"]]},
   {id:"mossback",name:"이끼돌이",em:"🐢",type:"grass",type2:"rock",tier:1,base:{hp:54,atk:14,def:20,spd:8,spa:12,spDef:16},moves:["tackle","rockthrow"],learn:[[8,"lullaby"],[14,"absorb"],[18,"recover"],[20,"rockslide"],[27,"swordsdance"],[36,"growl"]],evolveTo:"terrapin",evolveLv:30},
   {id:"terrapin",name:"대지거북",em:"🗿",type:"grass",type2:"ground",tier:3,base:{hp:90,atk:22,def:36,spd:8,spa:16,spDef:24},moves:["boulder","megadrain","rockslide","harden"],learn:[]},
   {id:"sandwhirl",name:"회오리매",em:"🦅",type:"ground",type2:"flying",tier:2,base:{hp:64,atk:20,def:18,spd:24,spa:14,spDef:14},moves:["rockslide","gust","wingatk","rockthrow"],learn:[[8,"lullaby"],[18,"recover"],[27,"swordsdance"],[34,"skyrush"],[36,"doubleteam"]]},
@@ -107,11 +107,11 @@ const DEX=[
   {id:"nightkit",name:"그믐고양이",em:"🐈‍⬛",type:"dark",tier:1,base:{hp:46,atk:16,def:12,spd:18,spa:12,spDef:12},moves:["tackle","growl"],learn:[[10,"suckerpunch"],[18,"crunch"]],evolveTo:"voidpanther",evolveLv:32},
   {id:"voidpanther",name:"심연표범",em:"🐆",type:"dark",tier:3,base:{hp:76,atk:30,def:20,spd:30,spa:14,spDef:18},moves:["crunch","suckerpunch","nightburst","darkpulse"],learn:[[40,"swordsdance"]]},
   {id:"coglet",name:"톱니벌레",em:"⚙️",type:"steel",tier:1,base:{hp:50,atk:15,def:20,spd:10,spa:9,spDef:14},moves:["tackle","metalclaw"],learn:[[14,"bulletpunch"],[22,"mirrorshot"]],evolveTo:"gearclad",evolveLv:30},
-  {id:"gearclad",name:"강철갑충",em:"🛡️",type:"steel",type2:"bug",tier:3,base:{hp:80,atk:26,def:34,spd:14,spa:18,spDef:22},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[40,"harden"]]},
+  {id:"gearclad",name:"강철갑충",em:"🛡️",type:"steel",type2:"bug",tier:3,base:{hp:80,atk:26,def:34,spd:14,spa:18,spDef:22},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[28,"xscissor"],[40,"harden"]]},
   /* 벌레(bug) 프라이머리 라인 — 기존엔 bug가 gearclad의 2차 타입으로만 존재했다(순수/1차 bug 종 0).
      숲·정원 계열에 나비 라인을 얹어 타입 커버를 채운다. 아트는 SVG 플레이스홀더(매니페스트 미등록 → creatureSVG 폴백). */
   {id:"sporelet",name:"홀씨벌레",em:"🐛",type:"bug",tier:1,base:{hp:45,atk:14,def:16,spd:15,spa:18,spDef:14},moves:["tackle","bugbite"],learn:[[8,"absorb"],[12,"bugbuzz"],[16,"gust"]],evolveTo:"gustmoth",evolveLv:18},
-  {id:"gustmoth",name:"숲바람나방",em:"🦋",type:"bug",type2:"flying",tier:3,base:{hp:70,atk:22,def:22,spd:30,spa:34,spDef:26},moves:["bugbite","bugbuzz","gust","absorb"],learn:[[30,"peck"]]},
+  {id:"gustmoth",name:"숲바람나방",em:"🦋",type:"bug",type2:"flying",tier:3,base:{hp:70,atk:22,def:22,spd:30,spa:34,spDef:26},moves:["bugbite","bugbuzz","gust","absorb"],learn:[[30,"peck"],[36,"xscissor"]]},
   /* 희소 타입 보강 — 격투·페어리·악이 각 2종뿐이라 두 번째 진화 라인을 추가한다(팀 빌딩 다양성).
      기존 라인과 실루엣이 겹치지 않게 원숭이·반딧불·까마귀로 차별화. 신규 무브 불필요(전부 실존).
      스탯 총합(3단 190~195)은 기존 3단 대역과 동일 — balance_test 통과 유지. */
