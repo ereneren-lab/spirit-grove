@@ -723,23 +723,16 @@
           <g fill="#16281c"><path d="M18 150 L18 118 Q10 112 18 104 Q26 96 22 108 Q34 100 28 114 Q38 112 30 122 L34 150 Z"/><path d="M264 150 L264 122 Q256 116 264 108 Q272 100 268 112 Q280 104 274 118 L278 150 Z"/></g>
           <g fill="#1c3322"><ellipse cx="70" cy="126" rx="26" ry="20"/><ellipse cx="110" cy="130" rx="30" ry="22"/><ellipse cx="205" cy="128" rx="28" ry="21"/><ellipse cx="240" cy="132" rx="24" ry="18"/></g>
           <rect x="66" y="140" width="8" height="12" fill="#3a2a1e"/><rect x="203" y="142" width="8" height="10" fill="#3a2a1e"/>
-          <g transform="translate(150 118)">
-            <ellipse cx="0" cy="14" rx="20" ry="5" fill="#000" opacity="0.25"/>
-            <path d="M18 8 Q30 -2 26 -14 Q22 -6 18 -2 Z" fill="#e08040"/>
-            <ellipse cx="0" cy="2" rx="15" ry="12" fill="#ec8848"/>
-            <circle cx="-2" cy="-10" r="9" fill="#ee9450"/>
-            <path d="M-9 -14 L-11 -24 L-4 -17 Z" fill="#ee9450"/><path d="M5 -14 L8 -24 L1 -17 Z" fill="#ee9450"/>
-            <path d="M-9 -14 L-10 -20 L-5 -16 Z" fill="#7a4020"/><path d="M5 -14 L7 -20 L2 -16 Z" fill="#7a4020"/>
-            <circle cx="-5" cy="-10" r="1.6" fill="#2a1810"/><circle cx="2" cy="-10" r="1.6" fill="#2a1810"/>
-            <circle cx="-1.5" cy="-6" r="1.3" fill="#2a1810"/>
-            <path d="M-9 2 Q-3 6 -3 -1 Z" fill="#fff" opacity="0.85"/>
-          </g>
+          <!-- 타이틀 주인공 정령 — 게임 내 고해상 픽셀 아트(foxfire)를 그대로 얹어 화풍을 통일한다.
+               href는 로드 후 JS가 PAINT_ART.foxfire로 채운다(정적 폴백은 밤하늘 씬만 남는다). -->
+          <ellipse cx="150" cy="133" rx="23" ry="5.5" fill="#000" opacity="0.3"/>
+          <image id="titleMon" x="116" y="72" width="68" height="68" preserveAspectRatio="xMidYMax meet"/>
           <g fill="#ffe680"><circle cx="128" cy="96" r="1.6"><animate attributeName="opacity" values="0.3;1;0.3" dur="2.2s" repeatCount="indefinite"/></circle><circle cx="175" cy="104" r="1.3"><animate attributeName="opacity" values="1;0.3;1" dur="2.6s" repeatCount="indefinite"/></circle><circle cx="150" cy="86" r="1.4"><animate attributeName="opacity" values="0.4;1;0.4" dur="1.9s" repeatCount="indefinite"/></circle></g>
         </svg>
       </div>
       <h2>정령의 숲</h2>
       <p class="tag">황혼이 내려앉은 정령의 숲. 정령을 포획·진화시키고, 상성과 상태이상을 활용해 트레이너와 숲의 군주를 꺾어라.</p>
-      <div class="badges"><span class="badge" id="spCountBadge">정령 86종</span><span class="badge">이중 타입</span><span class="badge">물리·특수</span><span class="badge">진화의 돌</span><span class="badge">숲의 군주</span></div>
+      <div class="badges"><span class="badge" id="spCountBadge">정령 100종</span><span class="badge">이중 타입</span><span class="badge">물리·특수</span><span class="badge">진화의 돌</span><span class="badge">숲의 군주</span></div>
       <div class="btn-col"><button class="btn" id="newGameBtn">새 게임</button><button class="btn ghost" id="continueBtn" style="display:none">이어하기</button></div>
     </section>
 
@@ -2008,7 +2001,9 @@ const INTERIORS={
   home_tori:{ id:"home_tori", W:11, H:7, startX:5, startY:5, exitX:5, exitY:6, name:"언덕 농가",
     str:["###########","#B.P.....N#","#.........#","#.##...##.#","#.........#","#.........#","#####.#####"] },
   home_el:{ id:"home_el", W:9, H:7, startX:4, startY:5, exitX:4, exitY:6, name:"숲가 빈터",
-    str:["#########","#.P.B.N.#","#..###..#","#.......#","#..###..#","#.......#","####.####"] },
+    /* ⚠️ 침대(B@4,1) 아래(4,2)가 벽이라 양옆 칸이 P·N·벽에 갇혀 **침대에 닿을 수 없었다**(reachability_test).
+       (4,2)를 틔워 아래에서 접근 가능하게 한다 — 회복 침대는 써야 의미가 있다. */
+    str:["#########","#.P.B.N.#","#..#.#..#","#.......#","#..###..#","#.......#","####.####"] },
   // 정령 회관: 숨어 있던 시스템(IV·닉네임·친밀도)을 플레이어에게 여는 창구.
   // p=감정사, n=이름 짓는 사람, s=마사지사 — 셋 다 비보행(부딪혀 대화).
   // ⚠️ 세 NPC(p/n/s) 바로 아래가 뚫려 있어야 부딪혀 말을 걸 수 있다(카운터로 막으면 대화 불가).
@@ -4346,14 +4341,16 @@ const WEATHERS={ sun:{ko:"쨍쨍",em:"☀️",tint:"radial-gradient(circle at 62
   rain:{ko:"비",em:"🌧️",tint:"linear-gradient(180deg,rgba(80,124,194,.22),rgba(80,124,194,.06))"}, sand:{ko:"모래바람",em:"🌪️",tint:"linear-gradient(180deg,rgba(200,170,110,.24),rgba(160,130,80,.08))"},
   hail:{ko:"싸라기눈",em:"🌨️",tint:"linear-gradient(180deg,rgba(190,225,240,.26),rgba(150,200,225,.08))"} };
 /* 지역별 전투 배경 (하늘빛 글로우 + 하늘→지면 그라데이션), index=region(y) */
+/* 지역별 '씬형' 전투 배경 — 하늘 그라데이션 + 지평선 실루엣 + 지면(작은 인라인 SVG data-URI, 용량 무시할 수준).
+   region(y) 인덱스로 setWeather 전에 battleField.style.background에 적용된다(4402 근방). 스프라이트는 이 위 자식 DOM. */
 const REGION_BATTLE_BG=[
-  "radial-gradient(520px 300px at 72% 10%, rgba(255,224,150,.28), transparent 60%), linear-gradient(180deg,#a9dcee 0%,#cfe9c6 50%,#9ecb74 100%)",   /*0 마을*/
-  "radial-gradient(520px 300px at 70% 8%, rgba(255,240,180,.30), transparent 60%), linear-gradient(180deg,#9ad6f2 0%,#c6e9b8 48%,#93ca6a 100%)",    /*1 초원*/
-  "radial-gradient(500px 280px at 68% 6%, rgba(200,240,150,.22), transparent 62%), linear-gradient(180deg,#89c6b0 0%,#7bb583 46%,#4f8b52 100%)",    /*2 숲*/
-  "radial-gradient(460px 260px at 66% 4%, rgba(150,200,150,.16), transparent 60%), linear-gradient(180deg,#5f7f6c 0%,#456a4e 44%,#2f5238 100%)",    /*3 깊은 숲*/
-  "radial-gradient(540px 320px at 72% 10%, rgba(180,240,240,.30), transparent 60%), linear-gradient(180deg,#a6e0e8 0%,#8fd0d0 46%,#3f9a8e 100%)",   /*4 수정 호수*/
-  "radial-gradient(520px 300px at 74% 8%, rgba(255,236,190,.26), transparent 62%), linear-gradient(180deg,#cfe0ea 0%,#c8c6a4 48%,#8e8a5c 100%)",    /*5 고원*/
-  "radial-gradient(500px 300px at 70% 12%, rgba(190,150,240,.30), transparent 60%), linear-gradient(180deg,#3a2f56 0%,#4a3f6a 46%,#241f38 100%)"    /*6 군주의 제단*/
+  "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20320%20200%22%20preserveAspectRatio%3D%22xMidYMax%20slice%22%3E%3Cpath%20d%3D%22M0%20150%20Q80%20126%20170%20142%20T320%20138%20V200%20H0%20Z%22%20fill%3D%22%238fbf68%22%2F%3E%3Cpath%20d%3D%22M0%20158%20Q120%20140%20220%20152%20T320%20150%20V200%20H0%20Z%22%20fill%3D%22%237cae57%22%2F%3E%3Cg%20fill%3D%22%23b6614a%22%3E%3Cpath%20d%3D%22M232%20138%20l16%20-12%2016%2012%20z%22%2F%3E%3Cpath%20d%3D%22M262%20142%20l12%20-9%2012%209%20z%22%2F%3E%3C%2Fg%3E%3Crect%20x%3D%22238%22%20y%3D%22138%22%20width%3D%2220%22%20height%3D%2210%22%20fill%3D%22%23e6cfa0%22%2F%3E%3Crect%20x%3D%22266%22%20y%3D%22142%22%20width%3D%2216%22%20height%3D%228%22%20fill%3D%22%23e6cfa0%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22165%22%20width%3D%22320%22%20height%3D%2235%22%20fill%3D%22%238fc069%22%2F%3E%3C%2Fsvg%3E\") center bottom/cover no-repeat, radial-gradient(520px 300px at 72% 12%, rgba(255,236,170,.30), transparent 60%), linear-gradient(180deg,#bfe6f4 0%,#dcefd0 46%,#bfe0a0 62%)",   /*0 마을*/
+  "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20320%20200%22%20preserveAspectRatio%3D%22xMidYMax%20slice%22%3E%3Cpath%20d%3D%22M0%20148%20Q90%20128%20180%20140%20T320%20134%20V200%20H0%20Z%22%20fill%3D%22%238fca5f%22%2F%3E%3Cpath%20d%3D%22M0%20160%20Q140%20146%20240%20156%20T320%20154%20V200%20H0%20Z%22%20fill%3D%22%237bb84e%22%2F%3E%3Cg%20opacity%3D%22.9%22%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%22176%22%20r%3D%223%22%20fill%3D%22%23f2c0d8%22%2F%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%22182%22%20r%3D%223%22%20fill%3D%22%23f6e07a%22%2F%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%22178%22%20r%3D%223%22%20fill%3D%22%23f2c0d8%22%2F%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22185%22%20r%3D%223%22%20fill%3D%22%23f6e07a%22%2F%3E%3C%2Fg%3E%3Crect%20x%3D%220%22%20y%3D%22166%22%20width%3D%22320%22%20height%3D%2234%22%20fill%3D%22%2393c85f%22%2F%3E%3C%2Fsvg%3E\") center bottom/cover no-repeat, radial-gradient(520px 300px at 70% 10%, rgba(255,244,180,.32), transparent 60%), linear-gradient(180deg,#b6e2f6 0%,#d8efc8 44%,#bfe49c 60%)",   /*1 초원*/
+  "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20320%20200%22%20preserveAspectRatio%3D%22xMidYMax%20slice%22%3E%3Cg%20fill%3D%22%233f804c%22%3E%3Cellipse%20cx%3D%2236%22%20cy%3D%22140%22%20rx%3D%2234%22%20ry%3D%2226%22%2F%3E%3Cellipse%20cx%3D%2296%22%20cy%3D%22146%22%20rx%3D%2238%22%20ry%3D%2230%22%2F%3E%3Cellipse%20cx%3D%22250%22%20cy%3D%22142%22%20rx%3D%2236%22%20ry%3D%2228%22%2F%3E%3Cellipse%20cx%3D%22300%22%20cy%3D%22150%22%20rx%3D%2230%22%20ry%3D%2224%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%232f6b3c%22%3E%3Cellipse%20cx%3D%22150%22%20cy%3D%22150%22%20rx%3D%2240%22%20ry%3D%2226%22%2F%3E%3Cellipse%20cx%3D%22205%22%20cy%3D%22146%22%20rx%3D%2230%22%20ry%3D%2222%22%2F%3E%3C%2Fg%3E%3Crect%20x%3D%220%22%20y%3D%22158%22%20width%3D%22320%22%20height%3D%2242%22%20fill%3D%22%234f8b52%22%2F%3E%3C%2Fsvg%3E\") center bottom/cover no-repeat, radial-gradient(500px 280px at 68% 8%, rgba(210,240,160,.24), transparent 62%), linear-gradient(180deg,#a9d8d0 0%,#9ccb96 46%,#6fa864 60%)",   /*2 숲*/
+  "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20320%20200%22%20preserveAspectRatio%3D%22xMidYMax%20slice%22%3E%3Cg%20fill%3D%22%23264a30%22%3E%3Cellipse%20cx%3D%2240%22%20cy%3D%22138%22%20rx%3D%2230%22%20ry%3D%2230%22%2F%3E%3Cellipse%20cx%3D%2292%22%20cy%3D%22146%22%20rx%3D%2234%22%20ry%3D%2234%22%2F%3E%3Cellipse%20cx%3D%22248%22%20cy%3D%22140%22%20rx%3D%2232%22%20ry%3D%2232%22%2F%3E%3Cellipse%20cx%3D%22298%22%20cy%3D%22150%22%20rx%3D%2228%22%20ry%3D%2228%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%231c3a26%22%3E%3Crect%20x%3D%22150%22%20y%3D%22120%22%20width%3D%2214%22%20height%3D%2240%22%2F%3E%3Cellipse%20cx%3D%22157%22%20cy%3D%22120%22%20rx%3D%2230%22%20ry%3D%2226%22%2F%3E%3Crect%20x%3D%22196%22%20y%3D%22128%22%20width%3D%2212%22%20height%3D%2234%22%2F%3E%3Cellipse%20cx%3D%22202%22%20cy%3D%22128%22%20rx%3D%2224%22%20ry%3D%2222%22%2F%3E%3C%2Fg%3E%3Crect%20x%3D%220%22%20y%3D%22156%22%20width%3D%22320%22%20height%3D%2244%22%20fill%3D%22%232f5238%22%2F%3E%3C%2Fsvg%3E\") center bottom/cover no-repeat, radial-gradient(460px 260px at 66% 6%, rgba(150,200,150,.16), transparent 60%), linear-gradient(180deg,#6f8f86 0%,#537062 46%,#37543e 60%)",   /*3 깊은 숲*/
+  "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20320%20200%22%20preserveAspectRatio%3D%22xMidYMax%20slice%22%3E%3Crect%20x%3D%220%22%20y%3D%22150%22%20width%3D%22320%22%20height%3D%2250%22%20fill%3D%22%234fa8a0%22%2F%3E%3Cg%20stroke%3D%22%23bfeef0%22%20stroke-width%3D%222%22%20opacity%3D%22.55%22%3E%3Cline%20x1%3D%2230%22%20y1%3D%22162%22%20x2%3D%2290%22%20y2%3D%22162%22%2F%3E%3Cline%20x1%3D%22210%22%20y1%3D%22170%22%20x2%3D%22290%22%20y2%3D%22170%22%2F%3E%3Cline%20x1%3D%22120%22%20y1%3D%22178%22%20x2%3D%22180%22%20y2%3D%22178%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%23a8e4e6%22%3E%3Cpath%20d%3D%22M150%20150%20l10%20-30%2010%2030%20z%22%2F%3E%3Cpath%20d%3D%22M168%20150%20l7%20-20%207%2020%20z%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M0%20150%20Q60%20142%20130%20148%20L130%20150%20Z%22%20fill%3D%22%236fbdb2%22%2F%3E%3C%2Fsvg%3E\") center bottom/cover no-repeat, radial-gradient(540px 320px at 72% 10%, rgba(190,244,244,.32), transparent 60%), linear-gradient(180deg,#bfeaf2 0%,#a6e0e2 42%,#7fcccb 56%)",   /*4 수정 호수*/
+  "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20320%20200%22%20preserveAspectRatio%3D%22xMidYMax%20slice%22%3E%3Cpath%20d%3D%22M0%20150%20L60%2096%20110%20140%20170%2090%20240%20146%20300%20104%20320%20150%20V200%20H0%20Z%22%20fill%3D%22%238f8a5e%22%2F%3E%3Cg%20fill%3D%22%23eef2f5%22%3E%3Cpath%20d%3D%22M60%2096%20l14%2022%20-28%200%20z%22%2F%3E%3Cpath%20d%3D%22M170%2090%20l16%2024%20-32%200%20z%22%2F%3E%3Cpath%20d%3D%22M300%20104%20l12%2018%20-24%200%20z%22%2F%3E%3C%2Fg%3E%3Crect%20x%3D%220%22%20y%3D%22158%22%20width%3D%22320%22%20height%3D%2242%22%20fill%3D%22%23c6bf9a%22%2F%3E%3C%2Fsvg%3E\") center bottom/cover no-repeat, radial-gradient(520px 300px at 74% 8%, rgba(255,238,196,.26), transparent 62%), linear-gradient(180deg,#cfe0ea 0%,#cdcaa8 46%,#9c9668 60%)",   /*5 고원*/
+  "url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20320%20200%22%20preserveAspectRatio%3D%22xMidYMax%20slice%22%3E%3Crect%20x%3D%220%22%20y%3D%22150%22%20width%3D%22320%22%20height%3D%2250%22%20fill%3D%22%23352b52%22%2F%3E%3Cg%20fill%3D%22%23463a68%22%3E%3Crect%20x%3D%2244%22%20y%3D%22104%22%20width%3D%2218%22%20height%3D%2260%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%22120%22%20y%3D%22112%22%20width%3D%2218%22%20height%3D%2252%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%22228%22%20y%3D%22108%22%20width%3D%2218%22%20height%3D%2256%22%20rx%3D%223%22%2F%3E%3Crect%20x%3D%22284%22%20y%3D%22116%22%20width%3D%2218%22%20height%3D%2248%22%20rx%3D%223%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%235a4c82%22%3E%3Crect%20x%3D%2240%22%20y%3D%2298%22%20width%3D%2226%22%20height%3D%228%22%20rx%3D%222%22%2F%3E%3Crect%20x%3D%22116%22%20y%3D%22106%22%20width%3D%2226%22%20height%3D%228%22%20rx%3D%222%22%2F%3E%3Crect%20x%3D%22224%22%20y%3D%22102%22%20width%3D%2226%22%20height%3D%228%22%20rx%3D%222%22%2F%3E%3Crect%20x%3D%22280%22%20y%3D%22110%22%20width%3D%2226%22%20height%3D%228%22%20rx%3D%222%22%2F%3E%3C%2Fg%3E%3Cellipse%20cx%3D%22160%22%20cy%3D%22150%22%20rx%3D%22150%22%20ry%3D%2220%22%20fill%3D%22%236a58a0%22%20opacity%3D%22.35%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22162%22%20width%3D%22320%22%20height%3D%2238%22%20fill%3D%22%233a2f56%22%2F%3E%3C%2Fsvg%3E\") center bottom/cover no-repeat, radial-gradient(500px 300px at 70% 14%, rgba(200,160,245,.34), transparent 60%), linear-gradient(180deg,#3f345e 0%,#4a3f6a 46%,#2c2442 60%)"   /*6 군주의 제단*/
 ];
 // ===== 오버월드 날씨 =====
 // 지역별 특징 날씨가 느린 시계(dayCycle과 같은 실시간 방식 — 저장 상태 없음, 결정적)로 왔다 갔다 한다.
@@ -8094,6 +8091,8 @@ window.SG.flow={startEncounter,startTrainer,maybeRematch,doMove,renderCombatants
 /* ===================== INIT ===================== */
 // 타이틀 화면의 종수 표기를 DEX.length에서 파생 (하드코딩 방지)
 try{ $("dexPill").textContent=`📖 0/${DEX.length}`; const _dt=$("dexTotal"); if(_dt)_dt.textContent=DEX.length; const _sb=$("spCountBadge"); if(_sb)_sb.textContent=`정령 ${DEX.length}종`; }catch(e){}
+// 타이틀 정령: 게임 내 고해상 픽셀 아트로 화풍 통일(밤하늘 SVG 씬 위에 얹는다).
+try{ const _tm=$("titleMon"); const _art=(typeof PAINT_ART!=="undefined"&&PAINT_ART.foxfire)||(typeof ART!=="undefined"&&ART.foxfire); if(_tm&&_art)_tm.setAttribute("href",_art); }catch(e){}
 if(anySave()) $("continueBtn").style.display="block";
 
 })();

@@ -16,8 +16,10 @@ const { chromium } = require("playwright"); const path=require("path");
     // 인테리어 정의 + 진입(warpFade 비동기)
     const M=F.INTERIORS.marsh; const dimOK = !!M && M.W===17 && M.H===13 && M.name==="안개 늪지";
     F.enterInterior(M);
-    // 늪지 전용 조우: 풀 정령이 테마 풀에서 나오는지 (10회 표본)
-    const themePool=new Set(["swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"]);
+    // 늪지 전용 조우: 정령이 테마 풀에서만 나오는지 (10회 표본)
+    // 테마 = 독/땅/물/풀 + 분위기용 ghost(도깨비불 wispkin — 안개 늪지·수렁은 도깨비불의 전형적 서식지).
+    // ⚠️ 실제 ENC_POOLS.marsh와 동기화할 것 — 풀에 종을 더하면 여기도 더한다(이 목록은 하드코딩 스냅샷이다).
+    const themePool=new Set(["wispkin","swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"]);
     S.G().party=[S.makeMon("swampfrog",20)]; let inPool=true, gotFoe=false;
     // foe를 지우지 않는다: transitionToBattle의 비동기 콜백이 G.foe를 읽으므로(테스트 아티팩트 방지)
     for(let i=0;i<10;i++){ F.startMarshEncounter(); const f=S.G().foe; if(f){ gotFoe=true; if(!themePool.has(f.id))inPool=false; } S.G().inBattle=false; }

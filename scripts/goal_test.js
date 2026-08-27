@@ -96,7 +96,7 @@ setTimeout(() => {
   ok(gc.done === true && gc.x === null, "방향이 아닌 수집 현황을 보여준다");
   F.updateGoal();
   ok(track.classList.contains("done"), "트로피 스타일로 바뀐다");
-  ok(sub().includes("/86"), "도감 진행도: " + sub());
+  ok(sub().includes("/" + SG.DEX.length), "도감 진행도: " + sub() + " (총 " + SG.DEX.length + "종)");
 
   /* [4b] ⚠️ **트래커가 가리키는 곳엔 실제로 갈 수 있어야 한다.** 사슬에 단계를 끼우는 건 값싼 변경처럼
      보이지만, 목표 타일이 비보행 문(제단 X·리그 U·체육관 G)이면 bfsPath가 항상 null이라 자동 이동이
