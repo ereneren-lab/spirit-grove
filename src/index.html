@@ -5440,6 +5440,8 @@ function applyStage(mon,stat,delta,side){ if(!mon.stages)mon.stages=newStages();
   if(nv===old){ setMsg(`<b>${dispName(mon)}</b>의 ${lbl} 능력은 더 변하지 않는다!`); }
   else { mon.stages[stat]=nv; fxStage(side,delta>0); const dir=delta>0?(delta>=2?"크게 올랐다!":"올랐다!"):(delta<=-2?"크게 떨어졌다!":"떨어졌다!");
     setMsg(`<b>${dispName(mon)}</b>의 ${lbl} 능력이 ${dir}`); Audio.sfx("blip"); } renderStages(); }
+async function endTurnAbility(mon,side){ if(!mon||mon.hp<=0)return;
+  if(mon.ability==="speedboost"){ const _b=(mon.stages&&mon.stages.spd)||0; if(_b<6){ mon.stages.spd=clamp(_b+1,-6,6); renderStages(); setMsg(`<b>${dispName(mon)}</b>의 가속! 속도가 올랐다!`); Audio.sfx&&Audio.sfx("blip"); await mw(520); } } }
 async function endTurnItems(mon,side){ if(!mon||mon.hp<=0||!mon.held)return;
   if(mon.held==="leftovers" && mon.hp<mon.maxHp){ const h=Math.max(1,Math.floor(mon.maxHp/16)); mon.hp=Math.min(mon.maxHp,mon.hp+h); renderCombatants(); particles(side,"💚",3); setMsg(`<b>${dispName(mon)}</b>은(는) 먹다남은음식으로 회복했다!`); Audio.sfx("heal"); await mw(560); }
   else if(mon.held==="oranberry" && mon.hp>0 && mon.hp<mon.maxHp/2){ const h=Math.floor(mon.maxHp*0.25); mon.hp=Math.min(mon.maxHp,mon.hp+h); mon.held=null; renderCombatants(); particles(side,"💚",5); setMsg(`<b>${dispName(mon)}</b>은(는) 오랭열매를 먹고 회복했다!`); Audio.sfx("heal"); await mw(620); }
@@ -5562,6 +5564,9 @@ async function performMove(att,def,mvKey,side){ let move=MOVES[mvKey]; let _resu
   if(def.hp>0 && def.ability==="static" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"par",side); }
   if(def.hp>0 && def.ability==="poisonpoint" && !att.status && move.power>0 && (att.type!=="poison"&&att.type2!=="poison") && Math.random()<0.3){ await mw(240); applyStatus(att,"psn",side); }   // 독가시
   if(def.hp>0 && def.ability==="flamebody" && !att.status && move.power>0 && Math.random()<0.3){ await mw(240); applyStatus(att,"brn",side); }   // 불꽃몸
+  if(def.hp<=0 && att.hp>0 && move.power>0 && att.ability==="moxie"){   // 자기과신: 상대를 쓰러뜨리면 공격 1 ↑
+    const _b=att.stages.atk||0; att.stages.atk=clamp(_b+1,-6,6);
+    if(att.stages.atk!==_b){ renderStages(); await mw(240); setMsg(`<b>${dispName(att)}</b>의 자기과신! 공격이 올랐다!`); Audio.sfx&&Audio.sfx("blip"); await mw(460); } }
   if(def.hp>0 && att.hp>0 && def.ability==="roughskin" && move.power>0 && !isSpecMove(move)){   // 까칠한피부: 물리 접촉 반동(계열은 moveCat 단일 출처)
     const r=Math.max(1,Math.floor(att.maxHp/8)); const _b=att.hp; att.hp=Math.max(0,att.hp-r); renderCombatants();
     if(Audio.hpTick)Audio.hpTick(_b/att.maxHp*100, att.hp/att.maxHp*100);
@@ -5974,6 +5979,7 @@ async function doMove(mvKey){ if(G.busy)return; G.busy=true; G.battleTurn=(G.bat
   if(G.weatherTurns>0){ G.weatherTurns--; if(G.weatherTurns<=0){ G.weather=null; if(typeof applyWeather==="function")applyWeather(); setMsg("날씨가 원래대로 돌아왔다."); } }
   if(foe.hp>0)await endTurnStatus(foe,"foe"); if(foe.hp>0)await endTurnItems(foe,"foe");
   if(me.hp>0)await endTurnStatus(me,"me"); if(me.hp>0)await endTurnItems(me,"me");
+  if(foe.hp>0)await endTurnAbility(foe,"foe"); if(me.hp>0)await endTurnAbility(me,"me");
   if(foe.hp<=0){ await winBattle(); return; }
   if(me.hp<=0){ await faintMine(); return; }
   G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); Coach.afterTurn(); }
@@ -6859,7 +6865,8 @@ async function chooseSwitch(i){ if(i===G.active||!G.party[i]||G.party[i].hp<=0)r
   // 물러나는 정령은 랭크·혼란·씨앗이 사라진다(본가 규칙). 뒤로 뺐다 내보내며 부스트 유지하는 익스플로잇 차단.
   const _out=G.party[G.active]; if(_out&&_out.hp>0){ resetStages(_out); _out._confuse=0; _out._seeded=false; _out._flinch=false; _out._protect=false; _out._protectStreak=0; _out._choiceLock=null; _out._attract=false; _out._trapped=0; _out._charging=null; _out._invuln=false; _out._encore=null; _out._taunt=0; _out._disable=null;
     if(_out._tox)_out._tox=1;   // 맹독은 유지되지만 누적 카운터는 1로 리셋(본가 규칙)
-    if(_out.ability==="naturalcure" && _out.status){ _out.status=null; _out._tox=0; flashHint(`${dispName(_out)}의 상태이상이 나았다! (자연회복)`); } }
+    if(_out.ability==="naturalcure" && _out.status){ _out.status=null; _out._tox=0; flashHint(`${dispName(_out)}의 상태이상이 나았다! (자연회복)`); }
+    if(_out.ability==="regenerator" && _out.hp>0 && _out.hp<_out.maxHp){ const _h=Math.floor(_out.maxHp/3); _out.hp=Math.min(_out.maxHp,_out.hp+_h); flashHint(`${dispName(_out)}의 재생력! 체력을 회복했다`); } }
   const _bc=_batonCarry;   // 배턴터치면 랭크·급소랭크·씨앗을 새 정령이 이어받는다
   G.active=i; closeOverlay("switchOverlay"); $("meSprite").classList.remove("faint");
   if(_bc){ const nm=G.party[i]; nm.stages=Object.assign(newStages(),_bc.stages); nm._critStage=_bc.crit; nm._seeded=_bc.seeded; } renderCombatants(); sendOutAnim("me"); applyIntimidate(activeMon(),G.foe); renderStages(); setMsg(`가라, <b>${dispName(activeMon())}</b>!`); await applyHazards(activeMon(),"me");
