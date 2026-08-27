@@ -295,20 +295,18 @@ const { chromium } = require("playwright"); const path=require("path");
   // 그라인딩 — 언더레벨이면 gym에 들어가기 전에 근처 풀숲(T)에서 야생과 싸워 레벨을 올린다.
   // (봇이 목표로 직행해 gym 리더에게 언더레벨로 막히던 문제. 이동 중 조우는 메인 루프의 전투 로직이 처리.)
   const grindStep=async()=>{
-    const go=await p.evaluate(()=>{ const S=window.SG,F=S.flow,G=S.G(); if(G.indoor)return false;
-      const cand=[];
-      for(let y=Math.max(1,G.pos.y-8);y<Math.min(49,G.pos.y+9);y++)
-        for(let x=Math.max(1,G.pos.x-8);x<Math.min(24,G.pos.x+9);x++){
-          if(F.tileAt(x,y)!=="T"||!F.walkable(x,y))continue;
-          const d=Math.abs(x-G.pos.x)+Math.abs(y-G.pos.y); if(d>=3)cand.push({x,y,d}); }
-      if(!cand.length)return false;
-      cand.sort((a,b)=>a.d-b.d); const t=cand[Math.min(cand.length-1,Math.floor(cand.length/2))];   // 중간 거리(고정 — Math.random 회피)
-      return F.walkTo(t.x,t.y)?(t.x+","+t.y):false; });
-    if(!go)return false;
-    for(let i=0;i<40;i++){ await p.waitForTimeout(200);
-      const q=await p.evaluate(()=>{ const G=window.SG.G(); return {inB:!!G.inBattle,k:(G.indoor||"")+G.pos.x+","+G.pos.y}; });
-      if(q.inB)break;        // 조우 → 메인 루프가 전투 처리
-      if(q.k===go)break; }   // 도착 → 다음 루프에서 다른 풀숲으로
+    if(await p.evaluate(()=>!!window.SG.G().indoor))return false;
+    /* ⚠️ 옛 방식은 `F.walkTo(근처 풀숲)`으로 이동했는데 헤드리스에선 이 경로 이동이 rAF로 안 걷혀
+       봇이 제자리를 맴돌았다(전투 0). 반면 **goalTrack 탭 이동은 헤드리스에서도 동작한다**(longrun로 검증).
+       → 목표로 걸어가며 그 길목의 풀숲을 지나 야생과 싸운다(전진 자체가 그라인딩). 도착·조우까지 이동. */
+    const tapped=await p.evaluate(()=>{ const el=document.getElementById("goalTrack");
+      if(el&&el.offsetParent){ el.click(); return true; } return false; });
+    if(!tapped)return false;
+    let last=null,still=0;
+    for(let i=0;i<10;i++){ await p.waitForTimeout(360);
+      const q=await p.evaluate(()=>({inB:!!window.SG.G().inBattle, k:window.SG.G().pos.x+","+window.SG.G().pos.y}));
+      if(q.inB)break;                                   // 조우 → 메인 루프 전투 처리
+      if(q.k===last){ if(++still>=2)break; } else { still=0; last=q.k; } }   // 도착/정지 → 반환(메인 루프가 문 부딪힘 처리)
     return true;
   };
   // gym별 목표 레벨(리더 대비 -1까지 그라인딩). 밸런스 문서 기준 근사치. **4뱃지 뒤엔 일부러 안 건다.**
