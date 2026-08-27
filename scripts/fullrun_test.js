@@ -150,6 +150,11 @@ const { chromium } = require("playwright"); const path=require("path");
     await p.evaluate(()=>{ const S=window.SG; const G=S.freshState(); G.party=[S.makeMon("foxfire",5)]; S.setG(G); S.flow.enterMap(true); });
   }
   await p.waitForTimeout(500);
+  /* ⚠️ 헤드리스에서 실내 실시간 격자이동(rAF)이 안정적으로 안 틱해 키 입력만으론 시작 집을 못 나가는 판이
+     있다(실브라우저 정상). 먼저 문으로 걸어 나가보고, 그래도 실내면 문 밟기와 동일한 exitInterior로 필드에
+     확실히 내보낸다 — 그래야 이 스트레스 하네스가 '0 진행'으로 헛돌지 않는다. */
+  for(let i=0;i<10 && await p.evaluate(()=>!!window.SG.G().indoor);i++){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(170); }
+  if(await p.evaluate(()=>!!window.SG.G().indoor)){ await p.evaluate(()=>{ const F=window.SG.flow; if(F.exitInterior)F.exitInterior(); }); await p.waitForTimeout(400); }
 
   const t0=Date.now();
   const stats={battles:0,wild:0,trainer:0,caught:0,potions:0,runs:0,heals:0,restocks:0,grinds:0,faints:0,milestones:[],samples:[]};
@@ -210,6 +215,7 @@ const { chromium } = require("playwright"); const path=require("path");
     // 나가기
     for(let i=0;i<10;i++){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(220);
       const out=await p.evaluate(()=>!window.SG.G().indoor); if(out)break; }
+    if(await p.evaluate(()=>!!window.SG.G().indoor)){ await p.evaluate(()=>{ const F=window.SG.flow; if(F.exitInterior)F.exitInterior(); }); await p.waitForTimeout(300); }   // 헤드리스 실내 rAF 폴백
     if(healed)stats.heals++;
     return healed;
   };
@@ -275,6 +281,7 @@ const { chromium } = require("playwright"); const path=require("path");
     // 나가기
     for(let i=0;i<12;i++){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(230);
       const out=await p.evaluate(()=>!window.SG.G().indoor); if(out)break; }
+    if(await p.evaluate(()=>!!window.SG.G().indoor)){ await p.evaluate(()=>{ const F=window.SG.flow; if(F.exitInterior)F.exitInterior(); }); await p.waitForTimeout(300); }   // 헤드리스 실내 rAF 폴백
     const balls=await p.evaluate(()=>{ const G=window.SG.G(); return (G.items.ball||0)+(G.items.greatball||0); });
     if(balls>=4)stats.restocks++;
     return balls>=4;
@@ -569,6 +576,7 @@ const { chromium } = require("playwright"); const path=require("path");
           if(q.done||q.inB)break; } }
       for(let i=0;i<4;i++){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(240);
         const out=await p.evaluate(()=>!window.SG.G().indoor); if(out)break; }
+      if(await p.evaluate(()=>!!window.SG.G().indoor)){ await p.evaluate(()=>{ const F=window.SG.flow; if(F.exitInterior)F.exitInterior(); }); await p.waitForTimeout(300); }   // 헤드리스 실내 rAF 폴백
       await p.waitForTimeout(300); continue;
     }
 
