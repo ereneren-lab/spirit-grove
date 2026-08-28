@@ -5580,7 +5580,7 @@ async function performMove(att,def,mvKey,side){ let move=MOVES[mvKey]; let _resu
   const hits=move.multi?multiHits(move.multi):1; let total=0,lastR=null,sturdied=false,sashed=false;
   for(let h=0;h<hits;h++){ const r=damage(att,def,move); lastR=r; let dmg=r.dmg; if(side==="foe"){ let _dm=DIFF[CONFIG.difficulty].dmg; if(typeof forestBadges==="function"&&forestBadges()===0)_dm*=0.6; dmg=Math.max(1,Math.round(dmg*_dm)); }
     if(def.ability==="sturdy" && def.hp===def.maxHp && dmg>=def.hp){ dmg=def.hp-1; sturdied=true; }
-    else if(def.held==="focussash" && def.hp===def.maxHp && dmg>=def.hp){ dmg=def.hp-1; sashed=true; }   // 기합의띠: 풀피에서 1HP 생존(1회, 소모)
+    else if(def.held && HELD_ITEMS[def.held] && HELD_ITEMS[def.held].sash && def.hp===def.maxHp && dmg>=def.hp){ dmg=def.hp-1; sashed=true; }   // 풀피에서 1HP 생존(1회, 소모). ⚠️ 표의 sash 필드를 읽는다(단일 출처) — 키 하드코딩 시 새 띠형 아이템이 조용히 죽는다
     dmg=Math.min(dmg,def.hp); def.hp=Math.max(0,def.hp-dmg); total+=dmg;
     renderCombatants(); dS.classList.add("hurt"); setTimeout(()=>dS.classList.remove("hurt"),300); dmgNumber(dSide,dmg,r.eff>1||r.crit);
     Audio.sfx(r.eff>1?"superhit":r.eff<1?"weakhit":"hit");
@@ -5640,6 +5640,11 @@ async function performMove(att,def,mvKey,side){ let move=MOVES[mvKey]; let _resu
   if(def.hp>0 && move.eff && move.eff.flinch && !def._acted && Math.random()<move.eff.flinch) def._flinch=true;
   if(def.hp>0 && move.eff && move.eff.trap && !(def._trapped>0)){ def._trapped=ri(4,5); await mw(240); setMsg(`<b>${dispName(def)}</b>이(가) 조여져 움직임이 봉쇄됐다!`); Audio.sfx("status"); }
   if(move.eff && move.eff.selfKO && att.hp>0){ att.hp=0; renderCombatants(); const _aS=spriteEl(side); if(_aS)_aS.classList.add("faint"); await mw(300); setMsg(`<b>${dispName(att)}</b>은(는) 폭발의 반동으로 쓰러졌다!`); Audio.sfx("faint"); }
+  // 피해기의 부가 능력치 변화(머드샷·얼음바람·거품광선·애시드샷·모래폭풍탄·인파이트 등). 예전엔 power===0 분기에만
+  // eff.stat 소비가 있어, 위력 있는 기술의 랭크 하락/자기 하락이 전부 죽어 있었다(설명엔 표기되나 실제론 무효).
+  if(move.eff && move.eff.stat && Math.random()<(move.eff.chance||1)){
+    const _self=move.eff.target==="self"; const _tg=_self?att:def;
+    if(_tg && _tg.hp>0){ await mw(200); applyStage(_tg, move.eff.stat, move.eff.stage, _self?side:dSide); } }
   if(_recoiled)setMsg(`<b>${dispName(att)}</b>도 반동 피해를 입었다!`);
   await mw(500); }
 
@@ -5800,6 +5805,8 @@ async function dbExec(att,def,key,side){ const mv=MOVES[key]; if(!mv)return;
     dbLog(`→ <b>${dbName(def)}</b>에게 ${dmg} 데미지${r.eff>1?" · 효과가 굉장했다!":r.eff<1?" · 효과가 별로…":""}`);
     dbRender(); dbHitFx(def,r.eff); if(Audio.hpTick)Audio.hpTick(_pp,def.hp/def.maxHp*100);   // 피격: 카드 흔들림+플래시+타격음+HP틱
     if(def.hp>0 && mv.eff && mv.eff.status && Math.random()<(mv.eff.chance||0.3)) dbStatus(def,mv.eff.status,mv.eff.badly);
+    if(mv.eff && mv.eff.stat && Math.random()<(mv.eff.chance||1)){ const _self=mv.eff.target==="self"; const _tg=_self?att:def;   // 피해기 부가 랭크 변화(듀오 병렬 수정)
+      if(_tg && _tg.hp>0){ _tg.stages=_tg.stages||newStages(); if(mv.eff.stat in _tg.stages){ _tg.stages[mv.eff.stat]=clamp((_tg.stages[mv.eff.stat]||0)+mv.eff.stage,-6,6); dbLog(`${dbName(_tg)}의 ${STAGE_KO[mv.eff.stat]||mv.eff.stat}이(가) ${mv.eff.stage>0?"올랐다":"떨어졌다"}!`); } } }
     await wait(fxT(420));
   } else if(mv.heal){ const h=Math.floor(att.maxHp*mv.heal); att.hp=Math.min(att.maxHp,att.hp+h); dbLog(`${dbName(att)}의 체력이 회복됐다!`); await wait(fxT(360)); }
   else if(mv.eff && mv.eff.status){ dbStatus(def,mv.eff.status,mv.eff.badly); await wait(fxT(360)); }

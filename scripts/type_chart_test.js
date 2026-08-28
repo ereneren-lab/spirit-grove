@@ -18,6 +18,7 @@ const { chromium } = require("playwright"); const path=require("path");
       fireIce:eff("fire","ice"), elecGround:eff("elec","ground"), rockIce:eff("rock","ice"),
       iceDragon:eff("ice","dragon"), fireDragon:eff("fire","dragon"), dragonDragon:eff("dragon","dragon"), normalDragon:eff("normal","dragon"),
       bugGrass:eff("bug","grass"), fireBug:eff("fire","bug"), flyBug:eff("flying","bug"), bugFire:eff("bug","fire"),
+      grassBug:eff("grass","bug"), groundBug:eff("ground","bug"), flyElec:eff("flying","elec"),
       fightNormal:eff("fight","normal"), fightRock:eff("fight","rock"), fightIce:eff("fight","ice"),
       fightFlying:eff("fight","flying"), fightBug:eff("fight","bug"), flyFight:eff("flying","fight"), rockFight:eff("rock","fight"),
       psyFight:eff("psychic","fight"), psyPoison:eff("psychic","poison"), bugPsy:eff("bug","psychic"),
@@ -33,6 +34,9 @@ const { chromium } = require("playwright"); const path=require("path");
       grassSteel:eff("grass","steel") }; });
 
   ok(r.bad===0, `상성표 10x10 완전성(NaN 없음, 불량 ${r.bad})`);
+  ok(r.grassBug===0.5, `풀→벌레 0.5배(벌레 저항) (${r.grassBug})`);
+  ok(r.groundBug===0.5, `땅→벌레 0.5배(벌레 저항) (${r.groundBug})`);
+  ok(r.flyElec===0.5, `비행→전기 0.5배(전기 저항) (${r.flyElec})`);
   ok(r.iceGrass===2, `얼음→풀 2배 (${r.iceGrass})`);
   ok(r.iceFire===0.5, `얼음→불 0.5배 (${r.iceFire})`);
   ok(r.iceFly===2, `얼음→비행 2배 (${r.iceFly})`);
