@@ -50,6 +50,22 @@ const { chromium } = require("playwright"); const path = require("path");
     out.voidDoneSet = g.voidDone === true;
     out.noSealMisfire = g.badge === false;   // boss 훅이 오발해 숲의 인장 주면 badge=true가 됨
     out.candyRewarded = (g.items && g.items.candy || 0) >= 3;
+
+    // 발견성: 목표 트래커가 아크 종결 후 슈퍼보스로 안내, 클리어 후 폴백
+    const va = S.NPCS.find(n => n.id === "void_avatar");
+    const champ = () => { S.setG(S.freshState()); const G = S.G(); G.party = [S.makeMon("foxfire", 55)]; G.badges = ["1", "2", "3", "4"]; G.badge = true; G.lakeDone = true; G.champion = true; G.shadowDone = true; G.questFlags = { haramScene: 1 }; return G; };
+    let Gc = champ(); Gc.voidDone = false; const g1 = F.currentGoal();
+    out.goalToBoss = !!(g1 && g1.name === "각성한 그림자" && g1.x === va.x && g1.y === va.y);
+    Gc = champ(); Gc.voidDone = true; const g2 = F.currentGoal();
+    out.goalAfter = g2 && g2.name === "도감 완성";
+    Gc = champ(); Gc.shadowDone = false; Gc.voidDone = false; const g3 = F.currentGoal();
+    out.goalPreArc = g3 && g3.name === "도감 완성";   // 아크 미완 → 슈퍼보스 안내 안 함
+    // 도전과제: void 항목이 voidDone을 검사
+    const ACH = window.SG.flow.ACHIEVEMENTS || (typeof ACHIEVEMENTS !== "undefined" ? ACHIEVEMENTS : []);
+    const va2 = ACH.find(a => a.id === "void");
+    S.setG(S.freshState()); S.G().voidDone = true;
+    out.voidAch = !!va2 && va2.check() === true;
+    S.G().voidDone = false; out.voidAchOff = va2 ? va2.check() === false : false;
     return out;
   });
 
@@ -63,6 +79,9 @@ const { chromium } = require("playwright"); const path = require("path");
   ok(!r.winErr && r.voidDoneSet, "VOID 격파 시 voidDone이 세워진다" + (r.winErr ? ": " + r.winErr : ""));
   ok(r.noSealMisfire, "boss 훅 오발 없음(숲의 인장·메인 엔딩 안 뜸)");
   ok(r.candyRewarded, "첫 격파 보상(레어 사탕 등) 지급");
+  ok(r.goalToBoss, "발견성: 목표 트래커가 아크 종결 후 슈퍼보스(제단 아바타)로 안내");
+  ok(r.goalAfter && r.goalPreArc, "발견성: 클리어 후·아크 미완엔 슈퍼보스 안내 안 함");
+  ok(r.voidAch && r.voidAchOff, "도전과제 '근원을 끊다'가 voidDone을 검사한다");
   ok(errs.length === 0, "런타임 에러 0" + (errs.length ? ": " + errs.slice(0, 3).join(" / ") : ""));
   console.log(process.exitCode ? "\n❌ 실패" : "\n🎉 포스트게임 슈퍼보스(각성한 그림자) 통과");
   await b.close(); process.exit(process.exitCode || 0);
