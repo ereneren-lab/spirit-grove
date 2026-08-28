@@ -59,6 +59,13 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(/html\.fs-xl\s+\.dlg-text/.test(src), "글자 크기 CSS(html.fs-xl .dlg-text)가 실재한다");
   ok(/html\.cb\s+\.hpfill\.hpcrit/.test(src) || /html\.cb .*hpcrit/.test(src), "색약 HP 줄무늬 CSS(html.cb …hpcrit)가 실재한다");
   ok(/html\.cb\s+\.type-tag/.test(src), "색약 타입 태그 외곽선 CSS가 실재한다");
+  // 색약 줄무늬가 모든 HP 바를 덮는가 — 요약 바(.mini-hp)·듀오 바(.dbhpfill)까지(예전엔 .mon-card·.hpfill만)
+  const _cbWarn=src.split("\n").find(l=>/html\.cb/.test(l)&&/hpwarn|\.warn/.test(l))||"";
+  const _cbCrit=src.split("\n").find(l=>/html\.cb/.test(l)&&/hpcrit|\.crit/.test(l))||"";
+  ok(/\.mini-hp i\.hpwarn/.test(_cbWarn)&&/\.mini-hp i\.hpcrit/.test(_cbCrit), "색약 줄무늬가 모든 .mini-hp 바를 덮는다(요약 포함)");
+  ok(/\.dbhpfill\.warn/.test(_cbWarn)&&/\.dbhpfill\.crit/.test(_cbCrit), "색약 줄무늬가 듀오 HP 바(.dbhpfill)를 덮는다");
+  // 요약 오버레이 HP 바가 단일 출처 miniHpHtml을 쓴다(warn/crit 색이 일관되게 뜨도록)
+  ok(/HP \$\{Math\.max\(0,m\.hp\)\}\/\$\{m\.maxHp\}<\/div>\s*\$\{miniHpHtml\(m\)\}/.test(src), "요약 오버레이 HP 바가 miniHpHtml 단일 출처를 쓴다");
 
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,2).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 접근성(글자 크기·색약) 통과");
