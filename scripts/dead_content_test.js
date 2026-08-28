@@ -39,7 +39,7 @@ const { chromium } = require("playwright"); const path=require("path");
     for(const id in F.INTERIORS){ (F.INTERIORS[id].str||[]).forEach(row=>[...row].forEach(c=>tiles.add(c))); }
     for(let y=0;y<50;y++)for(let x=0;x<25;x++){ const t=F.tileAt(x,y); if(t)tiles.add(t); }
     const npcKeys=new Set((F.NPCS||[]).map(n=>n.battleKey).filter(Boolean));
-    const special=new Set(["X","SNOW","L","V","T9","T10","T11","T12","T14","T15","T19","T20"]);
+    const special=new Set(["X","SNOW","L","V","T9","T10","T11","T12","T14","T15","T19","T20","VOID"]);   // VOID(각성한 그림자)=제단 아바타 NPC의 voidBoss 특수분기로 트리거(battleKey 아님)
     const orphanTrainers=Object.keys(S.TRAINERS||{}).filter(k=>!tiles.has(k)&&!npcKeys.has(k)&&!special.has(k));
     /* ⚠️ **키 노출은 nm에서 한 번 고쳤는데 ds에서 재발했다** — 기술머신 13종이 상점·가방에서
        "fire 정령에게 불티폭발을(를) 가르친다"로 떴다(영문 타입 키 + 깨진 조사). 위 nameless는
