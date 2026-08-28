@@ -3659,6 +3659,12 @@ function currentGoal(){
   }
   if(!G.champion)
     return {name:"정령 리그", sub:"인장을 되살렸다 — 이제 정점에 도전하라", x:LEAGUE_XY.x, y:LEAGUE_XY.y};
+  /* 포스트게임 슈퍼보스 안내 — 그림자 아크 종결(챔피언+흑요마+하람) 후 아직 근원을 끊지 못했다면
+     제단의 아바타(각성한 그림자)로 이끈다. 안 그러면 챔피언이 곧장 '도감 완성'으로 넘어가 VOID를 못 만난다. */
+  if(G.shadowDone && (G.questFlags&&G.questFlags.haramScene) && !G.voidDone){
+    const va=(typeof NPCS!=="undefined")&&NPCS.find(n=>n.id==="void_avatar");
+    if(va)return {name:"각성한 그림자", sub:"제단에 서린 최후의 어둠을 마주하라", x:va.x, y:va.y};
+  }
   return {name:"도감 완성", sub:`${G.caught.size}/${DEX.length}종 수집`, x:null, y:null, done:true};
 }
 function updateGoal(){
@@ -6761,6 +6767,7 @@ const ACHIEVEMENTS=[
   {id:"badge4",  ic:"🎖️", name:"네 조각",       desc:"숲의 인장 4개 모두 획득",       check:()=>((typeof forestBadges==="function")?forestBadges():0)>=4, prog:()=>`${(typeof forestBadges==="function")?forestBadges():0}/4`, money:3000, items:{hyperpotion:5,revive:3}},
   {id:"champion",ic:"👑", name:"챔피언",         desc:"정령 리그 제패",               check:()=>!!G.champion,                  prog:()=>G.champion?"완료":"미달성",                  money:8000, items:{candy:4}},
   {id:"shadow",  ic:"🌑", name:"그림자를 걷다",  desc:"제단의 흑요마 격파",           check:()=>!!G.shadowDone,                prog:()=>G.shadowDone?"완료":"미달성",                money:6000, items:{revive:3}},
+  {id:"void",    ic:"🕳️", name:"근원을 끊다",     desc:"각성한 그림자(제단 슈퍼보스) 격파", check:()=>!!G.voidDone,                 prog:()=>G.voidDone?"완료":"미달성",                  money:12000,items:{candy:5,revive:3}},
   {id:"legend3", ic:"✨", name:"전설의 조련사",  desc:"전설 정령 3종 만남",           check:()=>_legendCount()>=3,             prog:()=>`${_legendCount()}/3`,                       money:9000, items:{candy:4,revive:3}},
   {id:"shiny",   ic:"🌈", name:"빛나는 인연",    desc:"이로치(샤이니) 정령 보유",     check:()=>_ownedMons().some(m=>m.shiny), prog:()=>_ownedMons().some(m=>m.shiny)?"완료":"미달성",money:5000, items:{greatball:8}},
   {id:"tower",   ic:"🗼", name:"연전의 강자",    desc:"연전 도장 7연승",             check:()=>(G.towerBest||0)>=7,           prog:()=>`${Math.min(G.towerBest||0,7)}/7`,           money:4000, items:{hyperpotion:5}},
