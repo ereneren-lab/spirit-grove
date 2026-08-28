@@ -71,6 +71,9 @@ const { chromium } = require("playwright"); const path=require("path");
     //    "조건을 채우면 완료된다"가 거짓으로 실패한다(게임이 아니라 픽스처 문제).
     G.party.push(S.makeMon("shellow",18), S.makeMon("dustbunny",16));           // q_firstteam: 3마리
     G.caught.add("glowfly");                                                    // q_firefly: 반딧불이 포획
+    ["glowfly","lunarmoth","voltbeetle"].forEach(id=>G.caught.add(id));          // q_bughunt: 벌레 3종
+    G.party.push(S.makeMon("drakeling",30));                                    // q_dragonside: 용 Lv30
+    G.party.push(S.makeMon("grovespirit",40));                                  // q_talent: 재생력 특성
     Q.forEach(x=>{ after[x.id]=!!x.check(); });
     return { before, after, progOk };
   });
@@ -106,6 +109,36 @@ const { chromium } = require("playwright"); const path=require("path");
   });
   ok(bond.hasTrade, "trade1은 trade와 q_bond를 겸한다(회귀 조건)");
   ok(bond.active==="active", `q_bond가 trade에 가려지지 않고 제공된다 (${bond.active})`);
+
+  /* ===== chat 전용 NPC(나무꾼 바우)의 퀘스트 생애주기 + 완료 후 대화 크래시 방지 =====
+     woodsman은 lines가 없고 chat만 있다. 예전 talkNPC는 완료 후 첫 대화에서 src=undefined→.map 크래시.
+     저장/로드로 _npcTalk가 리셋된 복귀 유저가 정확히 이 경로를 밟는다. */
+  const woods=await p.evaluate(()=>{
+    const S=window.SG, F=S.flow; S.setG(S.freshState()); S.CONFIG.reduceMotion=true;
+    const G=S.G(); G.party=[S.makeMon("foxfire",30)]; F.enterMap(true);
+    const npc=F.NPCS.find(n=>n.id==="woodsman");
+    const out={ hasLines:!!npc.lines, hasChat:!!(npc.chat&&npc.chat.length) };
+    // 수락
+    F.talkNPC(npc); for(let i=0;i<8 && F.dialogActive();i++)F.advanceDialog();
+    out.accepted=(G.quests&&G.quests.q_bughunt)||null;
+    // 조건 충족 → 완료 대화
+    ["glowfly","lunarmoth","voltbeetle"].forEach(id=>G.caught.add(id));
+    const ballBefore=(G.items&&G.items.greatball)||0;
+    F.talkNPC(npc); for(let i=0;i<8 && F.dialogActive();i++)F.advanceDialog();
+    out.done=(G.quests&&G.quests.q_bughunt)||null;
+    out.rewarded=((G.items&&G.items.greatball)||0)>ballBefore;
+    // 저장/로드 시뮬: _npcTalk 리셋 후 완료 상태에서 반복 대화 → 크래시 없어야
+    let err=null;
+    try{ const ser=F.serialize(); F.deserialize(ser);
+      for(let k=0;k<5;k++){ F.talkNPC(npc); for(let i=0;i<6 && F.dialogActive();i++)F.advanceDialog(); } }
+    catch(e){ err=String(e); }
+    out.postDoneErr=err;
+    return out;
+  });
+  ok(woods.hasChat && !woods.hasLines, "나무꾼은 chat 전용 NPC(lines 없음) — 크래시 경로 대상");
+  ok(woods.accepted==="active", `q_bughunt 수락됨 (${woods.accepted})`);
+  ok(woods.done==="done" && woods.rewarded, "벌레 3종 충족 시 완료 + 보상 지급");
+  ok(!woods.postDoneErr, "완료·재로드 후 chat 전용 NPC 대화가 크래시하지 않는다"+(woods.postDoneErr?": "+woods.postDoneErr:""));
 
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 실내 트레이너/퀘스트 통과");

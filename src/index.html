@@ -1773,7 +1773,34 @@ const QUESTS=[
     reward:{hyperpotion:5,candy:2,revive:2},
     offer:["떠돌이 학자: 체육관엔 관장 말고도 견습 트레이너들이 숨어 있지. 대부분 그냥 지나치더군.","떠돌이 학자: 네 체육관의 견습들을 <b>전원</b> 꺾어보게. 자네의 실력을 기록에 남기겠네."],
     active:["떠돌이 학자: 아직 못 꺾은 견습이 남아 있군. 체육관 안을 구석구석 살펴보게."],
-    done:["떠돌이 학자: 전원 격파라니 — 자네 이름을 정령사 명부 맨 윗줄에 올렸네.","떠돌이 학자: 이건 내 감사의 표시일세."] }
+    done:["떠돌이 학자: 전원 격파라니 — 자네 이름을 정령사 명부 맨 윗줄에 올렸네.","떠돌이 학자: 이건 내 감사의 표시일세."] },
+  /* ── 콘텐츠 확장 퀘스트 3종 ──────────────────────────────────────────────
+     최근 추가분(벌레·용 라인 · 신규 특성)과 직접 연결되는 의뢰다. giver는 전부 실존 비전투 NPC라
+     퀘스트가 끝나면 자연히 원래 대사로 넘어간다(회귀 indoor_quest가 유령 의뢰인·픽스처 충족을 강제). */
+  { id:"q_bughunt", giver:"woodsman", title:"숲속 채집 일지", desc:"벌레 타입 정령 3종 도감 등록",
+    check:()=>[...(G.caught||[])].filter(id=>{ const d=byId(id); return d&&(d.type==="bug"||d.type2==="bug"); }).length>=3,
+    prog:()=>`${[...(G.caught||[])].filter(id=>{ const d=byId(id); return d&&(d.type==="bug"||d.type2==="bug"); }).length}/3종`,
+    reward:{greatball:3,candy:1},
+    offer:["나무꾼 바우: 이 숲엔 날개 달린 것들이 참 많지. 반딧불이, 나방, 딱정벌레까지.",
+           "나무꾼 바우: <b>벌레 정령 3종</b>만 도감에 담아다 주게. 내 오래된 채집 일지를 마저 채우고 싶어서 말이야."],
+    active:["나무꾼 바우: 반딧불 오솔길이나 이끼 골짜기, 오래된 유적을 뒤져 보게. 밤이면 더 많이 나오지."],
+    done:["나무꾼 바우: 오, 벌써 세 종이나! 일지가 꽉 찼구먼.","나무꾼 바우: 약속한 사례일세. 좋은 정령구야."] },
+  { id:"q_dragonside", giver:"elder", title:"용의 곁에서", desc:"용 타입 정령을 Lv 30 이상으로 키우기",
+    check:()=>(G.party||[]).some(m=>m&&!m.isEgg&&(m.type==="dragon"||m.type2==="dragon")&&(m.level||0)>=30),
+    prog:()=>{ const b=Math.max(0,...(G.party||[]).filter(m=>m&&(m.type==="dragon"||m.type2==="dragon")).map(m=>m.level||0)); return b?`용 정령 최고 Lv ${b}/30`:"용 정령 없음"; },
+    reward:{hyperpotion:2,candy:1},
+    offer:["숲의 노인: 용을 닮은 정령은 마음을 여는 데 오래 걸린다네. 조급해선 안 돼.",
+           "숲의 노인: <b>용 타입</b> 하나를 <b>Lv 30</b>까지 곁에 두고 키워 보게. 그 인내가 무엇을 남기는지 보고 싶으이."],
+    active:["숲의 노인: 고원과 설산, 깊은 물가에 용의 후예들이 산다지. 함께 싸우며 천천히 키우게."],
+    done:["숲의 노인: …과연, 눈빛이 달라졌군. 자네도, 그 아이도.","숲의 노인: 이 물약과 사탕을 받게. 먼 길에 보탬이 될 걸세."] },
+  { id:"q_talent", giver:"guide_rio", title:"깃든 재능", desc:"특별한 특성을 지닌 정령을 팀에 넣기",
+    check:()=>(G.party||[]).some(m=>m&&["moxie","speedboost","regenerator","adaptability","technician","filter"].includes(m.ability)),
+    prog:()=>(G.party||[]).some(m=>m&&["moxie","speedboost","regenerator","adaptability","technician","filter"].includes(m.ability))?"완료!":"특별한 특성 정령 없음",
+    reward:{candy:2,hyperpotion:2},
+    offer:["연구소 조수 하린: 정령마다 타고난 <b>특성</b>이 다르다는 거, 알고 있었어?",
+           "연구소 조수 하린: 개중엔 아주 드문 재능을 지닌 아이들이 있어 — 재생력, 가속, 적응력 같은. 그런 아이를 <b>팀에 한 마리</b> 데려와 줄래? 데이터를 남기고 싶어."],
+    active:["연구소 조수 하린: 대개 완전히 진화한 정령이 그런 특성을 깨워. 정령 정보 화면에서 특성을 확인할 수 있어."],
+    done:["연구소 조수 하린: 우와, 이 특성…! 연구소가 깜짝 놀랄 거야.","연구소 조수 하린: 고마워! 이건 그 데이터에 대한 보답이야."] }
 ];
 function questForGiver(id){ let offer=null; for(const q of QUESTS){ if(q.giver!==id)continue; const st=G.quests&&G.quests[q.id]; if(st==="active")return q; if(!st&&!offer)offer=q; } return offer; }
 function grantReward(r){ if(!G.items)G.items={}; for(const k in r){ G.items[k]=(G.items[k]||0)+r[k]; } }
@@ -1811,8 +1838,11 @@ function talkNPC(npc){ if(_talking||dialogActive())return;
   if(key && !cleared){ src=npc.lines; }
   else { _npcTalk[npc.id]=(_npcTalk[npc.id]||0)+1;
     const base=(cleared&&npc.linesAfter)?npc.linesAfter:npc.lines;
-    if(_npcTalk[npc.id]===1){ src=base; }
-    else { const pool=(npc.chat&&npc.chat.length)?npc.chat:npcAmbient(npc); src=[pool[(_npcTalk[npc.id]-2)%pool.length]]; } }
+    if(base && _npcTalk[npc.id]===1){ src=base; }
+    // ⚠️ lines가 없는 chat 전용 NPC(예: 나무꾼)는 base가 undefined다. 예전엔 첫 대화에서 src=undefined→.map 크래시.
+    //    lines가 있으면 첫 대화만 lines·이후 chat 순환, 없으면 첫 대화부터 chat을 순환한다(음수 인덱스도 방어).
+    else { const pool=(npc.chat&&npc.chat.length)?npc.chat:npcAmbient(npc);
+      const idx=(base?_npcTalk[npc.id]-2:_npcTalk[npc.id]-1); src=[pool[((idx%pool.length)+pool.length)%pool.length]]; } }
   const pages=src.map(t=>({name:npc.name||"",text:stripNamePrefix(npc.name,t)}));
   _talking=true; Audio.sfx("blip");
   showDialog(pages, ()=>{ _talking=false;
