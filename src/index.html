@@ -5965,7 +5965,17 @@ function parseTradeCode(code){ if(!code)return {err:"코드가 비어 있어요.
   const parts=code.split("."); if(parts.length!==3||parts[0]!==TRADE_VER)return {err:"형식이 올바르지 않은 코드예요."};
   if(_tradeChk(parts[1])!==parts[2])return {err:"손상된 코드예요 (체크섬 불일치)."};
   let obj; try{ obj=JSON.parse(_b64d(parts[1])); }catch(e){ return {err:"해독할 수 없는 코드예요."}; }
-  const m=reviveMon(obj); if(!m||!byId(m.id))return {err:"정령 데이터를 복원하지 못했어요."};
+  // ⚠️ 외부 입력 위생 — 체크섬은 공개(_tradeChk)라 보안 장벽이 아니다. 조작·손상된 코드가
+  //    레벨/개체값/기술을 비정상으로 넣으면 NaN 스탯이나 실존하지 않는 기술 → 기술 메뉴 렌더가 터져
+  //    전투 소프트락이 된다. 복원 전에 값을 정상 범위로 강제하고 실존 기술만 남긴다.
+  if(obj && typeof obj==="object" && !obj.egg){
+    const _int=(v,lo,hi,d)=>{ v=Math.floor(Number(v)); return isFinite(v)?clamp(v,lo,hi):d; };
+    obj.lv=_int(obj.lv,1,100,5);
+    if(obj.iv&&typeof obj.iv==="object"){ for(const k in obj.iv)obj.iv[k]=_int(obj.iv[k],0,31,15); } else obj.iv=null;
+    if(obj.ev&&typeof obj.ev==="object"){ for(const k in obj.ev)obj.ev[k]=_int(obj.ev[k],0,252,0); } else obj.ev=null;
+    if(Array.isArray(obj.mv)){ obj.mv=obj.mv.filter(k=>MOVES[k]).slice(0,4); if(!obj.mv.length)delete obj.mv; }
+  }
+  const m=reviveMon(obj); if(!m||!byId(m.id)||!(m.moves&&m.moves.length))return {err:"정령 데이터를 복원하지 못했어요."};
   return {mon:m}; }
 function qrModules(text){ const q=qrcode(0,"M"); q.addData(text); q.make(); const n=q.getModuleCount();
   const rows=[]; for(let y=0;y<n;y++){ const r=[]; for(let x=0;x<n;x++)r.push(q.isDark(y,x)); rows.push(r); } return rows; }
@@ -6648,7 +6658,7 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
                            //    여기서 계속하면 alive>0으로 오판해 **필드에 닫을 수 없는 강제 교체 모달**을 남긴다(실측: 45분 봇 런이 여기서 죽었다)
   // H5-C 누즐록: 기절한 정령은 영원히 떠난다(대체할 정령이 있을 때만 — 마지막 정령은 보호해 소프트락 방지).
   if(G.rules&&G.rules.nuzlocke){ const fainted=activeMon();
-    const fallback=G.party.some(m=>m!==fainted&&m.hp>0)||(G.box&&G.box.length>0);
+    const fallback=G.party.some(m=>m!==fainted&&m.hp>0&&!m.isEgg)||(G.box&&G.box.some(m=>m&&m.hp>0&&!m.isEgg));   // ⚠️ 알·기절 정령은 대체 요원이 아니다 — 이걸 요원으로 세면 마지막 전투 정령이 방생돼 전투 불능 상태로 화이트아웃(누즐록 보호 우회)
     if(fainted&&fallback){ const idx=G.party.indexOf(fainted); if(idx>=0)G.party.splice(idx,1);
       if(G.active>=G.party.length)G.active=Math.max(0,G.party.length-1);
       G.graveyard=G.graveyard||[]; G.graveyard.push(dispName(fainted));
@@ -6799,12 +6809,12 @@ function startNewGamePlus(){
   const nn=(G.ngPlus||0)+1;
   if(!confirm(`🔄 뉴게임+ (${nn}회차)\n\n유지: 도감·정령·보관함·업적·명예의전당·타워 기록\n초기화: 배지·스토리·비전기술·위치\n야생이 회차마다 강해진다(최대 +15). 소지금은 절반.\n\n다시 여정을 시작할까?`))return;
   // 유지할 것만 뽑아 새 상태에 이식한다. 나머지는 freshState 기본값(=처음부터).
-  const K={ caught:G.caught, seen:G.seen, party:G.party, box:G.box||[], dexClaimed:G.dexClaimed||[], achClaimed:G.achClaimed||[],
+  const K={ caught:G.caught, seen:G.seen, shinyDex:G.shinyDex||new Set(), party:G.party, box:G.box||[], dexClaimed:G.dexClaimed||[], achClaimed:G.achClaimed||[],
     towerBest:G.towerBest||0, towerBestSet:G.towerBestSet||0, towerSeason:G.towerSeason||{key:"",best:0}, towerRecords:G.towerRecords||[],
     hallOfFame:G.hallOfFame||[], rules:G.rules||{hardcore:false,nuzlocke:false}, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm,
     playSec:G.playSec||0, graveyard:G.graveyard||[], pe:G.playerEmoji, ps:G.styleIdx||0, money:Math.floor((G.money||0)/2), ng:nn };
   const s=freshState();
-  Object.assign(s,{ caught:K.caught, seen:K.seen, party:K.party, box:K.box, dexClaimed:K.dexClaimed, achClaimed:K.achClaimed,
+  Object.assign(s,{ caught:K.caught, seen:K.seen, shinyDex:K.shinyDex, party:K.party, box:K.box, dexClaimed:K.dexClaimed, achClaimed:K.achClaimed,
     towerBest:K.towerBest, towerBestSet:K.towerBestSet, towerSeason:K.towerSeason, towerRecords:K.towerRecords, hallOfFame:K.hallOfFame,
     rules:K.rules, dexMaster:K.dexMaster, shinyCharm:K.shinyCharm, playSec:K.playSec, graveyard:K.graveyard, money:K.money, ngPlus:K.ng });
   s.playerEmoji=K.pe; s.styleIdx=K.ps;
