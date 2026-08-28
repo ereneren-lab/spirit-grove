@@ -141,8 +141,8 @@
   html.fs-l .goal .gnm{font-size:13.5px} html.fs-xl .goal .gnm{font-size:15px}
   /* 색약 보정: 색만으로 구분되던 신호에 형태 채널을 더한다. HP 위험/주의는 줄무늬 패턴으로,
      타입 태그는 진한 외곽선으로 — 적록·청황 색각이상에서도 구분되게 한다(색은 그대로 유지). */
-  html.cb .hpfill.hpwarn, html.cb .mon-card .mini-hp i.hpwarn{ background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.4) 0 3px,transparent 3px 7px); }
-  html.cb .hpfill.hpcrit, html.cb .mon-card .mini-hp i.hpcrit{ background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 2px,transparent 2px 5px); }
+  html.cb .hpfill.hpwarn, html.cb .mini-hp i.hpwarn, html.cb .dbhpfill.warn{ background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.4) 0 3px,transparent 3px 7px); }
+  html.cb .hpfill.hpcrit, html.cb .mini-hp i.hpcrit, html.cb .dbhpfill.crit{ background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 2px,transparent 2px 5px); }
   html.cb .type-tag{ box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.6); text-shadow:0 0 1px rgba(255,255,255,.35); }
   .st-badge{display:inline-block;font-size:9px;font-weight:800;color:#1a1626;padding:1px 6px;border-radius:6px;margin-left:5px}
   /* .b-<status> 는 STATUSES에서 생성 — injectPalette() */
@@ -7882,7 +7882,7 @@ function showMonSummary(m){ if(!m)return; const body=$("sumBody"); if(!body)retu
         <div style="font-size:16px;font-weight:700">${dispName(m)} ${m.shiny?"✨":""}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px">Lv ${m.level} · <span class="type-tag ${TYPE_CLASS[m.type]}" style="font-size:10px">${tkLabel(m.type)}</span>${m.nick?` <span style="font-size:10px">(${m.name})</span>`:""}</div>
         <div style="margin-top:5px;font-size:11px;color:var(--muted)">HP ${Math.max(0,m.hp)}/${m.maxHp}</div>
-        <div class="mini-hp" style="margin-top:2px"><i style="width:${Math.max(0,m.hp/m.maxHp*100)}%"></i></div>
+        ${miniHpHtml(m)}
         <div style="margin-top:4px;font-size:10px;color:var(--muted)">경험치</div>
         <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-top:1px"><i style="display:block;height:100%;width:${xpPct}%;background:#8fd0ff"></i></div>
       </div>
