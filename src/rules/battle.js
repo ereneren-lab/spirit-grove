@@ -56,7 +56,7 @@ function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&d
   const _isStab=(move.type===att.type||(att.type2&&move.type===att.type2));
   const stab=_isStab?(att.ability==="adaptability"?2:1.5):1;   // 적응력: 자속 1.5→2.0
   let wMul=1; if(typeof G!=="undefined"&&G&&G.weather){ if(G.weather==="sun"){ if(move.type==="fire")wMul=1.3; else if(move.type==="water")wMul=0.7; } else if(G.weather==="rain"){ if(move.type==="water")wMul=1.3; else if(move.type==="fire")wMul=0.7; } else if(G.weather==="sand"){ if(move.type==="rock")wMul=1.2; } else if(G.weather==="hail"){ if(move.type==="ice")wMul=1.2; } }
-  let scrMul=1; if(typeof G!=="undefined"&&G&&G.screens){ const _ds=(def===G.foe)?"foe":"me"; const _sc=G.screens[_ds]; if(_sc){ if(isSpec&&_sc.light>0)scrMul=0.5; else if(!isSpec&&_sc.reflect>0)scrMul=0.5; } }
+  let scrMul=1; if(crit<=1 && typeof G!=="undefined"&&G&&G.screens){ const _ds=(def===G.foe)?"foe":"me"; const _sc=G.screens[_ds]; if(_sc){ if(isSpec&&_sc.light>0)scrMul=0.5; else if(!isSpec&&_sc.reflect>0)scrMul=0.5; } }   // 급소는 장막(리플렉터·빛의장막)을 무시한다(본가 규칙)
   let dmg=Math.floor((lvf*move.power*((A*aMul)/(D*dMul)))/9+2);
   dmg=Math.floor(dmg*eff*stab*crit*abil*wMul*scrMul*rand(0.85,1.0)); return {dmg:Math.max(1,dmg),eff,crit:crit>1}; }
 
