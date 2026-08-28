@@ -4293,6 +4293,9 @@ function findHint(sp){
   return spots.join(" · ")+t; }
 
 const PRE_EVO={}; DEX.forEach(d=>{ if(d.evolveTo)PRE_EVO[d.evolveTo]=d.id; });
+// 분기진화(evolveBranch)로만 도달하는 종도 하위폼을 등록한다 — 안 하면 baseForm()이 그 종을 제 하위폼으로
+// 못 찾아, 교배 시 최종 진화체(예: 윤슬정)가 그대로 알로 나오는 익스플로잇이 생긴다.
+DEX.forEach(d=>{ if(d.evolveBranch)d.evolveBranch.forEach(b=>{ if(b&&b.to&&!PRE_EVO[b.to])PRE_EVO[b.to]=d.id; }); });
 function baseForm(id){ let cur=id,g=0; while(PRE_EVO[cur]&&g++<6)cur=PRE_EVO[cur]; return cur; }
 function canBreed(a,b){ if(!a||!b||a.isEgg||b.isEgg)return false; if(a.gender==="N"||b.gender==="N")return false; if(a.gender===b.gender)return false;
   if(baseForm(a.id)===baseForm(b.id))return true;
@@ -7296,7 +7299,7 @@ function startTrainer(key){ const tr=TRAINERS[key];
 function maybeRematch(t){ const tr=TRAINERS[t];
   if(!G.badge){ flashHint("이미 쓰러뜨린 트레이너야 — 숲의 인장을 얻으면 재대결 가능"); return; }
   if(confirm(`${tr.name}에게 재대결을 신청할까?\n(레벨이 오르고 보상은 절반)`)) startTrainer(t); }
-function firstAliveIdx(){ if(!G||!G.party)return 0; for(let i=0;i<G.party.length;i++){ if(G.party[i]&&G.party[i].hp>0)return i; } return 0; }
+function firstAliveIdx(){ if(!G||!G.party)return 0; for(let i=0;i<G.party.length;i++){ if(G.party[i]&&G.party[i].hp>0&&!G.party[i].isEgg)return i; } return 0; }   // ⚠️ 알(hp:1)은 전투 정령이 아니다 — 선두로 뽑히면 스탯이 없어 damage/effSpd가 NaN
 function transitionToBattle(after){ heldDir=null; stopPath(); if(G)G.active=firstAliveIdx();   // 포켓몬식: 전투 선두 = 파티 첫 생존 정령(슬롯0). 재정렬로 순서 바꾸면 나오는 정령도 바뀜.
   G.runTries=0; G.battleTurn=0;   // 퀵볼: 첫 턴(공격 전) 판정용
   G.screens={me:{reflect:0,light:0},foe:{reflect:0,light:0}}; G.hazards={me:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; if(G.party)G.party.forEach(m=>{ if(m){ m._confuse=0; m._seeded=false; m._flinch=false; m._acted=false; m._protect=false; m._protectStreak=0; m._choiceLock=null; m._attract=false; m._trapped=0; m._charging=null; m._invuln=false; m._encore=null; m._taunt=0; m._disable=null; } }); if(G.foe){ G.foe._confuse=0; G.foe._seeded=false; G.foe._flinch=false; G.foe._acted=false; G.foe._protect=false; G.foe._protectStreak=0; G.foe._choiceLock=null; G.foe._attract=false; G.foe._trapped=0; G.foe._charging=null; G.foe._invuln=false; G.foe._encore=null; G.foe._taunt=0; G.foe._disable=null; } const wrap=$("canvasWrap"); wrap.classList.add("zoom");
@@ -9766,7 +9769,7 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
       if(G.active>=G.party.length)G.active=Math.max(0,G.party.length-1);
       G.graveyard=G.graveyard||[]; G.graveyard.push(dispName(fainted));
       setMsg(`⚰️ <b>${dispName(fainted)}</b>은(는) 누즐록 룰에 따라 영원히 떠났다…`); await mw(1100); } }
-  const alive=G.party.filter(m=>m.hp>0);
+  const alive=G.party.filter(m=>m.hp>0&&!m.isEgg);   // ⚠️ 알은 전투에 못 나가므로 '살아있는 정령'에서 제외 — 알만 남으면 강제교체 오버레이가 닫히지 않아 소프트락
   if(alive.length>0){ setMsg("다음 정령을 내보내자."); G.busy=false; openSwitch(true); }
   else if(G.trainer&&G.trainer.tower){ await endTowerRun(); }   // 연전 도장 전멸 = 그 자리에서 도전 종료(워프·소지금 패널티 없음, 번 돈 유지)
   else if(G._bossTrial){ await bossTrialEnd(); }   // H5-A-3 보스 재대전 패배 = 워프·소지금 패널티 없이 제자리 종료
@@ -10914,7 +10917,9 @@ function pcAction(a,i){ Audio.sfx("blip");
   if(a==="sum"){ const m=(pcTab==="party"?G.party:G.box)[i]; if(m)showMonSummary(m); return; }
   if(a==="nick"){ const m=(pcTab==="party"?G.party:G.box)[i]; if(m) askNickname(m).then(()=>{ renderPC(); saveGame(); }); return; }
   if(a==="held"){ openHeld(pcTab,i); return; }
-  if(a==="dep"){ if(G.party.length<=1)return; const m=G.party.splice(i,1)[0]; G.box.push(m);
+  if(a==="dep"){ if(G.party.length<=1)return;
+    if(G.party.filter((m,idx)=>idx!==i && !m.isEgg).length===0){ flashHint("전투에 낼 정령이 없어진다"); return; }   // 알만 남기고 마지막 전투 정령을 예치하면 야생전에서 알이 선두가 돼 NaN — 차단
+    const m=G.party.splice(i,1)[0]; G.box.push(m);
     if(G.active>=G.party.length)G.active=0; flashHint(m.name+"을(를) 보관함에 넣었다"); }
   else if(a==="with"){ if(G.party.length>=6){toast("파티가 가득 찼어");return;} const m=G.box.splice(i,1)[0]; G.party.push(m); flashHint(m.name+"을(를) 파티에 넣었다"); }
   else if(a==="rel"){ const m=G.box[i]; if(!confirm(`${dispName(m)}을(를) 방생할까? 되돌릴 수 없어.`))return; G.box.splice(i,1); flashHint(m.name+"을(를) 풀어주었다"); }
