@@ -4554,7 +4554,7 @@ const NPCS=[
   {id:"night_wanderer",x:7,y:41,em:"🌙",name:"밤의 방랑자",
     cond:()=>{ const ph=(typeof dayPhase==="function")?dayPhase():"day"; return ph==="night"||ph==="dusk"; },
     gift:{flag:"moonGift",items:{candy:1,greatball:2},msg:"🌙 밤의 방랑자가 <b>레어 사탕</b>과 <b>고급 정령구</b>를 건넸다!"},
-    spr:{outfit:"#2a2440",accent:"#9a86e0",skin:"#d8c0a0",hair:"#1a1622",hat:"hood",hatc:"#231d38",boots:"#1a1622"},
+    spr:{outfit:"#2a2440",accent:"#9a86e0",skin:"#d8c0a0",hair:"#1a1622",hat:"hood",hatc:"#231d38",boots:"#1a1622",extra:"staff"},
     lines:["밤의 방랑자: …이런 시각에 밖을 도는 정령사라. 나와 비슷하군.",
            "밤의 방랑자: 인장의 빛이 스러질수록 밤이 길어진다네. 낮에 숨던 것들이 이 어둠 속을 걷지.",
            "밤의 방랑자: 두려워 말게. 밤에도 정령은 정령이야. 자, 이건 초행길에 주는 선물일세."],
@@ -4564,7 +4564,7 @@ const NPCS=[
           "밤의 방랑자: 인장이 온전하던 시절엔 밤이 이토록 길지 않았어."]},
   /* 비경의 파수꾼 4인 — 각 신규 지역 입구 곁에 서서 도전한다(입구를 막지 않는 곁칸에 배치 → 도달성 불변).
      서브퀘스트 q_wildwarden(떠돌이 학자)이 넷 격파를 하나로 묶는다. battleKey는 TRAINERS.MOON/CRYS/DESR/WYVN. */
-  {id:"warden_moon",x:10,y:31,em:"🦇",name:"밤그늘 사냥꾼 여랑",battleKey:"MOON",spr:{outfit:"#2a2a3a",accent:"#6a6a8a",skin:"#d8c0a0",hair:"#1e1a26",hat:"hood",hatc:"#22202e",boots:"#1e1a26"},lines:["밤그늘 사냥꾼 여랑: 달그림자 골짜기는 아무나 드는 곳이 아니야. 나를 넘어야 어둠을 마주할 자격이 생긴다."],linesAfter:["밤그늘 사냥꾼 여랑: 어둠을 두려워 않는 눈이군. 골짜기 안쪽까지 잘 살펴봐."]},
+  {id:"warden_moon",x:10,y:31,em:"🦇",name:"밤그늘 사냥꾼 여랑",battleKey:"MOON",spr:{outfit:"#2a2a3a",accent:"#6a6a8a",skin:"#d8c0a0",hair:"#1e1a26",hat:"hood",hatc:"#22202e",boots:"#1e1a26",extra:"bag"},lines:["밤그늘 사냥꾼 여랑: 달그림자 골짜기는 아무나 드는 곳이 아니야. 나를 넘어야 어둠을 마주할 자격이 생긴다."],linesAfter:["밤그늘 사냥꾼 여랑: 어둠을 두려워 않는 눈이군. 골짜기 안쪽까지 잘 살펴봐."]},
   {id:"warden_crys",x:22,y:24,em:"💎",name:"수정굴 탐광꾼 도경",battleKey:"CRYS",spr:{outfit:"#4a6a7a",accent:"#8fd0e0",skin:"#e3b07e",hair:"#3a3a4a",hat:"cap",hatc:"#5a8a9a",boots:"#3a4a52",extra:"pick"},lines:["수정굴 탐광꾼 도경: 수정 동굴로 갈 셈이야? 그 결정 같은 정령들, 나부터 이기고 봐."],linesAfter:["수정굴 탐광꾼 도경: 네 정령이 수정보다 반짝이는걸. 좋은 걸 캐 가길."]},
   {id:"warden_desr",x:3,y:15,em:"🏜️",name:"사막 순찰자 하란",battleKey:"DESR",spr:{build:"tall",outfit:"#c89a5a",accent:"#8a6030",skin:"#d8ab7e",hair:"#3a2c1a",hat:"straw",hatc:"#d8b060",boots:"#6a4a2a",extra:"bag"},lines:["사막 순찰자 하란: 모래바람 사막은 준비 없이 들면 위험해. 실력부터 증명해라."],linesAfter:["사막 순찰자 하란: 열기에도 안 꺾이는군. 사막이 널 받아들일 것이다."]},
   {id:"warden_wyvn",x:18,y:14,em:"🐲",name:"협곡 용기병 시온",battleKey:"WYVN",spr:{build:"tall",outfit:"#5a4a7a",accent:"#b088e0",skin:"#e0bd96",hair:"#2a2440",hat:"bandana",hatc:"#4a3a6a",boots:"#3a2c5a",extra:"staff"},lines:["협곡 용기병 시온: 비룡 협곡의 용들은 강대하다. 그 하늘에 오르려면 먼저 나를 넘어라."],linesAfter:["협곡 용기병 시온: 용의 눈이 너를 인정했다. 벼랑 위 둥지로 오르라."]},
@@ -8437,6 +8437,29 @@ const SIGFX={
   /* ── 타입별 공격기 보강(평가 #3)의 전용 연출 13종 ─────────────────────────
      ⚠️ 공격기는 **전원 전용 연출**이 있어야 한다(`movefx_variety_test`가 `atkSig===atkAll`을 강제).
         폴백으로 두면 같은 타입 기술이 전부 똑같이 보여 "기술을 늘린 의미"가 사라진다. */
+  dragonclaw: async(s,d)=>{ const aS=spriteEl(s), c=fxCenter(d); aS.classList.add("lunge"); await wait(fxT(130)); aS.classList.remove("lunge");
+    for(const dir of [-1,1]){ const g=fxGlyph("🐲",{x:c.x+dir*18,y:c.y},TYPE_COLOR.dragon,"fx-particle"); g.style.fontSize="20px";
+      g.animate([{transform:`translate(-50%,-50%) translateX(${dir*16}px) rotate(${dir*20}deg)`,opacity:1},{transform:"translate(-50%,-50%)",opacity:0}],{duration:fxT(300)}).finished.then(()=>g.remove()).catch(()=>g.remove()); }
+    fxSlash(d); fxBurst(d,"dragon",2); await wait(fxT(100)); },
+  dragonrush: async(s,d)=>{ const aS=spriteEl(s), c=fxCenter(d); aS.classList.add("lunge"); await wait(fxT(160));
+    for(let i=0;i<8;i++){ const a=i/8*6.28; _pop("🐉",c,TYPE_COLOR.dragon,Math.cos(a)*rand(24,44),Math.sin(a)*rand(24,44),rand(300,460)); }
+    aS.classList.remove("lunge"); fxBurst(d,"dragon",3); impactFlash(); screenShake(true); await wait(fxT(120)); },
+  xscissor: async(s,d)=>{ const c=fxCenter(d);
+    for(const dir of [-1,1]){ const g=fxGlyph("✂️",{x:c.x,y:c.y},TYPE_COLOR.bug,"fx-particle"); g.style.fontSize="22px";
+      g.animate([{transform:`translate(-50%,-50%) rotate(${dir*45}deg) scale(.6)`,opacity:1},{transform:`translate(-50%,-50%) rotate(${dir*45}deg) scale(1.3)`,opacity:0}],{duration:fxT(280)}).finished.then(()=>g.remove()).catch(()=>g.remove()); }
+    fxSlash(d); fxBurst(d,"bug",2); await wait(fxT(100)); },
+  powergem: async(s,d)=>{ const from=fxCenter(s),to=fxCenter(d);
+    for(let i=0;i<7;i++){ const t=i/6; _pop("💎",{x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t-rand(0,8)},TYPE_COLOR.rock,rand(-6,6),rand(-10,4),rand(280,420)); await wait(fxT(20)); }
+    fxBurst(d,"rock",2); impactFlash(); await wait(fxT(90)); },
+  iciclecrash: async(s,d)=>{ const c=fxCenter(d);
+    for(let i=0;i<6;i++){ const g=fxGlyph("🧊",{x:c.x+rand(-26,26),y:c.y-34},TYPE_COLOR.ice,"fx-particle"); g.style.fontSize="18px";
+      g.animate([{transform:"translate(-50%,-50%) translateY(0)",opacity:1},{transform:"translate(-50%,-50%) translateY(40px)",opacity:0}],{duration:fxT(300)}).finished.then(()=>g.remove()).catch(()=>g.remove()); await wait(fxT(30)); }
+    fxBurst(d,"ice",2); screenShake(false); await wait(fxT(90)); },
+  shadowclaw: async(s,d)=>{ const c=fxCenter(d);
+    for(const dir of [-1,1]){ const g=fxGlyph("🌑",{x:c.x+dir*16,y:c.y},TYPE_COLOR.ghost,"fx-particle"); g.style.fontSize="19px";
+      g.animate([{transform:`translate(-50%,-50%) translateX(${dir*15}px)`,opacity:1},{transform:"translate(-50%,-50%)",opacity:0}],{duration:fxT(300)}).finished.then(()=>g.remove()).catch(()=>g.remove()); }
+    for(let i=0;i<4;i++)_pop("👻",c,TYPE_COLOR.ghost,rand(-16,16),rand(-20,4),rand(300,440));
+    fxSlash(d); fxBurst(d,"ghost",2); await wait(fxT(100)); },
   emberburst: async(s,d)=>{ const c=fxCenter(d);
     for(let i=0;i<9;i++){ const a=i/9*6.28; _pop("🔥",c,TYPE_COLOR.fire,Math.cos(a)*rand(26,46),Math.sin(a)*rand(26,46),rand(300,460)); }
     fxBurst(d,"fire",2); impactFlash(); await wait(fxT(110)); },

@@ -106,12 +106,13 @@ const { chromium } = require("playwright"); const path=require("path");
      TM 전용 기술이 아예 없었다(normal은 파괴광선 22종 손해 · grass는 덩굴채찍 7종 손해 ·
      rock은 TM 전용 공격기가 0개). 나중에 그 타입에 **새 TM 기술**을 넣을 때 반대 계열로 만들면 풀린다.
      임계값이 아니라 **집합을 고정**한다 — 늘어나도 줄어도(=여기 적힌 근거가 바뀌어도) 걸리게. */
-  const KNOWN_ONE_SIDED=["normal","grass","rock","dragon"];
+  // 바위=파워젬(특수)·용=용의돌진(물리) 추가로 양 계열을 갖게 됐다(2026 신규 기술). 이제 한쪽뿐인 타입은 normal·grass뿐.
+  const KNOWN_ONE_SIDED=["normal","grass"];
   const oneSided=Object.entries(r5).filter(([t,c])=>c.phys===0||c.spec===0).map(([t])=>t).sort();
   console.log("     " + Object.entries(r5).map(([t,c])=>`${t} ${c.phys}/${c.spec}`).join(" · ") + "  (물리/특수)");
   ok(JSON.stringify(oneSided)===JSON.stringify([...KNOWN_ONE_SIDED].sort()),
-     `한쪽 계열만 있는 타입이 알려진 3개 그대로다 (지금: ${oneSided.join(",")||"없음"} · 기대: ${[...KNOWN_ONE_SIDED].sort().join(",")})`);
-  ok(Object.keys(r5).length-oneSided.length===14, `나머지 14타입은 물리·특수를 모두 갖는다`);
+     `한쪽 계열만 있는 타입이 알려진 2개 그대로다 (지금: ${oneSided.join(",")||"없음"} · 기대: ${[...KNOWN_ONE_SIDED].sort().join(",")})`);
+  ok(Object.keys(r5).length-oneSided.length===16, `나머지 16타입은 물리·특수를 모두 갖는다`);
 
   ok(errs.length===0, `런타임 에러 0 (${errs.length})${errs.length?": "+errs.slice(0,2).join(" | "):""}`);
   await b.close();
