@@ -1637,6 +1637,15 @@ GROUND_ITEMS.push(
   {k:"gi_shrine2",in:"shrine",x:12,y:2,item:"elixir",qty:1},
   {k:"gi_coast1",in:"coast",x:13,y:9,item:"hyperpotion",qty:2},
   {k:"gi_coast2",in:"coast",x:2,y:5,item:"greatball",qty:3},
+  // 신규 지역 4곳 — 지역 테마에 맞춘 바닥 아이템. ⚠️ 좌표는 그 인테리어의 통행 가능 칸(시작·출구·N팻말·벽 제외).
+  {k:"gi_moon1",in:"mooncanyon",x:1,y:1,item:"duskball",qty:3},      // 밤 지역 = 다크볼(밤·동굴 포획률↑)
+  {k:"gi_moon2",in:"mooncanyon",x:11,y:8,item:"revive",qty:1},
+  {k:"gi_desert1",in:"desert",x:1,y:1,item:"firestone",qty:1},       // 사막 = 불의 돌
+  {k:"gi_desert2",in:"desert",x:11,y:8,item:"hyperpotion",qty:2},
+  {k:"gi_crystal1",in:"crystalcave",x:1,y:1,item:"thunderstone",qty:1}, // 수정굴 = 번개의 돌
+  {k:"gi_crystal2",in:"crystalcave",x:11,y:8,item:"ultraball",qty:2},
+  {k:"gi_wyvern1",in:"wyverngorge",x:1,y:1,item:"candy",qty:1},      // 협곡(최난) = 레어 사탕
+  {k:"gi_wyvern2",in:"wyverngorge",x:11,y:8,item:"elixir",qty:1},
 );
 const GROUND_AT={}; GROUND_ITEMS.forEach(g=>{ GROUND_AT[(g.in||"")+"|"+g.x+","+g.y]=g; });
 function groundItemAt(x,y){ const g=GROUND_AT[(G.indoor||"")+"|"+x+","+y]; if(!g)return null;
@@ -1648,6 +1657,11 @@ const HIDDEN=[
   {k:"stone_fire",x:16,y:15,item:"firestone",qty:1},{k:"stone_thunder",x:18,y:17,item:"thunderstone",qty:1},
   {k:"stone_water",x:20,y:23,item:"waterstone",qty:1},{k:"stone_leaf",x:9,y:37,item:"leafstone",qty:1},
   {k:"hid_coast1",in:"coast",x:14,y:7,item:"revive",qty:1},
+  // 신규 지역 4곳 — 숨은 도구(밟아야 발견). ⚠️ 통행 가능 칸.
+  {k:"hid_moon1",in:"mooncanyon",x:4,y:4,item:"candy",qty:1},
+  {k:"hid_desert1",in:"desert",x:4,y:4,item:"ether",qty:2},
+  {k:"hid_crystal1",in:"crystalcave",x:4,y:4,item:"scopelens",qty:1},
+  {k:"hid_wyvern1",in:"wyverngorge",x:5,y:4,item:"ultraball",qty:2},
 ];
 // ⚠️ GROUND_ITEMS와 똑같이 실내 스코프로 키를 잡는다(`in` 없으면 오버월드 전용).
 //    예전엔 좌표만 키로 써서, 늪지(W:17) 안 (2,10)을 밟으면 오버월드 숨은 도구가 딸려 나왔다.
