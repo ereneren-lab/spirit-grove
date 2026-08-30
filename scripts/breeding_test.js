@@ -46,7 +46,25 @@ const { chromium } = require("playwright"); const path=require("path");
     const everstoneLocks=(lockHit===lockRuns);
     const everstoneIsHeld=!!(S.HELD_ITEMS&&S.HELD_ITEMS.everstone&&S.HELD_ITEMS.everstone.natureLock);
 
-    return { okSame, okSameGender, okDiffLine, okGenderless, everstoneLocks, everstoneIsHeld,
+    // ── 특성 유전: 아기는 어미(암컷)의 특성을 물려받는다 ──
+    const momAb=S.makeMon("blazelion",40); momAb.gender="F"; momAb.ability="filter";   // 어미: 임의 특성
+    const dadAb=S.makeMon("emberwolf",30); dadAb.gender="M"; dadAb.ability="guts";
+    const eggAb=S.makeEgg(dadAb,momAb);
+    const babyAb=S.hatchEgg(eggAb);
+    const abFromMother=(eggAb.abilityInherit==="filter" && babyAb.ability==="filter");
+    // 부모 순서를 바꿔도 '암컷'의 특성을 따른다
+    const eggAb2=S.makeEgg(momAb,dadAb); const abOrderStable=(eggAb2.abilityInherit==="filter");
+    // 신규 특성도 물려받는다(교배로 하위폼에 내려보내기)
+    const momTough=S.makeMon("wyverna",40); momTough.gender="F"; momTough.ability="toughclaws";
+    const dadTough=S.makeMon("drakeling",20); dadTough.gender="M";
+    const babyTough=S.hatchEgg(S.makeEgg(dadTough,momTough));
+    const newAbInherit=(babyTough.ability==="toughclaws");
+    // 세이브 왕복에 특성 유전이 영속
+    const ser=S.flow.serMon(eggAb); const rev=S.flow.reviveMon(ser);
+    const abPersist=(rev.abilityInherit==="filter" && S.hatchEgg(rev).ability==="filter");
+
+    return { abFromMother, abOrderStable, newAbInherit, abPersist,
+      okSame, okSameGender, okDiffLine, okGenderless, everstoneLocks, everstoneIsHeld,
       legendGender:legend.gender, base3, base3w, base1,
       eggIsEgg:!!egg.isEgg, eggName:egg.name, hatch:egg.hatch,
       babyId:baby.id, babyLv:baby.level, babyFriend:baby.friendship,
@@ -70,6 +88,10 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(r.everstoneIsHeld===true, "변함의돌이 natureLock 지닌물건으로 정의됨");
   ok(r.everstoneLocks===true, "변함의돌을 지니면 그 정령 성격이 100% 유전(24/24)");
   ok((r.eggMoves||[]).length>0 && r.eggMovesFromParents, `egg move가 부모 기술에서 유전된다 (${(r.eggMoves||[]).join(",")||"없음"})`);
+  ok(r.abFromMother, "아기는 어미(암컷)의 특성을 물려받는다");
+  ok(r.abOrderStable, "부모 순서를 바꿔도 암컷의 특성을 따른다");
+  ok(r.newAbInherit, "신규 특성(억센발톱)도 교배로 하위폼에 유전된다");
+  ok(r.abPersist, "특성 유전이 세이브 왕복에 영속된다");
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 교배(육아방) 통과");
   await b.close(); process.exit(process.exitCode||0);
