@@ -24,7 +24,20 @@ const { chromium } = require("playwright"); const path=require("path");
     G.indoor="gym1"; G.pos={x:4,y:5}; const indoor=F.owWeather();
     return { out, indoor }; });
   ok(reg.out.every(o=>o.okv), `owWeather가 지역별로 base 또는 clear만 반환 (${reg.out.map(o=>o.r+":"+o.w).join(" ")})`);
-  ok(reg.indoor==="clear", `실내에서는 clear (${reg.indoor})`);
+  ok(reg.indoor==="clear", `특징 날씨 없는 실내(체육관)는 clear (${reg.indoor})`);
+
+  /* ── 2b. 신규 지역(인테리어)의 상시 특징 날씨 + 전투 전이 ── */
+  const iw=await p.evaluate(()=>{ const S=window.SG,F=S.flow; S.setG(S.freshState()); F.setOwWeather(null); const G=S.G();
+    const want={mooncanyon:"fog",desert:"sand",crystalcave:"snow",wyverngorge:"rain"};
+    const out={}; for(const id in want){ G.indoor=id; G.pos={x:6,y:5};
+      const ow=F.owWeather(); F.setWeather(); out[id]={ow,battle:S.G().weather}; }
+    G.indoor=null; F.setOwWeather(null);
+    return { out, map:F.INDOOR_WEATHER, battleMap:F.OW_BATTLE_WEATHER }; });
+  ok(iw.out.mooncanyon.ow==="fog" && !iw.out.mooncanyon.battle, "달그림자=안개(연출만, 전투 날씨 없음)");
+  ok(iw.out.desert.ow==="sand" && iw.out.desert.battle==="sand", "사막=모래바람 → 전투 sand");
+  ok(iw.out.crystalcave.ow==="snow" && iw.out.crystalcave.battle==="hail", "수정 동굴=싸라기눈 → 전투 hail");
+  ok(iw.out.wyverngorge.ow==="rain" && iw.out.wyverngorge.battle==="rain", "비룡 협곡=폭풍우 → 전투 rain");
+  ok(iw.map && Object.keys(iw.map).length===4, `INDOOR_WEATHER 4지역 정의 (${Object.keys(iw.map||{}).join(",")})`);
 
   /* ── 3. setWeather가 필드 날씨를 전투로 옮긴다 ── */
   const carry=await p.evaluate(()=>{ const S=window.SG,F=S.flow; const G=S.G(); G.indoor=null;
@@ -44,7 +57,7 @@ const { chromium } = require("playwright"); const path=require("path");
   /* ── 5. 날씨 연출(drawWeatherFx)이 에러 없이 그린다 ── */
   const render=await p.evaluate(()=>{ const F=window.SG.flow; let err=null;
     try{ const c=document.createElement("canvas"); c.width=430; c.height=600; const ctx=c.getContext("2d");
-      for(const w of ["rain","snow","fog","sun"])F.drawWeatherFx(ctx,430,600,32,w); }catch(e){ err=e.message; }
+      for(const w of ["rain","snow","fog","sun","sand"])F.drawWeatherFx(ctx,430,600,32,w); }catch(e){ err=e.message; }
     return err; });
   ok(render===null, `날씨 연출 렌더 에러 0 (${render||"없음"})`);
 
