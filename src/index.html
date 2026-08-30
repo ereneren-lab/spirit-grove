@@ -1532,6 +1532,12 @@ const NPCS=[
           "밤의 방랑자: 밤에만 우는 것들의 소리를 들어본 적 있나? 익숙해지면 길잡이가 되지.",
           "밤의 방랑자: 해가 뜨면 나는 사라진다네. 밤이 나의 길이니까.",
           "밤의 방랑자: 인장이 온전하던 시절엔 밤이 이토록 길지 않았어."]},
+  /* 비경의 파수꾼 4인 — 각 신규 지역 입구 곁에 서서 도전한다(입구를 막지 않는 곁칸에 배치 → 도달성 불변).
+     서브퀘스트 q_wildwarden(떠돌이 학자)이 넷 격파를 하나로 묶는다. battleKey는 TRAINERS.MOON/CRYS/DESR/WYVN. */
+  {id:"warden_moon",x:10,y:31,em:"🦇",name:"밤그늘 사냥꾼 여랑",battleKey:"MOON",spr:{outfit:"#2a2a3a",accent:"#6a6a8a",skin:"#d8c0a0",hair:"#1e1a26",hat:"hood",hatc:"#22202e",boots:"#1e1a26"},lines:["밤그늘 사냥꾼 여랑: 달그림자 골짜기는 아무나 드는 곳이 아니야. 나를 넘어야 어둠을 마주할 자격이 생긴다."],linesAfter:["밤그늘 사냥꾼 여랑: 어둠을 두려워 않는 눈이군. 골짜기 안쪽까지 잘 살펴봐."]},
+  {id:"warden_crys",x:22,y:24,em:"💎",name:"수정굴 탐광꾼 도경",battleKey:"CRYS",spr:{outfit:"#4a6a7a",accent:"#8fd0e0",skin:"#e3b07e",hair:"#3a3a4a",hat:"cap",hatc:"#5a8a9a",boots:"#3a4a52",extra:"pick"},lines:["수정굴 탐광꾼 도경: 수정 동굴로 갈 셈이야? 그 결정 같은 정령들, 나부터 이기고 봐."],linesAfter:["수정굴 탐광꾼 도경: 네 정령이 수정보다 반짝이는걸. 좋은 걸 캐 가길."]},
+  {id:"warden_desr",x:3,y:15,em:"🏜️",name:"사막 순찰자 하란",battleKey:"DESR",spr:{build:"tall",outfit:"#c89a5a",accent:"#8a6030",skin:"#d8ab7e",hair:"#3a2c1a",hat:"straw",hatc:"#d8b060",boots:"#6a4a2a",extra:"bag"},lines:["사막 순찰자 하란: 모래바람 사막은 준비 없이 들면 위험해. 실력부터 증명해라."],linesAfter:["사막 순찰자 하란: 열기에도 안 꺾이는군. 사막이 널 받아들일 것이다."]},
+  {id:"warden_wyvn",x:18,y:14,em:"🐲",name:"협곡 용기병 시온",battleKey:"WYVN",spr:{build:"tall",outfit:"#5a4a7a",accent:"#b088e0",skin:"#e0bd96",hair:"#2a2440",hat:"bandana",hatc:"#4a3a6a",boots:"#3a2c5a",extra:"staff"},lines:["협곡 용기병 시온: 비룡 협곡의 용들은 강대하다. 그 하늘에 오르려면 먼저 나를 넘어라."],linesAfter:["협곡 용기병 시온: 용의 눈이 너를 인정했다. 벼랑 위 둥지로 오르라."]},
 ];
 const NPC_AT={}; NPCS.forEach(n=>{ NPC_AT[n.x+","+n.y]=n; });
 function npcAvailable(n){ if(!n)return false; if(n.battleKey&&G.defeated.has(n.battleKey)){ if(n.dir&&G.rematchWanted&&G.rematchWanted.has(n.battleKey))return true; return false; } if(n.requires&&!G.defeated.has(n.requires))return false; if(n.cond){ try{ if(!n.cond())return false; }catch(_){ return false; } } return true; }
@@ -1723,6 +1729,13 @@ TRAINERS.VOID={key:"VOID",name:"각성한 그림자",em:"🕳️",boss:true,
   reward:{candy:3,hyperpotion:5,revive:3},money:15000,
   intro:"형체 없는 어둠이 여섯 개의 눈을 뜬다. \"…나는 흐려진 인장의 틈, 삼켜진 모든 것의 총합. 흑요마는 내 그림자에 지나지 않았다. 네 빛이 얼마나 버티는지 보자.\"",
   outro:"…빛이. 사슬이 아니라, 서로 맞잡은 빛이. 어둠이 마침내 흩어지며 그 목소리가 아득히 잦아든다. \"…그런 것이었나. 혼자가 아니라는 것은.\""};
+/* ===== 비경의 파수꾼 4인 — 신규 야생 지역(달그림자·수정 동굴·사막·비룡 협곡) 입구를 지키는 도전 트레이너.
+   오버월드 NPC(battleKey)로 배치해 실내(인테리어)를 건드리지 않는다. 서브퀘스트 q_wildwarden이 넷을 묶는다.
+   난이도는 지역 순서대로 상승(달24 → 동굴28 → 사막32 → 협곡36~40, 협곡이 최강). ⚠️ 넷 다 실존 종만 쓴다. */
+TRAINERS.MOON={key:"MOON",name:"밤그늘 사냥꾼 여랑",em:"🦇",team:[["duskbeak",24],["wispkin",25],["vinesnake",27]],reward:{greatball:2,potion:2},money:2200,intro:"밤그늘 사냥꾼 여랑: 이 골짜기의 어둠에 익숙지 않다면 돌아가라. …아니면, 나를 넘어 보든가.",outro:"밤그늘 사냥꾼 여랑: 어둠 속에서도 흔들리지 않는군. 골짜기가 널 받아들인 모양이다."};
+TRAINERS.CRYS={key:"CRYS",name:"수정굴 탐광꾼 도경",em:"💎",team:[["boulderin",28],["snowl",29],["crystalgon",31]],reward:{greatball:3,hyperpotion:1},money:2800,intro:"수정굴 탐광꾼 도경: 이 굴의 정령은 결정처럼 단단해. 어설픈 각오론 못 캐낸다고.",outro:"수정굴 탐광꾼 도경: …네 정령이 더 빛나는걸. 굴 안쪽까지 잘 둘러봐."};
+TRAINERS.DESR={key:"DESR",name:"사막 순찰자 하란",em:"🏜️",team:[["boulderin",32],["burrowlord",33],["magmadon",35]],reward:{hyperpotion:2,revive:1},money:3400,intro:"사막 순찰자 하란: 이 열기를 견딜 정령사만 사막을 건널 자격이 있다. 보여봐라.",outro:"사막 순찰자 하란: 모래바람에도 안 꺾이는군. 좋다 — 사막이 네 앞을 열어줄 것이다."};
+TRAINERS.WYVN={key:"WYVN",name:"협곡 용기병 시온",em:"🐲",team:[["stormhawk",36],["thundwyrm",37],["cryogon",38],["emberdrake",40]],reward:{hyperpotion:2,candy:1,revive:1},money:4200,intro:"협곡 용기병 시온: 이 협곡의 용들은 하늘을 지배한다. 그 날개를 감당할 수 있겠나?",outro:"협곡 용기병 시온: …용의 눈이 너를 인정했다. 벼랑 위, 그들의 둥지로 오르라."};
 let _talking=false;
 const _npcTalk={};
 function npcAmbient(npc){
@@ -1833,7 +1846,19 @@ const QUESTS=[
     offer:["연구소 조수 하린: 정령마다 타고난 <b>특성</b>이 다르다는 거, 알고 있었어?",
            "연구소 조수 하린: 개중엔 아주 드문 재능을 지닌 아이들이 있어 — 재생력, 가속, 적응력 같은. 그런 아이를 <b>팀에 한 마리</b> 데려와 줄래? 데이터를 남기고 싶어."],
     active:["연구소 조수 하린: 대개 완전히 진화한 정령이 그런 특성을 깨워. 정령 정보 화면에서 특성을 확인할 수 있어."],
-    done:["연구소 조수 하린: 우와, 이 특성…! 연구소가 깜짝 놀랄 거야.","연구소 조수 하린: 고마워! 이건 그 데이터에 대한 보답이야."] }
+    done:["연구소 조수 하린: 우와, 이 특성…! 연구소가 깜짝 놀랄 거야.","연구소 조수 하린: 고마워! 이건 그 데이터에 대한 보답이야."] },
+  /* ── 비경의 파수꾼 서브퀘스트 ────────────────────────────────────────────
+     신규 야생 지역 4곳의 입구를 지키는 파수꾼(MOON/CRYS/DESR/WYVN)을 전원 격파. q_gauntlet(견습 전원)과
+     같은 '전원 격파' 계열이지만 대상이 야생 비경이라, 학자가 준다(q_gauntlet 완료 후 자연히 이 의뢰로 넘어감).
+     ⚠️ battleKey를 G.defeated로 검사한다 — TRAINERS.MOON/CRYS/DESR/WYVN 및 각 파수꾼 NPC와 키가 일치해야 한다. */
+  { id:"q_wildwarden", giver:"scholar", title:"비경의 파수꾼들", desc:"네 비경의 파수꾼(달그림자·수정 동굴·사막·비룡 협곡) 전원 격파",
+    check:()=>["MOON","CRYS","DESR","WYVN"].every(k=>G.defeated&&G.defeated.has(k)),
+    prog:()=>`${["MOON","CRYS","DESR","WYVN"].filter(k=>G.defeated&&G.defeated.has(k)).length}/4명`,
+    reward:{hyperpotion:4,candy:3,revive:2},
+    offer:["떠돌이 학자: 체육관 견습들은 다 꺾었다지. 헌데 진짜 야생은 길들지 않은 비경에 있네.",
+           "떠돌이 학자: 달그림자 골짜기, 수정 동굴, 모래바람 사막, 비룡 협곡 — 그 <b>네 입구를 지키는 파수꾼</b>들을 전원 꺾어보게. 야생을 아는 자만이 그들을 넘지."],
+    active:["떠돌이 학자: 아직 못 넘은 파수꾼이 있군. 각 비경의 입구 곁을 지키고 있을 걸세."],
+    done:["떠돌이 학자: 네 파수꾼을 전부 넘다니 — 자네는 이제 이 숲의 야생 그 자체를 아는 자일세.","떠돌이 학자: 이건 그 여정에 대한 내 감사일세. 부디 요긴하게 쓰게."] }
 ];
 function questForGiver(id){ let offer=null; for(const q of QUESTS){ if(q.giver!==id)continue; const st=G.quests&&G.quests[q.id]; if(st==="active")return q; if(!st&&!offer)offer=q; } return offer; }
 function grantReward(r){ if(!G.items)G.items={}; for(const k in r){ G.items[k]=(G.items[k]||0)+r[k]; } }
