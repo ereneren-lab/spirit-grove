@@ -74,6 +74,7 @@ const { chromium } = require("playwright"); const path=require("path");
     ["glowfly","lunarmoth","voltbeetle"].forEach(id=>G.caught.add(id));          // q_bughunt: 벌레 3종
     G.party.push(S.makeMon("drakeling",30));                                    // q_dragonside: 용 Lv30
     G.party.push(S.makeMon("grovespirit",40));                                  // q_talent: 재생력 특성
+    ["MOON","CRYS","DESR","WYVN"].forEach(k=>G.defeated.add(k));                 // q_wildwarden: 비경 파수꾼 4인 격파
     Q.forEach(x=>{ after[x.id]=!!x.check(); });
     return { before, after, progOk };
   });
