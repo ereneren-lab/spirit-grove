@@ -121,6 +121,9 @@ const DEX=[
   {id:"lumenfae",name:"빛의요정",em:"🧚",type:"fairy",tier:3,base:{hp:74,atk:12,def:20,spd:32,spa:33,spDef:24},moves:["fairywind","dazzlinggleam","moonblast","psybeam"],learn:[[40,"recover"]]},
   {id:"duskbeak",name:"땅거미새",em:"🐦‍⬛",type:"dark",type2:"flying",tier:1,base:{hp:46,atk:17,def:12,spd:19,spa:11,spDef:12},moves:["tackle","peck"],learn:[[10,"suckerpunch"],[16,"gust"],[22,"crunch"]],evolveTo:"ravenveil",evolveLv:32},
   {id:"ravenveil",name:"흑요까마귀",em:"🌑",type:"dark",type2:"flying",tier:3,base:{hp:74,atk:31,def:20,spd:33,spa:14,spDef:18},moves:["crunch","suckerpunch","darkpulse","peck"],learn:[[40,"nightburst"]]},
+  // 신규 종 — 사막 독전갈 2단 라인(가장 얇은 독 타입 보강 + 신규 조합 poison/ground). 아트 없음 → 절차적 폴백.
+  {id:"stingtail",name:"독꼬리",em:"🦂",type:"poison",tier:1,base:{hp:44,atk:15,def:13,spd:16,spa:11,spDef:12},moves:["tackle","poisonjab"],learn:[[8,"venomfang"],[14,"toxic"],[20,"needlerush"],[26,"crunch"]],evolveTo:"venomscorp",evolveLv:24},
+  {id:"venomscorp",name:"맹독전갈",em:"🦂",type:"poison",type2:"ground",tier:2,base:{hp:66,atk:24,def:22,spd:22,spa:14,spDef:18},moves:["poisonjab","crunch","venomfang","needlerush"],learn:[[8,"toxic"],[18,"suckerpunch"],[24,"sludge"],[30,"nightburst"],[36,"swordsdance"],[42,"toxicwave"]]},
 ];
 const byId=id=>DEX.find(d=>d.id===id);
 const STARTERS=DEX.filter(d=>d.starter);

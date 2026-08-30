@@ -4200,7 +4200,7 @@ const ENC_POOLS={
   crater:["foxfire","emberwolf","blazelion","cindercat","cindercub","pyrewolf","emberfly","pyrmoth","lavakit","magmadon"],
   garden:["psykit","glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop","sporelet","gustmoth"],
   mooncanyon:["nightkit","duskbeak","wispkin","jellure","hedgemoss","vinesnake","arcmoth","psykit","swampfrog","glimmite","burrowmouse","racoonmon"],   // 달그림자 골짜기 = 야행성 어둠·고스트·독 (전부 야생 가능종 — NO_WILD 제외)
-  desert:["sandwhirl","pebblet","boulderin","burrowmouse","coglet","lavakit","cindercat","emberlix","dustbunny","pummelpup"],   // 모래바람 사막 = 바위·땅·불 (전부 야생 가능종)
+  desert:["sandwhirl","pebblet","boulderin","burrowmouse","coglet","lavakit","cindercat","emberlix","dustbunny","pummelpup","stingtail"],   // 모래바람 사막 = 바위·땅·불 (전부 야생 가능종)
   crystalcave:["pebblet","boulderin","coglet","iceling","snowl","psykit","sparkmouse","sandwhirl","frostfish","glimmite"],   // 수정 동굴 = 바위·강철·에스퍼·얼음 (전부 야생 가능종)
   wyverngorge:["drakeling","wyverna","emberdrake","thundwyrm","cryogon","frostwyrm","riverdrake","leafdrake","stormhawk","sandwhirl"],   // 비룡 협곡 = 용·비행 (전부 야생 가능종 — skydrake는 NO_WILD라 제외)
   isle:["stormhawk","tigerflame","magmahound","krakentide","tidewhale","harelord","emberdrake","grovespirit","palmore","emberlix","crablord"],
@@ -7439,6 +7439,8 @@ const FLAVOR={
   voidpanther:{cat:"심연표범",h:1.4,w:55,t:"어둠에 녹아드는 표범. 발소리 없이 다가와 상대의 그림자부터 덮친다."},
   coglet:{cat:"톱니벌레",h:0.3,w:10,t:"등딱지가 통째로 톱니바퀴다. 종일 딸깍이며 무언가를 조립하듯 돌아다닌다."},
   gearclad:{cat:"강철갑충",h:1.5,w:120,t:"맞물린 강판과 기어로 뒤덮인 요새 같은 갑충. 한번 버티면 좀처럼 밀리지 않는다."},
+  stingtail:{cat:"독침 전갈",h:0.4,w:6,t:"모래 밑에 숨어 발소리를 기다린다. 꼬리 끝 독침 한 방이면 큰 먹이도 움직임을 멈춘다."},
+  venomscorp:{cat:"맹독 전갈",h:1.1,w:38,t:"사막의 밤을 지배하는 사냥꾼. 집게로 붙든 뒤 꼬리로 맹독을 쏟아붓는다. 그림자 속에서 눈만 빛난다."},
 };
 function ddAbility(sp){ return sp.ability||ABILITY_OVERRIDE[sp.id]||DEFAULT_ABILITY[sp.type]||"guts"; }
 function openDetail(id){ const sp=byId(id); Audio.sfx("blip"); $("ddTitle").textContent=sp.name;
