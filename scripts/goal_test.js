@@ -110,10 +110,14 @@ setTimeout(() => {
        능력을 안 켜고 재면 멀쩡한 목표가 실패로 잡힌다 — 처음 이 단정을 그렇게 짰다가 겪었다. */
     const save={surf:G.hasSurf, surfing:G.surfing};
     G.hasSurf=true; G.surfing=true;                       /* 물 위를 건널 수 있는 상태로 모델링 */
+    /* ⚠️ 4뱃지 시점 플레이어는 자르기(x)·괴력(o)·파도타기(~)를 전부 갖는다 — reachability_test와 동일하게
+       이 비전기술 지형을 통행 가능으로 모델링해야 한다. 안 하면 그 뒤에 있는 목표(예: 제단 앞 광장의 리그 U)가
+       멀쩡히 도달 가능한데도 '인접 도달칸 0개'로 잘못 잡힌다. */
     const seen=new Set(), q=[[5,48]]; seen.add("5,48");
+    const passable=(x,y)=>{ if(F.walkable(x,y))return true; const t=F.tileAt(x,y); return t==="x"||t==="o"||(t==="~"&&G.hasSurf); };
     while(q.length){ const [x,y]=q.shift();
       for(const [dx,dy] of [[0,1],[0,-1],[1,0],[-1,0]]){ const nx=x+dx,ny=y+dy,k=nx+","+ny;
-        if(seen.has(k)||!F.walkable(nx,ny))continue; seen.add(k); q.push([nx,ny]); } }
+        if(seen.has(k)||!passable(nx,ny))continue; seen.add(k); q.push([nx,ny]); } }
     G.hasSurf=save.surf; G.surfing=save.surfing;
     const probe=(name,x,y)=>{ if(F.walkable(x,y))return {name,ok:seen.has(x+","+y),how:"보행 타일"};
       const adj=[[0,1],[0,-1],[1,0],[-1,0]].filter(([dx,dy])=>seen.has((x+dx)+","+(y+dy)));
