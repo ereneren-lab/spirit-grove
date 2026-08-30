@@ -163,6 +163,11 @@ const MOVES={
   ironhead:{name:"아이언헤드",type:"rock",power:60,acc:100,pp:12,pri:0,eff:{flinch:0.3}},
   bite:{name:"물기",type:"normal",power:48,acc:100,pp:20,pri:0,eff:{flinch:0.3}},
   struggle:{name:"발버둥",type:"normal",power:40,acc:100,pp:Infinity,pri:0,recoil:0.25},
+  // ===== 신규 기술(타입별 물리/특수 공백 보강) =====
+  powergem:{name:"파워젬",type:"rock",power:80,acc:100,pp:10,pri:0,cat:"spec"},          // 최초의 바위 특수기 — 결정룡(특공형 바위)이 자속 특수를 갖게 된다
+  dragonrush:{name:"용의돌진",type:"dragon",power:95,acc:85,pp:10,pri:0,cat:"phys",eff:{flinch:0.2}},  // 용 물리 대타 — 물리 용린(비룡·천공룡·뇌전룡)의 마무리기
+  iciclecrash:{name:"고드름떨구기",type:"ice",power:75,acc:95,pp:10,pri:0,cat:"phys",eff:{flinch:0.2}},  // 얼음 물리 강기 — 빙룡·빙곰의 물리 얼음 공백을 메운다
+  shadowclaw:{name:"섀도클로",type:"ghost",power:70,acc:100,pp:15,pri:0,cat:"phys",highCrit:true},        // 고스트 물리 강기 — 랜턴폭스·눈올빼의 물리 고스트 공백
 };
 /* ===== 물리/특수 판정 단일 출처 =====
    ⚠️ 예전엔 `SPEC_TYPES[move.type]`으로 **타입이 계열을 강제**했다(3세대 이전 방식).
