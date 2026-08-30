@@ -16,7 +16,7 @@ function multiHits(mr){ const [lo,hi]=mr;
   if(lo===2&&hi===5){ const r=Math.random(); return r<0.375?2:r<0.75?3:r<0.875?4:5; }
   return ri(lo,hi); }
 function effSpd(m){ let w=1;
-  if(typeof G!=="undefined"&&G&&G.weather){ if(m.ability==="swiftswim"&&G.weather==="rain")w=2; else if(m.ability==="chlorophyll"&&G.weather==="sun")w=2; }
+  if(typeof G!=="undefined"&&G&&G.weather){ if(m.ability==="swiftswim"&&G.weather==="rain")w=2; else if(m.ability==="chlorophyll"&&G.weather==="sun")w=2; else if(m.ability==="slushrush"&&G.weather==="hail")w=2; }
   const _hi=m.held&&HELD_ITEMS[m.held]; if(_hi&&_hi.spdx)w*=_hi.spdx;   // 구애스카프
   return m.spd*stageMul(m.stages.spd)*(m.status==="par"?0.5:1)*w; }
 // 혼란 자해: 본가는 "위력 40 무타입 물리 기술을 자신에게" 맞는 것과 같다.
@@ -52,6 +52,8 @@ function damage(att,def,move){ let eff=EFF[move.type][def.type]; if(def.type2&&d
   if(att.ability==="hugepower" && !isSpec) abil*=1.5;   // 순수한힘: 물리만
   if(att.ability==="technician" && move.power<=60) abil*=1.5;   // 테크니션: 위력 60 이하 강화
   if(def.ability==="filter" && eff>1) abil*=0.75;              // 필터: 효과 굉장 피해 경감
+  if(att.ability==="toughclaws" && !isSpec) abil*=1.2;         // 억센발톱: 물리 기술 강화
+  if(att.ability==="sandforce" && typeof G!=="undefined"&&G&&G.weather==="sand" && (move.type==="rock"||move.type==="ground"||move.type==="steel")) abil*=1.3;   // 모래의힘: 모래바람 시 바위·땅·강철 강화
   const lvf=2*att.level/5+2;
   const _isStab=(move.type===att.type||(att.type2&&move.type===att.type2));
   const stab=_isStab?(att.ability==="adaptability"?2:1.5):1;   // 적응력: 자속 1.5→2.0
