@@ -114,28 +114,46 @@ const { chromium } = require("playwright"); const path=require("path"); const os
   await p.waitForTimeout(700);
   await clearDialog(20);
 
-  // ⚠️ 상하좌우를 번갈아 누르면 제자리에서 진동만 한다. 그리고 마을(지역0)엔 야생 조우가 없다.
-  //    같은 방향을 여러 번 눌러 북쪽 풀숲으로 실제로 이동해야 전투가 걸린다.
-  let battles=0, steps=0;
-  const seq=["ArrowUp","ArrowUp","ArrowUp","ArrowUp","ArrowLeft","ArrowUp","ArrowUp","ArrowRight"];
+  /* ⚠️ **고정 키 시퀀스(Up×4,…)는 flaky했다** — 우연히 풀숲(T)을 충분히 밟길 기대했는데, 헤드리스에선
+     경로가 '.'·'g'(조우 없음) 칸을 주로 밟아 80~400걸음 예산 안에 조우가 안 걸리곤 했다(게임은 정상).
+     야생 조우는 **오버월드 T(긴 풀숲) 칸을 밟을 때만** ~22%로 굴러간다.
+     → 매 걸음 in-page BFS로 '가장 가까운 T 칸'으로 향하는 **첫 걸음 방향**을 결정적으로 구해 이동한다.
+       풀숲에 들어서면 인접 T를 계속 밟아(각 걸음 조우 롤) 전투가 걸릴 때까지 간다 — 운에 기대지 않는다. */
+  let battles=0, steps=0, stuck=0;
   const trail=[];
-  for(let i=0;i<400 && battles===0;i++){
-    const st=await p.evaluate(()=>({inB:window.SG.G().inBattle, ...window.SG.G().pos,
-                                    indoor:window.SG.G().indoor,
-                                    dlg:document.getElementById("dialogBox").classList.contains("show")}));
+  for(let i=0;i<300 && battles===0;i++){
+    const st=await p.evaluate(()=>{ const S=window.SG,F=S.flow,G=S.G();
+      if(G.inBattle)return {inB:true};
+      if(document.getElementById("dialogBox").classList.contains("show"))return {dlg:true};
+      if(G.indoor)return {indoor:true};
+      // 가장 가까운 긴 풀숲(T)로 향하는 첫 걸음 방향(BFS over walkable). T도 walkable이라 경로에 섞인다.
+      const sx=G.pos.x, sy=G.pos.y, K=(x,y)=>x+","+y;
+      const DIRS=[["ArrowUp",0,-1],["ArrowDown",0,1],["ArrowLeft",-1,0],["ArrowRight",1,0]];
+      const seen=new Set([K(sx,sy)]), q=[[sx,sy,null]];
+      while(q.length){ const [x,y,fd]=q.shift();
+        for(const [d,dx,dy] of DIRS){ const nx=x+dx,ny=y+dy,k=K(nx,ny);
+          if(seen.has(k))continue; seen.add(k);
+          const first=fd||d;
+          if(F.tileAt(nx,ny)==="T")return {dir:first, x:sx, y:sy};   // 풀숲 발견 → 그쪽 첫 걸음
+          if(F.walkable(nx,ny))q.push([nx,ny,first]); } }
+      return {nograss:true, x:sx, y:sy};
+    });
     if(st.inB){ battles++; break; }
     if(st.dlg){ await p.keyboard.press("Enter"); await p.waitForTimeout(150); continue; }
     if(st.indoor){ await p.keyboard.press("ArrowDown"); await p.waitForTimeout(200); continue; }
-    if(i%40===0)trail.push(st.x+","+st.y);
-    await p.keyboard.press(seq[i%seq.length]);
-    await p.waitForTimeout(125);
-    steps++;
+    if(st.nograss)break;   // 걸어서 닿는 풀숲이 없다(있을 수 없음) — 방어
+    if(i%20===0)trail.push(st.x+","+st.y);
+    const before=st.x+","+st.y;
+    await p.keyboard.press(st.dir);
+    await p.waitForTimeout(130);
+    const now=await p.evaluate(()=>window.SG.G().pos.x+","+window.SG.G().pos.y);
+    if(now===before){ if(++stuck>10)break; } else { stuck=0; steps++; }
   }
   const walkEnd=await p.evaluate(()=>({...window.SG.G().pos}));
-  console.log(`     (이동 경로 표본: ${trail.join(" → ")} → ${walkEnd.x},${walkEnd.y})`);
+  console.log(`     (이동 경로 표본: ${trail.join(" → ")} → ${walkEnd.x},${walkEnd.y}, ${steps}걸음)`);
   await p.waitForTimeout(900);
   const battleView=await view();
-  ok(battles>0, `풀숲을 ${steps}걸음 걸어 야생 전투 발생`);
+  ok(battles>0, `풀숲으로 결정적으로 걸어가 야생 전투 발생 (${steps}걸음)`);
   ok(battleView==="battle", `전투 화면으로 전환 (${battleView})`);
 
   /* ── 6. 실제 버튼으로 전투를 끝낸다 ── */
