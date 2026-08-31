@@ -40,6 +40,27 @@ const { chromium } = require("playwright"); const path = require("path");
   await p.keyboard.press("Escape"); await p.waitForTimeout(80);
   ok(!(await active("endingOverlay")), "endingOverlay가 Esc로 닫힌다(다른 ✕형과 일관)");
 
+  // 배경(시트 바깥) 탭으로 닫힌다 — 단, 시트 내용 탭은 안 닫힌다
+  const back = await p.evaluate(() => {
+    const F = window.SG.flow; F.openOverlay("bagOverlay");
+    const ov = document.getElementById("bagOverlay");
+    const sheet = ov.querySelector(".sheet, .ov-head, #bagBody") || ov.firstElementChild;
+    if (sheet) sheet.click();   // 시트 내용 탭 → 안 닫힘
+    const afterSheet = ov.classList.contains("active");
+    ov.click();   // 배경 자신 탭 → 닫힘
+    const afterBack = ov.classList.contains("active");
+    return { afterSheet, afterBack };
+  });
+  ok(back.afterSheet, "시트 내용 탭으로는 안 닫힌다");
+  ok(!back.afterBack, "모달 배경(바깥) 탭으로 닫힌다");
+
+  // mxOverlay·daycareOverlay에 헤더 ✕(data-close) 존재
+  const heads = await p.evaluate(() => ({
+    mx: !!document.querySelector('#mxOverlay .closex[data-close="mxOverlay"]'),
+    dc: !!document.querySelector('#daycareOverlay .closex[data-close="daycareOverlay"]')
+  }));
+  ok(heads.mx && heads.dc, "기술 전문가·육아방에도 고정 헤더 ✕ 추가(닫기 일관)");
+
   ok(errs.length === 0, "런타임 에러 0" + (errs.length ? ": " + errs.slice(0, 3).join(" / ") : ""));
   console.log(process.exitCode ? "\n❌ 실패" : "\n🎉 오버레이 스택 취소 통과");
   await b.close(); process.exit(process.exitCode || 0);

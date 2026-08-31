@@ -903,12 +903,12 @@
       <div id="buyBody"></div>
     </div></div>
     <div class="overlay" id="mxOverlay"><div class="sheet" style="max-width:420px">
-      <div style="font-weight:800;text-align:center;margin-bottom:8px">📖 기술 전문가</div>
+      <div class="ov-head"><h3>📖 기술 전문가</h3><button class="closex" data-close="mxOverlay">✕</button></div>
       <div id="mxBody"></div>
       <button class="dcbtn" id="mxClose" style="width:100%;margin-top:10px">닫기</button>
     </div></div>
     <div class="overlay" id="daycareOverlay"><div class="sheet" style="max-width:420px">
-      <div style="font-weight:800;text-align:center;margin-bottom:8px">🏡 정령 육아방</div>
+      <div class="ov-head"><h3>🏡 정령 육아방</h3><button class="closex" data-close="daycareOverlay">✕</button></div>
       <div id="daycareBody"></div>
       <button class="dcbtn" id="daycareClose" style="width:100%;margin-top:10px">닫기</button>
     </div></div>
@@ -3970,6 +3970,11 @@ function openOverlay(id){ $(id).classList.add("active"); const k=_ovStack.indexO
    그 정지가 '닫기 버튼 핸들러'에만 있어 Escape·✕로 닫으면 루프가 살아남아 계속 그렸다. */
 function closeOverlay(id){ $(id).classList.remove("active"); const k=_ovStack.indexOf(id); if(k>=0)_ovStack.splice(k,1); if(id==="minimap")stopMinimapLoop(); }
 document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>{Audio.sfx("blip");closeOverlay(b.dataset.close);}));
+/* 모달 바깥(어두운 배경) 탭으로 닫기 — 플레이어가 흔히 기대하는 동작. 시트 바깥을 탭했을 때(=이벤트 대상이
+   오버레이 배경 자신)만, 그리고 취소 가능 모달일 때만 닫는다(강제 교체·컷신 등은 배경 탭으로 안 닫힘). */
+document.addEventListener("click",e=>{ const ov=e.target;
+  if(ov&&ov.classList&&ov.classList.contains("overlay")&&ov.classList.contains("active")&&CANCELABLE_OVERLAYS.indexOf(ov.id)>=0){
+    Audio.sfx&&Audio.sfx("blip"); closeOverlay(ov.id); } });
 /* ===================== 조사 자동 선택 ===================== */
 /* ⚠️ 이 게임의 이름은 전부 **한글 고정 데이터**다(DEX 86종·아이템 102종) — 종성만 보면 조사를
    정확히 고를 수 있는데도 소스에 괄호형 조사가 145건 있었다(은(는) 46·이(가) 56·을(를) 42·와(과) 1).
