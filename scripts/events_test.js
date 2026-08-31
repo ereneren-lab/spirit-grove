@@ -46,7 +46,7 @@ const { chromium } = require("playwright"); const path = require("path");
     // 지닌물건 비율: 궂은 날씨(omen)에서 더 높아야 한다. transitionToBattle은 비동기 콜백이라
     // startEncounter 직후 G.foe.held는 이미 동기적으로 결정돼 있다.
     const sample = (wx, n) => { F.setOwWeather(wx); let held = 0; for (let i = 0; i < n; i++) { F.startEncounter(0); if (S.G().foe && S.G().foe.held) held++; } return held / n; };
-    const N = 300;
+    const N = 700;  // 표본을 키워 경계(+0.05) 부근 통계 흔들림 방지 — 기대 보정폭 ≈0.11
     const rainHeld = sample("rain", N);
     const clearHeld = sample("clear", N);
     F.setOwWeather(null);
