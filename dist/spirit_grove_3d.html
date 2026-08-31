@@ -4446,7 +4446,7 @@ const NPCS=[
           "복순: 풀숲에 들어가기 전엔 정령 체력을 꼭 보렴.",
           "복순: 조심히 다녀오너라."]},
   {id:"guide_el",x:4,y:45,em:"🍃",name:"숲지기 노인",
-    spr:{outfit:"#4a7a5a",accent:"#a8d490",skin:"#d8c0a0",hair:"#8a8a7a",hat:"hood",hatc:"#3a6a4a",boots:"#2c4a3a"},
+    spr:{outfit:"#4a7a5a",accent:"#a8d490",skin:"#d8c0a0",hair:"#cfcabf",hat:"hood",hatc:"#3a6a4a",boots:"#2c4a3a",extra:"beard"},
     lines:["숲지기 노인: …숲이 너를 내보냈구나. 인간의 땅은 처음이겠지.",
            "저 <b>진한 풀숲</b>엔 아직 야생인 정령들이 있다. 밟으면 나온다 — 놀라지 마라.",
            "다치면 <b>모닥불 🔥</b>을 찾아라. 인간들이 피워둔 불이지만, 정령도 거기서 쉰다."],
@@ -4458,7 +4458,7 @@ const NPCS=[
   {id:"rival",x:16,y:41,em:"🧑‍🎤",name:"라이벌 카이",battleKey:"V",spr:{extra:"bag",outfit:"#d8503e",accent:"#2a2230",skin:"#e8b88a",hair:"#2a2a33",spiky:true,hat:"cap",hatc:"#33526a",boots:"#2c3a4a"},
     lines:["라이벌 카이: 어이! 너도 정령 연구소에서 왔다며?","실은 스승님을 찾으러 이 숲에 들어왔어. 인장이 옅어진 뒤로 소식이 끊기셨거든. 누가 더 센지, 한 판 가려보자!"],
     linesAfter:["라이벌 카이: 큭… 이번엔 운이 좋았어. 그래도 스승님 흔적 쪽엔 나도 가까워지고 있어. 위에서 다시 붙자!"]},
-  {id:"t1",x:18,y:47,em:"🪲",name:"벌레소년 메아",battleKey:"T1",spr:{outfit:"#6aa84f",accent:"#3a6b2e",skin:"#e8c39a",hair:"#3a2c22",hat:"cap",hatc:"#7a9a3a",boots:"#4a5a2c",extra:"net"},
+  {id:"t1",x:18,y:47,em:"🪲",name:"벌레소년 메아",battleKey:"T1",spr:{build:"child",outfit:"#6aa84f",accent:"#3a6b2e",skin:"#e8c39a",hair:"#3a2c22",hat:"cap",hatc:"#7a9a3a",boots:"#4a5a2c",extra:"net"},
     lines:["벌레소년 메아: 마을 풀숲에서 벌레 정령 엄청 모았어! 하나만 봐줘, 응?"], linesAfter:["벌레소년 메아: 다음엔 더 멋진 벌레 잡아서 보여줄게!"]},
   {id:"elder",x:16,y:34,chat:["장로: 이 숲은 천 년을 살아왔지. 그 숨결을 느껴보게.","장로: 서두르지 말게. 정령과의 신뢰가 힘보다 먼저라네.","장로: 깊은 숲엔 늙은 나조차 길을 잃는다네. 표식을 잘 보게."],em:"🧓",name:"숲의 노인",spr:{outfit:"#7d7a86",accent:"#5a5560",skin:"#e0bd96",hair:"#d8d4cc",boots:"#4a4550",extra:"beard"},
     lines:["숲의 노인: 예전엔 이 길이 곧게 뻗어 있었지. 인장의 빛이 옅어지자 길마저 뒤틀려 미궁이 됐어.","정령은 상성이 중요하다네. 불은 풀에, 물은 불에, 풀은 물에 강하지. 기술 선택을 잘 하게.","어떤 정령은 두 가지 속성을 함께 지녔다네. 약점이 겹치면 4배의 피해를 입기도 하지 — 상대의 속성을 잘 살피게."]},
@@ -4520,11 +4520,11 @@ const NPCS=[
   {id:"t13",x:6,y:33,em:"🐤",name:"들새 관찰자 소라",battleKey:"T13",spr:{hairlen:"long",outfit:"#6a9ac0",accent:"#a0d0e8",skin:"#e0bd96",hair:"#4a5a6a",hat:"cap",hatc:"#5a8ab0",boots:"#3a5a6a"},lines:["들새 관찰자 소라: 새벽엔 새 정령이 제일 많이 울어. 그때 와봐!"],linesAfter:["들새 관찰자 소라: 너, 나보다 눈이 좋구나."]},
   {id:"t14",x:3,y:27,em:"🪨",name:"동굴 탐사가 바위",battleKey:"T14",spr:{outfit:"#8a7a5a",accent:"#5a4a32",skin:"#e3b07e",hair:"#3a2c1a",hat:"cap",hatc:"#6a5a3a",boots:"#4a3a22",extra:"pick"},lines:["동굴 탐사가 바위: 동굴 안쪽엔 반짝이는 수정이 있어. 괴력이 있으면 가봐."],linesAfter:["동굴 탐사가 바위: 동굴에서 더 단단해져 오마."]},
   {id:"t15",x:16,y:47,em:"🧒",name:"초보 정령사 준",battleKey:"T15",spr:{build:"child",outfit:"#d09a4a",accent:"#a06a2a",skin:"#e8c39a",hair:"#3a2c1a",hat:"cap",hatc:"#e0b050",boots:"#5a4020"},lines:["초보 정령사 준: 오늘 처음 정령이랑 마을 밖에 나와봤어. 같이 해줄래?"],linesAfter:["초보 정령사 준: 너랑 첫 배틀이라 다행이었어. 자신 붙었어!"]},
-  {id:"t16",x:4,y:41,em:"🌸",name:"풀숲 소녀 미나",battleKey:"T16",spr:{hairlen:"long",extra:"basket",outfit:"#e08ab0",accent:"#c05a8a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["풀숲 소녀 미나: 초원 들꽃 사이에도 정령이 숨어 있어. 밟지 않게 조심해!"],linesAfter:["풀숲 소녀 미나: 바람에 흔들려도 뿌리는 안 뽑혀. 나처럼 말이야!"]},
+  {id:"t16",x:4,y:41,em:"🌸",name:"풀숲 소녀 미나",battleKey:"T16",spr:{build:"child",hairlen:"long",extra:"basket",outfit:"#e08ab0",accent:"#c05a8a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["풀숲 소녀 미나: 초원 들꽃 사이에도 정령이 숨어 있어. 밟지 않게 조심해!"],linesAfter:["풀숲 소녀 미나: 바람에 흔들려도 뿌리는 안 뽑혀. 나처럼 말이야!"]},
   {id:"t17",x:4,y:35,em:"🌲",name:"숲지기 도윤",battleKey:"T17",spr:{build:"tall",outfit:"#4a7a4a",accent:"#2a5a2a",skin:"#e3b07e",hair:"#2a2416",hat:"cap",hatc:"#3a6a3a",boots:"#2a3a1a"},lines:["숲지기 도윤: 길을 잃거든 이끼 낀 쪽을 봐. 그쪽이 북쪽이다."],linesAfter:["숲지기 도윤: 나무들이 널 위해 길을 열 거야."]},
   {id:"t18",x:3,y:27,em:"🐉",name:"용 수련생 하늘",battleKey:"T18",spr:{build:"tall",hat:"bandana",hatc:"#6a4a8a",outfit:"#6a5aa0",accent:"#4a3a80",skin:"#e0bd96",hair:"#2a2c4a",boots:"#3a2c5a"},lines:["용 수련생 하늘: 언젠가 천공룡을 이 손으로 키울 거야. 두고 봐!"],linesAfter:["용 수련생 하늘: 아직 용의 발끝에도 못 미쳤네. 더 수련할게."]},
   {id:"t19",x:21,y:49,em:"💧",name:"물놀이 소년 하리",battleKey:"T19",dir:"up",spr:{build:"child",outfit:"#5aa0c0",accent:"#3a7a9a",skin:"#e8c39a",hair:"#3a4a5a",hat:"none",boots:"#3a5a6a"},lines:["물놀이 소년 하리: 마을 개울에서 물 정령이랑 첨벙대는 게 최고야!"],linesAfter:["물놀이 소년 하리: 더우면 개울 와. 물 정령들이 놀아줄 거야!"]},
-  {id:"t20",x:19,y:37,em:"🌷",name:"꽃밭 소녀 채원",battleKey:"T20",spr:{hairlen:"long",extra:"basket",outfit:"#e0709a",accent:"#c04a7a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["꽃밭 소녀 채원: 이 꽃밭, 계절마다 색이 바뀌어. 또 보러 와!"],linesAfter:["꽃밭 소녀 채원: 꽃잎 하나 안 아까운 멋진 배틀이었어!"]},
+  {id:"t20",x:19,y:37,em:"🌷",name:"꽃밭 소녀 채원",battleKey:"T20",spr:{build:"child",hairlen:"long",extra:"basket",outfit:"#e0709a",accent:"#c04a7a",skin:"#e8c39a",hair:"#6a3a4a",hat:"none",boots:"#8a4a6a"},lines:["꽃밭 소녀 채원: 이 꽃밭, 계절마다 색이 바뀌어. 또 보러 와!"],linesAfter:["꽃밭 소녀 채원: 꽃잎 하나 안 아까운 멋진 배틀이었어!"]},
   {id:"t21",x:15,y:31,em:"🏹",name:"숲의 사냥꾼 강",battleKey:"T21",spr:{build:"tall",hat:"bandana",hatc:"#5a6a3a",outfit:"#5a6a3a",accent:"#3a4a22",skin:"#e3b07e",hair:"#2a2416",boots:"#2a3a1a"},lines:["숲의 사냥꾼 강: 짐승 발자국을 읽어라. 정령의 길목이 보일 테니."],linesAfter:["숲의 사냥꾼 강: …오늘은 네가 강했다. 이 길, 네게 내주지."]},
   {id:"altar_pilgrim",x:5,y:10,em:"🧎",name:"제단의 순례자",spr:{build:"tall",extra:"bag",outfit:"#6a5a7a",accent:"#a898c0",skin:"#e0bd96",hair:"#3a3446",hat:"none",boots:"#4a4258"},lines:["제단의 순례자: 여기까지 왔군요… 군주는 홀로 그림자를 막아내고 있습니다.","제단의 순례자: 인장 조각을 모두 모았다면, 리그로 가세요. 챔피언만이 군주를 도울 수 있습니다."]},
   {id:"altar_watcher",x:20,y:11,em:"🔭",name:"제단 감시인",spr:{hat:"beanie",hatc:"#3a4a5a",outfit:"#4a5a6a",accent:"#8a9aaa",skin:"#e8c39a",hair:"#2a3440",boots:"#2a3440"},lines:["제단 감시인: 밤이 길어졌어. 인장의 빛이 약해진 탓이지.","제단 감시인: 저 위쪽에 후드를 쓴 자들이 모여 있어. 제단을 노리는 것 같은데… 조심해.","제단 감시인: 이 근방엔 아직 아무도 줍지 않은 물건이 남아 있을 거야. 잘 둘러봐."]},
@@ -4537,7 +4537,7 @@ const NPCS=[
   {id:"shadow3",x:16,y:11,em:"🕯️",name:"그림자 사도 하람",battleKey:"SH3",spr:{build:"tall",outfit:"#302a3a",accent:"#b0a0c8",skin:"#c8b8a0",hair:"#8a8496",hat:"hood",hatc:"#241f30",boots:"#241f30",extra:"staff"},
     lines:["그림자 사도 하람: …빛을 지고 올라온 아이로군. 나도 그랬다. 아주 오래전에.","그림자 사도 하람: 인장을 지키려던 손이 지금은 그림자를 붙든다. 다가와 나를 시험해라 — 그것이 그림자를 아는 유일한 길이니."],
     linesAfter:["그림자 사도 하람: …그 아이의 이름이 자꾸 흐려진다. 나를 스승이라 부르던 아이가 있었어. 미안하다고, 전해다오."]},
-  {id:"trade1",x:9,y:45,em:"🔄",name:"교환하는 소녀 하늘",trade:"tr_forest",spr:{hairlen:"long",extra:"bag",outfit:"#e0a0c0",accent:"#c07a9a",skin:"#e8c39a",hair:"#6a4a5a",hat:"none",boots:"#8a5a7a"},lines:["교환하는 소녀 하늘: 정령 교환, 관심 있어?"]},
+  {id:"trade1",x:9,y:45,em:"🔄",name:"교환하는 소녀 하늘",trade:"tr_forest",spr:{build:"child",hairlen:"long",extra:"bag",outfit:"#e0a0c0",accent:"#c07a9a",skin:"#e8c39a",hair:"#6a4a5a",hat:"none",boots:"#8a5a7a"},lines:["교환하는 소녀 하늘: 정령 교환, 관심 있어?"]},
   {id:"trade2",x:10,y:21,em:"🔄",name:"교환하는 청년 재하",trade:"tr_lake",spr:{extra:"bag",outfit:"#7a9ac0",accent:"#4a6a9a",skin:"#e0bd96",hair:"#3a3a4a",hat:"none",boots:"#3a4a6a"},lines:["교환하는 청년 재하: 교환할 정령 있어?"]},
   {id:"t22",x:8,y:22,em:"🎣",name:"호수 낚시꾼 도윤",battleKey:"T22",spr:{build:"stout",extra:"bag",outfit:"#4a7a9a",accent:"#2a5a7a",skin:"#e0bd96",hair:"#3a3a2a",hat:"cap",hatc:"#2a5a7a",boots:"#2a4a5a"},lines:["호수 낚시꾼 도윤: 낚싯대가 있으면 물가에서 정령을 낚을 수 있어. 해봐."],linesAfter:["호수 낚시꾼 도윤: …내 낚싯대가 다 부끄럽구먼. 자넨 월척이야."]},
   {id:"t23",x:12,y:25,em:"🔬",name:"수정 연구가 예린",battleKey:"T23",spr:{hairlen:"long",extra:"glasses",outfit:"#d8d8e8",accent:"#8a8ab0",skin:"#e8c39a",hair:"#4a4a6a",hat:"none",boots:"#6a6a8a"},lines:["수정 연구가 예린: 수정이 울리는 방향에 강한 정령이 있어. 기록해 뒀지."],linesAfter:["수정 연구가 예린: 수정보다 네 정령이 더 반짝였어. 고마워!"]},
@@ -6953,12 +6953,12 @@ const ORIGIN_STORY=[
           {name:"관측 기록",text:"조각은 넷. 숲 곳곳의 <b>체육관 관장</b>들이 <b>인장 조각 4개</b>를 나눠 지키고 있다. 조각을 모아야 제단이 열린다."},
           {name:"관측 기록",text:"…여기까지가 내가 책상에서 알아낸 전부다. 나머지는 가서 봐야 한다."}],
     send:[{name:"소장",text:"자네가 쓴 보고서를 읽었네. 숫자는 맞아. 그런데 숫자만으론 아무도 안 움직이지."},
-          {name:"소장",text:"그러니 자네가 가게. 관장들을 만나 조각을 모으고, 제단의 <b>숲의 군주</b>에게 닿게."},
+          {name:"소장",text:"그러니 자네가 가게. 관장들을 만나 조각을 모으고, 제단에 계신 <b>숲의 군주</b>에게 닿게."},
           {name:"소장",text:"연구소는 여기 있겠네. 살아서 돌아와 결론을 써 주게. 🔬"}] },
   { wake:[{name:"",text:"…천막 틈으로 찬 새벽 공기가 들어온다. 모닥불은 벌써 재만 남았다."},
           {name:"",text:"<b>첫 동료 정령</b>이 천막 자락을 물고 당긴다. 밖을 보라는 듯이."}],
     note:[{name:"전서 정령이 물어온 쪽지",text:"— <b>정령 연구소</b>가 길 위의 모든 이에게 알립니다.<br>천 년간 숲을 지켜온 <b>숲의 인장</b>의 빛이 빠르게 옅어지고 있습니다."},
-          {name:"전서 정령이 물어온 쪽지",text:"숲 곳곳의 체육관 관장들이 <b>인장 조각 4개</b>를 나눠 지키고 있습니다. 조각을 모아 제단의 <b>숲의 군주</b>에게 닿을 이를 찾습니다."},
+          {name:"전서 정령이 물어온 쪽지",text:"숲 곳곳의 체육관 관장들이 <b>인장 조각 4개</b>를 나눠 지키고 있습니다. 조각을 모아 제단에 계신 <b>숲의 군주</b>에게 닿을 이를 찾습니다."},
           {name:"",text:"…어젯밤 정령들이 전부 같은 방향으로 떠났다. 이유가 여기 적혀 있었다."}],
     send:[{name:"동행 상인",text:"어이, 벌써 짐을 싸나? 하긴, 자네는 한곳에 오래 못 있지."},
           {name:"동행 상인",text:"북쪽 초원에 체육관이 있어. 거기부터 가 보게. 길은 자네가 더 잘 알 테고."},
@@ -6967,7 +6967,7 @@ const ORIGIN_STORY=[
           {name:"",text:"<b>첫 동료 정령</b>이 문 앞에서 기다리고 있다. 벌써 밭을 다녀온 모양이다."}],
     note:[{name:"할아버지의 쪽지",text:"— 밭 정령들이 사흘째 시들어. 물 탓이 아니야.<br>읍내에 붙은 <b>연구소 공고</b>를 베껴 왔다. 읽어 보렴."},
           {name:"연구소 공고",text:"천 년간 숲을 지켜온 <b>숲의 인장</b>의 빛이 옅어지고 있습니다. 체육관 관장들이 <b>인장 조각 4개</b>를 나눠 지키고 있습니다."},
-          {name:"연구소 공고",text:"조각을 모아 제단의 <b>숲의 군주</b>에게 닿으세요. 숲이 마르면, 숲에 기댄 모든 것이 함께 마릅니다."}],
+          {name:"연구소 공고",text:"조각을 모아 제단에 계신 <b>숲의 군주</b>에게 닿으세요. 숲이 마르면, 숲에 기댄 모든 것이 함께 마릅니다."}],
     send:[{name:"할아버지",text:"밭은 내가 본다. 너는 가서 원인을 봐라."},
           {name:"할아버지",text:"우리 밭만의 일이 아니야. 숲이 마르면 다 마른다."},
           {name:"할아버지",text:"…가서, 꼭 돌아와라. 🌾"}] },
@@ -6996,7 +6996,7 @@ const HOME_WAKE=[
    ⚠️ 목표를 여기서만 말하지 않는다 — 목표 트래커가 늘 같은 것을 가리킨다(중복이 아니라 이중화). */
 const HOME_LETTER=[
   {name:"연구소의 편지",text:"— <b>정령 연구소</b>가 보냅니다.<br>천 년간 숲을 지켜온 <b>숲의 인장</b>의 빛이 빠르게 옅어지고 있습니다. 무언가가 그 힘을 빨아먹고 있어요."},
-  {name:"연구소의 편지",text:"숲 곳곳의 체육관 관장들이 <b>인장 조각 4개</b>를 나눠 지키고 있습니다. 그들을 꺾어 조각을 모으고, 제단의 <b>숲의 군주</b>에게 닿으세요."},
+  {name:"연구소의 편지",text:"숲 곳곳의 체육관 관장들이 <b>인장 조각 4개</b>를 나눠 지키고 있습니다. 그들을 꺾어 조각을 모으고, 제단에 계신 <b>숲의 군주</b>에게 닿으세요."},
   {name:"연구소의 편지",text:"당신과 첫 동료에게 이 일을 맡깁니다. …부디, 살아서 돌아오세요."}
 ];
 /* 출신지에서 시작한다. `styleIdx`로 지도·도입·나오는 자리가 전부 갈린다.
@@ -7030,7 +7030,7 @@ function enterMap(fromLoad){ if(fromLoad){ G.indoor=null; _owBackup=null; } if(!
 
 function maybeTutorial(){ let done=false; try{done=!!localStorage.getItem("sg4_tut");}catch(e){}
   if(done)return; try{localStorage.setItem("sg4_tut","1");}catch(e){}
-  const steps=["맵을 탭하면 그 칸까지 자동 이동, D패드는 꾹 누르면 계속 이동 🕹️","풀숲(🌿)을 밟으면 야생 정령이 나타나 ⚔️","🔥모닥불=회복 · 🏪상점=구매 · 위로 갈수록 강해져","🧝 제단의 숲의 군주를 꺾고 인장을 손에 넣자!"];
+  const steps=["맵을 탭하면 그 칸까지 자동 이동, D패드는 꾹 누르면 계속 이동 🕹️","풀숲(🌿)을 밟으면 야생 정령이 나타나 ⚔️","🔥모닥불=회복 · 🏪상점=구매 · 위로 갈수록 강해져","🧝 제단에서 숲의 군주를 꺾고 인장을 손에 넣자!"];
   let i=0; const tick=()=>{ if(i>=steps.length)return; flashHint(steps[i]); i++; setTimeout(tick,2400); }; tick(); }
 
 /* ===================== MOVEMENT: pathfinding + tap + hold ===================== */
@@ -9000,7 +9000,7 @@ async function performMove(att,def,mvKey,side){ let move=MOVES[mvKey]; let _resu
     else if(move.eff.seed){ if(def.type==="grass"||def.type2==="grass"){ setMsg("효과가 없었다…"); } else if(def._seeded){ setMsg("이미 씨앗이 심어져 있다."); } else { def._seeded=side; Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>에게 씨앗이 심어졌다!`); } }
     else if(move.eff.confuse){ if(def._confuse>0){ setMsg("이미 혼란에 빠져있다."); } else { def._confuse=ri(2,4); Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>이(가) 혼란에 빠졌다!`); } }
     else if(move.eff.attract){
-      if(!def.gender||def.gender==="N"||!att.gender||att.gender==="N"||def.gender===att.gender){ setMsg("효과가 없는 것 같다…"); }
+      if(!def.gender||def.gender==="N"||!att.gender||att.gender==="N"||def.gender===att.gender){ setMsg("효과가 없었다…"); }
       else if(def._attract){ setMsg("이미 헤롱헤롱 상태다."); }
       else { def._attract=true; Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>은(는) 헤롱헤롱해졌다! 💕`); } }
     else if(move.eff.encore){ if(def._lastMove && MOVES[def._lastMove] && (def.pp[def._lastMove]||0)>0 && !(def._encore&&def._encore.turns>0)){ def._encore={move:def._lastMove,turns:3}; Audio.sfx("status"); setMsg(`<b>${dispName(def)}</b>은(는) 앵콜에 걸려 같은 기술만 쓰게 됐다!`); } else { setMsg("효과가 없었다…"); } }
