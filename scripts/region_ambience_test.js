@@ -49,7 +49,7 @@ const { chromium } = require("playwright"); const path = require("path");
 
   ok(r.musicValid, `네 지역 BGM이 기대 트랙 반환 + 실존 트랙 (${JSON.stringify(r.music)})`);
   ok(r.musicDistinct, "네 지역 BGM이 서로 다르다");
-  ok(r.bgCount === 4, `INDOOR_BATTLE_BG 4지역 정의 (${r.bgCount})`);
+  ok(r.bgCount === 5, `INDOOR_BATTLE_BG 5지역 정의 (${r.bgCount})`);
   ok(r.bgFormat, "전투 배경이 유효한 data-URI SVG 형식");
   ok(r.bgDistinct, "네 지역 전투 배경이 서로 다르다");
   ok(r.bgNotAltar, "전투 배경이 기존 제단(보라) 배경과 다르다");
