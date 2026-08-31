@@ -7121,7 +7121,7 @@ function enterMap(fromLoad){ if(fromLoad){ G.indoor=null; _owBackup=null; } if(!
 function maybeTutorial(){ let done=false; try{done=!!localStorage.getItem("sg4_tut");}catch(e){}
   if(done)return; try{localStorage.setItem("sg4_tut","1");}catch(e){}
   const steps=["맵을 탭하면 그 칸까지 자동 이동, D패드는 꾹 누르면 계속 이동 🕹️","풀숲(🌿)을 밟으면 야생 정령이 나타나 ⚔️","🔥모닥불=회복 · 🏪상점=구매 · 위로 갈수록 강해져","🧝 제단에서 숲의 군주를 꺾고 인장을 손에 넣자!"];
-  let i=0; const tick=()=>{ if(i>=steps.length)return; flashHint(steps[i]); i++; setTimeout(tick,2400); }; tick(); }
+  let i=0; const tick=()=>{ if(i>=steps.length)return; flashHint(steps[i]); i++; setTimeout(tick,3200); }; tick(); }   // 간격을 늘려 초반이 덜 정신없게(한 줄씩 읽을 여유)
 
 /* ===================== MOVEMENT: pathfinding + tap + hold ===================== */
 let gamePath=[]; let heldDir=null; let lastRegion=-1; let encCooldown=0; let _warpLock=0;
