@@ -1,0 +1,30 @@
+// 회귀 — 보관함/파티 정령 요약(showMonSummary)에 이전/다음 이동. 현재 표시 순서를 따라 훑는다.
+const { chromium } = require("playwright"); const path=require("path");
+(async()=>{ const b=await chromium.launch();
+  const p=await b.newPage({viewport:{width:430,height:760}});
+  const errs=[]; p.on("pageerror",e=>errs.push(e.message));
+  await p.goto("file://"+path.resolve(process.argv[2])); await p.waitForTimeout(700);
+  const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)process.exitCode=1; };
+  await p.evaluate(()=>{ const S=window.SG; S.setG(S.freshState()); const G=S.G();
+    G.party=[S.makeMon("foxfire",10)];
+    G.box=[S.makeMon("sproutcat",8),S.makeMon("emberwolf",9),S.makeMon("glimmite",7)];
+    document.getElementById("pcOverlay").classList.add("active");
+  });
+  await p.click("#pcTabBox"); await p.waitForTimeout(150);
+  // 첫 박스 정령 요약 열기
+  await p.evaluate(()=>{ window.SG.flow.showMonSummary(window.SG.G().box[0]); });
+  await p.waitForTimeout(150);
+  ok(await p.evaluate(()=>!!document.getElementById("sumNextBtn")),"요약에 이전/다음 존재");
+  const name1=await p.evaluate(()=>{ const el=document.querySelector("#sumBody div[style*='font-weight:700']"); return el?el.textContent.trim():""; });
+  await p.evaluate(()=>{ const nb=document.getElementById("sumNextBtn"); nb&&!nb.disabled&&nb.click(); });
+  await p.waitForTimeout(150);
+  const name2=await p.evaluate(()=>{ const el=document.querySelector("#sumBody div[style*='font-weight:700']"); return el?el.textContent.trim():""; });
+  ok(name1&&name2&&name1!==name2, `다음으로 다른 정령 요약 (${name1} → ${name2})`);
+  await p.evaluate(()=>{ const pb=document.getElementById("sumPrevBtn"); pb&&!pb.disabled&&pb.click(); });
+  await p.waitForTimeout(150);
+  const name3=await p.evaluate(()=>{ const el=document.querySelector("#sumBody div[style*='font-weight:700']"); return el?el.textContent.trim():""; });
+  ok(name3===name1, `이전으로 복귀 (${name3})`);
+  ok(errs.length===0,"런타임 에러 0"+(errs.length?": "+errs.slice(0,2).join(" / "):""));
+  console.log(process.exitCode?"\n❌ 실패":"\n🎉 요약 이전/다음 통과");
+  await b.close(); process.exit(process.exitCode||0);
+})();
