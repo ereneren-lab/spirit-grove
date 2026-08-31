@@ -367,6 +367,8 @@
      키보드 조작은 kbfocus가 단일 출처이므로 포커스 링은 끈다. */
   .mbtn:focus{outline:none} .pick:focus{outline:none}
   .mbtn.kbfocus{outline:2.5px solid var(--mint);outline-offset:1px;box-shadow:0 0 11px rgba(127,209,174,.55);border-color:var(--mint)}
+  /* 오버레이(가방·도감 등) 안에서 방향키로 옮겨 다니는 커서 — 모달이 열리면 방향키가 그 안에서 돈다(밖으로 새지 않음). */
+  .overlay .kbfocus{outline:2.5px solid var(--mint);outline-offset:1px;box-shadow:0 0 10px rgba(127,209,174,.5);border-radius:8px}
   .move-btn{flex-direction:column;align-items:flex-start;gap:3px;padding:9px 12px}
   .move-btn .top{display:flex;justify-content:space-between;width:100%;align-items:center}
   .move-btn .mp{font-size:9.5px;color:var(--muted);font-weight:600}
@@ -5499,6 +5501,15 @@ const NPC_SPR={
   s:{sheet:"s",outfit:"#6aa08a",accent:"#a0d0c0",skin:"#e8c39a",hair:"#3a4a42",boots:"#3a5a4a"},
   isleLeader:{sheet:"isleLeader",outfit:"#2f7aa0",accent:"#4fd0e0",skin:"#e8c39a",hair:"#3a2a1a",spiky:true,boots:"#24506a",boss:true},
   snowMaster:{sheet:"snowMaster",outfit:"#5a7a9a",accent:"#9fc0e0",skin:"#e8d0b0",hair:"#dff0ff",spiky:true,boots:"#3a5a7a",boss:true} };
+/* 출신지(집)마다 지키는 사람이 다르다 — 예전엔 실내 'N' 타일을 전부 NPC_SPR.lore(회청색 현자)로 그려
+   "할아버지"인데 젊은 현자 그림이 나왔다(유저 제보). 각 집 인물을 대사 정체에 맞춘 절차적 스프라이트로 그린다.
+   (sheet 없이 절차적 경로 → build·hat·extra로 나이대·역할을 드러낸다.) */
+const HOME_NPC_SPR={
+  home_rio:{outfit:"#e4e8ee",accent:"#9ab0c8",skin:"#e8c39a",hair:"#8a8f98",boots:"#4a5a6a",extra:"scroll"},                         // 소장 — 흰 가운·희끗한 머리·자료 두루마리(연구자)
+  home_mina:{outfit:"#b5643c",accent:"#e0a060",skin:"#d8b088",hair:"#3a2c22",hat:"bandana",hatc:"#c0503a",boots:"#5a3a2a",extra:"bag"}, // 동행 상인 — 두건·등짐
+  home_tori:{build:"stout",outfit:"#8a7a54",accent:"#b0a070",skin:"#dcc0a0",hair:"#e8e4dc",hat:"straw",hatc:"#caa050",boots:"#4a3a2a",extra:"beard"}, // 할아버지 — 백발·수염·밀짚모자(농부 노인)
+  home_el:{outfit:"#4a7a5a",accent:"#a8d490",skin:"#d8c0a0",hair:"#cfcabf",hat:"hood",hatc:"#3a6a4a",boots:"#2c4a3a",extra:"beard"}   // 숲의 목소리 — 백발·수염·초록 후드(숲의 노현자)
+};
 const HALL_TOOL={p:"🔍",n:"✒️",s:"💆"};
 const GYM_THEME={ gym1:{fl:"#bcd0a0",wl:"#7a9a5a"}, gym2:{fl:"#9ab88a",wl:"#4f7a4a"}, gym3:{fl:"#a6c8cc",wl:"#4a8a8a"}, gym4:{fl:"#c8bfa0",wl:"#8a7a5a"}, league:{fl:"#39344f",wl:"#6a5a8a"},
   center:{fl:"#eef1f4",wl:"#d4514c",wt:"#b83f3c",gr:"rgba(150,170,190,.42)"},
@@ -5944,7 +5955,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
       if(t==="#"){ ctx.fillStyle="#7a5a3a"; ctx.fillRect(sx+ts*0.44,sy+ts*0.42,ts*0.12,ts*0.48); ctx.fillStyle="#3f8b52"; for(let a=0;a<5;a++){ const an=Math.PI+a*0.78; ctx.beginPath(); ctx.ellipse(sx+ts*0.5+Math.cos(an)*ts*0.2,sy+ts*0.36+Math.sin(an)*ts*0.12,ts*0.19,ts*0.07,an,0,6.29); ctx.fill(); } return; }
       if(t==="T"){ for(let i=0;i<6;i++){ const bx=sx+ts*(0.14+i*0.145); ctx.strokeStyle="#5aa85a"; ctx.lineWidth=Math.max(1,ts*0.05); ctx.beginPath(); ctx.moveTo(bx,sy+ts*0.88); ctx.quadraticCurveTo(bx,sy+ts*0.5,bx+Math.sin(i+(now||0)*2)*ts*0.08,sy+ts*0.36); ctx.stroke(); } return; }
       if(t==="C"){ ctx.fillStyle="#f2dbe2"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.62,ts*0.22,Math.PI,0); ctx.fill(); ctx.strokeStyle="#d59aa8"; ctx.lineWidth=Math.max(1,ts*0.02); for(let a=0;a<4;a++){ ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*0.62); ctx.lineTo(sx+ts*(0.3+a*0.13),sy+ts*0.42); ctx.stroke(); } return; }
-      if(t==="N"){ this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.92,NPC_SPR.lore,"down",now); return; }
+      if(t==="N"){ this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.92,(typeof HOME_NPC_SPR!=="undefined"&&HOME_NPC_SPR[G.indoor])||NPC_SPR.lore,"down",now); return; }
       if(t==="&"){ ctx.fillStyle="rgba(150,200,240,.42)"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.5,ts*0.44,0,6.29); ctx.fill(); ctx.fillStyle="rgba(0,0,0,.16)"; ctx.beginPath(); ctx.ellipse(sx+ts*0.5,sy+ts*0.88,ts*0.24,ts*0.06,0,0,6.29); ctx.fill(); ctx.fillStyle="#8fb8d8"; ctx.fillRect(sx+ts*0.34,sy+ts*0.5,ts*0.32,ts*0.36); ctx.fillStyle="#c0e4f8"; ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*0.14); ctx.lineTo(sx+ts*0.66,sy+ts*0.42); ctx.lineTo(sx+ts*0.5,sy+ts*0.56); ctx.lineTo(sx+ts*0.34,sy+ts*0.42); ctx.closePath(); ctx.fill(); ctx.fillStyle="#eafaff"; ctx.beginPath(); ctx.moveTo(sx+ts*0.5,sy+ts*0.22); ctx.lineTo(sx+ts*0.57,sy+ts*0.4); ctx.lineTo(sx+ts*0.5,sy+ts*0.48); ctx.lineTo(sx+ts*0.43,sy+ts*0.4); ctx.closePath(); ctx.fill(); return; }
       if(t==="Q"){ if(typeof G!=="undefined"&&G.defeated&&G.defeated.has("SNOW"))return; this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.96,NPC_SPR.snowMaster,"down",now); return; }
       if(t==="K"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx+ts*0.16,sy+ts*0.44,ts*0.68,ts*0.46); ctx.fillStyle="#5a4632"; ctx.fillRect(sx+ts*0.42,sy+ts*0.6,ts*0.16,ts*0.3); ctx.fillStyle="#e0563f"; ctx.fillRect(sx+ts*0.08,sy+ts*0.3,ts*0.84,ts*0.16); ctx.fillStyle="#f5f0e6"; for(var _i=0;_i<4;_i++){ ctx.fillRect(sx+ts*(0.08+_i*0.21),sy+ts*0.3,ts*0.105,ts*0.16); } ctx.fillStyle="#ffd23f"; ctx.beginPath(); ctx.arc(sx+ts*0.5,sy+ts*0.22,ts*0.06,0,6.29); ctx.fill(); return; }
@@ -6007,7 +6018,7 @@ const Map2D={ctx:null,raf:null,player:{x:0,y:0},target:null,arrived:true,facing:
         // 머리 위 도구 아이콘 — 누가 무슨 서비스인지 한눈에(감정사🔍 · 이름✒️ · 마사지💆)
         ctx.font=Math.floor(ts*0.3)+"px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
         ctx.fillText(HALL_TOOL[t], sx+ts*0.5, sy+ts*0.1); }
-      else if(t==="N"){ ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.92,(G.indoor==="center")?NPC_SPR.nurse:NPC_SPR.clerk,"down",now); }
+      else if(t==="N"){ ctx.fillStyle=_flC; ctx.fillRect(sx,sy,tb,tb); this._char(ctx,sx+ts*0.5,sy+ts*0.46,ts*0.92,(typeof HOME_NPC_SPR!=="undefined"&&HOME_NPC_SPR[G.indoor])||((G.indoor==="center")?NPC_SPR.nurse:NPC_SPR.clerk),"down",now); }
       else if(t==="B"){ ctx.fillStyle="#c8a878"; ctx.fillRect(sx,sy,tb,tb); ctx.fillStyle="#8a6240"; ctx.fillRect(sx+ts*0.14,sy+ts*0.2,ts*0.72,ts*0.68); ctx.fillStyle="#e8e2d8"; ctx.fillRect(sx+ts*0.18,sy+ts*0.24,ts*0.64,ts*0.4); ctx.fillStyle="#d86a6a"; ctx.fillRect(sx+ts*0.18,sy+ts*0.5,ts*0.64,ts*0.34); ctx.fillStyle="#f0eee8"; ctx.fillRect(sx+ts*0.22,sy+ts*0.27,ts*0.34,ts*0.16); ctx.strokeStyle="rgba(40,26,14,.4)"; ctx.lineWidth=Math.max(1,ts*0.02); ctx.strokeRect(sx+ts*0.14,sy+ts*0.2,ts*0.72,ts*0.68); }
       /* ⚠️ 집 안의 P는 팻말이 아니라 **머리맡의 편지**다 — 침실에 나무 표지판이 서 있으면 어색하다.
          ⚠️ 이 가지는 반드시 **실내 분기 안**에 있어야 한다 — 실내는 여기서 전부 처리하고 모르는 타일을
@@ -6785,6 +6796,29 @@ document.addEventListener("keydown",e=>{ if(!$("map").classList.contains("active
   if(act==="confirm"){ e.preventDefault(); interact(); return; }
   if(_isDir(act)){ e.preventDefault(); heldDir=act; move(act); } });
 document.addEventListener("keyup",e=>{ const act=keyAction(e.key); if(_isDir(act)&&heldDir===act)heldDir=null; });
+/* 오버레이 안 방향키 내비게이션 — 모달(가방·도감·상점 등)이 열려 있으면 방향키가 그 모달 안 버튼 사이를 돈다.
+   ⚠️ 예전엔 모달이 떠 있어도 방향키가 뒤(오버월드 이동·전투 메뉴)로 새어 나가 캐릭터/커서가 뒤에서 움직였다(유저 제보).
+      맵·전투 핸들러는 각각 anyOverlayOpen()에서 손을 떼므로, 여기서 방향키를 잡아 모달 커서를 옮기고 이벤트를 소비한다. */
+function _ovFocusables(el){ return Array.from(el.querySelectorAll('button, [role="button"], [tabindex]:not([tabindex="-1"])'))
+  .filter(b=>!b.disabled && !b.classList.contains("disabled") && b.offsetParent!==null && !b.hidden); }
+function _ovFocus(list,i){ document.querySelectorAll(".overlay .kbfocus").forEach(b=>b.classList.remove("kbfocus"));
+  const b=list[i]; if(b){ b.classList.add("kbfocus"); try{b.focus({preventScroll:true});}catch(_){}
+    if(b.scrollIntoView)try{b.scrollIntoView({block:"nearest"});}catch(_){} } }
+document.addEventListener("keydown",e=>{
+  const id=(typeof anyOverlayOpen==="function")&&anyOverlayOpen(); if(!id)return;
+  if(typeof dialogActive==="function"&&dialogActive())return;
+  const ae=document.activeElement; if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName||""))return;   // 입력창(교환 코드 등)에선 방향키가 커서 이동
+  const act=keyAction(e.key);
+  const el=$(id); if(!el)return;
+  if(act==="cancel"){ e.preventDefault(); cancelBtn(); return; }   // 전투 위 모달도 Esc/B로 닫힌다(맵 핸들러는 map 비활성이라 손 못 댐)
+  if(act!=="confirm"&&!_isDir(act))return;
+  const list=_ovFocusables(el); if(!list.length){ e.preventDefault(); return; }
+  let i=list.findIndex(b=>b.classList.contains("kbfocus")); if(i<0)i=list.indexOf(ae);
+  if(act==="confirm"){ e.preventDefault(); if(i>=0)list[i].click(); else _ovFocus(list,0); return; }
+  e.preventDefault();
+  if(i<0){ _ovFocus(list,0); return; }
+  if(act==="down"||act==="right")i=(i+1)%list.length; else i=(i-1+list.length)%list.length;
+  _ovFocus(list,i); });
 // H5-D 키 리매핑 — 캡처 단계에서 재설정 중인 키를 가로챈다(다른 핸들러보다 먼저 실행돼 이동/취소가 끼어들지 않게).
 let _rebindAction=null;
 document.addEventListener("keydown",e=>{ if(!_rebindAction)return; e.preventDefault(); e.stopImmediatePropagation();
@@ -8446,6 +8480,7 @@ function battleFocus(i){ const btns=battleMenuBtns(); document.querySelectorAll(
   if(!btns.length)return; _bfi=Math.max(0,Math.min(i,btns.length-1)); const f=btns[_bfi]; if(f)f.classList.add("kbfocus"); }
 function battleNavActive(){ return typeof G!=="undefined"&&G&&G.inBattle&&!G.busy
   && $("battle")&&$("battle").classList.contains("active") && !($("dbOverlay")&&$("dbOverlay").classList.contains("active"))
+  && !(typeof anyOverlayOpen==="function"&&anyOverlayOpen())   // ⚠️ 가방·도감 등 오버레이가 전투 위에 떠 있으면 방향키는 그 모달이 먹는다(뒤 전투 메뉴로 새지 않게)
   && battleMenuBtns().length>0; }
 function battleNav(dir){ const btns=battleMenuBtns(); if(!btns.length)return; const n=btns.length, cols=2; let i=_bfi;
   if(dir==="right"){ if(i%cols<cols-1 && i+1<n)i++; }
@@ -11674,7 +11709,7 @@ window.SG.SAVE_SLOTS=SAVE_SLOTS;
 window.SG.NET=NET; window.SG.netTryEnable=netTryEnable;
 /* NPC_SPR도 같이 내보낸다 — 회귀가 "보스 오라를 가진 spec에 시트를 붙이지 않았는가"를 재기 위해서다.
    시트 경로는 그림을 그리고 바로 return하므로 `spec.boss`의 오라를 **그리지 않는다**(실측: 그라디언트 3 → 0). */
-window.SG.NPC_SPR=NPC_SPR;
+window.SG.NPC_SPR=NPC_SPR; window.SG.HOME_NPC_SPR=HOME_NPC_SPR;
 /* 지형 아트도 같이 — 회귀가 아트 없을 때/주입했을 때를 둘 다 태운다. */
 window.SG.TERRAIN_ART=TERRAIN_ART; window.SG.TERRAIN_ART_ID=TERRAIN_ART_ID; window.SG.terrainArt=terrainArt;
 window.SG.TERRAIN_TINT=TERRAIN_TINT; window.SG.terrainTinted=terrainTinted;
