@@ -7363,6 +7363,7 @@ $("openDex").addEventListener("click",()=>{Audio.sfx("blip");renderDex();openOve
 $("openCard").addEventListener("click",()=>{Audio.sfx("blip");openTrainerCard();});
 let _dexFilter={type:null,uncaught:false};
 let _dexSort="dex", _dexSearch="", _dexKeepFocus=false;
+let _dexNav=[];   // 현재 도감 화면(정렬·필터·검색)에서 열 수 있는(목격/포획) 종 id 순서 — 상세 화면 이전/다음 이동용
 // H5-B: 정령 정렬 비교 함수(도감·박스 공용). 종 스펙(sp)과 개체(m·있으면)로 정렬한다.
 let _boxSort="get", _boxSearch="", _boxKeepFocus=false;
 let _boxSelMode=false; const _boxSel=new Set();   // H5-B-6 박스 일괄 조작: 선택은 정령 객체 참조로 추적(정렬·필터로 순서가 바뀌어도 안전)
@@ -7468,6 +7469,7 @@ function renderDex(){ $("dexCaught").textContent=G.caught.size; $("dexParty").te
         if(_dexFilter.uncaught&&o.caught)return false; if(_dexFilter.shiny&&!(G.shinyDex&&G.shinyDex.has(o.sp.id)))return false;
         if(!searchHit(_dexSearch,o.sp,o.m))return false; return true; })
       .sort(SORT_MODES[_dexSort].cmp).map(o=>o.sp);
+    _dexNav=_list.filter(sp=>G.seen.has(sp.id)||G.caught.has(sp.id)).map(sp=>sp.id);   // 상세 이전/다음 이동 순서(열 수 있는 종만)
     if(!_list.length){ const e=document.createElement("div"); e.style.cssText="color:var(--muted);text-align:center;padding:22px;font-size:13px"; e.textContent="조건에 맞는 정령이 없어"; listWrap.appendChild(e); }
     _list.forEach(sp=>_dexCard(sp,listWrap)); };
   { const bar2=document.createElement("div"); bar2.style.cssText="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:9px";
@@ -7618,7 +7620,14 @@ function openDetail(id){ const sp=byId(id); Audio.sfx("blip"); $("ddTitle").text
   const evoLine=chain.length>1?`<div class="evo-line">${chain.map((c,i)=>`${i>0?'<span>→</span>':''}<span class="node ${c.id===sp.id?'cur':''}">${c.em} ${c.name}${c.evolveLv&&DEX.find(d=>d.evolveTo===c.evolveTo)?'':''}</span>`).join("")}</div>`:`<div style="color:var(--muted);font-size:12px">진화하지 않는다</div>`;
   const findReg=findHint(sp);
   const fv=FLAVOR[sp.id];
+  // 상세 이전/다음 이동 — 현재 도감 화면 정렬·필터 순서를 그대로 따라간다(닫았다 다시 열 필요 없음)
+  const _ni=_dexNav.indexOf(id); const _prev=_ni>0?_dexNav[_ni-1]:null; const _next=(_ni>=0&&_ni<_dexNav.length-1)?_dexNav[_ni+1]:null;
+  const navRow=(_dexNav.length>1)?`<div class="dd-nav" style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+    <button class="pick" ${_prev?`onclick="SG.flow.openDetail('${_prev}')"`:"disabled"} aria-label="이전 정령">◀ 이전</button>
+    <span style="flex:1;text-align:center;font-size:11px;color:var(--muted)">${_ni>=0?_ni+1:"—"} / ${_dexNav.length}</span>
+    <button class="pick" ${_next?`onclick="SG.flow.openDetail('${_next}')"`:"disabled"} aria-label="다음 정령">다음 ▶</button></div>`:"";
   $("dexDetailBody").innerHTML=`<div class="dex-detail">
+    ${navRow}
     <div class="dd-head"><div class="em">${creatureVisual(sp.id,sp.type)}</div><div><div class="nm">${sp.name} <button class="crybtn" onclick="SG.Audio.cry('${sp.id}','${sp.type}')" title="울음소리" aria-label="울음소리 듣기">🔊</button></div>
       <div class="meta"><span class="type-tag ${TYPE_CLASS[sp.type]}" style="font-size:9px">${tkLabel(sp.type)}</span> · ${fv?fv.cat:(sp.tier===3?"희귀":sp.tier===2?"중급":"흔함")} · 출현: ${findReg}</div>
       ${fv?`<div class="meta" style="margin-top:3px;color:var(--muted)">키 ${fv.h.toFixed(1)}m · 무게 ${fv.w}kg</div>`:""}</div></div>
