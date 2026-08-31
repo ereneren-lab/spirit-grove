@@ -37,7 +37,7 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(iw.out.desert.ow==="sand" && iw.out.desert.battle==="sand", "사막=모래바람 → 전투 sand");
   ok(iw.out.crystalcave.ow==="snow" && iw.out.crystalcave.battle==="hail", "수정 동굴=싸라기눈 → 전투 hail");
   ok(iw.out.wyverngorge.ow==="rain" && iw.out.wyverngorge.battle==="rain", "비룡 협곡=폭풍우 → 전투 rain");
-  ok(iw.map && Object.keys(iw.map).length===5, `INDOOR_WEATHER 5지역 정의 (${Object.keys(iw.map||{}).join(",")})`);
+  ok(iw.map && Object.keys(iw.map).length===6, `INDOOR_WEATHER 6지역 정의 (${Object.keys(iw.map||{}).join(",")})`);
 
   /* ── 3. setWeather가 필드 날씨를 전투로 옮긴다 ── */
   const carry=await p.evaluate(()=>{ const S=window.SG,F=S.flow; const G=S.G(); G.indoor=null;
