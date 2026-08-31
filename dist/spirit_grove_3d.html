@@ -10592,24 +10592,28 @@ function renderDex(){ $("dexCaught").textContent=G.caught.size; $("dexParty").te
     stb.style.cssText="font-size:11px;padding:4px 9px;border-radius:13px;cursor:pointer;color:inherit;border:1px solid rgba(127,209,174,.4);background:rgba(127,209,174,.14);margin-left:auto";
     stb.addEventListener("click",()=>{ Audio.sfx("blip"); openDexStats(); }); bar.appendChild(stb);
     body.appendChild(bar); }
-  /* H5-B: 검색 + 정렬 바 */
+  /* H5-B: 검색 + 정렬 바 — ⚠️ 검색은 목록(listWrap)만 다시 그린다. 입력창을 통째로 재생성하면
+     한글 IME 조합(ㅂ→부→불)이 매 글자마다 끊겨 검색이 사실상 불가능하다(한국어 사용자 실측 마찰). */
+  const listWrap=document.createElement("div");
+  const paintList=()=>{ listWrap.innerHTML="";
+    const _list=DEX.map((sp,i)=>({sp,i,nm:sp.name,caught:G.caught.has(sp.id),m:G.party.find(x=>x.id===sp.id)}))
+      .filter(o=>{ if(_dexFilter.type&&o.sp.type!==_dexFilter.type&&o.sp.type2!==_dexFilter.type)return false;
+        if(_dexFilter.uncaught&&o.caught)return false; if(_dexFilter.shiny&&!(G.shinyDex&&G.shinyDex.has(o.sp.id)))return false;
+        if(!searchHit(_dexSearch,o.sp,o.m))return false; return true; })
+      .sort(SORT_MODES[_dexSort].cmp).map(o=>o.sp);
+    if(!_list.length){ const e=document.createElement("div"); e.style.cssText="color:var(--muted);text-align:center;padding:22px;font-size:13px"; e.textContent="조건에 맞는 정령이 없어"; listWrap.appendChild(e); }
+    _list.forEach(sp=>_dexCard(sp,listWrap)); };
   { const bar2=document.createElement("div"); bar2.style.cssText="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:9px";
     const inp=document.createElement("input"); inp.id="dexSearchInput"; inp.type="search"; inp.placeholder="🔍 이름·타입 검색"; inp.value=_dexSearch;
     inp.style.cssText="flex:1;min-width:120px;font-size:12px;padding:5px 9px;border-radius:11px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:inherit";
-    inp.addEventListener("input",()=>{ _dexSearch=inp.value; _dexKeepFocus=true; renderDex(); });
+    inp.addEventListener("input",()=>{ _dexSearch=inp.value; paintList(); });   // 목록만 갱신 → 입력창·IME 유지
     bar2.appendChild(inp);
     ["dex","name","type","caught"].forEach(k=>{ const b=document.createElement("button"); b.textContent=SORT_MODES[k].ko;
       b.style.cssText="font-size:11px;padding:4px 9px;border-radius:13px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.18);background:"+(_dexSort===k?"rgba(127,209,174,.32)":"rgba(255,255,255,.05)");
       b.addEventListener("click",()=>{ Audio.sfx("blip"); _dexSort=k; renderDex(); }); bar2.appendChild(b); });
     body.appendChild(bar2); }
-  let _list=DEX.map((sp,i)=>({sp,i,nm:sp.name,caught:G.caught.has(sp.id),m:G.party.find(x=>x.id===sp.id)}))
-    .filter(o=>{ if(_dexFilter.type&&o.sp.type!==_dexFilter.type&&o.sp.type2!==_dexFilter.type)return false;
-      if(_dexFilter.uncaught&&o.caught)return false; if(_dexFilter.shiny&&!(G.shinyDex&&G.shinyDex.has(o.sp.id)))return false;
-      if(!searchHit(_dexSearch,o.sp,o.m))return false; return true; })
-    .sort(SORT_MODES[_dexSort].cmp).map(o=>o.sp);
-  if(_dexKeepFocus){ _dexKeepFocus=false; setTimeout(()=>{ const el=$("dexSearchInput"); if(el){ el.focus(); const v=el.value; el.value=""; el.value=v; } },0); }
-  if(!_list.length){ const e=document.createElement("div"); e.style.cssText="color:var(--muted);text-align:center;padding:22px;font-size:13px"; e.textContent="조건에 맞는 정령이 없어"; body.appendChild(e); }
-  _list.forEach(sp=>{ const inParty=G.party.find(m=>m.id===sp.id),caught=G.caught.has(sp.id),seen=G.seen.has(sp.id);
+  body.appendChild(listWrap); paintList(); }
+function _dexCard(sp,body){ { const inParty=G.party.find(m=>m.id===sp.id),caught=G.caught.has(sp.id),seen=G.seen.has(sp.id);
     const card=document.createElement("div"); card.className="mon-card"+(inParty&&G.party[G.active].id===sp.id?" active-mon":""); card.style.cursor=(caught||seen)?"pointer":"default";
     if(!caught&&!seen){ card.innerHTML=`<div class="em">❔</div><div class="info"><div class="nm" style="color:var(--muted)">??? </div><div class="st">아직 만나지 못함</div></div>`; }
     else if(!caught){ card.innerHTML=`<div class="em" style="filter:grayscale(.85) brightness(.4);opacity:.85">${creatureVisual(sp.id,sp.type)}</div>
@@ -10622,7 +10626,7 @@ function renderDex(){ $("dexCaught").textContent=G.caught.size; $("dexParty").te
       card.addEventListener("click",e=>{ if(e.target.closest(".pick"))return; openDetail(sp.id); });
       const btn=card.querySelector(".pick"); if(btn)btn.addEventListener("click",e=>{ e.stopPropagation(); const idx=G.party.findIndex(x=>x===m);
         if(idx>=0&&m.hp>0){G.active=idx;Audio.sfx("blip");renderDex();}else if(m&&m.hp<=0){flashHint("쓰러진 정령은 선두로 보낼 수 없다");} }); }
-    body.appendChild(card); }); }
+    body.appendChild(card); } }
 const FLAVOR={
   barkfist:{cat:"숲권 몽키",h:0.6,w:9,t:"이끼 낀 주먹으로 나무를 두드려 리듬을 익힌다. 잎사귀 붕대는 스승에게 물려받은 것."},
   zenapex:{cat:"권왕 유인원",h:1.6,w:86,t:"숲 가장 깊은 곳에서 홀로 참선한다. 고요히 내지른 주먹 한 방이 바위를 가른다."},
@@ -11289,6 +11293,7 @@ function statusChipHtml(m){ if(!m)return "";
   if(m.hp<=0)return ' <span class="type-tag" style="font-size:9px;background:#4a4458;color:#cfc9dd">기절</span>';
   if(!m.status)return "";
   return ` <span class="type-tag ${STATUS_CLS[m.status]||""}" style="font-size:9px">${STATUS_KO[m.status]||m.status}</span>`; }
+let _pcPaintList=null;   // 보관함 목록만 다시 그리는 함수(검색 시 입력창을 살려 한글 IME 유지)
 function renderPC(){ const body=$("pcBody"); body.innerHTML="";
   const raw=pcTab==="party"?G.party:G.box;
   // 표시 목록 = {m, i(실제 인덱스)}. 박스 탭에만 검색·정렬을 적용(파티는 순서가 의미라 유지).
@@ -11297,7 +11302,7 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
     const bar=document.createElement("div"); bar.style.cssText="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:9px";
     const inp=document.createElement("input"); inp.id="boxSearchInput"; inp.type="search"; inp.placeholder="🔍 이름·타입 검색"; inp.value=_boxSearch;
     inp.style.cssText="flex:1;min-width:120px;font-size:12px;padding:5px 9px;border-radius:11px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:inherit";
-    inp.addEventListener("input",()=>{ _boxSearch=inp.value; _boxKeepFocus=true; renderPC(); });
+    inp.addEventListener("input",()=>{ _boxSearch=inp.value; if(_boxSelMode){ renderPC(); } else if(_pcPaintList){ _pcPaintList(); } });   // 목록만 갱신 → 입력창·IME 유지(선택 모드에선 카운트 정확성 위해 전체 갱신)
     bar.appendChild(inp);
     ["get","level","name","type","iv","shiny"].forEach(k=>{ const b=document.createElement("button"); b.textContent=SORT_MODES[k].ko;
       b.style.cssText="font-size:11px;padding:4px 9px;border-radius:13px;cursor:pointer;color:inherit;border:1px solid rgba(255,255,255,.18);background:"+(_boxSort===k?"rgba(127,209,174,.32)":"rgba(255,255,255,.05)");
@@ -11349,9 +11354,14 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
       pw.appendChild(rows); }
     body.appendChild(pw);
   }
-  if(!disp.length){ const e=document.createElement("div"); e.style.cssText="color:var(--muted);text-align:center;padding:30px;font-size:13px"; e.textContent=(pcTab==="party"?"파티가 비어있다":(_boxSearch?"조건에 맞는 정령이 없어":"보관함이 비어있다")); body.appendChild(e); return; }
-  const selMode=(pcTab==="box"&&_boxSelMode);
-  disp.forEach(({m,i})=>{ recalc(m); const sel=selMode&&_boxSel.has(m); const card=document.createElement("div"); card.className="mon-card"+(pcTab==="party"&&i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"")+(sel?" active-mon":"");
+  const boxListWrap=document.createElement("div"); body.appendChild(boxListWrap);
+  const paintBoxList=()=>{ boxListWrap.innerHTML="";
+    let d=(pcTab==="party"?G.party:G.box).map((m,i)=>({m,i}));
+    if(pcTab==="box"){ d=d.filter(o=>{ const sp=byId(o.m.id); return sp&&searchHit(_boxSearch,sp,o.m); })
+      .map(o=>({...o,sp:byId(o.m.id),nm:(o.m.nick||o.m.name),caught:true})).sort(SORT_MODES[_boxSort].cmp); }
+    if(!d.length){ const e=document.createElement("div"); e.style.cssText="color:var(--muted);text-align:center;padding:30px;font-size:13px"; e.textContent=(pcTab==="party"?"파티가 비어있다":(_boxSearch?"조건에 맞는 정령이 없어":"보관함이 비어있다")); boxListWrap.appendChild(e); return; }
+    const selMode=(pcTab==="box"&&_boxSelMode);
+    d.forEach(({m,i})=>{ recalc(m); const sel=selMode&&_boxSel.has(m); const card=document.createElement("div"); card.className="mon-card"+(pcTab==="party"&&i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"")+(sel?" active-mon":"");
     let actions="";
     if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
     else { const canWith=G.party.length<6; actions=`<button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel" title="놓아주기" aria-label="놓아주기">방생</button>`; }
@@ -11365,7 +11375,8 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
       <div class="acts">${selMode?`<div style="font-size:22px;width:34px;text-align:center">${sel?"✅":"⬜"}</div>`:actions}</div>`;
     if(selMode){ card.style.cursor="pointer"; card.addEventListener("click",()=>{ Audio.sfx("blip"); if(_boxSel.has(m))_boxSel.delete(m); else _boxSel.add(m); renderPC(); }); }
     else { card.querySelectorAll(".pick").forEach(btn=>btn.addEventListener("click",()=>pcAction(btn.dataset.a,i))); }
-    body.appendChild(card); }); }
+    boxListWrap.appendChild(card); }); };
+  _pcPaintList=paintBoxList; paintBoxList(); }
 function pcAction(a,i){ Audio.sfx("blip");
   if((a==="up"||a==="down")&&pcTab==="party"){ const j=a==="up"?i-1:i+1; if(j<0||j>=G.party.length)return;   // 포켓몬식 파티 순서 조절
     const tmp=G.party[i]; G.party[i]=G.party[j]; G.party[j]=tmp;
