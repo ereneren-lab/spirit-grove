@@ -50,6 +50,27 @@ const { chromium } = require("playwright"); const path = require("path");
   ok(pos1.x === leak.pos0.x && pos1.y === leak.pos0.y, `방향키로 캐릭터가 움직이지 않는다 (${leak.pos0.x},${leak.pos0.y} → ${pos1.x},${pos1.y})`);
   ok(await p.evaluate(() => !!document.querySelector("#bagOverlay .kbfocus")), "오버월드 모달에서도 방향키가 내부 커서를 움직인다");
 
+  /* ── 3. 화면 D패드(터치): 모달이 열려 있으면 D패드로도 캐릭터가 움직이지 않는다 ── */
+  const pos2a = await p.evaluate(() => ({ x: window.SG.G().pos.x, y: window.SG.G().pos.y }));
+  await p.dispatchEvent('.dpad button[data-dir="right"]', "pointerdown");
+  await p.dispatchEvent('.dpad button[data-dir="down"]', "pointerdown"); await p.waitForTimeout(120);
+  const pos2b = await p.evaluate(() => ({ x: window.SG.G().pos.x, y: window.SG.G().pos.y }));
+  ok(pos2a.x === pos2b.x && pos2a.y === pos2b.y, `모달 중 D패드로도 캐릭터가 안 움직인다 (${pos2a.x},${pos2a.y} → ${pos2b.x},${pos2b.y})`);
+  await p.evaluate(() => document.getElementById("bagOverlay").classList.remove("active"));
+
+  /* ── 4. CANCELABLE에 없는 강제성 모달(교체창)도 입력을 막는다 ── */
+  const swk = await p.evaluate(() => {
+    const S = window.SG; const G = S.G(); G.busy = false;
+    document.getElementById("switchOverlay").classList.add("active");   // 강제성 모달(교체창)을 직접 띄워 입력 차단 검증
+    return { open: document.getElementById("switchOverlay").classList.contains("active"), pos0: { x: G.pos.x, y: G.pos.y } };
+  });
+  ok(swk.open, "교체창(비-CANCELABLE 모달) 활성화");
+  await p.keyboard.press("ArrowRight");
+  await p.dispatchEvent('.dpad button[data-dir="right"]', "pointerdown"); await p.waitForTimeout(100);
+  const pos3 = await p.evaluate(() => ({ x: window.SG.G().pos.x, y: window.SG.G().pos.y }));
+  ok(pos3.x === swk.pos0.x && pos3.y === swk.pos0.y, "교체창(CANCELABLE 아님)에서도 방향키·D패드가 안 샌다(입력 차단 집합)");
+  await p.evaluate(() => document.getElementById("switchOverlay").classList.remove("active"));
+
   ok(errs.length === 0, "런타임 에러 0" + (errs.length ? ": " + errs.slice(0, 3).join(" / ") : ""));
   console.log(process.exitCode ? "\n❌ 실패" : "\n🎉 모달 방향키 누수 방지 통과");
   await b.close(); process.exit(process.exitCode || 0);
