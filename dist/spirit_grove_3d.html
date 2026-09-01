@@ -546,6 +546,16 @@
 .dbmon .dbsp.shiny img{filter:drop-shadow(0 2px 3px rgba(0,0,0,.35)) hue-rotate(150deg) saturate(1.4) brightness(1.05)}
 .dbmon.dbhit{animation:dbHit .42s ease}
 @keyframes dbHit{0%,100%{transform:translateX(0);filter:none}18%{transform:translateX(-7px);filter:brightness(1.7)}38%{transform:translateX(6px)}58%{transform:translateX(-4px);filter:brightness(1.3)}78%{transform:translateX(3px)}}
+/* 듀오 배틀 모션(단일 배틀 느낌 이식) — 공격자 런지·타입 임팩트·데미지 숫자·기절 낙하. fx는 .dbsp(position:relative) 자식으로 얹어 좌표계산 없이 스프라이트에 정렬. */
+.dbmon.dblunge-up .dbsp img,.dbmon.dblunge-up .dbsp svg{animation:dbLungeU .4s ease}
+.dbmon.dblunge-down .dbsp img,.dbmon.dblunge-down .dbsp svg{animation:dbLungeD .4s ease}
+@keyframes dbLungeU{0%,100%{transform:translateY(0) scale(1)}42%{transform:translateY(-13px) scale(1.09)}}
+@keyframes dbLungeD{0%,100%{transform:translateY(0) scale(1)}42%{transform:translateY(13px) scale(1.09)}}
+.dbmon.dbfainting .dbsp img,.dbmon.dbfainting .dbsp svg{animation:dbFaintDrop .6s ease-in forwards}
+@keyframes dbFaintDrop{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(34px) rotate(16deg);opacity:0}}
+.dbdmg{position:absolute;left:50%;top:-6px;transform:translateX(-50%);font-weight:900;font-size:17px;color:var(--rose);z-index:7;pointer-events:none;text-shadow:0 2px 5px rgba(0,0,0,.75);animation:dmg .95s ease forwards;white-space:nowrap}
+.dbdmg.big{font-size:22px;color:#ffd34d}
+.dbfxburst{position:absolute;left:50%;top:50%;width:40px;height:40px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5}
 .dbinfo{flex:1;min-width:0}
 .dbnm{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dblv{font-size:10px;opacity:.7;font-weight:400}
@@ -9349,15 +9359,30 @@ function dbCardEl(mon){ if(!DB)return null; let i=DB.foes.indexOf(mon); if(i>=0)
   i=DB.allies.indexOf(mon); if(i>=0)return document.querySelector(`#dbAllies .dbmon[data-slot="${i}"]`); return null; }
 function dbHitFx(mon,eff){ Audio.sfx&&Audio.sfx((eff>1)?"superhit":(eff>0&&eff<1)?"weakhit":"hit"); if(CONFIG.reduceMotion)return;
   const el=dbCardEl(mon); if(!el)return; el.classList.remove("dbhit"); void el.offsetWidth; el.classList.add("dbhit"); setTimeout(()=>{try{el.classList.remove("dbhit");}catch(_){}} ,440); }
+function dbSpEl(mon){ const c=dbCardEl(mon); return c?c.querySelector(".dbsp"):null; }
+// 공격자 런지 — 내 편(아래 줄)은 위로, 상대(위 줄)는 아래로 잽. "누가 공격 중인지" 읽히게(단일 배틀의 lunge 대응).
+function dbLungeFx(mon,side){ if(CONFIG.reduceMotion)return; const c=dbCardEl(mon); if(!c)return;
+  const cls=(side==="ally")?"dblunge-up":"dblunge-down"; c.classList.remove(cls); void c.offsetWidth; c.classList.add(cls);
+  setTimeout(()=>{try{c.classList.remove(cls);}catch(_){}} ,440); }
+// 데미지 숫자 — 대상 스프라이트 위로 떠오른다(단일 배틀 dmgNumber 대응).
+function dbDmgFx(mon,val,eff){ if(CONFIG.reduceMotion)return; const sp=dbSpEl(mon); if(!sp)return;
+  const d=document.createElement("div"); d.className="dbdmg"+((eff>1)?" big":""); d.textContent="-"+val; sp.appendChild(d); setTimeout(()=>{try{d.remove();}catch(_){}} ,1000); }
+// 타입 임팩트 링 — 대상 위에 타입색 파문(단일 배틀 fxBurst 축약).
+function dbBurstFx(mon,type){ if(CONFIG.reduceMotion)return; const sp=dbSpEl(mon); if(!sp)return;
+  const col=(typeof TYPE_COLOR!=="undefined"&&TYPE_COLOR[type])||"#ffffff";
+  const ring=document.createElement("div"); ring.className="dbfxburst"; ring.style.border="3px solid "+col; ring.style.boxShadow="0 0 10px "+col; sp.appendChild(ring);
+  try{ ring.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:.95},{transform:"translate(-50%,-50%) scale(1.7)",opacity:0}],{duration:fxT(360),easing:"ease-out"}).finished.then(()=>{try{ring.remove();}catch(_){}}).catch(()=>{try{ring.remove();}catch(_){}}); }catch(_){ setTimeout(()=>{try{ring.remove();}catch(_){}} ,400); } }
+// 기절 낙하 — 대상 스프라이트가 떨어지며 사라진다(단일 배틀 faint 대응). dbRender가 카드를 다시 그리므로 직후에 얹는다.
+function dbFaintFx(mon){ if(CONFIG.reduceMotion)return; const c=dbCardEl(mon); if(c)c.classList.add("dbfainting"); }
 async function dbExec(att,def,key,side){ const mv=MOVES[key]; if(!mv)return;
-  dbLog(`<b>${dbName(att)}</b>의 ${mv.name}!`); await wait(fxT(420));
+  dbLog(`<b>${dbName(att)}</b>의 ${mv.name}!`); dbLungeFx(att,side); await wait(fxT(230));   // 공격자 런지 → 잠깐 뜸 → 명중 판정
   if(mv.acc<100 && Math.random()*100>mv.acc){ dbLog("…빗나갔다!"); await wait(fxT(360)); return; }
   if(def && def._protect && (mv.power>0 || (mv.eff&&(mv.eff.status||mv.eff.seed||mv.eff.confuse)))){ dbLog(`→ <b>${dbName(def)}</b>이(가) 방어로 막아냈다!`); await wait(fxT(340)); return; }
   if(mv.power>0){ const r=damage(att,def,mv); let dmg=r.dmg;
     if(side==="foe"){ let dm=DIFF[CONFIG.difficulty].dmg; if(typeof forestBadges==="function"&&forestBadges()===0)dm*=0.6; dmg=Math.max(1,Math.round(dmg*dm)); }
     dmg=Math.min(dmg,def.hp); const _pp=def.hp/def.maxHp*100; def.hp=Math.max(0,def.hp-dmg);
     dbLog(`→ <b>${dbName(def)}</b>에게 ${dmg} 데미지${r.eff>1?" · 효과가 굉장했다!":r.eff<1?" · 효과가 별로…":""}`);
-    dbRender(); dbHitFx(def,r.eff); if(Audio.hpTick)Audio.hpTick(_pp,def.hp/def.maxHp*100);   // 피격: 카드 흔들림+플래시+타격음+HP틱
+    dbRender(); dbHitFx(def,r.eff); dbBurstFx(def,mv.type); dbDmgFx(def,dmg,r.eff); if(def.hp<=0)dbFaintFx(def); if(Audio.hpTick)Audio.hpTick(_pp,def.hp/def.maxHp*100);   // 피격: 카드 흔들림+타입 임팩트+데미지 숫자+기절 낙하+HP틱
     if(def.hp>0 && mv.eff && mv.eff.status && Math.random()<(mv.eff.chance||0.3)) dbStatus(def,mv.eff.status,mv.eff.badly);
     if(mv.eff && mv.eff.stat && Math.random()<(mv.eff.chance||1)){ const _self=mv.eff.target==="self"; const _tg=_self?att:def;   // 피해기 부가 랭크 변화(듀오 병렬 수정)
       if(_tg && _tg.hp>0){ _tg.stages=_tg.stages||newStages(); if(mv.eff.stat in _tg.stages){ _tg.stages[mv.eff.stat]=clamp((_tg.stages[mv.eff.stat]||0)+mv.eff.stage,-6,6); dbLog(`${dbName(_tg)}의 ${STAGE_KO[mv.eff.stat]||mv.eff.stat}이(가) ${mv.eff.stage>0?"올랐다":"떨어졌다"}!`); } } }
