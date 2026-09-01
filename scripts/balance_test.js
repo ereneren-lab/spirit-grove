@@ -113,6 +113,36 @@ const SIM=require("./battle_sim.js");   // 두 하네스가 공유하는 전투 
   }
   console.log(`\n  참고: WILD_FLOOR(지역별 야생 하한) = [${R.floors.join(", ")}]\n`);
 
+  // ── [초반 야생] 갓 마을을 나선 스타터(Lv5)의 지역1 첫 야생 승률 ──
+  //   왜: curve_test는 레벨만 본다. "실제로 이기는가"는 여기서 __SIM으로 잰다.
+  //   과거 하한 7·진화형 허용이던 시절 이 값이 15.4%(진화형 매복 포함)로 첫 구간이 벽이었다.
+  //   g2 7→9(진화형 차단)·하한 7→6 튜닝으로 29%대까지 올렸다 — 이 완급을 회귀로 못박는다.
+  const FW = await p.evaluate((M) => {
+    const S = window.SG, F = S.flow, DEX = S.DEX;
+    const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const FLOOR = F.WILD_FLOOR, y = 44, H = 50, depth = (H - 1 - y) / (H - 1);
+    const al = Math.max(5, FLOOR[1]);
+    const starters = DEX.filter(d => d.starter).map(d => d.id);
+    let w = 0, n = 0, tier2 = 0, lvSum = 0;
+    for (let i = 0; i < M; i++) {
+      const sp = F.pickWild(al, depth);
+      let lv = Math.round(al + ri(-1, 1) + depth * 4);
+      if (sp.tier >= 2) lv += ri(1, 3); if (sp.tier >= 3) lv += ri(2, 4);
+      lv = clamp(lv + S.DIFF.normal.lvl, 2, 60);
+      if ((sp.tier || 1) >= 2) tier2++; lvSum += lv;
+      const me = S.makeMon(starters[i % starters.length], 5); me.hp = me.maxHp;
+      if (window.__SIM.battle([me], [[sp.id, lv]], null).win) w++;
+      n++;
+    }
+    return { rate: +(w / n * 100).toFixed(1), meanLv: +(lvSum / n).toFixed(2), tier2pct: +(tier2 / n * 100).toFixed(1), floor: FLOOR[1] };
+  }, 1500);
+  console.log(`  [초반 야생] 지역1 하한 ${FW.floor} · 첫 야생 평균 Lv ${FW.meanLv} · 진화형 ${FW.tier2pct}% · 스타터(Lv5) 승률 ${FW.rate}%\n`);
+  ok(FW.tier2pct === 0, `갓 나선 파티는 진화형 야생을 안 만난다 (${FW.tier2pct}%)`);
+  // ⚠️ __SIM은 양측을 적 AI로 두는 "평범한 플레이어" 기준 — 실제 사람은 타입선택·회복·도주로 더 이긴다.
+  //    25%는 그 하한선(진화형 매복 시절 15%를 못박기 위함). 이 밑으로 떨어지면 첫 구간이 다시 벽이다.
+  ok(FW.rate >= 25, `초반 첫 야생 승률 ${FW.rate}% ≥ 25% (AI대전 기준, 벽 아님)`);
+
   // 판정 기준
   //  (a) 모든 게이트에 "해볼 만한" 레벨 구간(승률 55~85%)이 있어야 한다 → 도전이 존재
   //  (b) 상대보다 6레벨 낮은데도 90% 넘게 이기면 게이트가 무의미하다 → 언더레벨 무쌍 금지
