@@ -6226,6 +6226,7 @@ function dbPromptMove(slot){ const m=DB.allies[slot]; const menu=$("dbMenu");
   menu.querySelectorAll(".dbmv").forEach(b=>b.addEventListener("click",()=>dbPickMove(slot,b.dataset.k)));
 }
 function dbPickMove(slot,key){ const mv=MOVES[key];
+  if(mv.power>0 && mv.spread){ DB.choices[slot]={key,tgt:null,spread:true}; dbAfterChoice(slot); return; }   // 스프레드기는 대상 선택 불필요(양쪽 동시)
   if(mv.power>0){ // needs a target among alive foes
     const alive=DB.foes.map((f,i)=>({f,i})).filter(o=>o.f&&o.f.hp>0);
     if(alive.length<=1){ DB.choices[slot]={key,tgt:alive.length?alive[0].f:null}; dbAfterChoice(slot); return; }
@@ -6261,7 +6262,7 @@ function dbStatus(m,st,badly){
   if(why==="already"||why==="dead")return;
   if(why==="ability"){ dbLog(`<b>${dbName(m)}</b>은(는) <b>${ABILITY_KO[m.ability]||m.ability}</b> 덕분에 아무렇지 않다!`); return; }
   if(why==="type"){ dbLog(`<b>${dbName(m)}</b>은(는) <b>${TYPE_KO[STATUS_TYPE_IMMUNE[st]]}</b> 타입이라 아무렇지 않다!`); return; }
-  setStatusFields(m,st,badly);
+  setStatusFields(m,st,badly); dbStatusFx(m,st);
   dbLog(`<b>${dbName(m)}</b>은(는) ${badly&&st==="psn"?"맹독":(STATUS_KO[st]||"상태이상")}에 걸렸다!`); }
 function dbCardEl(mon){ if(!DB)return null; let i=DB.foes.indexOf(mon); if(i>=0)return dbSlotEl("foe",i);
   i=DB.allies.indexOf(mon); if(i>=0)return dbSlotEl("ally",i); return null; }
@@ -6282,20 +6283,39 @@ function dbBurstFx(mon,type){ if(CONFIG.reduceMotion)return; const sp=dbSpEl(mon
   try{ ring.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:.95},{transform:"translate(-50%,-50%) scale(1.7)",opacity:0}],{duration:fxT(360),easing:"ease-out"}).finished.then(()=>{try{ring.remove();}catch(_){}}).catch(()=>{try{ring.remove();}catch(_){}}); }catch(_){ setTimeout(()=>{try{ring.remove();}catch(_){}} ,400); } }
 // 기절 낙하 — 대상 스프라이트가 떨어지며 사라진다(단일 배틀 faint 대응). dbRender가 카드를 다시 그리므로 직후에 얹는다.
 function dbFaintFx(mon){ if(CONFIG.reduceMotion)return; const c=dbCardEl(mon); if(c)c.classList.add("dbfainting"); }
+// 상태이상 오라 — 대상 스프라이트에 상태색 글로우 + 상태 글리프가 떠오른다(단일 배틀 fxStatusAura 대응).
+function dbStatusFx(mon,st){ if(CONFIG.reduceMotion)return; const sp=dbSpEl(mon); if(!sp)return;
+  const S=(typeof STATUSES!=="undefined")&&STATUSES[st]; const col=(S&&S.fx)||"#c9a0ff", g=(S&&S.g)||"✦";
+  sp.style.filter=`drop-shadow(0 0 9px ${col})`; setTimeout(()=>{try{sp.style.filter="";}catch(_){}} ,780);
+  for(let i=0;i<5;i++){ const e=document.createElement("div"); e.className="dbaura"; e.textContent=g;
+    e.style.cssText=`position:absolute;left:${28+Math.random()*44}%;bottom:8px;font-size:14px;pointer-events:none;z-index:8;filter:drop-shadow(0 0 3px ${col})`; sp.appendChild(e);
+    try{ e.animate([{transform:"translateY(0) scale(.6)",opacity:0},{transform:"translateY(-6px) scale(1)",opacity:1,offset:.25},{transform:`translateY(-${34+Math.random()*14}px) scale(1)`,opacity:0}],{duration:fxT(720),easing:"ease-out",delay:i*40}).finished.then(()=>{try{e.remove();}catch(_){}}).catch(()=>{try{e.remove();}catch(_){}}); }catch(_){ setTimeout(()=>{try{e.remove();}catch(_){}} ,800); } } }
+function _dbOppSide(side){ return side==="foe"?DB.allies:DB.foes; }   // 공격자 기준 상대편(pvp side는 foe=p2)
+// 한 대상에 피해 적용 + 연출 + 부가효과(상태/랭크). 단일·스프레드 공통. mult=스프레드 감쇠(0.75).
+async function _dbDamageOne(att,def,mv,side,mult){
+  if(def._protect){ dbLog(`→ <b>${dbName(def)}</b>이(가) 방어로 막아냈다!`); await wait(fxT(300)); return; }
+  const r=damage(att,def,mv); let dmg=Math.round(r.dmg*(mult||1));
+  if(side==="foe"){ let dm=DIFF[CONFIG.difficulty].dmg; if(typeof forestBadges==="function"&&forestBadges()===0)dm*=0.6; dmg=Math.round(dmg*dm); }
+  dmg=Math.max(1,Math.min(dmg,def.hp)); const _pp=def.hp/def.maxHp*100; def.hp=Math.max(0,def.hp-dmg);
+  dbLog(`→ <b>${dbName(def)}</b>에게 ${dmg} 데미지${r.eff>1?" · 효과가 굉장했다!":r.eff<1?" · 효과가 별로…":""}`);
+  dbRender(); dbHitFx(def,r.eff); dbBurstFx(def,mv.type); dbDmgFx(def,dmg,r.eff); if(def.hp<=0)dbFaintFx(def); if(Audio.hpTick)Audio.hpTick(_pp,def.hp/def.maxHp*100);
+  if(def.hp>0 && mv.eff && mv.eff.status && Math.random()<(mv.eff.chance||0.3)) dbStatus(def,mv.eff.status,mv.eff.badly);
+  if(mv.eff && mv.eff.stat && Math.random()<(mv.eff.chance||1)){ const _self=mv.eff.target==="self"; const _tg=_self?att:def;
+    if(_tg && _tg.hp>0){ _tg.stages=_tg.stages||newStages(); if(mv.eff.stat in _tg.stages){ _tg.stages[mv.eff.stat]=clamp((_tg.stages[mv.eff.stat]||0)+mv.eff.stage,-6,6); dbLog(`${dbName(_tg)}의 ${STAGE_KO[mv.eff.stat]||mv.eff.stat}이(가) ${mv.eff.stage>0?"올랐다":"떨어졌다"}!`); } } }
+}
 async function dbExec(att,def,key,side){ const mv=MOVES[key]; if(!mv)return;
   dbLog(`<b>${dbName(att)}</b>의 ${mv.name}!`); dbLungeFx(att,side); await wait(fxT(230));   // 공격자 런지 → 잠깐 뜸 → 명중 판정
   if(mv.acc<100 && Math.random()*100>mv.acc){ dbLog("…빗나갔다!"); await wait(fxT(360)); return; }
-  if(def && def._protect && (mv.power>0 || (mv.eff&&(mv.eff.status||mv.eff.seed||mv.eff.confuse)))){ dbLog(`→ <b>${dbName(def)}</b>이(가) 방어로 막아냈다!`); await wait(fxT(340)); return; }
-  if(mv.power>0){ const r=damage(att,def,mv); let dmg=r.dmg;
-    if(side==="foe"){ let dm=DIFF[CONFIG.difficulty].dmg; if(typeof forestBadges==="function"&&forestBadges()===0)dm*=0.6; dmg=Math.max(1,Math.round(dmg*dm)); }
-    dmg=Math.min(dmg,def.hp); const _pp=def.hp/def.maxHp*100; def.hp=Math.max(0,def.hp-dmg);
-    dbLog(`→ <b>${dbName(def)}</b>에게 ${dmg} 데미지${r.eff>1?" · 효과가 굉장했다!":r.eff<1?" · 효과가 별로…":""}`);
-    dbRender(); dbHitFx(def,r.eff); dbBurstFx(def,mv.type); dbDmgFx(def,dmg,r.eff); if(def.hp<=0)dbFaintFx(def); if(Audio.hpTick)Audio.hpTick(_pp,def.hp/def.maxHp*100);   // 피격: 카드 흔들림+타입 임팩트+데미지 숫자+기절 낙하+HP틱
-    if(def.hp>0 && mv.eff && mv.eff.status && Math.random()<(mv.eff.chance||0.3)) dbStatus(def,mv.eff.status,mv.eff.badly);
-    if(mv.eff && mv.eff.stat && Math.random()<(mv.eff.chance||1)){ const _self=mv.eff.target==="self"; const _tg=_self?att:def;   // 피해기 부가 랭크 변화(듀오 병렬 수정)
-      if(_tg && _tg.hp>0){ _tg.stages=_tg.stages||newStages(); if(mv.eff.stat in _tg.stages){ _tg.stages[mv.eff.stat]=clamp((_tg.stages[mv.eff.stat]||0)+mv.eff.stage,-6,6); dbLog(`${dbName(_tg)}의 ${STAGE_KO[mv.eff.stat]||mv.eff.stat}이(가) ${mv.eff.stage>0?"올랐다":"떨어졌다"}!`); } } }
-    await wait(fxT(420));
-  } else if(mv.heal){ const h=Math.floor(att.maxHp*mv.heal); att.hp=Math.min(att.maxHp,att.hp+h); dbLog(`${dbName(att)}의 체력이 회복됐다!`); await wait(fxT(360)); }
+  if(mv.power>0 && mv.spread){   // 스프레드기(지진·눈보라 등): 상대편 전원 타격, 2체 이상이면 0.75배
+    const targets=_dbOppSide(side).filter(x=>x&&x.hp>0); if(!targets.length){ dbLog("하지만 대상이 없다…"); await wait(fxT(300)); return; }
+    const mult=targets.length>1?0.75:1; dbLog(`→ 양쪽으로 퍼진다!`); await wait(fxT(160));
+    for(const d of targets){ await _dbDamageOne(att,d,mv,side,mult); await wait(fxT(150)); }
+    await wait(fxT(240)); return;
+  }
+  if(mv.power>0){ if(def&&def._protect){ dbLog(`→ <b>${dbName(def)}</b>이(가) 방어로 막아냈다!`); await wait(fxT(340)); return; }
+    if(def){ await _dbDamageOne(att,def,mv,side,1); } await wait(fxT(420)); return; }
+  if(def && def._protect && (mv.eff&&(mv.eff.status||mv.eff.seed||mv.eff.confuse))){ dbLog(`→ <b>${dbName(def)}</b>이(가) 방어로 막아냈다!`); await wait(fxT(340)); return; }
+  if(mv.heal){ const h=Math.floor(att.maxHp*mv.heal); att.hp=Math.min(att.maxHp,att.hp+h); dbLog(`${dbName(att)}의 체력이 회복됐다!`); await wait(fxT(360)); }
   else if(mv.eff && mv.eff.status){ dbStatus(def,mv.eff.status,mv.eff.badly); await wait(fxT(360)); }
   else if(mv.eff && mv.eff.stat){ const self=mv.eff.target==="self"; const tg=self?att:def; tg.stages=tg.stages||newStages(); if(mv.eff.stat in tg.stages){ tg.stages[mv.eff.stat]=clamp((tg.stages[mv.eff.stat]||0)+mv.eff.stage,-6,6); } dbLog(`${dbName(tg)}의 ${STAGE_KO[mv.eff.stat]||mv.eff.stat}이(가) ${mv.eff.stage>0?"올랐다":"떨어졌다"}!`); await wait(fxT(360)); }
   else if(mv.eff && mv.eff.protect){ att._protect=true; dbLog(`<b>${dbName(att)}</b>은(는) 방어 태세!`); await wait(fxT(320)); }
