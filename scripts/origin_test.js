@@ -15,7 +15,7 @@ const { chromium } = require("playwright"); const path=require("path");
   const b=await chromium.launch();
   let fail=0; const ok=(c,m)=>{ console.log((c?"  ✅ ":"  ❌ ")+m); if(!c)fail=1; };
   const WANT=[{home:"home_rio",name:"정령 연구소",pos:"5,48"},
-              {home:"home_mina",name:"길가 야영지",pos:"17,44"},
+              {home:"home_mina",name:"길가 야영지",pos:"8,44"},
               {home:"home_tori",name:"언덕 농가",pos:"10,42"},
               {home:"home_el",name:"숲가 빈터",pos:"3,45"}];
   for(let i=0;i<4;i++){
