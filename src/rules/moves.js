@@ -63,7 +63,7 @@ const MOVES={
   iceshard:{name:"얼음뭉치",type:"ice",power:40,acc:100,pp:20,pri:1},
   frostbreath:{name:"서리숨결",type:"ice",power:48,acc:100,pp:15,pri:0,eff:{status:"frz",chance:0.1}},
   icebeam:{name:"냉동빔",type:"ice",power:60,acc:95,pp:12,pri:0,eff:{status:"frz",chance:0.12}},
-  blizzard:{name:"눈보라",type:"ice",power:76,acc:80,pp:6,pri:0,eff:{status:"frz",chance:0.15}},
+  blizzard:{name:"눈보라",type:"ice",power:76,acc:80,pp:6,pri:0,eff:{status:"frz",chance:0.15},spread:true},
   chill:{name:"한기",type:"ice",power:0,acc:95,pp:20,pri:0,eff:{stat:"spd",stage:-1,target:"foe",chance:1}},
   // ===== 독(물리 계열) =====
   poisonjab:{name:"독찌르기",type:"poison",power:50,acc:100,pp:20,pri:0,eff:{status:"psn",chance:0.2}},
@@ -73,7 +73,7 @@ const MOVES={
   icywind:{name:"얼음바람",type:"ice",power:38,acc:95,pp:15,pri:0,eff:{stat:"spd",stage:-1,target:"foe",chance:1}},
   poisonpowder:{name:"독가루",type:"poison",power:0,acc:75,pp:20,pri:0,eff:{status:"psn",chance:1}},
   dig:{name:"땅파기",type:"ground",power:60,acc:100,pp:10,pri:0},
-  quake:{name:"지진",type:"ground",power:78,acc:100,pp:8,pri:0},
+  quake:{name:"지진",type:"ground",power:78,acc:100,pp:8,pri:0,spread:true},
   /* ── 타입별 공격기 보강(평가 #3) ─────────────────────────────────────────
      불·물 정령이 30종인데 그 타입 공격기가 각 4개뿐이라 **같은 타입 정령이 거의 같은 기술**을 썼다.
      독은 2개, 땅은 4개로 더 심했다. 타입당 최소 6개가 되도록 13개를 추가한다.
