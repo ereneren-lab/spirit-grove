@@ -15,7 +15,7 @@ const { chromium } = require("playwright"); const path=require("path");
     const tg=await p.$("#dbMenu .dbtg"); if(tg){ await tg.click(); await p.waitForTimeout(180); } }
   // 데미지 해결 중 .dbhit 흔들림 폴링
   let hitSeen=false;
-  for(let i=0;i<35;i++){ if(await p.evaluate(()=>!!document.querySelector(".dbmon.dbhit"))){ hitSeen=true; break; } await p.waitForTimeout(80); }
+  for(let i=0;i<35;i++){ if(await p.evaluate(()=>!!document.querySelector(".dbslot.dbhit"))){ hitSeen=true; break; } await p.waitForTimeout(80); }
   const dealt=await p.evaluate(()=>((document.getElementById("dbLog")||{}).innerText||"").includes("데미지"));
 
   ok(dealt, "듀오 턴 진행(데미지 발생)");

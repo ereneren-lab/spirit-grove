@@ -531,37 +531,50 @@
   *:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
 
 /* double battle */
-.dbfoes,.dballies{display:flex;gap:8px;margin:6px 0}
-.dbmon{flex:1;background:#2a2f48;border:1px solid #3a4060;border-radius:10px;padding:6px 8px;display:flex;gap:8px;align-items:center;transition:opacity .3s}
-.dbmon.foe{background:linear-gradient(180deg,#332a42,#2a2438)}
-.dbmon.ally{background:linear-gradient(180deg,#26324a,#222b40)}
-.dbmon.dead{opacity:.4;filter:grayscale(1)}
-.dbmon.empty{opacity:.3;justify-content:center;min-height:52px}
+/* 듀오(2v2) 배틀 — 포켓몬식 4스프라이트 필드. 상대 2마리는 위, 내 편 2마리는 아래에 대각으로 배치. */
+.dbfield{position:relative;height:240px;border-radius:12px;overflow:hidden;margin:6px 0;border:1px solid var(--line);background:linear-gradient(180deg,#9fd8ee 0%,#bfe6c4 54%,#93c86f 100%)}
+.dbfield::after{content:"";position:absolute;left:-8%;right:-8%;top:50%;height:52%;background:radial-gradient(ellipse at 50% 0,rgba(120,180,90,.45),transparent 72%);pointer-events:none}
+.dbslot{position:absolute;width:120px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:opacity .3s;z-index:2}
+.dbslot.dead{opacity:.32;filter:grayscale(1)}
+.dbslot.foe[data-slot="0"]{top:4px;left:5%}
+.dbslot.foe[data-slot="1"]{top:20px;right:3%}
+.dbslot.ally[data-slot="0"]{bottom:4px;left:1%}
+.dbslot.ally[data-slot="1"]{bottom:22px;right:5%;z-index:3}
+.dbbenchtag{position:absolute;font-size:10px;opacity:.75;background:rgba(0,0,0,.42);color:#fff;border-radius:6px;padding:1px 6px;pointer-events:none;z-index:4;white-space:nowrap}
+.dbbenchtag.foe{top:5px;right:7px}
+.dbbenchtag.ally{bottom:5px;left:7px}
+.dbhud{width:114px;background:rgba(20,24,38,.82);border:1px solid #3a4060;border-radius:7px;padding:2px 6px}
+.dbhptxt{font-size:8px;opacity:.7;text-align:right}
 .hofsp{width:46px;height:46px;flex:none;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
 .hofsp img,.hofsp svg{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
 .hofsp.shiny img{filter:hue-rotate(150deg) saturate(1.4) brightness(1.05) drop-shadow(0 2px 3px rgba(0,0,0,.35))}
-.dbmon .dbsp{width:52px;height:52px;flex:none;display:flex;align-items:end;justify-content:center;position:relative}
-.dbmon .dbsp::after{content:"";position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:38px;height:8px;background:radial-gradient(ellipse,rgba(0,0,0,.35),transparent 70%);border-radius:50%}
-.dbmon .dbsp img,.dbmon .dbsp svg{width:50px;height:50px;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
-.dbmon .dbsp.shiny img{filter:drop-shadow(0 2px 3px rgba(0,0,0,.35)) hue-rotate(150deg) saturate(1.4) brightness(1.05)}
-.dbmon.dbhit{animation:dbHit .42s ease}
+.dbslot .dbsp{width:78px;height:66px;display:flex;align-items:end;justify-content:center;position:relative}
+.dbslot .dbsp::after{content:"";position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:54px;height:11px;background:radial-gradient(ellipse,rgba(0,0,0,.3),transparent 70%);border-radius:50%}
+.dbslot .dbsp img,.dbslot .dbsp svg{width:72px;height:66px;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.dbslot.ally .dbsp img,.dbslot.ally .dbsp svg{transform:scaleX(-1)}   /* 내 편은 뒤에서 본 듯 좌우 반전(단일 배틀 .me 결) */
+.dbslot .dbsp.shiny img{filter:drop-shadow(0 2px 3px rgba(0,0,0,.35)) hue-rotate(150deg) saturate(1.4) brightness(1.05)}
+.dbslot.dbhit{animation:dbHit .42s ease}
 @keyframes dbHit{0%,100%{transform:translateX(0);filter:none}18%{transform:translateX(-7px);filter:brightness(1.7)}38%{transform:translateX(6px)}58%{transform:translateX(-4px);filter:brightness(1.3)}78%{transform:translateX(3px)}}
-/* 듀오 배틀 모션(단일 배틀 느낌 이식) — 공격자 런지·타입 임팩트·데미지 숫자·기절 낙하. fx는 .dbsp(position:relative) 자식으로 얹어 좌표계산 없이 스프라이트에 정렬. */
-.dbmon.dblunge-up .dbsp img,.dbmon.dblunge-up .dbsp svg{animation:dbLungeU .4s ease}
-.dbmon.dblunge-down .dbsp img,.dbmon.dblunge-down .dbsp svg{animation:dbLungeD .4s ease}
+/* 듀오 배틀 모션 — 공격자 런지·타입 임팩트·데미지 숫자·기절 낙하. fx는 .dbsp(position:relative) 자식으로 얹어 좌표계산 없이 스프라이트에 정렬. */
+.dbslot.dblunge-up .dbsp img,.dbslot.dblunge-up .dbsp svg{animation:dbLungeU .4s ease}
+.dbslot.dblunge-down .dbsp img,.dbslot.dblunge-down .dbsp svg{animation:dbLungeD .4s ease}
 @keyframes dbLungeU{0%,100%{transform:translateY(0) scale(1)}42%{transform:translateY(-13px) scale(1.09)}}
 @keyframes dbLungeD{0%,100%{transform:translateY(0) scale(1)}42%{transform:translateY(13px) scale(1.09)}}
-.dbmon.dbfainting .dbsp img,.dbmon.dbfainting .dbsp svg{animation:dbFaintDrop .6s ease-in forwards}
+/* ⚠️ ally 스프라이트는 scaleX(-1)이라 런지/기절 transform이 반전을 덮어쓰지 않게 flip을 합성한다 */
+.dbslot.ally.dblunge-up .dbsp img,.dbslot.ally.dblunge-up .dbsp svg{animation:dbLungeUAlly .4s ease}
+.dbslot.ally.dbfainting .dbsp img,.dbslot.ally.dbfainting .dbsp svg{animation:dbFaintDropAlly .6s ease-in forwards}
+@keyframes dbLungeUAlly{0%,100%{transform:scaleX(-1) translateY(0)}42%{transform:scaleX(-1) translateY(-13px) scale(1.09)}}
+@keyframes dbFaintDropAlly{0%{transform:scaleX(-1) translateY(0) rotate(0);opacity:1}100%{transform:scaleX(-1) translateY(34px) rotate(16deg);opacity:0}}
+.dbslot.dbfainting .dbsp img,.dbslot.dbfainting .dbsp svg{animation:dbFaintDrop .6s ease-in forwards}
 @keyframes dbFaintDrop{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(34px) rotate(16deg);opacity:0}}
 .dbdmg{position:absolute;left:50%;top:-6px;transform:translateX(-50%);font-weight:900;font-size:17px;color:var(--rose);z-index:7;pointer-events:none;text-shadow:0 2px 5px rgba(0,0,0,.75);animation:dmg .95s ease forwards;white-space:nowrap}
 .dbdmg.big{font-size:22px;color:#ffd34d}
 .dbfxburst{position:absolute;left:50%;top:50%;width:40px;height:40px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5}
-.dbinfo{flex:1;min-width:0}
-.dbnm{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dblv{font-size:10px;opacity:.7;font-weight:400}
-.dbst{font-size:9px;color:#fff;border-radius:4px;padding:0 4px;margin-left:4px;background:#6a6f8a}
+.dbnm{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:3px}
+.dblv{font-size:9px;opacity:.7;font-weight:400}
+.dbst{font-size:8px;color:#fff;border-radius:3px;padding:0 3px;background:#6a6f8a;flex:none}
 /* .dbst.b-<status> 는 STATUSES에서 생성 — injectPalette() */
-.dbhpbar{height:6px;background:#1a1e30;border-radius:3px;overflow:hidden;margin:3px 0}
+.dbhpbar{height:5px;background:#1a1e30;border-radius:3px;overflow:hidden;margin:2px 0 1px}
 .dbhpfill{height:100%;background:#5ac26a;transition:width .35s}
 .dbhpfill.warn{background:#e0c05a}.dbhpfill.crit{background:#e05a5a}
 .dbhptxt{font-size:9px;opacity:.7}
@@ -931,9 +944,15 @@
     </div></div>
     <div class="overlay" id="dbOverlay"><div class="sheet" style="max-width:460px">
       <div id="dbTitle" style="font-weight:800;text-align:center;margin-bottom:6px">⚔️ 듀오 배틀 · 2 vs 2</div>
-      <div class="dbfoes" id="dbFoes"></div>
+      <div class="dbfield" id="dbField">
+        <div class="dbslot foe" data-side="foe" data-slot="0"></div>
+        <div class="dbslot foe" data-side="foe" data-slot="1"></div>
+        <div class="dbslot ally" data-side="ally" data-slot="0"></div>
+        <div class="dbslot ally" data-side="ally" data-slot="1"></div>
+        <div class="dbbenchtag foe" id="dbFoeBench"></div>
+        <div class="dbbenchtag ally" id="dbAllyBench"></div>
+      </div>
       <div class="dblog" id="dbLog"></div>
-      <div class="dballies" id="dbAllies"></div>
       <div class="dbmenu" id="dbMenu"></div>
     </div></div>
     <div class="overlay" id="switchOverlay">
@@ -6159,17 +6178,24 @@ function startDouble(foeSpecs,name,key){
   openOverlay("dbOverlay"); const _dt=$("dbTitle"); if(_dt)_dt.textContent="⚔️ 듀오 배틀 · 2 vs 2"; $("dbLog").innerHTML=""; dbLog(`<b>${DB.name}</b>의 2:2 듀오 배틀!`); dbRender(); dbBeginRound(); return true;
 }
 function dbHpClass(r){ return r>0.5?"":r>0.2?"warn":"crit"; }
-function dbCard(m,who,slot){ if(!m)return `<div class="dbmon empty">—</div>`;
-  const r=Math.max(0,m.hp/m.maxHp); const st=m.status?`<span class="dbst ${STATUS_CLS[m.status]||""}">${STATUS_KO[m.status]||""}</span>`:"";
-  const dead=m.hp<=0?" dead":""; const shy=m.shiny?" shiny":"";
-  return `<div class="dbmon ${who}${dead}" data-slot="${slot}"><div class="dbsp${shy}">${creatureVisual(m.id,m.type)}</div>`+
-    `<div class="dbinfo"><div class="dbnm">${dbName(m)} <span class="dblv">L${m.level}</span>${st}</div>`+
+function dbSlotEl(side,slot){ return document.querySelector(`#dbField .dbslot.${side}[data-slot="${slot}"]`); }
+function _dbHudHTML(m){ const r=Math.max(0,m.hp/m.maxHp);
+  const st=m.status?`<span class="dbst ${STATUS_CLS[m.status]||""}">${STATUS_KO[m.status]||""}</span>`:"";
+  return `<div class="dbhud"><div class="dbnm">${dbName(m)} <span class="dblv">L${m.level}</span>${st}</div>`+
     `<div class="dbhpbar"><div class="dbhpfill ${dbHpClass(r)}" style="width:${r*100}%"></div></div>`+
-    `<div class="dbhptxt">${Math.max(0,m.hp)}/${m.maxHp}</div></div></div>`;
-}
+    `<div class="dbhptxt">${Math.max(0,m.hp)}/${m.maxHp}</div></div>`; }
+function _dbSpriteHTML(m){ return `<div class="dbsp${m.shiny?" shiny":""}">${creatureVisual(m.id,m.type)}</div>`; }
+function dbFillSlot(side,slot,m){ const el=dbSlotEl(side,slot); if(!el)return;
+  if(!m){ el.hidden=true; el.innerHTML=""; el.classList.remove("dead","dbhit","dblunge-up","dblunge-down","dbfainting"); return; }
+  el.hidden=false; el.classList.toggle("dead",m.hp<=0);
+  // 상대(위)는 HUD 위·스프라이트 아래 / 내 편(아래)은 스프라이트 위·HUD 아래
+  el.innerHTML=(side==="foe")?(_dbHudHTML(m)+_dbSpriteHTML(m)):(_dbSpriteHTML(m)+_dbHudHTML(m)); }
+function dbClearField(){ ["foe","ally"].forEach(s=>[0,1].forEach(n=>dbFillSlot(s,n,null)));
+  const fb=$("dbFoeBench"),ab=$("dbAllyBench"); if(fb)fb.textContent=""; if(ab)ab.textContent=""; }
 function dbRender(){ if(!DB)return;
-  $("dbFoes").innerHTML=DB.foes.map((f,i)=>dbCard(f,"foe",i)).join("")+(DB.bench.length?`<div class="dbbench">+${DB.bench.length}</div>`:"");
-  $("dbAllies").innerHTML=DB.allies.map((a,i)=>dbCard(a,"ally",i)).join("");
+  dbFillSlot("foe",0,DB.foes[0]); dbFillSlot("foe",1,DB.foes[1]);
+  dbFillSlot("ally",0,DB.allies[0]); dbFillSlot("ally",1,DB.allies[1]);
+  if(!DB._pvp){ const fb=$("dbFoeBench"); if(fb)fb.textContent=(DB.bench&&DB.bench.length)?`대기 +${DB.bench.length}`:""; const ab=$("dbAllyBench"); if(ab)ab.textContent=""; }
 }
 function dbLog(msg){ const l=$("dbLog"); if(!l)return; const d=document.createElement("div"); d.className="dbline"; d.innerHTML=(typeof fixJosa==="function")?fixJosa(msg):msg; l.appendChild(d); l.scrollTop=l.scrollHeight; }   // 조사 자동 해결(듀오 배틀 로그도 "…은(는)" 안 나오게)
 function dbBeginRound(){ DB.phase="choose"; DB.choices={}; DB._cur=-1; [...DB.allies,...DB.foes].forEach(m=>{ if(m)m._protect=false; }); dbNextChoice(); }
@@ -6220,8 +6246,8 @@ function dbStatus(m,st,badly){
   if(why==="type"){ dbLog(`<b>${dbName(m)}</b>은(는) <b>${TYPE_KO[STATUS_TYPE_IMMUNE[st]]}</b> 타입이라 아무렇지 않다!`); return; }
   setStatusFields(m,st,badly);
   dbLog(`<b>${dbName(m)}</b>은(는) ${badly&&st==="psn"?"맹독":(STATUS_KO[st]||"상태이상")}에 걸렸다!`); }
-function dbCardEl(mon){ if(!DB)return null; let i=DB.foes.indexOf(mon); if(i>=0)return document.querySelector(`#dbFoes .dbmon[data-slot="${i}"]`);
-  i=DB.allies.indexOf(mon); if(i>=0)return document.querySelector(`#dbAllies .dbmon[data-slot="${i}"]`); return null; }
+function dbCardEl(mon){ if(!DB)return null; let i=DB.foes.indexOf(mon); if(i>=0)return dbSlotEl("foe",i);
+  i=DB.allies.indexOf(mon); if(i>=0)return dbSlotEl("ally",i); return null; }
 function dbHitFx(mon,eff){ Audio.sfx&&Audio.sfx((eff>1)?"superhit":(eff>0&&eff<1)?"weakhit":"hit"); if(CONFIG.reduceMotion)return;
   const el=dbCardEl(mon); if(!el)return; el.classList.remove("dbhit"); void el.offsetWidth; el.classList.add("dbhit"); setTimeout(()=>{try{el.classList.remove("dbhit");}catch(_){}} ,440); }
 function dbSpEl(mon){ const c=dbCardEl(mon); return c?c.querySelector(".dbsp"):null; }
@@ -6300,15 +6326,15 @@ let PVP=null;
 function pvpActive(p){ return PVP[p].team[PVP[p].active]; }
 function pvpAlive(p){ return PVP[p].team.filter(m=>m.hp>0).length; }
 function pvpSyncDB(){ DB={allies:[pvpActive("p1")],foes:[pvpActive("p2")],bench:[],_pvp:true}; }   // dbExec/dbCardEl/dbHitFx/dbRender가 참조(bench 필수)
-function pvpRenderCards(){ pvpSyncDB();
-  $("dbFoes").innerHTML=dbCard(pvpActive("p2"),"foe",0)+`<div class="dbbench">${PVP.p2.name} · ${pvpAlive("p2")}/3</div>`;
-  $("dbAllies").innerHTML=dbCard(pvpActive("p1"),"ally",0)+`<div class="dbbench">${PVP.p1.name} · ${pvpAlive("p1")}/3</div>`;
+function pvpRenderCards(){ pvpSyncDB(); dbRender();   // 핫싯(1v1)은 slot0만 채우고 slot1은 숨는다
+  const fb=$("dbFoeBench"); if(fb)fb.textContent=`${PVP.p2.name} · ${pvpAlive("p2")}/3`;
+  const ab=$("dbAllyBench"); if(ab)ab.textContent=`${PVP.p1.name} · ${pvpAlive("p1")}/3`;
 }
 function startHotSeat(){ if(G.inBattle||G.busy)return;
   PVP={ phase:"select", p1:{name:"플레이어 1",team:[],active:0}, p2:{name:"플레이어 2",team:[],active:0}, sel:[] };
   G.inBattle=true; G._pvp=true;
   openOverlay("dbOverlay"); const t=$("dbTitle"); if(t)t.textContent="⚔️ 핫싯 대전 · 로컬 2인";
-  $("dbFoes").innerHTML=""; $("dbAllies").innerHTML=""; $("dbLog").innerHTML="";
+  dbClearField(); $("dbLog").innerHTML="";
   Audio.sfx&&Audio.sfx("blip");
   dbLog("두 정령사가 겨룬다! 각자 렌탈 정령 <b>3마리</b>를 고르자. (Lv50)");
   pvpSelect("p1");
@@ -6328,7 +6354,7 @@ function pvpRenderSelect(){ const menu=$("dbMenu"); const P=PVP[PVP.selP]; const
     if(PVP.selP==="p1") pvpPass("플레이어 2 차례",()=>pvpSelect("p2"));
     else pvpPass("대전 시작!",()=>pvpBeginBattle()); });
 }
-function pvpPass(msg,next){ PVP.phase="pass"; $("dbFoes").innerHTML=""; $("dbAllies").innerHTML="";
+function pvpPass(msg,next){ PVP.phase="pass"; dbClearField();
   $("dbMenu").innerHTML=`<div class="pvppass"><div class="ppm">📱 ${msg}</div><div class="pps">상대에게 화면을 넘기고, 준비되면 누르세요.</div><button class="dbmv" id="pvpGo" style="width:100%">준비 완료 ▶</button></div>`;
   $("pvpGo").addEventListener("click",()=>{ Audio.sfx&&Audio.sfx("blip"); next(); });
 }

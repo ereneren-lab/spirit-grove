@@ -1,4 +1,5 @@
-// 듀오 배틀(2v2) UI 회귀 테스트: 이모지 대신 크리처 아트(creatureVisual)로 렌더 + 상태칩이 색 클래스와 함께 표시.
+// 듀오 배틀(2v2) UI 회귀 테스트: 포켓몬식 4스프라이트 필드 — 상대 2·아군 2가 각 슬롯에
+//  크리처 아트로 렌더 + HUD(이름/HP) + 상태칩(색 클래스) + 대기 벤치 표기.
 const { chromium } = require("playwright"); const path=require("path");
 (async()=>{ const b=await chromium.launch();
   const p=await b.newPage({viewport:{width:430,height:760}});
@@ -11,22 +12,25 @@ const { chromium } = require("playwright"); const path=require("path");
     G.party=[a, S.makeMon("crystalgon",34), S.makeMon("emberwolf",28)]; G.active=0; S.setG(G);
     S.flow.enterMap(true);
     S.flow.startDouble([["voltsnake",26],["seedbean",26],["emberfly",27],["frostpup",27]],"쌍둥이 나나·리리","DUO");
-    const foeArt=document.querySelector("#dbFoes .dbsp img"), allyArt=document.querySelector("#dbAllies .dbsp img");
-    const chip=document.querySelector("#dbAllies .dbst");
+    const foeArt=document.querySelector('#dbField .dbslot.foe .dbsp img'), allyArt=document.querySelector('#dbField .dbslot.ally .dbsp img');
+    const chip=document.querySelector('#dbField .dbslot.ally .dbst');
+    const vis=side=>[...document.querySelectorAll(`#dbField .dbslot.${side}`)].filter(s=>!s.hidden&&s.querySelector(".dbsp")).length;
     return { open:document.getElementById("dbOverlay").classList.contains("active"),
       foeArt:!!foeArt, allyArt:!!allyArt,
-      foeCount:document.querySelectorAll("#dbFoes .dbmon").length,
-      allyCount:document.querySelectorAll("#dbAllies .dbmon").length,
+      foeCount:vis("foe"), allyCount:vis("ally"),
+      allyFlipped:!!document.querySelector('#dbField .dbslot.ally .dbsp img,#dbField .dbslot.ally .dbsp svg'),
+      hud:!!document.querySelector('#dbField .dbslot .dbhud .dbhpbar'),
       chipText:chip?chip.textContent:"", chipSlp:chip?chip.classList.contains("b-slp"):false,
-      benchTag:!!document.querySelector("#dbFoes .dbbench") }; });
+      benchTag:((document.getElementById("dbFoeBench")||{}).textContent||"").includes("+") }; });
 
   ok(r.open, "듀오 배틀 오버레이 열림");
   ok(r.foeArt, "상대 정령이 크리처 아트로 렌더(이모지 아님)");
   ok(r.allyArt, "아군 정령이 크리처 아트로 렌더");
-  ok(r.foeCount===2 && r.allyCount===2, `2 vs 2 카드 (상대 ${r.foeCount}, 아군 ${r.allyCount})`);
+  ok(r.foeCount===2 && r.allyCount===2, `4스프라이트 필드 (상대 ${r.foeCount}, 아군 ${r.allyCount})`);
+  ok(r.hud, "각 슬롯에 HUD(이름/HP바) 표시");
   ok(r.chipText==="잠듦", `아군 상태칩 표시 (${r.chipText})`);
   ok(r.chipSlp, "상태칩이 색 클래스(b-slp) 적용");
-  ok(r.benchTag, "벤치(+N) 표기");
+  ok(r.benchTag, "대기(+N) 벤치 표기");
   ok(errs.length===0, "런타임 에러 0"+(errs.length?": "+errs.slice(0,3).join(" / "):""));
   console.log(process.exitCode?"\n❌ 실패":"\n🎉 듀오 배틀 UI 통과");
   await b.close(); process.exit(process.exitCode||0);
