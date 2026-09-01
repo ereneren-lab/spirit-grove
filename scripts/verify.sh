@@ -124,6 +124,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw duo_hit_test.js
   pw duo_motion_test.js
   pw duo_spread_test.js
+  pw duo_enditem_test.js
   pw catch_identity_test.js
   # type_chart_test.js 는 순수 상성표라 rules_unit_test.js(브라우저 불필요)로 이관됨 → 여기선 제거.
   pw newtypes_test.js
