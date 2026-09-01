@@ -128,6 +128,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw duo_field_test.js
   pw duo_trainers_test.js
   pw duo_rematch_test.js
+  pw duo_reward_test.js
   pw catch_identity_test.js
   # type_chart_test.js 는 순수 상성표라 rules_unit_test.js(브라우저 불필요)로 이관됨 → 여기선 제거.
   pw newtypes_test.js
@@ -168,6 +169,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw simul_faint_test.js
   pw battle_blindspot_test.js
   pw meta_blindspot_test.js
+  pw meta_round3_test.js
   pw item_target_test.js
   pw door_front_test.js
   pw fieldmove_test.js
