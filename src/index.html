@@ -6430,7 +6430,8 @@ async function dbReplace(){
     if(DB.bench.length){ const b=DB.bench.shift(); DB.foes[s]=makeMon(b[0],b[1],TRAINER_HELD); DB.foes[s].stages=newStages(); G.seen.add(DB.foes[s].id); dbLog(`상대가 <b>${dbName(DB.foes[s])}</b>을(를) 내보냈다!`); await wait(fxT(420)); await dbApplyHazards(DB.foes[s],"foe"); } } }
   dbRender();
 }
-async function dbWin(){ DB.phase="done"; if(DB.key){ G.defeated.add(DB.key); if(typeof Field!=="undefined"&&Field&&Field.removeNpc)Field.removeNpc(DB.key); } dbLog(`<b>승리!</b> ${DB.name}을(를) 이겼다!`); Audio.sfx&&Audio.sfx("victory");
+async function dbWin(){ DB.phase="done"; if(DB.key){ G.defeated.add(DB.key); if(G.rematchWanted)G.rematchWanted.delete(DB.key);   // 재대전 소진 — 단일 트레이너(trainerDefeated)와 동일. 안 하면 듀오는 무한 재대전됐다.
+  if(typeof Field!=="undefined"&&Field&&Field.removeNpc)Field.removeNpc(DB.key); } dbLog(`<b>승리!</b> ${DB.name}을(를) 이겼다!`); Audio.sfx&&Audio.sfx("victory");
   const foeLvSum=(DB._foeLvSum||30); const xp=Math.floor(foeLvSum*10+40);
   DB.part.forEach(i=>{ const m=G.party[i]; if(m&&m.hp>0){ dbGrantXp(m,xp); } });
   $("dbMenu").innerHTML=`<button class="dbmv" id="dbClose" style="width:100%">계속</button>`;
@@ -6901,10 +6902,10 @@ async function gainXpFor(m,gain,isLead){ const add=Math.floor(gain*(isLead?1:0.4
   }
   if(m.level>=60)m.xp=0;
   return leveled; }
-async function learnMoveFlow(m,mv,isLead){ if(m.moves.includes(mv))return;
-  if(m.moves.length<4){ m.moves.push(mv); m.pp[mv]=MOVES[mv].pp; if(isLead)toast(`${m.name}이(가) ${MOVES[mv].name} 습득!`); return; }
-  if(!isLead)return; // background party: keep existing set
-  await new Promise(resolve=>{ buildLearnOverlay(m,mv,resolve); openOverlay("learnOverlay"); }); }
+async function learnMoveFlow(m,mv,isLead){ if(m.moves.includes(mv))return false;   // 반환: 실제로 배웠는지(TM 환불 판정에 쓰인다)
+  if(m.moves.length<4){ m.moves.push(mv); m.pp[mv]=MOVES[mv].pp; if(isLead)toast(`${m.name}이(가) ${MOVES[mv].name} 습득!`); return true; }
+  if(!isLead)return false; // background party: keep existing set
+  return await new Promise(resolve=>{ buildLearnOverlay(m,mv,resolve); openOverlay("learnOverlay"); }); }
 function buildLearnOverlay(m,newMv,resolve){ $("learnTitle").textContent="새로운 기술!";
   const nm=MOVES[newMv]; const body=$("learnBody"); body.innerHTML="";
   const intro=document.createElement("div"); intro.style.cssText="margin-bottom:6px";
@@ -6913,12 +6914,12 @@ function buildLearnOverlay(m,newMv,resolve){ $("learnTitle").textContent="새로
   m.moves.forEach((mvk,i)=>{ const mo=MOVES[mvk]; const card=document.createElement("div"); card.className="mon-card";
     card.innerHTML=`<div class="info"><div class="nm">${mo.name}</div><div class="st">${moveSummary(mvk)}</div></div><button class="pick danger">잊기</button>`;
     card.querySelector(".pick").addEventListener("click",()=>{ Audio.sfx("blip"); delete m.pp[mvk]; m.moves[i]=newMv; m.pp[newMv]=nm.pp;
-      toast(`${m.name}이(가) ${nm.name} 습득!`); closeOverlay("learnOverlay"); resolve(); }); body.appendChild(card); });
+      toast(`${m.name}이(가) ${nm.name} 습득!`); closeOverlay("learnOverlay"); resolve(true); }); body.appendChild(card); });
   const newCard=document.createElement("div"); newCard.className="mon-card"; newCard.style.borderColor="var(--mint)";
   newCard.innerHTML=`<div class="em">✨</div><div class="info"><div class="nm" style="color:var(--mint)">${nm.name} <span style="font-size:10px;color:var(--muted)">신규</span></div><div class="st">${moveSummary(newMv)}</div></div>`;
   body.appendChild(newCard);
   const skip=document.createElement("button"); skip.className="btn ghost"; skip.style.cssText="margin-top:8px;width:100%"; skip.textContent=`${nm.name} 안 배우기`;
-  skip.addEventListener("click",()=>{ Audio.sfx("blip"); toast(`${nm.name}을(를) 배우지 않았다`); closeOverlay("learnOverlay"); resolve(); }); body.appendChild(skip); }
+  skip.addEventListener("click",()=>{ Audio.sfx("blip"); toast(`${nm.name}을(를) 배우지 않았다`); closeOverlay("learnOverlay"); resolve(false); }); body.appendChild(skip); }
 
 /* ===================== WIN / LOSE ===================== */
 function gainEV(m, foeId){ if(!m)return; if(!m.evs)m.evs={hp:0,atk:0,def:0,spa:0,spDef:0,spd:0}; const sp=byId(foeId); if(!sp||!sp.base)return;
@@ -7426,7 +7427,9 @@ function startNewGamePlus(){
   const nn=(G.ngPlus||0)+1;
   if(!confirm(`🔄 뉴게임+ (${nn}회차)\n\n유지: 도감·정령·보관함·업적·명예의전당·타워 기록\n초기화: 배지·스토리·비전기술·위치\n야생이 회차마다 강해진다(최대 +15). 소지금은 절반.\n\n다시 여정을 시작할까?`))return;
   // 유지할 것만 뽑아 새 상태에 이식한다. 나머지는 freshState 기본값(=처음부터).
-  const K={ caught:G.caught, seen:G.seen, shinyDex:G.shinyDex||new Set(), party:G.party, box:G.box||[], dexClaimed:G.dexClaimed||[], achClaimed:G.achClaimed||[],
+  // ⚠️ 육아방에 맡겨둔 부모는 freshState가 daycare를 비우면서 소멸했다(확인창은 "정령 유지"라 약속) → 보관함으로 회수해 보존.
+  const _dcMons=[]; if(G.daycare){ if(G.daycare.a)_dcMons.push(G.daycare.a); if(G.daycare.b)_dcMons.push(G.daycare.b); }
+  const K={ caught:G.caught, seen:G.seen, shinyDex:G.shinyDex||new Set(), party:G.party, box:(G.box||[]).concat(_dcMons), dexClaimed:G.dexClaimed||[], achClaimed:G.achClaimed||[],
     towerBest:G.towerBest||0, towerBestSet:G.towerBestSet||0, towerSeason:G.towerSeason||{key:"",best:0}, towerRecords:G.towerRecords||[],
     hallOfFame:G.hallOfFame||[], rules:G.rules||{hardcore:false,nuzlocke:false}, dexMaster:!!G.dexMaster, shinyCharm:!!G.shinyCharm,
     playSec:G.playSec||0, graveyard:G.graveyard||[], pe:G.playerEmoji, ps:G.styleIdx||0, money:Math.floor((G.money||0)/2), ng:nn };
@@ -8044,7 +8047,7 @@ function renderItemTarget(it){
   const back=document.createElement("button"); back.className="pick"; back.textContent="← 돌아가기"; back.style.marginLeft="auto";
   back.onclick=()=>{ Audio.sfx("blip"); renderBag(); };
   head.appendChild(back); body.appendChild(head);
-  (G.party||[]).forEach(m=>{ if(!m)return;
+  (G.party||[]).forEach(m=>{ if(!m||m.isEgg)return;   // 알엔 아이템을 쓸 수 없다(사탕·비타민이 소모되고 알이 손상되던 버그). recalc도 알 maxHp를 덮어써 표시가 깨졌다.
     const row=document.createElement("div"); row.className="bag-item";
     // 못 쓰는 대상은 이유를 보여주고 비활성 — 아무 반응이 없으면 고장으로 보인다
     let why=""; recalc(m);
@@ -8070,7 +8073,9 @@ function applyItemEffect(it,tgt){ const m=tgt||activeMon();
   if(it.use==="tm"){ const mv=it.move, md=MOVES[mv]; if(!m){flashHint("정령이 없다");return false;} if(!md){flashHint("잘못된 기술머신");return false;}
     if(m.moves.includes(mv)){ flashHint(`${dispName(m)}은(는) 이미 ${md.name}을(를) 알고 있다`); return false; }
     if(!(it.universal||md.type===m.type||md.type===m.type2)){ flashHint(`${dispName(m)}은(는) ${md.name}을(를) 배울 수 없다`); return false; }   // ⚠️ type2까지: 이중타입은 두 타입 중 하나만 맞으면 그 타입 TM을 배운다
-    G.items[it.key]--; Audio.sfx("levelup"); flashHint(`${dispName(m)}에게 ${md.name}을(를) 가르친다!`); learnMoveFlow(m,mv,true); return true; }
+    // ⚠️ 배우기 전에 소모하면, 기술 4개일 때 '안 배우기'를 골라도 TM이 사라졌다 → 실제 습득 시에만 차감/환불 없음.
+    Audio.sfx("levelup"); flashHint(`${dispName(m)}에게 ${md.name}을(를) 가르친다!`);
+    learnMoveFlow(m,mv,true).then(learned=>{ if(learned){ G.items[it.key]--; if(typeof renderBag==="function"&&!G.inBattle){ try{ renderBag(); }catch(_){} } } }); return true; }
   if(it.use==="rod"){ if(G.inBattle||G.busy)return false;
     const adj=[[0,1],[0,-1],[1,0],[-1,0]].some(([dx,dy])=>tileAt(G.pos.x+dx,G.pos.y+dy)==="~");
     if(!adj){ flashHint("🎣 물가에서 낚싯대를 사용해야 한다"); return false; }
