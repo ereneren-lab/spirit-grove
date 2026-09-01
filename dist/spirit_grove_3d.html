@@ -9317,12 +9317,15 @@ function dbSideDead(side){ if(side==="foe")return DB.foes.every(f=>!f||f.hp<=0);
 function startDouble(foeSpecs,name,key){
   const p=dbActivePair();
   if(p.out.length<2){ flashHint("듀오 배틀엔 정령 2마리 이상이 필요하다!"); return false; }
-  DB={ allies:p.out, allyIdx:p.idx, foes:[makeMon(foeSpecs[0][0],foeSpecs[0][1],TRAINER_HELD),makeMon(foeSpecs[1][0],foeSpecs[1][1],TRAINER_HELD)], bench:foeSpecs.slice(2), name:name||"듀오 트레이너", choices:{}, phase:"choose", part:new Set(p.idx), key:key, _foeLvSum:foeSpecs.reduce((a,f)=>a+(f[1]||10),0) };
-  DB.allies.forEach(m=>{ m.stages=m.stages||newStages(); });
+  DB={ allies:p.out, allyIdx:p.idx, foes:[makeMon(foeSpecs[0][0],foeSpecs[0][1],TRAINER_HELD),makeMon(foeSpecs[1][0],foeSpecs[1][1],TRAINER_HELD)], bench:foeSpecs.slice(2), name:name||"듀오 트레이너", choices:{}, phase:"choose", part:new Set(p.idx), key:key, hz:{ally:{rock:false,spikes:0},foe:{rock:false,spikes:0}}, _foeLvSum:foeSpecs.reduce((a,f)=>a+(f[1]||10),0) };
+  DB.allies.forEach(m=>{ m.stages=m.stages||newStages(); m._seeded=false; m._trapped=0; m._confuse=0; m._flinch=false; });
   DB.foes.forEach(f=>{ f.stages=f.stages||newStages(); G.seen.add(f.id); });
+  if(typeof setWeather==="function")setWeather();   // 필드 날씨를 배틀로 이월(단일 배틀과 동일)
   G.inBattle=true; G.double=true; G.busy=false;
   if(typeof Audio!=="undefined")Audio.startMusic&&Audio.startMusic("battle");
-  openOverlay("dbOverlay"); dbApplyFieldBg(); const _dt=$("dbTitle"); if(_dt)_dt.textContent="⚔️ 듀오 배틀 · 2 vs 2"; $("dbLog").innerHTML=""; dbLog(`<b>${DB.name}</b>의 2:2 듀오 배틀!`); dbRender(); dbBeginRound(); return true;
+  openOverlay("dbOverlay"); dbApplyFieldBg(); const _dt=$("dbTitle"); if(_dt)_dt.textContent="⚔️ 듀오 배틀 · 2 vs 2"; $("dbLog").innerHTML=""; dbLog(`<b>${DB.name}</b>의 2:2 듀오 배틀!`);
+  if(G.weather)dbLog(({sun:"☀️ 햇살이 강하다!",rain:"🌧️ 비가 내린다!",sand:"🌪️ 모래바람이 분다!",hail:"🌨️ 싸라기눈이 흩날린다!"}[G.weather])||"");
+  dbRender(); dbBeginRound(); return true;
 }
 function dbHpClass(r){ return r>0.5?"":r>0.2?"warn":"crit"; }
 function dbSlotEl(side,slot){ return document.querySelector(`#dbField .dbslot.${side}[data-slot="${slot}"]`); }
@@ -9371,11 +9374,38 @@ function dbPickMove(slot,key){ const mv=MOVES[key];
   } else { DB.choices[slot]={key,tgt:null}; dbAfterChoice(slot); }
 }
 function dbAfterChoice(slot){ dbNextChoice(); }
+// 듀오 상대 AI — 각 기술을 점수화해 고른다(단일 배틀 foeChooseMove 수준).
+//  · 데미지기: 실제 damage()로 추정 → 마무리(KO) 크게 가산, 스프레드는 2체 총합으로 평가
+//  · 상태기/씨앗/혼란: 건강하고 아직 안 걸린 위협에게만 가치(이미 걸렸으면 안 씀)
+//  · 날씨/설치기/자버프/회복: 상황 맞을 때만. ri 지터로 완전 최적은 아니게(과하게 안 세게).
 function dbAi(f){ const alive=DB.allies.filter(a=>a&&a.hp>0); if(!alive.length)return null;
-  const moves=(f.moves||["tackle"]).filter(k=>MOVES[k]); const dmg=moves.filter(k=>MOVES[k].power>0); const pool=dmg.length?dmg:moves;
-  const key=pool[ri(0,pool.length-1)]; const mv=MOVES[key]; let tgt=null;
-  if(mv.power>0){ let best=alive[0],bs=-1e9; alive.forEach(a=>{ const sc=dbEff(mv.type,a)*100-a.hp*0.3; if(sc>bs){bs=sc;best=a;} }); tgt=best; }
-  return {key,tgt};
+  let pool=(f.moves||["tackle"]).filter(k=>MOVES[k]&&(!f.pp||f.pp[k]==null||f.pp[k]>0)); if(!pool.length)pool=(f.moves||["tackle"]).filter(k=>MOVES[k]); if(!pool.length)pool=["tackle"];
+  const thr=a=>a.hp/a.maxHp, byHp=cs=>cs.slice().sort((x,y)=>y.hp-x.hp)[0];
+  let best={key:pool[0],tgt:alive[0],spread:false,score:-1e9};
+  const bid=(key,tgt,spread,score)=>{ if(score>best.score)best={key,tgt,spread,score}; };
+  for(const key of pool){ const mv=MOVES[key];
+    if(mv.power>0 && mv.spread){ let sc=0; const m=alive.length>1?0.75:1;
+      alive.forEach(a=>{ const est=Math.round(damage(f,a,mv).dmg*m); sc+=(est>=a.hp)?(1000+a.hp*0.1):Math.min(est,a.hp); });
+      bid(key,null,true, sc + (alive.length>1?30:0) + ri(0,12)); }
+    else if(mv.power>0){ alive.forEach(a=>{ const r=damage(f,a,mv); const est=Math.round(r.dmg);
+      const sc=(est>=a.hp)?(1000+a.hp*0.1):Math.min(est,a.hp)*(r.eff>1?1.2:1);   // 확정 KO는 어떤 깎기보다 우선(위협 하나를 확실히 제거)
+      bid(key,a,false, sc + ri(0,12)); }); }
+    else if(mv.eff && mv.eff.status){ const cand=alive.filter(a=>!a.status && !statusBlockReason(a,mv.eff.status));
+      if(cand.length){ const a=byHp(cand); bid(key,a,false, 45*thr(a) + (mv.eff.status==="slp"||mv.eff.badly?20:8) + ri(0,10)); } }
+    else if(mv.eff && mv.eff.seed){ const cand=alive.filter(a=>!a._seeded && a.type!=="grass" && a.type2!=="grass");
+      if(cand.length){ const a=byHp(cand); bid(key,a,false, 35*thr(a) + ri(0,10)); } }
+    else if(mv.eff && mv.eff.confuse){ const cand=alive.filter(a=>!(a._confuse>0));
+      if(cand.length){ const a=byHp(cand); bid(key,a,false, 30*thr(a) + ri(0,10)); } }
+    else if(mv.eff && mv.eff.weather){ if(G.weather!==mv.eff.weather) bid(key,null,false, 18+ri(0,8)); }
+    else if(mv.eff && mv.eff.hazard){ const hz=DB.hz&&DB.hz.ally; const room=mv.eff.hazard==="rock"?!(hz&&hz.rock):(!hz||(hz.spikes||0)<3);
+      if(room && DB.bench && DB.bench.length) bid(key,null,false, 22+ri(0,8)); }
+    else if(mv.heal){ if(f.hp<f.maxHp*0.5) bid(key,f,false, 40+ri(0,10)); }
+    else if(mv.eff && mv.eff.stat){ const self=mv.eff.target==="self"; const up=mv.eff.stage>0;
+      if(self&&up&&f.hp>f.maxHp*0.6) bid(key,f,false, 16+ri(0,8));
+      else if(!self&&!up) bid(key,byHp(alive),false, 14+ri(0,8)); }
+    else if(mv.eff && mv.eff.protect){ bid(key,f,false, 8+ri(0,6)); }
+  }
+  return { key:best.key, tgt:best.spread?null:(best.tgt||alive[0]) };
 }
 async function dbResolve(){ DB.phase="resolve"; $("dbMenu").innerHTML=`<div class="dbprompt">전투 중…</div>`;
   const acts=[];
@@ -9442,8 +9472,28 @@ async function _dbDamageOne(att,def,mv,side,mult){
   if(def.hp>0 && mv.eff && mv.eff.status && Math.random()<(mv.eff.chance||0.3)) dbStatus(def,mv.eff.status,mv.eff.badly);
   if(mv.eff && mv.eff.stat && Math.random()<(mv.eff.chance||1)){ const _self=mv.eff.target==="self"; const _tg=_self?att:def;
     if(_tg && _tg.hp>0){ _tg.stages=_tg.stages||newStages(); if(mv.eff.stat in _tg.stages){ _tg.stages[mv.eff.stat]=clamp((_tg.stages[mv.eff.stat]||0)+mv.eff.stage,-6,6); dbLog(`${dbName(_tg)}의 ${STAGE_KO[mv.eff.stat]||mv.eff.stat}이(가) ${mv.eff.stage>0?"올랐다":"떨어졌다"}!`); } } }
+  if(def.hp>0 && mv.eff && mv.eff.trap && !(def._trapped>0)){ def._trapped=ri(4,5); dbLog(`<b>${dbName(def)}</b>이(가) 조여져 움직임이 봉쇄됐다!`); Audio.sfx&&Audio.sfx("status"); }   // 조이기: 4~5턴 잔뎀(단일 배틀 대응)
 }
+// 듀오 행동 가능 판정 — 풀죽음·혼란 자해·수면·빙결·마비(단일 canAct 대응). 예전엔 없어 잠든 정령도 공격했다.
+async function dbCanAct(att){
+  if(att._flinch){ att._flinch=false; dbLog(`<b>${dbName(att)}</b>은(는) 풀이 죽어 움직이지 못했다!`); Audio.sfx&&Audio.sfx("status"); await wait(fxT(520)); return false; }
+  if(att._confuse>0){ att._confuse--;
+    if(att._confuse<=0){ dbLog(`<b>${dbName(att)}</b>의 혼란이 풀렸다!`); await wait(fxT(420)); }
+    else { dbLog(`<b>${dbName(att)}</b>은(는) 혼란에 빠져있다!`); await wait(fxT(460));
+      if(Math.random()<0.33){ const s=confusionSelfHit(att); const _pp=att.hp/att.maxHp*100; att.hp=Math.max(0,att.hp-s); dbRender(); dbHitFx(att,1); dbDmgFx(att,s,1); if(att.hp<=0)dbFaintFx(att); if(Audio.hpTick)Audio.hpTick(_pp,att.hp/att.maxHp*100); dbLog("영문도 모른 채 스스로를 공격했다!"); await wait(fxT(560)); return false; } } }
+  if(att.status==="slp"){ att._slp=(att._slp||1)-1;
+    if(att._slp>0){ dbLog(`<b>${dbName(att)}</b>은(는) 새근새근 잠들어 있다…`); Audio.sfx&&Audio.sfx("status"); await wait(fxT(520)); return false; }
+    att.status=null; dbRender(); dbLog(`<b>${dbName(att)}</b>은(는) 잠에서 깨어났다!`); await wait(fxT(460)); }
+  if(att.status==="frz"){ if(Math.random()<0.2){ att.status=null; dbRender(); dbLog(`<b>${dbName(att)}</b>의 얼음이 녹았다!`); await wait(fxT(460)); }
+    else { dbLog(`<b>${dbName(att)}</b>은(는) 꽁꽁 얼어 움직일 수 없다!`); Audio.sfx&&Audio.sfx("status"); await wait(fxT(520)); return false; } }
+  if(att.status==="par" && Math.random()<0.25){ dbLog(`<b>${dbName(att)}</b>은(는) 몸이 저려 움직일 수 없다!`); Audio.sfx&&Audio.sfx("status"); await wait(fxT(520)); return false; }
+  return true; }
+// 설치기(스텔스록·압정) 등장 피해 — 교체로 나온 정령에 적용(단일 applyHazards 대응). side는 그 정령의 편.
+async function dbApplyHazards(mon,side){ if(!mon||mon.hp<=0||!DB.hz||!DB.hz[side])return; const hz=DB.hz[side];
+  if(hz.rock){ let eff=(EFF["rock"]&&EFF["rock"][mon.type])||1; if(mon.type2&&mon.type2!==mon.type)eff*=((EFF["rock"]&&EFF["rock"][mon.type2])||1); const d=Math.max(1,Math.floor(mon.maxHp*eff/8)); mon.hp=Math.max(0,mon.hp-d); dbRender(); dbHitFx(mon,eff>1?2:1); if(mon.hp<=0)dbFaintFx(mon); dbLog(`<b>${dbName(mon)}</b>이(가) 떠도는 바위에 부딪혔다!`); await wait(fxT(500)); if(mon.hp<=0)return; }
+  if(hz.spikes>0 && mon.type!=="flying" && mon.type2!=="flying"){ const frac=hz.spikes>=3?4:(hz.spikes===2?6:8); const d=Math.max(1,Math.floor(mon.maxHp/frac)); mon.hp=Math.max(0,mon.hp-d); dbRender(); dbHitFx(mon,1); if(mon.hp<=0)dbFaintFx(mon); dbLog(`<b>${dbName(mon)}</b>이(가) 압정을 밟았다!`); await wait(fxT(500)); } }
 async function dbExec(att,def,key,side){ const mv=MOVES[key]; if(!mv)return;
+  if(!(await dbCanAct(att)))return;   // 수면·빙결·마비·풀죽음·혼란 자해로 이번 행동 불가(단일 배틀 동등)
   dbLog(`<b>${dbName(att)}</b>의 ${mv.name}!`); dbLungeFx(att,side); await wait(fxT(230));   // 공격자 런지 → 잠깐 뜸 → 명중 판정
   if(mv.acc<100 && Math.random()*100>mv.acc){ dbLog("…빗나갔다!"); await wait(fxT(360)); return; }
   if(mv.power>0 && mv.spread){   // 스프레드기(지진·눈보라 등): 상대편 전원 타격, 2체 이상이면 0.75배
@@ -9455,18 +9505,40 @@ async function dbExec(att,def,key,side){ const mv=MOVES[key]; if(!mv)return;
   if(mv.power>0){ if(def&&def._protect){ dbLog(`→ <b>${dbName(def)}</b>이(가) 방어로 막아냈다!`); await wait(fxT(340)); return; }
     if(def){ await _dbDamageOne(att,def,mv,side,1); } await wait(fxT(420)); return; }
   if(def && def._protect && (mv.eff&&(mv.eff.status||mv.eff.seed||mv.eff.confuse))){ dbLog(`→ <b>${dbName(def)}</b>이(가) 방어로 막아냈다!`); await wait(fxT(340)); return; }
-  if(mv.heal){ const h=Math.floor(att.maxHp*mv.heal); att.hp=Math.min(att.maxHp,att.hp+h); dbLog(`${dbName(att)}의 체력이 회복됐다!`); await wait(fxT(360)); }
+  if(mv.heal){ const h=Math.floor(att.maxHp*mv.heal); att.hp=Math.min(att.maxHp,att.hp+h); dbRender(); dbHealFx(att); dbLog(`${dbName(att)}의 체력이 회복됐다!`); await wait(fxT(360)); }
+  else if(mv.eff && mv.eff.weather){ G.weather=mv.eff.weather; G.weatherTurns=5; if(typeof applyWeather==="function")applyWeather(); Audio.sfx&&Audio.sfx("blip"); dbLog(({sun:"☀️ 햇살이 강해졌다!",rain:"🌧️ 비가 내리기 시작했다!",sand:"🌪️ 모래바람이 휘몰아친다!",hail:"🌨️ 싸라기눈이 흩날린다!"}[mv.eff.weather])||"날씨가 변했다!"); await wait(fxT(360)); }
+  else if(mv.eff && mv.eff.hazard){ if(!DB.hz)DB.hz={ally:{rock:false,spikes:0},foe:{rock:false,spikes:0}}; const hz=DB.hz[side==="ally"?"foe":"ally"]||{}; Audio.sfx&&Audio.sfx("blip");
+    if(mv.eff.hazard==="rock"){ if(hz.rock){ dbLog("이미 바위가 떠 있다."); } else { hz.rock=true; dbLog("상대 발밑에 날카로운 바위가 떠올랐다!"); } }
+    else { if(hz.spikes>=3){ dbLog("더는 압정을 뿌릴 수 없다."); } else { hz.spikes=(hz.spikes||0)+1; dbLog("상대 발밑에 압정을 흩뿌렸다!"); } } await wait(fxT(360)); }
+  else if(mv.eff && mv.eff.seed){ if(def.type==="grass"||def.type2==="grass"){ dbLog("효과가 없었다…"); } else if(def._seeded){ dbLog("이미 씨앗이 심어져 있다."); } else { def._seeded=side; dbStatusFx(def,"psn"); Audio.sfx&&Audio.sfx("status"); dbLog(`<b>${dbName(def)}</b>에게 씨앗이 심어졌다!`); } await wait(fxT(360)); }
+  else if(mv.eff && mv.eff.confuse){ if(def._confuse>0){ dbLog("이미 혼란에 빠져있다."); } else { def._confuse=ri(2,4); dbStatusFx(def,"par"); Audio.sfx&&Audio.sfx("status"); dbLog(`<b>${dbName(def)}</b>이(가) 혼란에 빠졌다!`); } await wait(fxT(360)); }
   else if(mv.eff && mv.eff.status){ dbStatus(def,mv.eff.status,mv.eff.badly); await wait(fxT(360)); }
   else if(mv.eff && mv.eff.stat){ const self=mv.eff.target==="self"; const tg=self?att:def; tg.stages=tg.stages||newStages(); if(mv.eff.stat in tg.stages){ tg.stages[mv.eff.stat]=clamp((tg.stages[mv.eff.stat]||0)+mv.eff.stage,-6,6); } dbLog(`${dbName(tg)}의 ${STAGE_KO[mv.eff.stat]||mv.eff.stat}이(가) ${mv.eff.stage>0?"올랐다":"떨어졌다"}!`); await wait(fxT(360)); }
   else if(mv.eff && mv.eff.protect){ att._protect=true; dbLog(`<b>${dbName(att)}</b>은(는) 방어 태세!`); await wait(fxT(320)); }
   else { dbLog("하지만 아무 일도 없었다…"); await wait(fxT(320)); }
 }
 async function dbAfterRound(){
-  for(const m of [...DB.allies,...DB.foes]){ if(m&&m.hp>0&&(m.status==="psn"||m.status==="brn")){
-    const _bad=m.status==="psn"&&m._tox;   // 맹독 누적은 듀오 배틀에서도 동일하게
-    const d=_bad?Math.max(1,Math.floor(m.maxHp*Math.min(15,m._tox)/16)):Math.max(1,Math.floor(m.maxHp/(m.status==="psn"?8:16)));
-    if(_bad)m._tox=Math.min(15,m._tox+1);
-    m.hp=Math.max(0,m.hp-d); dbLog(`<b>${dbName(m)}</b>이(가) ${_bad?"맹독":STATUS_KO[m.status]} 피해!`); dbRender(); await wait(fxT(340)); } }
+  // 라운드 종료 잔여 처리(단일 endTurnStatus 이식): 날씨·씨앗·조이기·독/화상.  순서도 단일과 동일.
+  for(const m of [...DB.allies,...DB.foes]){ if(!m||m.hp<=0)continue;
+    // 모래바람: 바위 아닌 정령에 1/16
+    if(G.weather==="sand" && m.type!=="rock" && m.type2!=="rock"){ const d=Math.max(1,Math.floor(m.maxHp/16)); m.hp=Math.max(0,m.hp-d); dbRender(); dbHitFx(m,1); if(m.hp<=0)dbFaintFx(m); dbLog(`<b>${dbName(m)}</b>이(가) 모래바람에 시달린다!`); await wait(fxT(340)); if(m.hp<=0)continue; }
+    // 싸라기눈: 얼음몸이면 회복, 아니고 얼음 아니면 1/16
+    if(G.weather==="hail" && m.ability==="icebody" && m.hp<m.maxHp){ const h=Math.max(1,Math.floor(m.maxHp/16)); m.hp=Math.min(m.maxHp,m.hp+h); dbRender(); dbHealFx(m); dbLog(`<b>${dbName(m)}</b>은(는) 얼음몸으로 회복했다!`); await wait(fxT(340)); }
+    if(G.weather==="hail" && m.type!=="ice" && m.type2!=="ice" && m.ability!=="icebody"){ const d=Math.max(1,Math.floor(m.maxHp/16)); m.hp=Math.max(0,m.hp-d); dbRender(); dbHitFx(m,1); if(m.hp<=0)dbFaintFx(m); dbLog(`<b>${dbName(m)}</b>이(가) 싸라기눈에 시달린다!`); await wait(fxT(340)); if(m.hp<=0)continue; }
+    // 씨앗: 심은 쪽의 살아있는 정령에게 흡수 회복
+    if(m._seeded){ const d=Math.max(1,Math.floor(m.maxHp/8)); m.hp=Math.max(0,m.hp-d);
+      const hs=(m._seeded==="ally")?DB.allies:DB.foes; const healer=hs.find(x=>x&&x.hp>0&&x!==m);
+      if(healer)healer.hp=Math.min(healer.maxHp,healer.hp+d); dbRender(); if(m.hp<=0)dbFaintFx(m); dbLog(`<b>${dbName(m)}</b>의 체력이 씨앗에 빨렸다!`); await wait(fxT(340)); if(m.hp<=0)continue; }
+    // 조이기: 4~5턴 1/8
+    if(m._trapped>0){ const d=Math.max(1,Math.floor(m.maxHp/8)); m.hp=Math.max(0,m.hp-d); m._trapped--; dbRender(); dbHitFx(m,1); if(m.hp<=0)dbFaintFx(m); dbLog(`<b>${dbName(m)}</b>이(가) 조이기에 시달린다!`); await wait(fxT(340)); if(m._trapped<=0&&m.hp>0)dbLog(`<b>${dbName(m)}</b>은(는) 속박에서 풀려났다.`); if(m.hp<=0)continue; }
+    // 독·화상 잔뎀(맹독 누적 포함)
+    if(m.status==="psn"||m.status==="brn"){
+      const _bad=m.status==="psn"&&m._tox;
+      const d=_bad?Math.max(1,Math.floor(m.maxHp*Math.min(15,m._tox)/16)):Math.max(1,Math.floor(m.maxHp/(m.status==="psn"?8:16)));
+      if(_bad)m._tox=Math.min(15,m._tox+1);
+      m.hp=Math.max(0,m.hp-d); dbRender(); if(m.hp<=0)dbFaintFx(m); dbLog(`<b>${dbName(m)}</b>이(가) ${_bad?"맹독":STATUS_KO[m.status]} 피해!`); await wait(fxT(340)); } }
+  // 무브로 부른 날씨(5턴)만 카운트다운 — 필드에서 온 날씨(weatherTurns=0)는 배틀 내내 유지(단일과 동일)
+  if(G.weatherTurns>0){ G.weatherTurns--; if(G.weatherTurns<=0){ G.weather=null; dbLog("날씨가 원래대로 돌아왔다."); } }
   // 지닌아이템·특성(단일 배틀 endTurnItems/endTurnAbility 이식): 먹다남은음식·오랭·정화열매·가속
   for(const m of [...DB.allies,...DB.foes]){ if(!m||m.hp<=0)continue;
     if(m.held==="leftovers" && m.hp<m.maxHp){ const h=Math.max(1,Math.floor(m.maxHp/16)); m.hp=Math.min(m.maxHp,m.hp+h); dbRender(); dbHealFx(m); dbLog(`<b>${dbName(m)}</b>은(는) 먹다남은음식으로 회복했다!`); Audio.sfx&&Audio.sfx("heal"); await wait(fxT(420)); }
@@ -9481,9 +9553,10 @@ async function dbAfterRound(){
 async function dbReplace(){
   for(let s=0;s<DB.allies.length;s++){ const a=DB.allies[s]; if(a&&a.hp<=0){ dbLog(`<b>${dbName(a)}</b>이(가) 쓰러졌다!`); await wait(fxT(420));
     let ni=-1; for(let i=0;i<G.party.length;i++){ if(G.party[i]&&G.party[i].hp>0&&DB.allyIdx.indexOf(i)<0){ ni=i; break; } }
-    if(ni>=0){ DB.allies[s]=G.party[ni]; DB.allyIdx[s]=ni; DB.part.add(ni); DB.allies[s].stages=DB.allies[s].stages||newStages(); dbLog(`가라, <b>${dbName(G.party[ni])}</b>!`); await wait(fxT(420)); } } }
+    if(ni>=0){ const nm=G.party[ni]; nm._seeded=false; nm._trapped=0; nm._confuse=0; nm._flinch=false; nm._protect=false;   // 교체로 나오는 정령은 휘발 상태 초기화(단일 규칙)
+      DB.allies[s]=nm; DB.allyIdx[s]=ni; DB.part.add(ni); nm.stages=nm.stages||newStages(); dbLog(`가라, <b>${dbName(nm)}</b>!`); await wait(fxT(420)); await dbApplyHazards(nm,"ally"); } } }
   for(let s=0;s<DB.foes.length;s++){ const f=DB.foes[s]; if(f&&f.hp<=0){ dbLog(`상대 <b>${dbName(f)}</b>이(가) 쓰러졌다!`); await wait(fxT(420));
-    if(DB.bench.length){ const b=DB.bench.shift(); DB.foes[s]=makeMon(b[0],b[1],TRAINER_HELD); DB.foes[s].stages=newStages(); G.seen.add(DB.foes[s].id); dbLog(`상대가 <b>${dbName(DB.foes[s])}</b>을(를) 내보냈다!`); await wait(fxT(420)); } } }
+    if(DB.bench.length){ const b=DB.bench.shift(); DB.foes[s]=makeMon(b[0],b[1],TRAINER_HELD); DB.foes[s].stages=newStages(); G.seen.add(DB.foes[s].id); dbLog(`상대가 <b>${dbName(DB.foes[s])}</b>을(를) 내보냈다!`); await wait(fxT(420)); await dbApplyHazards(DB.foes[s],"foe"); } } }
   dbRender();
 }
 async function dbWin(){ DB.phase="done"; if(DB.key){ G.defeated.add(DB.key); if(typeof Field!=="undefined"&&Field&&Field.removeNpc)Field.removeNpc(DB.key); } dbLog(`<b>승리!</b> ${DB.name}을(를) 이겼다!`); Audio.sfx&&Audio.sfx("victory");
