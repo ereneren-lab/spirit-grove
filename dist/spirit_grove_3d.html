@@ -9425,6 +9425,11 @@ function dbStatusFx(mon,st){ if(CONFIG.reduceMotion)return; const sp=dbSpEl(mon)
   for(let i=0;i<5;i++){ const e=document.createElement("div"); e.className="dbaura"; e.textContent=g;
     e.style.cssText=`position:absolute;left:${28+Math.random()*44}%;bottom:8px;font-size:14px;pointer-events:none;z-index:8;filter:drop-shadow(0 0 3px ${col})`; sp.appendChild(e);
     try{ e.animate([{transform:"translateY(0) scale(.6)",opacity:0},{transform:"translateY(-6px) scale(1)",opacity:1,offset:.25},{transform:`translateY(-${34+Math.random()*14}px) scale(1)`,opacity:0}],{duration:fxT(720),easing:"ease-out",delay:i*40}).finished.then(()=>{try{e.remove();}catch(_){}}).catch(()=>{try{e.remove();}catch(_){}}); }catch(_){ setTimeout(()=>{try{e.remove();}catch(_){}} ,800); } } }
+function dbHealFx(mon){ if(CONFIG.reduceMotion)return; const sp=dbSpEl(mon); if(!sp)return;
+  sp.style.filter="drop-shadow(0 0 9px #7de08a)"; setTimeout(()=>{try{sp.style.filter="";}catch(_){}} ,700);
+  for(let i=0;i<4;i++){ const e=document.createElement("div"); e.className="dbaura"; e.textContent="💚";
+    e.style.cssText=`position:absolute;left:${30+Math.random()*40}%;bottom:8px;font-size:14px;pointer-events:none;z-index:8;filter:drop-shadow(0 0 3px #7de08a)`; sp.appendChild(e);
+    try{ e.animate([{transform:"translateY(0) scale(.6)",opacity:0},{transform:"translateY(-6px) scale(1)",opacity:1,offset:.25},{transform:`translateY(-${30+Math.random()*12}px) scale(1)`,opacity:0}],{duration:fxT(680),easing:"ease-out",delay:i*45}).finished.then(()=>{try{e.remove();}catch(_){}}).catch(()=>{try{e.remove();}catch(_){}}); }catch(_){ setTimeout(()=>{try{e.remove();}catch(_){}} ,760); } } }
 function _dbOppSide(side){ return side==="foe"?DB.allies:DB.foes; }   // 공격자 기준 상대편(pvp side는 foe=p2)
 // 한 대상에 피해 적용 + 연출 + 부가효과(상태/랭크). 단일·스프레드 공통. mult=스프레드 감쇠(0.75).
 async function _dbDamageOne(att,def,mv,side,mult){
@@ -9462,6 +9467,12 @@ async function dbAfterRound(){
     const d=_bad?Math.max(1,Math.floor(m.maxHp*Math.min(15,m._tox)/16)):Math.max(1,Math.floor(m.maxHp/(m.status==="psn"?8:16)));
     if(_bad)m._tox=Math.min(15,m._tox+1);
     m.hp=Math.max(0,m.hp-d); dbLog(`<b>${dbName(m)}</b>이(가) ${_bad?"맹독":STATUS_KO[m.status]} 피해!`); dbRender(); await wait(fxT(340)); } }
+  // 지닌아이템·특성(단일 배틀 endTurnItems/endTurnAbility 이식): 먹다남은음식·오랭·정화열매·가속
+  for(const m of [...DB.allies,...DB.foes]){ if(!m||m.hp<=0)continue;
+    if(m.held==="leftovers" && m.hp<m.maxHp){ const h=Math.max(1,Math.floor(m.maxHp/16)); m.hp=Math.min(m.maxHp,m.hp+h); dbRender(); dbHealFx(m); dbLog(`<b>${dbName(m)}</b>은(는) 먹다남은음식으로 회복했다!`); Audio.sfx&&Audio.sfx("heal"); await wait(fxT(420)); }
+    else if(m.held==="oranberry" && m.hp<m.maxHp/2){ const h=Math.floor(m.maxHp*0.25); m.hp=Math.min(m.maxHp,m.hp+h); m.held=null; dbRender(); dbHealFx(m); dbLog(`<b>${dbName(m)}</b>은(는) 오랭열매를 먹고 회복했다!`); Audio.sfx&&Audio.sfx("heal"); await wait(fxT(460)); }
+    else if(m.held==="cureberry" && m.status){ m.status=null; m._slp=0; m._tox=0; m.held=null; dbRender(); dbHealFx(m); dbLog(`<b>${dbName(m)}</b>은(는) 정화열매로 상태이상이 나았다!`); Audio.sfx&&Audio.sfx("heal"); await wait(fxT(460)); }
+    if(m.hp>0 && m.ability==="speedboost"){ m.stages=m.stages||newStages(); const _b=m.stages.spd||0; if(_b<6){ m.stages.spd=clamp(_b+1,-6,6); dbLog(`<b>${dbName(m)}</b>의 가속! 속도가 올랐다!`); Audio.sfx&&Audio.sfx("blip"); await wait(fxT(380)); } } }
   await dbReplace();
   if(dbSideDead("foe"))return dbWin();
   if(dbSideDead("ally"))return dbLose();
