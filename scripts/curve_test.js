@@ -72,6 +72,21 @@ setTimeout(() => {
   // 마을(지역0)은 스타터와 대등해야 한다(첫 전투가 코치와 함께 나오는 곳)
   ok(wildLevel(5, 48) <= 7, `마을 야생 Lv${wildLevel(5,48)} — 스타터와 대등(≤7)`);
 
+  // ⚠️ wildLevel(위 모델)은 진화형 레벨 보너스(tier2 +1~3, tier3 +2~4)를 반영하지 않는다.
+  //    그래서 "지역1 Lv7"로 통과해도 실게임에선 진화형 야생이 Lv8~10으로 튀어 벽이 됐다(실측).
+  //    → pickWild를 직접 뽑아 초반(스타터 Lv5) 파티가 진화형 야생을 만나지 않는지 못박는다.
+  console.log("[6] 초반 진화형 야생 차단: 갓 나선 파티는 base형만 만난다");
+  const pickWild = SG.flow.pickWild, DEX = SG.DEX, tierOf = id => (DEX.find(d => d.id === id) || {}).tier;
+  const al1 = Math.max(5, FLOOR[1]);   // 지역1 첫 조우 기준레벨 = max(스타터5, 하한7)
+  const dep1 = depthAt(44);
+  let evolvedSeen = 0; const N = 4000;
+  for (let i = 0; i < N; i++) { const sp = pickWild(al1, dep1); if ((tierOf(sp.id) || 1) >= 2) evolvedSeen++; }
+  ok(evolvedSeen === 0, `지역1 야생 ${N}회 표본에 진화형(tier≥2) 0마리 (실측 ${evolvedSeen})`);
+  // 반대 위생검사: 파티를 Lv9까지 키우면 진화형이 다시 등장해야 한다(영구 봉쇄가 아니라 완급).
+  const al9 = Math.max(9, FLOOR[1]); let evolvedAt9 = 0;
+  for (let i = 0; i < N; i++) { const sp = pickWild(al9, dep1); if ((tierOf(sp.id) || 1) >= 2) evolvedAt9++; }
+  ok(evolvedAt9 > 0, `Lv9 파티엔 진화형 야생이 다시 등장(완급이지 영구봉쇄 아님) (${evolvedAt9}/${N})`);
+
   console.log(process.exitCode ? "\n❌ 실패" : "\n🎉 난이도 커브 전부 통과");
   process.exit(process.exitCode || 0);
 }, 2500);

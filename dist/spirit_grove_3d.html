@@ -7369,7 +7369,11 @@ const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox",
 const DAY_MONS=new Set(["sprigfawn", "stormhawk", "cindercat", "leafdrake", "palmore", "seedbean", "mossback", "sproutcat", "glimmertide"]);
 function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
   const deep=depth>=0.82;
-  const t3p=deep?0.30:0.10, t2p=deep?0.66:0.36, g3=deep?4:12, g2=deep?3:7;
+  // ⚠️ 초반 완급: 진화형(tier2) 야생은 평균 Lv9 이상부터만 나온다(g2 7→9).
+  //    지역1(초원) 하한이 7이라 g2=7이면 Lv5 스타터가 곧장 진화형 야생(레벨+스탯 급상승)을 만나
+  //    첫 구간이 벽이 됐다(실측: 초원 첫 야생이 Lv9~10). g2=9면 스타터가 base형만 만나고,
+  //    실제로 Lv9까지 키운 뒤에야(그때는 al=max(avg,7)=avg≥9) 진화형이 등장해 공정해진다. 후반 불변(deep=3).
+  const t3p=deep?0.30:0.10, t2p=deep?0.66:0.36, g3=deep?4:12, g2=deep?3:9;
   if(al>=g3&&roll<t3p)pool=DEX.filter(d=>d.tier===3);
   else if(al>=g2&&roll<t2p)pool=DEX.filter(d=>d.tier===2);
   else pool=DEX.filter(d=>d.tier===1&&!d.starter);
