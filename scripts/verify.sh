@@ -105,6 +105,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw pace_test.js
   pw trainer_ramp_test.js
   pw mobile_controls_test.js
+  pw stuckkey_test.js
   pw hero_facing_test.js
   pw title_music_test.js
   pw victory_music_test.js
