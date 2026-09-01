@@ -6631,7 +6631,8 @@ async function doMove(mvKey){ if(G.busy)return; G.busy=true; G.battleTurn=(G.bat
   // 내 기술은 새로 나온 정령에게 들어간다(본가와 동일).
   const _swapped=await foeMaybeSwitch();
   const me=activeMon(),foe=G.foe;
-  if(_swapped){ if(foe.hp>0 && me.hp>0){ if(await canAct(me,"me")){ me._acted=true; await performMove(me,foe,mvKey,"me"); } } }
+  if(_swapped){ foe._acted=false;   // 방금 교체로 나온 상대는 이번 턴 아직 '행동' 안 함 → 풀죽음이 정상 적용되게 스테일 _acted 초기화
+    if(foe.hp>0 && me.hp>0){ if(await canAct(me,"me")){ me._acted=true; await performMove(me,foe,mvKey,"me"); } } }
   else{
   const foeKey=foeKeyResolved(); const meFirst=pickFirst(mvKey,foeKey);
   const seq=meFirst?[["me",mvKey,me,foe],["foe",foeKey,foe,me]]:[["foe",foeKey,foe,me],["me",mvKey,me,foe]];
@@ -6935,7 +6936,9 @@ async function winBattle(){
   setMsg(`<b>${me.name}</b> 경험치 +${base}`); await mw(540);
   await gainXpFor(me,base,true);
   // shared XP to the rest of the (alive) party, silent
-  for(const o of G.party){ if(o!==me && o.hp>0){ await gainXpFor(o,base,false); } }
+  // ⚠️ 알(isEgg)은 hp:1이라 o.hp>0에 걸린다 → 경험치를 먹고 레벨업·진화까지 돌아 알이 손상됐다.
+  //    다른 파티 순회는 전부 !isEgg 가드를 두는데 여기만 빠져 있었다.
+  for(const o of G.party){ if(o!==me && o.hp>0 && !o.isEgg){ await gainXpFor(o,base,false); } }
   // coins for wild kill
   if(!G.trainer){ const c=ri(8,18)+Math.floor(_foe.level*1.5); G.money+=c; updateMoney(); }
   if(G._bossTrial && !G.trainer && G.foe){ await bossTrialWin(); return; }   // H5-A-3 보스 재대전(시련): 원본 격파 플래그·서사 재생을 건너뛰고 연습·보상만
@@ -6945,6 +6948,8 @@ async function winBattle(){
     const _nextI=trainerNextAlive();
     if(_nextI>=0){ G.trainer.idx=_nextI;
       G.foe=trainerMon(_nextI); G.seen.add(G.foe.id); $("foeSprite").classList.remove("faint");
+      // 묶기·헤롱헤롱은 그 걸었던 상대가 사라지면 풀린다(본가 규칙). 상대가 기절해 교체되면 내 정령의 속박·헤롱헤롱 해제.
+      { const _pm=activeMon(); if(_pm){ if(_pm._trapped>0){ _pm._trapped=0; setMsg("속박이 풀렸다."); } _pm._attract=false; } }
       setupBattleUI(true); setMsg(`${G.trainer.name}이(가) <b>${G.foe.name}</b>을(를) 내보냈다!`); await mw(900); await applyHazards(G.foe,"foe"); if(G.foe.hp<=0){ await winBattle(); return; }
       // ⚠️ 동시 기절 — 이번 턴에 상대뿐 아니라 내 선두도 같이 쓰러졌으면(반동·독/화상 잔뎀 등),
       //    여기서 강제 교체를 처리한다. 안 하면 죽은 선두로 메뉴가 열려 "기술을 골랐는데 아무 일도 안 일어나는"
