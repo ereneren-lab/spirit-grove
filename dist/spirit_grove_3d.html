@@ -9903,6 +9903,10 @@ async function winBattle(){
     if(_nextI>=0){ G.trainer.idx=_nextI;
       G.foe=trainerMon(_nextI); G.seen.add(G.foe.id); $("foeSprite").classList.remove("faint");
       setupBattleUI(true); setMsg(`${G.trainer.name}이(가) <b>${G.foe.name}</b>을(를) 내보냈다!`); await mw(900); await applyHazards(G.foe,"foe"); if(G.foe.hp<=0){ await winBattle(); return; }
+      // ⚠️ 동시 기절 — 이번 턴에 상대뿐 아니라 내 선두도 같이 쓰러졌으면(반동·독/화상 잔뎀 등),
+      //    여기서 강제 교체를 처리한다. 안 하면 죽은 선두로 메뉴가 열려 "기술을 골랐는데 아무 일도 안 일어나는"
+      //    한 턴을 허비한 뒤에야 교체가 걸린다(doMove 말미의 me.hp 체크가 다음 턴에야 잡음).
+      { const _mine=activeMon(); if(_mine&&_mine.hp<=0){ await faintMine(); return; } }
       G.busy=false; setMenuEnabled(true); setMsg("무엇을 할까?"); return; }
     else { await trainerDefeated(); return; } }
   endBattle(); }
