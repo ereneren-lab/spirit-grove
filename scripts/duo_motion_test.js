@@ -18,9 +18,9 @@ const { chromium } = require("playwright"); const path = require("path");
   // 관측: 해결 중 나타나는 fx를 폴링으로 모은다(일시적이라 놓치지 않게 촘촘히)
   const seen = { lunge: false, dmg: false, burst: false, faint: false };
   const poll = async () => { const s = await p.evaluate(() => ({
-    lunge: !!document.querySelector(".dbmon.dblunge-up,.dbmon.dblunge-down"),
+    lunge: !!document.querySelector(".dbslot.dblunge-up,.dbslot.dblunge-down"),
     dmg: !!document.querySelector(".dbdmg"), burst: !!document.querySelector(".dbfxburst"),
-    faint: !!document.querySelector(".dbmon.dbfainting") }));
+    faint: !!document.querySelector(".dbslot.dbfainting") }));
     for (const k in s) if (s[k]) seen[k] = true; };
 
   // 아군 2명 기술 선택(첫 기술 → 첫 대상), 그 뒤 해결 구간을 촘촘히 폴링
