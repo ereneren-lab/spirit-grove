@@ -222,7 +222,7 @@ console.log("\n[기술 설명 — 배우기/잊기/전투 메뉴가 쓰는 한 �
 console.log("\n[종 데이터 · 개체 생성]");
 // DEX/makeMon도 규칙 계층으로 내려왔다(legendary_test가 브라우저로 하던 검사).
 {
-  ok(R.DEX.length===114, `DEX 114종 (${R.DEX.length})`);
+  ok(R.DEX.length===117, `DEX 117종 (${R.DEX.length})`);
   const legends=R.DEX.filter(d=>d.legend);
   ok(legends.length===5 && legends.every(d=>d.tier===4), `전설 5종 전부 tier4 (${legends.length})`);
   const bst=d=>Object.values(d.base).reduce((a,b)=>a+b,0);
