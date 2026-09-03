@@ -165,7 +165,8 @@ function makeMon(speciesId,level,heldPool){ const sp=byId(speciesId); level=Math
   m.moves.forEach(mv=>{m.pp[mv]=MOVES[mv].pp;});
   recalc(m,sp,true); return m; }
 function addMove(m,mv){ if(m.moves.includes(mv))return; if(m.moves.length<4)m.moves.push(mv); else m.moves[3]=mv; if(!m.pp)m.pp={}; m.pp[mv]=MOVES[mv].pp; }
-function recalc(m,sp,full){ sp=sp||byId(m.id);
+function recalc(m,sp,full){ if(m&&m.isEgg)return;   // 알은 부화 전이라 스탯이 없다(maxHp:1 고정). recalc하면 성체 스탯으로 덮여 알이 손상된다 — 알 누수의 근본 방어선(어느 순회가 알을 놓쳐도 스탯은 안 깨진다).
+  sp=sp||byId(m.id);
   m.maxHp=Math.floor(sp.base.hp+sp.base.hp*0.12*(m.level-1)+m.level*2);
   m.atk=Math.floor(sp.base.atk+sp.base.atk*0.10*(m.level-1));
   m.def=Math.floor(sp.base.def+sp.base.def*0.10*(m.level-1));
