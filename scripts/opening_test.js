@@ -50,10 +50,15 @@ const { chromium } = require("playwright"); const path=require("path");
   await p.waitForFunction(()=>{ const i=window.SG.G().indoor;
     return i && (i==="house" || i.indexOf("home_")===0); },null,{timeout:8000});
   await p.waitForTimeout(900);
-  const wake=await p.evaluate(()=>({ pos:window.SG.G().pos, indoor:window.SG.G().indoor,
-    fade:Number(getComputedStyle(document.getElementById("warpFade")).opacity) }));
+  const wake=await p.evaluate(()=>{ const S=window.SG,G=S.G(); const it=S.flow.INTERIORS[G.indoor]||{};
+    const str=it.str||[]; const tile=(str[G.pos.y]&&str[G.pos.y][G.pos.x])||"?";
+    // 침대(B) 위치와 인접 여부
+    let bx=-1,by=-1; for(let y=0;y<str.length;y++){ const c=str[y].indexOf("B"); if(c>=0){ bx=c; by=y; break; } }
+    return { pos:G.pos, indoor:G.indoor, tile, adjBed:(Math.abs(G.pos.x-bx)+Math.abs(G.pos.y-by)===1),
+      fade:Number(getComputedStyle(document.getElementById("warpFade")).opacity) }; });
   ok(wake.indoor==="home_rio", `출신지에서 시작한다 (indoor=${wake.indoor})`);
-  ok(wake.pos.x===2 && wake.pos.y===2, `침대 옆(2,2)에서 눈을 뜬다 — 실제 (${wake.pos.x},${wake.pos.y})`);
+  // ⚠️ 눈뜨는 칸은 침대 옆 **바닥**이어야 한다(집마다 위치 다름). 예전엔 (2,2) 하드코딩이라 리오는 벽 기둥 위에서 눈떴다 → 이제 바닥 칸.
+  ok(wake.tile==="." && wake.adjBed, `침대 옆 바닥에서 눈을 뜬다 (${wake.pos.x},${wake.pos.y})='${wake.tile}'`);
   ok(wake.fade>0.05, `눈뜨기 연출이 진행 중이다(화면이 아직 덮여 있다) — 불투명도 ${wake.fade.toFixed(2)}`);
 
   console.log("\n[3] 눈뜨기가 끝나면 대사가 순서대로 온다: 깨어남 → 편지 → 엄마");
