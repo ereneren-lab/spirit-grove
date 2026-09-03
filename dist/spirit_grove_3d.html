@@ -1931,7 +1931,8 @@ function makeMon(speciesId,level,heldPool){ const sp=byId(speciesId); level=Math
   m.moves.forEach(mv=>{m.pp[mv]=MOVES[mv].pp;});
   recalc(m,sp,true); return m; }
 function addMove(m,mv){ if(m.moves.includes(mv))return; if(m.moves.length<4)m.moves.push(mv); else m.moves[3]=mv; if(!m.pp)m.pp={}; m.pp[mv]=MOVES[mv].pp; }
-function recalc(m,sp,full){ sp=sp||byId(m.id);
+function recalc(m,sp,full){ if(m&&m.isEgg)return;   // 알은 부화 전이라 스탯이 없다(maxHp:1 고정). recalc하면 성체 스탯으로 덮여 알이 손상된다 — 알 누수의 근본 방어선(어느 순회가 알을 놓쳐도 스탯은 안 깨진다).
+  sp=sp||byId(m.id);
   m.maxHp=Math.floor(sp.base.hp+sp.base.hp*0.12*(m.level-1)+m.level*2);
   m.atk=Math.floor(sp.base.atk+sp.base.atk*0.10*(m.level-1));
   m.def=Math.floor(sp.base.def+sp.base.def*0.10*(m.level-1));
@@ -5021,7 +5022,7 @@ function freshState(){ return {playerEmoji:"🧑‍🔬",styleIdx:0,party:[],box
   items:{ball:6,greatball:2,potion:3,revive:0,antidote:1},money:600,pos:{x:STARTPOS.x,y:STARTPOS.y},lastHeal:null,repel:0,defeated:new Set(),rematchWanted:new Set(),campfires:new Set(),flySpots:new Set(),hasFly:false,mineSeen:false,hillSeen:false,pierSeen:false,frostSeen:false,seenTiles:new Set(),trail:new Set(),quests:{},questFlags:{},badge:false,badges:[],found:[],found:[],
   inBattle:false,foe:null,trainer:null,busy:false,dexClaimed:[],achClaimed:[],dailyLast:null,dailyStreak:0,shadowDone:false,voidDone:false,dawnDone:false,coastSeen:false,lavaSeen:false,hasRod:false,isleSeen:false,shrineSeen:false,legendDone:false,leagueSeen:false,champion:false,rules:{hardcore:false,nuzlocke:false},ngPlus:0,graveyard:[],hallOfFame:[],runTries:0,trades:{},hasCut:false,hasSurf:false,hasStrength:false,rodTier:0,lakeDone:false,lakeSignSeen:false,deepwoodsSeen:false,snowSeen:false,snowDone:false,marshSeen:false,skySeen:false,ruinsSeen:false,craterSeen:false,gardenSeen:false,mooncanyonSeen:false,desertSeen:false,crystalcaveSeen:false,wyverngorgeSeen:false,fairygladeSeen:false,coralcoveSeen:false,seaBossDone:false,skyBossDone:false,ruinsBossDone:false,towerBest:0,towerBestSet:0,towerSeason:{key:"",best:0},towerRecords:[],towerStreak:0,towerRun:false,daycare:{a:null,b:null,steps:0,eggReady:false},playSec:0,running:false,dexMaster:false,shinyCharm:false,berries:{},heldStock:{oranberry:1,leftovers:1},wild:false,weather:null,_uidSeq:0,teamPresets:[]}; }
 function activeMon(){return G.party[G.active];}
-function avgLevel(){return G.party.reduce((s,m)=>s+m.level,0)/G.party.length;}
+function avgLevel(){ const b=(G.party||[]).filter(m=>m&&!m.isEgg); return b.length?b.reduce((s,m)=>s+m.level,0)/b.length:1; }   // 알(Lv1)은 전투 정령이 아니라 평균 레벨(야생 난이도 스케일)에서 제외
 function updateDexPill(){$("dexPill").textContent=`📖 ${G.caught.size}/${DEX.length}${G.dexMaster?" 🏆":""}`;}
 function forestBadges(){ return (G.badges||[]).filter(b=>b==="1"||b==="2"||b==="3"||b==="4").length; }
 function updateBadgePill(){ const p=$("badgePill"); if(!p)return; const fb=forestBadges(); const isle=(G.badges||[]).includes("L"); p.textContent=`🏅 ${Math.min(fb,4)}/4${isle?" 🌊":""}${G.champion?" 👑":""}`; p.style.display="block"; }
@@ -10692,7 +10693,8 @@ function openSwitch(forced){ if(!G.inBattle)return;   // ⚠️ 전투 밖에서
   if(!forced && G.inBattle && typeof activeMon==="function" && activeMon() && activeMon()._trapped>0){ flashHint("묶여 있어서 교체할 수 없다!"); Audio.sfx&&Audio.sfx("miss"); return; }   // 묶기: 자발적 교체 봉쇄(강제 교체는 통과)
   switchForced=forced; $("switchClose").style.display=forced?"none":"block"; renderSwitch(); openOverlay("switchOverlay"); }
 function renderSwitch(){ const body=$("switchBody"); body.innerHTML="";
-  G.party.forEach((m,i)=>{ recalc(m); const card=document.createElement("div");
+  G.party.forEach((m,i)=>{ if(m.isEgg)return;   // 알은 전투에 못 나가므로 교체 목록에서 제외(예전엔 성체 카드로 뜨고 '내보내기'가 활성됐다)
+    recalc(m); const card=document.createElement("div");
     card.className="mon-card"+(i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"");
     card.innerHTML=`<div class="em">${creatureVisual(m.id,m.type)}</div><div class="info"><div class="nm">${dispName(m)} <span class="type-tag ${TYPE_CLASS[m.type]}" style="font-size:9px">${tkLabel(m.type)}</span>${m.status?`<span class="sc ${STATUS_CLS[m.status]}" style="font-size:9px;padding:1px 5px;border-radius:5px">${STATUS_KO[m.status]}</span>`:""}</div>
       ${miniHpHtml(m)}<div class="st">Lv ${m.level} · HP ${Math.max(0,m.hp)}/${m.maxHp}${statusChipHtml(m)}</div></div>

@@ -329,5 +329,17 @@ console.log("\n[순수성]");
   ok(/typeof document!=="undefined"/.test(R.__source), "document 사용은 typeof 가드 뒤에 있다");
 }
 
+console.log("\n[알 불변식 — recalc 근본 방어선]");
+{ // 알(isEgg)은 부화 전이라 스탯이 없다 → recalc가 절대 알 maxHp를 성체 값으로 덮으면 안 된다.
+  const egg={ isEgg:true, id:"racoonmon", level:1, hp:1, maxHp:1,
+    nature:"hardy", ivs:{hp:31,atk:31,def:31,spa:31,spDef:31,spd:31} };
+  R.recalc(egg);
+  ok(egg.maxHp===1 && egg.hp===1, `recalc가 알을 건드리지 않는다 (maxHp=${egg.maxHp})`);
+  // 대조군: 실제 정령은 recalc로 스탯이 잡힌다(가드가 정상 정령을 막지 않는다).
+  const real={ id:"racoonmon", level:20, nature:"hardy", ivs:{hp:15,atk:15,def:15,spa:15,spDef:15,spd:15} };
+  R.recalc(real);
+  ok(real.maxHp>1, `일반 정령은 recalc로 스탯이 계산된다 (maxHp=${real.maxHp})`);
+}
+
 console.log(fail?`\n❌ 실패 ${fail}건`:"\n🎉 순수 규칙 단위 테스트 통과");
 process.exit(fail?1:0);
