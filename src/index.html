@@ -4543,7 +4543,8 @@ function startCraterEncounter(){ const pool=ENC_POOLS.crater.filter(id=>byId(id)
 // 낮/밤으로 조우 풀이 갈리는 유일한 지역 — 밤에만 오는 종(NIGHT_MONS)은 낮에 빠진다.
 // 도감 설명문(FLAVOR)의 "밤에 활동한다"와 어긋나지 않게 하는 것이 목적이고, 조우율도 밤이 높다(onArrived).
 function gardenPool(){ const all=ENC_POOLS.garden.filter(id=>byId(id)); if(dayPhase()==="night")return all; return all.filter(id=>!NIGHT_MONS.has(id)); }
-function startGardenEncounter(){ const pool=gardenPool(); const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,14,50); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}꽃잎이 흩날리며 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
+function startGardenEncounter(){ const pool=gardenPool(); if(!pool.length)return;   // 형제 함수들과 동일한 빈 풀 가드(낮/밤 필터가 풀을 비우면 makeMon(undefined) 방지)
+  const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,14,50); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}꽃잎이 흩날리며 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
 // 달그림자 골짜기 — 밤엔 어둠/야행성 정령이 전부, 낮엔 밤 전용종을 뺀다(화원과 같은 규칙).
 function moonPool(){ const all=ENC_POOLS.mooncanyon.filter(id=>byId(id)); if(dayPhase()==="night"||dayPhase()==="dusk")return all; return all.filter(id=>!NIGHT_MONS.has(id)); }
 function startMoonEncounter(){ const pool=moonPool(); if(!pool.length)return; const id=pool[ri(0,pool.length-1)]; const al=avgLevel(); let lvl=clamp(al+ri(0,3)+DIFF[CONFIG.difficulty].lvl,14,52); G.foe=makeMon(id,lvl); G.trainer=null; G.seen.add(id); G.inBattle=true; G.busy=false; Audio.sfx("encounter"); transitionToBattle(()=>{ const shy=G.foe.shiny?"✨ ":""; setMsg(`${shy}어둠이 일렁이며 <b>${G.foe.name}</b>이(가) 나타났다!`); Audio.startMusic("battle"); }); updateDexPill(); }
@@ -8630,6 +8631,8 @@ function flySpotLabel(x,y){
   if(t==="+")return {em:"🏥",nm:"정령센터"};
   if(t==="R")return {em:"🔥",nm:"모닥불"};
   if(t==="H")return {em:"🏠",nm:"쉼터"};
+  // 정령센터는 문(+) 앞 walkable 칸에 등록된다(문 위로 못 올라서므로) → 인접에 +가 있으면 센터 앞으로 표기.
+  if(typeof OVERWORLD_STR0!=="undefined" && [[0,-1],[0,1],[-1,0],[1,0]].some(([dx,dy])=>{ const row=OVERWORLD_STR0[y+dy]; return row&&row[x+dx]==="+"; }))return {em:"🏥",nm:"정령센터"};
   return {em:"📍",nm:"쉬어간 곳"};
 }
 function flyList(){
@@ -8669,7 +8672,9 @@ let _miniRaf=null;
 /* ⚠️ `closeOverlay`(2726줄)가 이걸 부른다 — **함수 선언이라 호이스팅**되므로 `_miniRaf`(let) 선언 옆에 두는 게
    안전하다. closeOverlay 옆에 두면 TDZ에 걸린다(`typeof` 가드는 let에 안 통한다). */
 function stopMinimapLoop(){ if(_miniRaf){ cancelAnimationFrame(_miniRaf); _miniRaf=null; } }
-$("openMinimap").addEventListener("click",()=>{ Audio.sfx("blip"); openOverlay("minimap");
+$("openMinimap").addEventListener("click",()=>{
+  if(G.indoor){ flashHint("실내에서는 지도를 볼 수 없다."); Audio.sfx&&Audio.sfx("miss"); return; }   // ⚠️ 실내는 G.pos가 인테리어 좌표라 drawTopo의 mmReveal이 오버월드 안개(seenTiles)를 오염시킨다(openWarp와 동일 가드)
+  Audio.sfx("blip"); openOverlay("minimap");
   stopMinimapLoop(); const loop=()=>{ drawTopo(); _miniRaf=requestAnimationFrame(loop); }; loop(); });
 /* 닫기는 세 경로(하단 버튼·헤더 ✕·Escape) 전부 `closeOverlay` 하나로 모인다 — 루프 정지가 거기 있다. */
 $("closeMinimap").addEventListener("click",()=>{ Audio.sfx("blip"); closeOverlay("minimap"); });
