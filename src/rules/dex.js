@@ -117,6 +117,13 @@ const DEX=[
      숲·정원 계열에 나비 라인을 얹어 타입 커버를 채운다. 아트는 SVG 플레이스홀더(매니페스트 미등록 → creatureSVG 폴백). */
   {id:"sporelet",name:"홀씨벌레",em:"🐛",type:"bug",tier:1,base:{hp:45,atk:14,def:16,spd:15,spa:18,spDef:14},moves:["tackle","bugbite"],learn:[[8,"absorb"],[12,"bugbuzz"],[16,"gust"]],evolveTo:"gustmoth",evolveLv:18},
   {id:"gustmoth",name:"숲바람나방",em:"🦋",type:"bug",type2:"flying",tier:3,base:{hp:70,atk:22,def:22,spd:30,spa:34,spDef:26},moves:["bugbite","bugbuzz","gust","absorb"],learn:[[30,"peck"],[36,"xscissor"]]},
+  /* 순수 벌레 물리 라인 — sporelet 나방(특수 어태커)과 대비되는 사마귀(물리·고속·크리) 라인.
+     여전히 순수 bug 종이 sporelet 하나뿐(gustmoth는 bug/flying)이라, 물리 프라이머리 3단을 추가해
+     타입을 실질 보강한다. 신규 무브 불필요(bugbite·xscissor·slash·machpunch·focusenergy·closecombat 전부 실존).
+     빠른 물리 스위퍼 성격 — 낮은 방어·높은 공격/속도. 총합 120→184→251(3단 오프형). */
+  {id:"mantlet",name:"애사마귀",em:"🦗",type:"bug",tier:1,base:{hp:42,atk:22,def:14,spd:20,spa:10,spDef:12},moves:["tackle","bugbite"],learn:[[12,"focusenergy"],[16,"xscissor"]],evolveTo:"scythel",evolveLv:16},
+  {id:"scythel",name:"낫사마귀",em:"🗡️",type:"bug",tier:2,base:{hp:58,atk:36,def:22,spd:34,spa:14,spDef:20},moves:["bugbite","xscissor","focusenergy"],learn:[[24,"slash"],[30,"machpunch"]],evolveTo:"reapmantis",evolveLv:34},
+  {id:"reapmantis",name:"대검사마귀",em:"⚔️",type:"bug",tier:3,base:{hp:75,atk:52,def:30,spd:48,spa:18,spDef:28},moves:["xscissor","slash","machpunch","focusenergy"],learn:[[42,"closecombat"]]},
   /* 희소 타입 보강 — 격투·페어리·악이 각 2종뿐이라 두 번째 진화 라인을 추가한다(팀 빌딩 다양성).
      기존 라인과 실루엣이 겹치지 않게 원숭이·반딧불·까마귀로 차별화. 신규 무브 불필요(전부 실존).
      스탯 총합(3단 190~195)은 기존 3단 대역과 동일 — balance_test 통과 유지. */
