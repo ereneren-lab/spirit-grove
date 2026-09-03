@@ -30,7 +30,7 @@ const { chromium } = require("playwright"); const path=require("path");
       flavorA:!!(S.FLAVOR&&S.FLAVOR.sporelet), flavorB:!!(S.FLAVOR&&S.FLAVOR.gustmoth) }; });
 
   ok(r.hasA && r.hasB, "홀씨벌레·숲바람나방이 도감에 있다");
-  ok(r.dex===108, `DEX 108종 (${r.dex})`);
+  ok(r.dex===111, `DEX 111종 (${r.dex})`);
   ok(r.bugPrimary>=2, `bug 1차 타입 종이 생겼다 (${r.bugPrimary}) — 기존 0에서 채움`);
   ok(r.aType==="bug" && r.cType==="bug" && r.cType2==="flying", "타입: 홀씨벌레=bug · 숲바람나방=bug/flying");
   ok(r.evoTo==="gustmoth" && r.evoLv===18, `진화: 홀씨벌레 → 숲바람나방 (Lv${r.evoLv})`);
