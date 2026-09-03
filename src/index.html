@@ -4367,7 +4367,7 @@ const ENC_POOLS={
   snow:["iceling","frostpup","frostfish","dustbunny","frostwyrm","glacibear","drakeling","mossback","snowl","cryogon"],
   marsh:["wispkin","swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"],
   skyridge:["zapfinch","voltfalcon","thundwyrm","voltsnake","voltrat","sandwhirl","stormhawk","blossomhawk"],
-  mine:["coglet","pebblet","boulderin","burrowmouse","sandwhirl","mossback","hedgemoss"],
+  mine:["coglet","orelet","ironforge","pebblet","boulderin","burrowmouse","sandwhirl","mossback","hedgemoss"],
   hillpath:["dustbunny","racoonmon","sprigfawn","petalwing","seedbean","thunderowl"],   // 언덕 오솔길 = 노말·풀·비행
   pier:["shellow","otterwave","nipling","dewdrop","puddlet","jellure"],                 // 잔교 = 물가
   frostpass:["frostpup","iceling","frostfish","snowl","sharkfin","pebblet"],            // 고갯길 = 얼음
@@ -4381,7 +4381,7 @@ const ENC_POOLS={
   garden:["psykit","glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop","sporelet","gustmoth"],
   mooncanyon:["nightkit","duskbeak","wispkin","jellure","hedgemoss","vinesnake","arcmoth","psykit","swampfrog","glimmite","burrowmouse","racoonmon"],   // 달그림자 골짜기 = 야행성 어둠·고스트·독 (전부 야생 가능종 — NO_WILD 제외)
   desert:["sandwhirl","pebblet","boulderin","burrowmouse","coglet","lavakit","cindercat","emberlix","dustbunny","pummelpup","stingtail"],   // 모래바람 사막 = 바위·땅·불 (전부 야생 가능종)
-  crystalcave:["pebblet","boulderin","coglet","iceling","snowl","psykit","sparkmouse","sandwhirl","frostfish","glimmite"],   // 수정 동굴 = 바위·강철·에스퍼·얼음 (전부 야생 가능종)
+  crystalcave:["pebblet","boulderin","coglet","orelet","ironforge","iceling","snowl","psykit","sparkmouse","sandwhirl","frostfish","glimmite"],   // 수정 동굴 = 바위·강철·에스퍼·얼음 (전부 야생 가능종)
   wyverngorge:["drakeling","wyverna","emberdrake","thundwyrm","cryogon","frostwyrm","riverdrake","leafdrake","stormhawk","sandwhirl"],   // 비룡 협곡 = 용·비행 (전부 야생 가능종 — skydrake는 NO_WILD라 제외)
   fairyglade:["glimmertide","petalwing","blossomhawk","pixibud","glimmite","lumenfae","psykit","sproutcat","dewdrop","moonytide"],   // 요정의 뜰 = 페어리·풀·에스퍼 (전부 야생 가능종 — blossfae는 NO_WILD라 제외)
   coralcove:["puddlet","shellow","otterwave","nipling","jellure","riverine","frostfish","dewdrop","moonytide","crablord"],   // 산호 해식동 = 물·얼음·물요정 (전부 야생 가능종 — tidalore는 NO_WILD라 제외)
@@ -4398,7 +4398,7 @@ const ENC_POOLS={
 // ⚠️ 늘릴 땐 낮/밤 각 티어 풀이 비지 않는지 확인할 것(pickWild가 티어로 먼저 거른다).
 const NIGHT_MONS=new Set(["lunarmoth", "thunderowl", "swampfrog", "emberwolf", "tigerflame", "vinesnake", "emberlix", "moonytide", "pyrewolf", "glowfly", "arcmoth", "duskbeak", "glimmite"]);
 const SEA_MONS=new Set(["nipling","crablord","gullian","palmore","jellure","emberlix"]);
-const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox","blossfae","lanternox","voidpanther","gearclad"]);
+const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox","blossfae","lanternox","voidpanther","gearclad","steelgolem"]);
 const DAY_MONS=new Set(["sprigfawn", "stormhawk", "cindercat", "leafdrake", "palmore", "seedbean", "mossback", "sproutcat", "glimmertide"]);
 function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
   const deep=depth>=0.82;
@@ -7841,6 +7841,9 @@ const FLAVOR={
   voidpanther:{cat:"심연표범",h:1.4,w:55,t:"어둠에 녹아드는 표범. 발소리 없이 다가와 상대의 그림자부터 덮친다."},
   coglet:{cat:"톱니벌레",h:0.3,w:10,t:"등딱지가 통째로 톱니바퀴다. 종일 딸깍이며 무언가를 조립하듯 돌아다닌다."},
   gearclad:{cat:"강철갑충",h:1.5,w:120,t:"맞물린 강판과 기어로 뒤덮인 요새 같은 갑충. 한번 버티면 좀처럼 밀리지 않는다."},
+  orelet:{cat:"쇳덩이",h:0.4,w:22,t:"광맥에서 굴러나온 살아있는 무쇠 덩이. 두 개의 시안 눈이 어둠 속에서 반짝인다."},
+  ironforge:{cat:"무쇠병",h:0.9,w:78,t:"제 몸을 두들겨 갑주로 벼렸다. 가슴의 화로가 식지 않는 한 방패를 내리지 않는다."},
+  steelgolem:{cat:"강철거병",h:2.1,w:360,t:"광산 깊은 곳을 지키는 강철 거병. 코어가 울릴 때마다 산이 낮게 떨린다."},
   stingtail:{cat:"독침 전갈",h:0.4,w:6,t:"모래 밑에 숨어 발소리를 기다린다. 꼬리 끝 독침 한 방이면 큰 먹이도 움직임을 멈춘다."},
   venomscorp:{cat:"맹독 전갈",h:1.1,w:38,t:"사막의 밤을 지배하는 사냥꾼. 집게로 붙든 뒤 꼬리로 맹독을 쏟아붓는다. 그림자 속에서 눈만 빛난다."},
 };

@@ -108,6 +108,11 @@ const DEX=[
   {id:"voidpanther",name:"심연표범",em:"🐆",type:"dark",tier:3,base:{hp:76,atk:30,def:20,spd:30,spa:14,spDef:18},moves:["crunch","suckerpunch","nightburst","darkpulse"],learn:[[40,"swordsdance"]]},
   {id:"coglet",name:"톱니벌레",em:"⚙️",type:"steel",tier:1,base:{hp:50,atk:15,def:20,spd:10,spa:9,spDef:14},moves:["tackle","metalclaw"],learn:[[14,"bulletpunch"],[22,"mirrorshot"]],evolveTo:"gearclad",evolveLv:30},
   {id:"gearclad",name:"강철갑충",em:"🛡️",type:"steel",type2:"bug",tier:3,base:{hp:80,atk:26,def:34,spd:14,spa:18,spDef:22},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[28,"xscissor"],[40,"harden"]]},
+  /* 순수 강철(steel) 구성체 라인 — steel은 coglet→gearclad(2차 bug) 뿐이라 얇았다(순수 강철 최종 0).
+     동굴/광산 테마의 방어형 3단 라인을 추가해 강철을 5종으로. 느리지만 두껍고 특방·방어가 높다. */
+  {id:"orelet",name:"쇳덩이",em:"🔩",type:"steel",tier:1,base:{hp:48,atk:16,def:22,spd:8,spa:10,spDef:16},moves:["tackle","metalclaw"],learn:[[12,"bulletpunch"]],evolveTo:"ironforge",evolveLv:18},
+  {id:"ironforge",name:"무쇠병",em:"⚒️",type:"steel",tier:2,base:{hp:64,atk:25,def:31,spd:12,spa:17,spDef:25},moves:["tackle","metalclaw","bulletpunch"],learn:[[24,"mirrorshot"],[30,"harden"]],evolveTo:"steelgolem",evolveLv:36},
+  {id:"steelgolem",name:"강철거병",em:"🤖",type:"steel",tier:3,base:{hp:90,atk:35,def:43,spd:15,spa:23,spDef:35},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[42,"quake"]]},
   /* 벌레(bug) 프라이머리 라인 — 기존엔 bug가 gearclad의 2차 타입으로만 존재했다(순수/1차 bug 종 0).
      숲·정원 계열에 나비 라인을 얹어 타입 커버를 채운다. 아트는 SVG 플레이스홀더(매니페스트 미등록 → creatureSVG 폴백). */
   {id:"sporelet",name:"홀씨벌레",em:"🐛",type:"bug",tier:1,base:{hp:45,atk:14,def:16,spd:15,spa:18,spDef:14},moves:["tackle","bugbite"],learn:[[8,"absorb"],[12,"bugbuzz"],[16,"gust"]],evolveTo:"gustmoth",evolveLv:18},
