@@ -110,9 +110,9 @@ const DEX=[
   {id:"gearclad",name:"강철갑충",em:"🛡️",type:"steel",type2:"bug",tier:3,base:{hp:80,atk:26,def:34,spd:14,spa:18,spDef:22},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[28,"xscissor"],[40,"harden"]]},
   /* 순수 강철(steel) 구성체 라인 — steel은 coglet→gearclad(2차 bug) 뿐이라 얇았다(순수 강철 최종 0).
      동굴/광산 테마의 방어형 3단 라인을 추가해 강철을 5종으로. 느리지만 두껍고 특방·방어가 높다. */
-  {id:"orelet",name:"쇳덩이",em:"🔩",type:"steel",tier:1,base:{hp:48,atk:16,def:22,spd:8,spa:10,spDef:16},moves:["tackle","metalclaw"],learn:[[12,"bulletpunch"]],evolveTo:"ironforge",evolveLv:18},
-  {id:"ironforge",name:"무쇠병",em:"⚒️",type:"steel",tier:2,base:{hp:64,atk:25,def:31,spd:12,spa:17,spDef:25},moves:["tackle","metalclaw","bulletpunch"],learn:[[24,"mirrorshot"],[30,"harden"]],evolveTo:"steelgolem",evolveLv:36},
-  {id:"steelgolem",name:"강철거병",em:"🤖",type:"steel",tier:3,base:{hp:90,atk:35,def:43,spd:15,spa:23,spDef:35},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[42,"quake"]]},
+  {id:"orelet",name:"쇳덩이",em:"🔩",type:"steel",tier:1,base:{hp:46,atk:15,def:22,spd:8,spa:9,spDef:13},moves:["tackle","metalclaw"],learn:[[12,"bulletpunch"]],evolveTo:"ironforge",evolveLv:18},
+  {id:"ironforge",name:"무쇠병",em:"⚒️",type:"steel",tier:2,base:{hp:58,atk:25,def:26,spd:11,spa:15,spDef:20},moves:["tackle","metalclaw","bulletpunch"],learn:[[24,"mirrorshot"],[30,"harden"]],evolveTo:"steelgolem",evolveLv:36},
+  {id:"steelgolem",name:"강철거병",em:"🤖",type:"steel",tier:3,base:{hp:80,atk:30,def:40,spd:13,spa:18,spDef:21},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[42,"quake"]]},
   /* 벌레(bug) 프라이머리 라인 — 기존엔 bug가 gearclad의 2차 타입으로만 존재했다(순수/1차 bug 종 0).
      숲·정원 계열에 나비 라인을 얹어 타입 커버를 채운다. 아트는 SVG 플레이스홀더(매니페스트 미등록 → creatureSVG 폴백). */
   {id:"sporelet",name:"홀씨벌레",em:"🐛",type:"bug",tier:1,base:{hp:45,atk:14,def:16,spd:15,spa:18,spDef:14},moves:["tackle","bugbite"],learn:[[8,"absorb"],[12,"bugbuzz"],[16,"gust"]],evolveTo:"gustmoth",evolveLv:18},
@@ -121,9 +121,9 @@ const DEX=[
      여전히 순수 bug 종이 sporelet 하나뿐(gustmoth는 bug/flying)이라, 물리 프라이머리 3단을 추가해
      타입을 실질 보강한다. 신규 무브 불필요(bugbite·xscissor·slash·machpunch·focusenergy·closecombat 전부 실존).
      빠른 물리 스위퍼 성격 — 낮은 방어·높은 공격/속도. 총합 120→184→251(3단 오프형). */
-  {id:"mantlet",name:"애사마귀",em:"🦗",type:"bug",tier:1,base:{hp:42,atk:22,def:14,spd:20,spa:10,spDef:12},moves:["tackle","bugbite"],learn:[[12,"focusenergy"],[16,"xscissor"]],evolveTo:"scythel",evolveLv:16},
-  {id:"scythel",name:"낫사마귀",em:"🗡️",type:"bug",tier:2,base:{hp:58,atk:36,def:22,spd:34,spa:14,spDef:20},moves:["bugbite","xscissor","focusenergy"],learn:[[24,"slash"],[30,"machpunch"]],evolveTo:"reapmantis",evolveLv:34},
-  {id:"reapmantis",name:"대검사마귀",em:"⚔️",type:"bug",tier:3,base:{hp:75,atk:52,def:30,spd:48,spa:18,spDef:28},moves:["xscissor","slash","machpunch","focusenergy"],learn:[[42,"closecombat"]]},
+  {id:"mantlet",name:"애사마귀",em:"🦗",type:"bug",tier:1,base:{hp:41,atk:19,def:14,spd:18,spa:8,spDef:13},moves:["tackle","bugbite"],learn:[[12,"focusenergy"],[16,"xscissor"]],evolveTo:"scythel",evolveLv:16},
+  {id:"scythel",name:"낫사마귀",em:"🗡️",type:"bug",tier:2,base:{hp:52,atk:31,def:18,spd:29,spa:12,spDef:15},moves:["bugbite","xscissor","focusenergy"],learn:[[24,"slash"],[30,"machpunch"]],evolveTo:"reapmantis",evolveLv:34},
+  {id:"reapmantis",name:"대검사마귀",em:"⚔️",type:"bug",tier:3,base:{hp:64,atk:44,def:22,spd:40,spa:14,spDef:18},moves:["xscissor","slash","machpunch","focusenergy"],learn:[[42,"closecombat"]]},
   /* 희소 타입 보강 — 격투·페어리·악이 각 2종뿐이라 두 번째 진화 라인을 추가한다(팀 빌딩 다양성).
      기존 라인과 실루엣이 겹치지 않게 원숭이·반딧불·까마귀로 차별화. 신규 무브 불필요(전부 실존).
      스탯 총합(3단 190~195)은 기존 3단 대역과 동일 — balance_test 통과 유지. */
