@@ -3847,6 +3847,7 @@ function _ovFocus(list,i){ document.querySelectorAll(".overlay .kbfocus").forEac
 /* ⚠️ 캡처 단계로 등록 — 모달이 열려 있으면 맵·전투 keydown 핸들러보다 **먼저** 이 핸들러가 입력을 잡고
       stopImmediatePropagation으로 소비한다. 예전엔 맵 핸들러와 여기가 같은 Esc에 둘 다 cancelBtn을 불러
       한 번에 두 겹이 닫혔다(PC 위 요약창이 통째로 사라짐). 이제 취소는 한 곳에서만, 최상단 모달만 닫는다. */
+let _evoCancelFn=null;   // 진화 장면이 활성일 때 취소 훅 — 캡처 핸들러가 evoOverlay 취소키를 여기로 보낸다(아래).
 document.addEventListener("keydown",e=>{
   const id=(typeof inputBlockingOverlay==="function")&&inputBlockingOverlay(); if(!id)return;
   if(typeof dialogActive==="function"&&dialogActive())return;
@@ -3856,7 +3857,7 @@ document.addEventListener("keydown",e=>{
   if(act!=="cancel"&&act!=="confirm"&&!_isDir(act))return;   // 처리 안 하는 키는 흘려보낸다
   e.preventDefault(); e.stopImmediatePropagation();   // 뒤(맵·전투)로 새지 않게 소비
   const el=$(id); if(!el)return;
-  if(act==="cancel"){ cancelBtn(); return; }   // 최상단 취소 가능 모달만 닫힌다(_topOverlay)
+  if(act==="cancel"){ if(id==="evoOverlay"&&_evoCancelFn){ _evoCancelFn(); return; } cancelBtn(); return; }   // 진화 장면은 전용 취소 훅으로(evoOverlay는 CANCELABLE이 아니라 cancelBtn이 무시했다). 그 외는 최상단 취소 가능 모달만 닫힌다.
   const list=_ovFocusables(el); if(!list.length)return;
   let i=list.findIndex(b=>b.classList.contains("kbfocus")); if(i<0)i=list.indexOf(ae);
   if(act==="confirm"){ if(i>=0)list[i].click(); else _ovFocus(list,0); return; }
@@ -6859,6 +6860,7 @@ async function evolveScene(m,to,itemKey){ const old=m.name; const art=$("evoArt"
   let cancelled=false;
   const onKey=e=>{ const k=(e.key||"").toLowerCase(); if(k==="x"||k==="b"||k==="escape"||k==="backspace"){ e.preventDefault(); cancelled=true; } };
   document.addEventListener("keydown",onKey); if(cx)cx.onclick=()=>{ cancelled=true; };
+  _evoCancelFn=()=>{ cancelled=true; };   // 전역 캡처 핸들러가 취소키를 소비하므로, 그쪽에서 이 훅으로 취소를 전달한다
   await delay(950); if(cx)cx.style.display="none";
   if(!cancelled){
     if(CONFIG.reduceMotion){ setArt(to.id,to.type,false); Audio.sfx("evolve"); }
@@ -6869,7 +6871,7 @@ async function evolveScene(m,to,itemKey){ const old=m.name; const art=$("evoArt"
       if(!cancelled){ art.animate([{filter:"brightness(2.6)"},{filter:"brightness(1)"}],{duration:320}); await delay(220);
         art.classList.remove("sil"); setArt(to.id,to.type,false); } }
   }
-  document.removeEventListener("keydown",onKey); if(cx)cx.onclick=null;
+  document.removeEventListener("keydown",onKey); if(cx)cx.onclick=null; _evoCancelFn=null;
   if(cancelled){ art.classList.remove("sil"); setArt(m.id,m.type,false); msg.textContent=`${old}은(는) 진화를 멈췄다!`; if(Audio.sfx)Audio.sfx("blip");
     await delay(950); closeOverlay("evoOverlay"); if(_oob && typeof fieldMusic==="function")Audio.startMusic(fieldMusic()); saveGame(); if(typeof renderBag==="function")renderBag(); return false; }
   if(itemKey)G.items[itemKey]=Math.max(0,(G.items[itemKey]||0)-1);   // 성공 시에만 돌 소모(취소하면 안 씀)
@@ -8458,7 +8460,19 @@ function renderPC(){ const body=$("pcBody"); body.innerHTML="";
     _pcNav=d.map(o=>o.m);   // 요약 이전/다음 이동 순서(현재 표시 순서)
     if(!d.length){ const e=document.createElement("div"); e.style.cssText="color:var(--muted);text-align:center;padding:30px;font-size:13px"; e.textContent=(pcTab==="party"?"파티가 비어있다":(_boxSearch?"조건에 맞는 정령이 없어":"보관함이 비어있다")); boxListWrap.appendChild(e); return; }
     const selMode=(pcTab==="box"&&_boxSelMode);
-    d.forEach(({m,i})=>{ recalc(m); const sel=selMode&&_boxSel.has(m); const card=document.createElement("div"); card.className="mon-card"+(pcTab==="party"&&i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"")+(sel?" active-mon":"");
+    d.forEach(({m,i})=>{
+      // 알(isEgg)은 부화 전이라 능력치·타입·요약이 없다 → recalc/요약/지닌물건 없이 알 카드로만 렌더.
+      //   예전엔 여기서 recalc(m)로 알 maxHp를 성체 값으로 덮고 부화 전 성체 스프라이트·요약(스포일러)까지 노출했다.
+      if(m.isEgg){ const card=document.createElement("div"); card.className="mon-card"; const hatchLeft=Math.max(0,m.hatch||0);
+        let acts;
+        if(pcTab==="party"){ const canDep=G.party.length>1; acts=`<div style="display:flex;gap:4px"><button class="pick" data-a="up" aria-label="위로 옮기기" ${i>0?"":"disabled"} style="padding:7px 9px">▲</button><button class="pick" data-a="down" aria-label="아래로 옮기기" ${i<G.party.length-1?"":"disabled"} style="padding:7px 9px">▼</button></div><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
+        else { const canWith=G.party.length<6; acts=`<button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel" aria-label="놓아주기">방생</button>`; }
+        card.innerHTML=`<div class="em">🥚</div><div class="info"><div class="nm">알 <span style="font-size:9px;color:var(--muted)">미부화</span></div>`+
+          `<div class="st">품고 걸으면 깨어난다 · 앞으로 약 ${hatchLeft}걸음</div></div>`+
+          `<div class="acts">${selMode?`<div style="font-size:22px;width:34px;text-align:center">🥚</div>`:acts}</div>`;
+        if(!selMode)card.querySelectorAll(".pick").forEach(btn=>btn.addEventListener("click",()=>pcAction(btn.dataset.a,i)));
+        boxListWrap.appendChild(card); return; }
+      recalc(m); const sel=selMode&&_boxSel.has(m); const card=document.createElement("div"); card.className="mon-card"+(pcTab==="party"&&i===G.active?" active-mon":"")+(m.hp<=0?" fainted":"")+(sel?" active-mon":"");
     let actions="";
     if(pcTab==="party"){ const canDep=G.party.length>1; actions=`<button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" ${canDep?"":"disabled"} data-a="dep">보관</button>`; }
     else { const canWith=G.party.length<6; actions=`<button class="pick" data-a="nick" title="별명 짓기" aria-label="별명 짓기">✏️</button><button class="pick" ${canWith?"":"disabled"} data-a="with">꺼내기</button><button class="pick danger" data-a="rel" title="놓아주기" aria-label="놓아주기">방생</button>`; }

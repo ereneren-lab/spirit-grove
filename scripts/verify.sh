@@ -170,6 +170,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw battle_blindspot_test.js
   pw meta_blindspot_test.js
   pw meta_round3_test.js
+  pw meta_round4_test.js
   pw item_target_test.js
   pw door_front_test.js
   pw fieldmove_test.js
