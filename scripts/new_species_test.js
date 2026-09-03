@@ -16,7 +16,7 @@ const { chromium } = require("playwright"); const path = require("path");
     out.scorpType = scorp && scorp.type === "poison" && scorp.type2 === "ground";
     out.evoLink = sting && sting.evolveTo === "venomscorp" && sting.evolveLv === 24;
     out.movesExist = [sting, scorp].every(d => (d.moves || []).concat((d.learn || []).map(l => l[1])).every(mv => !!S.MOVES[mv]));
-    out.dexCount = S.DEX.length; // 111
+    out.dexCount = S.DEX.length; // 114
     // 2) FLAVOR 커버 + 진화 시 키·무게 증가
     const FLV = S.FLAVOR;
     out.flavor = !!(FLV.stingtail && FLV.venomscorp);
@@ -50,7 +50,7 @@ const { chromium } = require("playwright"); const path = require("path");
   ok(r.stingType && r.scorpType, "타입: 독꼬리=독 · 맹독전갈=독/땅(신규 조합)");
   ok(r.evoLink && r.baseForm, "진화 연결: 독꼬리 →(Lv24) 맹독전갈");
   ok(r.movesExist, "두 종의 모든 기술이 MOVES에 실존");
-  ok(r.dexCount === 111, `DEX 111종 (${r.dexCount})`);
+  ok(r.dexCount === 114, `DEX 114종 (${r.dexCount})`);
   ok(r.flavor && r.grows, "FLAVOR 커버 + 진화 시 키·무게 증가");
   ok(r.inPool && r.hint, "사막 조우 풀 소속 + 도감 서식지에 사막 표기");
   ok(r.genderable && r.breeds, "암수 생성 가능 + 교배 가능(무성 아님)");

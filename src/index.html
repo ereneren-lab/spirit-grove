@@ -4368,11 +4368,11 @@ const ENC_POOLS={
   marsh:["wispkin","swampfrog","jellure","burrowmouse","hedgemoss","mossback","racoonmon","dustbunny","vinesnake","leafwyrm","seedbean"],
   skyridge:["zapfinch","voltfalcon","thundwyrm","voltsnake","voltrat","sandwhirl","stormhawk","blossomhawk"],
   mine:["coglet","orelet","ironforge","pebblet","boulderin","burrowmouse","sandwhirl","mossback","hedgemoss"],
-  hillpath:["dustbunny","racoonmon","sprigfawn","petalwing","seedbean","thunderowl"],   // 언덕 오솔길 = 노말·풀·비행
+  hillpath:["dustbunny","racoonmon","sprigfawn","petalwing","seedbean","thunderowl","mantlet","scythel"],   // 언덕 오솔길 = 노말·풀·비행 (+풀숲 사마귀)
   pier:["shellow","otterwave","nipling","dewdrop","puddlet","jellure"],                 // 잔교 = 물가
   frostpass:["frostpup","iceling","frostfish","snowl","sharkfin","pebblet"],            // 고갯길 = 얼음
   fireflyway:["glowfly","dustbunny","bunnyhop","sparkmouse","sprigfawn","shellow","glimmite"],   // 오솔길 = 초반 소형종 (+반디요정)
-  mosshollow:["pixibud","mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing","sporelet","barkfist"],     // 골짜기 = 이끼·숲 (+홀씨벌레·나무주먹몽키)
+  mosshollow:["pixibud","mossback","vinesnake","sprigfawn","palmore","lumbeast","petalwing","sporelet","mantlet","scythel","barkfist"],     // 골짜기 = 이끼·숲 (+홀씨벌레·사마귀·나무주먹몽키)
   fallspath:["riverine","gullian","sandwhirl","tidewhale","pebblet","dewdrop"],         // 벼랑길 = 폭포(물·바위·비행)
    // 언덕 오솔길 = 노말·풀·비행(전부 실존 종)   // 광산 = 바위·땅 계열(전부 실존 종)
   
@@ -4398,7 +4398,7 @@ const ENC_POOLS={
 // ⚠️ 늘릴 땐 낮/밤 각 티어 풀이 비지 않는지 확인할 것(pickWild가 티어로 먼저 거른다).
 const NIGHT_MONS=new Set(["lunarmoth", "thunderowl", "swampfrog", "emberwolf", "tigerflame", "vinesnake", "emberlix", "moonytide", "pyrewolf", "glowfly", "arcmoth", "duskbeak", "glimmite"]);
 const SEA_MONS=new Set(["nipling","crablord","gullian","palmore","jellure","emberlix"]);
-const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox","blossfae","lanternox","voidpanther","gearclad","steelgolem"]);
+const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox","blossfae","lanternox","voidpanther","gearclad","steelgolem","reapmantis"]);
 const DAY_MONS=new Set(["sprigfawn", "stormhawk", "cindercat", "leafdrake", "palmore", "seedbean", "mossback", "sproutcat", "glimmertide"]);
 function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
   const deep=depth>=0.82;
@@ -7829,6 +7829,9 @@ const FLAVOR={
   /* H3-9 네이티브 라인 12종 — 진화 시 키·무게가 커진다(dex_flavor_test 불변식). */
   sporelet:{cat:"홀씨벌레",h:0.3,w:3,t:"등에 돋은 이끼 홀씨로 숲 냄새를 풍긴다. 위험하면 홀씨를 터뜨려 잠깐 몸을 숨긴다."},
   gustmoth:{cat:"숲바람나방",h:1.1,w:12,t:"날갯짓 한 번에 숲의 잔바람을 일으킨다. 밤이면 달빛을 받아 인분이 은은하게 빛난다."},
+  mantlet:{cat:"애사마귀",h:0.3,w:2,t:"여린 앞다리를 세우고 풀잎 사이에 숨어 먹이를 기다린다. 작지만 이미 사냥꾼의 눈빛이다."},
+  scythel:{cat:"낫사마귀",h:0.8,w:9,t:"앞다리가 두 자루 낫으로 자랐다. 한 번의 베기로 잎맥을 정확히 가른다."},
+  reapmantis:{cat:"대검사마귀",h:1.6,w:34,t:"숲의 그림자에서 큰 낫을 세운 검귀. 스쳐 지나간 자리엔 바람을 가른 흔적만 남는다."},
   pummelpup:{cat:"권술강아지",h:0.5,w:9,t:"작은 앞발에 붕대를 감고 하루 종일 허공에 주먹을 지른다. 겁 없이 큰 상대에게도 달려든다."},
   taekwarrior:{cat:"태권무사",h:1.6,w:62,t:"낡은 검은 띠를 두르고 도장을 지킨다. 한 발차기에 바위가 갈라진다 전해진다."},
   psykit:{cat:"요술여우",h:0.4,w:6,t:"이마의 세 번째 눈으로 상대의 마음을 살짝 엿본다. 심심하면 작은 환영으로 장난친다."},
