@@ -7146,11 +7146,18 @@ const HOME_LETTER=[
 ];
 /* 출신지에서 시작한다. `styleIdx`로 지도·도입·나오는 자리가 전부 갈린다.
    ⚠️ `G.pos`는 **출신지 앞 오버월드 칸**이어야 한다 — 인테리어에서 나올 때 그 좌표로 돌아온다. */
+// 눈뜨는 칸 = 그 집 침대(B) 바로 옆 바닥. 집마다 침대 위치가 달라(리오·미나·토리는 (1,1), 엘은 (4,1))
+// 예전엔 (2,2) 하드코딩이라 리오는 벽 기둥 위에서 눈떴다(첫 조작 순간의 시각 버그). 침대 인접 바닥을 찾아 배치한다.
+function _wakeTile(home){ const it=INTERIORS[home]; if(!it||!it.str)return {x:2,y:2};
+  let bx=-1,by=-1; for(let y=0;y<it.str.length;y++){ const c=it.str[y].indexOf("B"); if(c>=0){ bx=c; by=y; break; } }
+  if(bx<0)return {x:it.startX,y:it.startY};
+  for(const [dx,dy] of [[0,1],[-1,0],[1,0],[0,-1]]){ const nx=bx+dx,ny=by+dy; const row=it.str[ny]; if(row&&row[nx]===".")return {x:nx,y:ny}; }
+  return {x:it.startX,y:it.startY}; }
 function startInHouse(){ const _i=(G.styleIdx||0), _home=CHAR_HOME[_i]||"home_rio";
   G.pos={...(HOME_POS[_i]||HOME_POS[0])}; enterMap(true); enterInterior(INTERIORS[_home]);
   setTimeout(()=>{ if(G.indoor!==_home)return;
     /* 침대 옆에서 시작한다 — 재입장 시작칸(문 앞 startX/startY)은 그대로 두고 이 순간만 옮긴다 */
-    G.pos={x:2,y:2}; if(Field.setTarget)Field.setTarget(2,2,"up");   // B(침대/자리)는 넷 다 (1,1) 근처 — 그 옆에서 눈뜬다
+    const _w=_wakeTile(_home); G.pos={x:_w.x,y:_w.y}; if(Field.setTarget)Field.setTarget(_w.x,_w.y,"up");   // 침대 옆 바닥에서 눈뜬다(집마다 위치 다름)
     const _st=ORIGIN_STORY[_i]||ORIGIN_STORY[0];
     wakeUpScene(()=>{ G.noteRead=true;
       showDialog(_st.wake.concat(_st.note, _st.send)); });
@@ -10427,7 +10434,7 @@ async function faintMine(){ $("meSprite").classList.add("faint"); Audio.sfx("fai
   else if(G._bossTrial){ await bossTrialEnd(); }   // H5-A-3 보스 재대전 패배 = 워프·소지금 패널티 없이 제자리 종료
   else{ Audio.stopMusic(); Audio.sfx("defeat");   // 포켓몬식 화이트아웃: 전투 음악 멈추고 구슬픈 패배 징글. endBattle/blackout이 필드 음악 복귀.
     const pen=Math.floor(G.money*0.5); G.money=Math.max(0,G.money-pen); updateMoney();   // 본가 1세대: 소지금 절반
-    const _where=(G.lastHeal&&G.lastHeal.indoor==="center")?"정령센터":(G.lastHeal?"마지막으로 쉰 곳":"모닥불");
+    const _where=(G.lastHeal&&G.lastHeal.indoor==="center")?"정령센터":(G.lastHeal?"마지막으로 쉰 곳":"집");   // 회복 지점이 없으면 blackout이 출신지 앞(집)으로 보낸다 — 예전 '모닥불' 문구는 실제 목적지와 어긋났다
     setMsg(`눈앞이 깜깜해졌다… 코인 ${pen} 잃고 ${_where}(으)로 돌아간다.`); await mw(1300);
     healParty(true); G.trainer=null; endBattle(); blackout(); } }
 
