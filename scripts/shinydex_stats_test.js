@@ -43,7 +43,7 @@ const { chromium } = require("playwright"); const path=require("path");
   ok(r.shiny===2, `통계: 이로치 종 수 (${r.shiny})`);
   ok(r.bestIv===186, `통계: 최고 개체값 (${r.bestIv})`);
   ok(r.grave===1 && r.ng===2, "통계: 묘지·뉴게임+ 회차 반영");
-  ok(r.typeSums===114, `통계: 타입별 합이 전 종 114(${r.typeSums})`);
+  ok(r.typeSums===117, `통계: 타입별 합이 전 종 117(${r.typeSums})`);
   ok(r.statsOpen && r.statsLen>500, "수집 통계 화면이 열리고 렌더된다");
   ok(r.statBtn, "도감에 📊 통계 버튼이 있다");
   ok(r.shinyCards===2, `도감 이로치 필터가 이로치 종만 보인다 (${r.shinyCards})`);

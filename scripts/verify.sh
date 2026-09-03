@@ -149,6 +149,7 @@ if node -e "require.resolve('playwright')" 2>/dev/null; then
   pw region_content_test.js
   pw steel_line_test.js
   pw mantis_line_test.js
+  pw ghost_line_test.js
   pw indoor_quest_test.js
   pw blackout_test.js
   pw bugfix_round2_test.js

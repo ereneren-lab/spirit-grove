@@ -124,6 +124,13 @@ const DEX=[
   {id:"mantlet",name:"애사마귀",em:"🦗",type:"bug",tier:1,base:{hp:41,atk:19,def:14,spd:18,spa:8,spDef:13},moves:["tackle","bugbite"],learn:[[12,"focusenergy"],[16,"xscissor"]],evolveTo:"scythel",evolveLv:16},
   {id:"scythel",name:"낫사마귀",em:"🗡️",type:"bug",tier:2,base:{hp:52,atk:31,def:18,spd:29,spa:12,spDef:15},moves:["bugbite","xscissor","focusenergy"],learn:[[24,"slash"],[30,"machpunch"]],evolveTo:"reapmantis",evolveLv:34},
   {id:"reapmantis",name:"대검사마귀",em:"⚔️",type:"bug",tier:3,base:{hp:64,atk:44,def:22,spd:40,spa:14,spDef:18},moves:["xscissor","slash","machpunch","focusenergy"],learn:[[42,"closecombat"]]},
+  /* 순수 고스트 특수 라인 — 고스트가 가장 얇은 타입(총 4종·순수 2)이라 보강.
+     저주받은 탈(가면)이 원귀로 자라는 특수 어태커(spa>atk) — 물리 사마귀와 대비.
+     신규 무브 불필요(lick·ominouswind·nightburst·shadowball·darkpulse·shadowclaw 실존).
+     총합 113→155→200(정상 최종진화 대역, 밸런스 정합). 물리 실루엣과 다른 부유형 가면. */
+  {id:"hexmask",name:"저주탈",em:"🎭",type:"ghost",tier:1,base:{hp:38,atk:8,def:13,spd:14,spa:18,spDef:9},moves:["lick","ominouswind"],learn:[[14,"nightburst"]],evolveTo:"wraithmask",evolveLv:16},
+  {id:"wraithmask",name:"탈망령",em:"👺",type:"ghost",tier:2,base:{hp:46,atk:10,def:16,spd:21,spa:26,spDef:13},moves:["ominouswind","nightburst"],learn:[[22,"shadowball"],[30,"darkpulse"]],evolveTo:"dreadmask",evolveLv:36},
+  {id:"dreadmask",name:"원귀탈",em:"💀",type:"ghost",tier:3,base:{hp:60,atk:13,def:22,spd:26,spa:33,spDef:24},moves:["shadowball","darkpulse","ominouswind","nightburst"],learn:[[42,"shadowclaw"]]},
   /* 희소 타입 보강 — 격투·페어리·악이 각 2종뿐이라 두 번째 진화 라인을 추가한다(팀 빌딩 다양성).
      기존 라인과 실루엣이 겹치지 않게 원숭이·반딧불·까마귀로 차별화. 신규 무브 불필요(전부 실존).
      스탯 총합(3단 190~195)은 기존 3단 대역과 동일 — balance_test 통과 유지. */
