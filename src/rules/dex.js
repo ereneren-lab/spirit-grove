@@ -110,9 +110,9 @@ const DEX=[
   {id:"gearclad",name:"강철갑충",em:"🛡️",type:"steel",type2:"bug",tier:3,base:{hp:80,atk:26,def:34,spd:14,spa:18,spDef:22},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[28,"xscissor"],[40,"harden"]]},
   /* 순수 강철(steel) 구성체 라인 — steel은 coglet→gearclad(2차 bug) 뿐이라 얇았다(순수 강철 최종 0).
      동굴/광산 테마의 방어형 3단 라인을 추가해 강철을 5종으로. 느리지만 두껍고 특방·방어가 높다. */
-  {id:"orelet",name:"쇳덩이",em:"🔩",type:"steel",tier:1,base:{hp:46,atk:15,def:22,spd:8,spa:9,spDef:13},moves:["tackle","metalclaw"],learn:[[12,"bulletpunch"]],evolveTo:"ironforge",evolveLv:18},
-  {id:"ironforge",name:"무쇠병",em:"⚒️",type:"steel",tier:2,base:{hp:58,atk:25,def:26,spd:11,spa:15,spDef:20},moves:["tackle","metalclaw","bulletpunch"],learn:[[24,"mirrorshot"],[30,"harden"]],evolveTo:"steelgolem",evolveLv:36},
-  {id:"steelgolem",name:"강철거병",em:"🤖",type:"steel",tier:3,base:{hp:80,atk:30,def:40,spd:13,spa:18,spDef:21},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[42,"quake"]]},
+  {id:"orelet",name:"쇳덩이",em:"🔩",type:"steel",tier:1,ability:"sturdy",base:{hp:46,atk:15,def:22,spd:8,spa:9,spDef:13},moves:["tackle","metalclaw"],learn:[[12,"bulletpunch"]],evolveTo:"ironforge",evolveLv:18},
+  {id:"ironforge",name:"무쇠병",em:"⚒️",type:"steel",tier:2,ability:"filter",base:{hp:58,atk:25,def:26,spd:11,spa:15,spDef:20},moves:["tackle","metalclaw","bulletpunch"],learn:[[24,"mirrorshot"],[30,"harden"]],evolveTo:"steelgolem",evolveLv:36},
+  {id:"steelgolem",name:"강철거병",em:"🤖",type:"steel",tier:3,ability:"filter",base:{hp:80,atk:30,def:40,spd:13,spa:18,spDef:21},moves:["metalclaw","bulletpunch","mirrorshot","flashcannon"],learn:[[42,"quake"]]},
   /* 벌레(bug) 프라이머리 라인 — 기존엔 bug가 gearclad의 2차 타입으로만 존재했다(순수/1차 bug 종 0).
      숲·정원 계열에 나비 라인을 얹어 타입 커버를 채운다. 아트는 SVG 플레이스홀더(매니페스트 미등록 → creatureSVG 폴백). */
   {id:"sporelet",name:"홀씨벌레",em:"🐛",type:"bug",tier:1,base:{hp:45,atk:14,def:16,spd:15,spa:18,spDef:14},moves:["tackle","bugbite"],learn:[[8,"absorb"],[12,"bugbuzz"],[16,"gust"]],evolveTo:"gustmoth",evolveLv:18},
@@ -121,16 +121,23 @@ const DEX=[
      여전히 순수 bug 종이 sporelet 하나뿐(gustmoth는 bug/flying)이라, 물리 프라이머리 3단을 추가해
      타입을 실질 보강한다. 신규 무브 불필요(bugbite·xscissor·slash·machpunch·focusenergy·closecombat 전부 실존).
      빠른 물리 스위퍼 성격 — 낮은 방어·높은 공격/속도. 총합 120→184→251(3단 오프형). */
-  {id:"mantlet",name:"애사마귀",em:"🦗",type:"bug",tier:1,base:{hp:41,atk:19,def:14,spd:18,spa:8,spDef:13},moves:["tackle","bugbite"],learn:[[12,"focusenergy"],[16,"xscissor"]],evolveTo:"scythel",evolveLv:16},
-  {id:"scythel",name:"낫사마귀",em:"🗡️",type:"bug",tier:2,base:{hp:52,atk:31,def:18,spd:29,spa:12,spDef:15},moves:["bugbite","xscissor","focusenergy"],learn:[[24,"slash"],[30,"machpunch"]],evolveTo:"reapmantis",evolveLv:34},
-  {id:"reapmantis",name:"대검사마귀",em:"⚔️",type:"bug",tier:3,base:{hp:64,atk:44,def:22,spd:40,spa:14,spDef:18},moves:["xscissor","slash","machpunch","focusenergy"],learn:[[42,"closecombat"]]},
+  {id:"mantlet",name:"애사마귀",em:"🦗",type:"bug",tier:1,ability:"toughclaws",base:{hp:41,atk:19,def:14,spd:18,spa:8,spDef:13},moves:["tackle","bugbite"],learn:[[12,"focusenergy"],[16,"xscissor"]],evolveTo:"scythel",evolveLv:16},
+  {id:"scythel",name:"낫사마귀",em:"🗡️",type:"bug",tier:2,ability:"toughclaws",base:{hp:52,atk:31,def:18,spd:29,spa:12,spDef:15},moves:["bugbite","xscissor","focusenergy"],learn:[[24,"slash"],[30,"machpunch"]],evolveTo:"reapmantis",evolveLv:34},
+  {id:"reapmantis",name:"대검사마귀",em:"⚔️",type:"bug",tier:3,ability:"moxie",base:{hp:64,atk:44,def:22,spd:40,spa:14,spDef:18},moves:["xscissor","slash","machpunch","focusenergy"],learn:[[42,"closecombat"]]},
   /* 순수 고스트 특수 라인 — 고스트가 가장 얇은 타입(총 4종·순수 2)이라 보강.
      저주받은 탈(가면)이 원귀로 자라는 특수 어태커(spa>atk) — 물리 사마귀와 대비.
      신규 무브 불필요(lick·ominouswind·nightburst·shadowball·darkpulse·shadowclaw 실존).
      총합 113→155→200(정상 최종진화 대역, 밸런스 정합). 물리 실루엣과 다른 부유형 가면. */
-  {id:"hexmask",name:"저주탈",em:"🎭",type:"ghost",tier:1,base:{hp:38,atk:8,def:13,spd:14,spa:18,spDef:9},moves:["lick","ominouswind"],learn:[[14,"nightburst"]],evolveTo:"wraithmask",evolveLv:16},
-  {id:"wraithmask",name:"탈망령",em:"👺",type:"ghost",tier:2,base:{hp:46,atk:10,def:16,spd:21,spa:26,spDef:13},moves:["ominouswind","nightburst"],learn:[[22,"shadowball"],[30,"darkpulse"]],evolveTo:"dreadmask",evolveLv:36},
-  {id:"dreadmask",name:"원귀탈",em:"💀",type:"ghost",tier:3,base:{hp:60,atk:13,def:22,spd:26,spa:33,spDef:24},moves:["shadowball","darkpulse","ominouswind","nightburst"],learn:[[42,"shadowclaw"]]},
+  {id:"hexmask",name:"저주탈",em:"🎭",type:"ghost",tier:1,ability:"levitate",base:{hp:38,atk:8,def:13,spd:14,spa:18,spDef:9},moves:["lick","ominouswind"],learn:[[14,"nightburst"]],evolveTo:"wraithmask",evolveLv:16},
+  {id:"wraithmask",name:"탈망령",em:"👺",type:"ghost",tier:2,ability:"levitate",base:{hp:46,atk:10,def:16,spd:21,spa:26,spDef:13},moves:["ominouswind","nightburst"],learn:[[22,"shadowball"],[30,"darkpulse"]],evolveTo:"dreadmask",evolveLv:36},
+  {id:"dreadmask",name:"원귀탈",em:"💀",type:"ghost",tier:3,ability:"levitate",base:{hp:60,atk:13,def:22,spd:26,spa:33,spDef:24},moves:["shadowball","darkpulse","ominouswind","nightburst"],learn:[[42,"shadowclaw"]]},
+  /* 순수 에스퍼 예지 라인 — 에스퍼가 두 번째로 얇은 타입(총 5종·순수 2, 둘 다 여우 라인).
+     여우(psykit→mystfox)와 겹치지 않게 '떠 있는 점술 구슬 → 천리안 → 심안자' 예지자 계열로 차별화.
+     특수 어태커(spa>atk). 신규 무브 불필요(confusion·psybeam·psystrike·zenheadbutt·shadowball 실존).
+     에스퍼는 방어 타이핑이 고스트만큼 극단적이지 않아 표준 대역(113→155→200)으로 두되 실측 검증함. */
+  {id:"mystorb",name:"점술구슬",em:"🔮",type:"psychic",tier:1,ability:"regenerator",base:{hp:40,atk:8,def:14,spd:15,spa:19,spDef:12},moves:["confusion"],learn:[[12,"psybeam"]],evolveTo:"seergaze",evolveLv:16},
+  {id:"seergaze",name:"천리안",em:"👁️",type:"psychic",tier:2,ability:"regenerator",base:{hp:52,atk:10,def:19,spd:23,spa:28,spDef:16},moves:["confusion","psybeam"],learn:[[26,"zenheadbutt"]],evolveTo:"omniseer",evolveLv:36},
+  {id:"omniseer",name:"심안자",em:"🧿",type:"psychic",tier:3,ability:"regenerator",base:{hp:64,atk:13,def:25,spd:29,spa:34,spDef:23},moves:["psybeam","psystrike","confusion","zenheadbutt"],learn:[[42,"shadowball"]]},
   /* 희소 타입 보강 — 격투·페어리·악이 각 2종뿐이라 두 번째 진화 라인을 추가한다(팀 빌딩 다양성).
      기존 라인과 실루엣이 겹치지 않게 원숭이·반딧불·까마귀로 차별화. 신규 무브 불필요(전부 실존).
      스탯 총합(3단 190~195)은 기존 3단 대역과 동일 — balance_test 통과 유지. */
