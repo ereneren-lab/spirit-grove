@@ -4381,9 +4381,9 @@ const ENC_POOLS={
   garden:["psykit","glowfly","arcmoth","lunarmoth","petalwing","sproutcat","bloomlynx","sprigfawn","titanoak","moonytide","dewdrop","sporelet","gustmoth"],
   mooncanyon:["nightkit","duskbeak","wispkin","hexmask","wraithmask","jellure","hedgemoss","vinesnake","arcmoth","psykit","swampfrog","glimmite","burrowmouse","racoonmon"],   // 달그림자 골짜기 = 야행성 어둠·고스트·독 (+저주탈 라인, 전부 야생 가능종 — NO_WILD 제외)
   desert:["sandwhirl","pebblet","boulderin","burrowmouse","coglet","lavakit","cindercat","emberlix","dustbunny","pummelpup","stingtail"],   // 모래바람 사막 = 바위·땅·불 (전부 야생 가능종)
-  crystalcave:["pebblet","boulderin","coglet","orelet","ironforge","iceling","snowl","psykit","sparkmouse","sandwhirl","frostfish","glimmite"],   // 수정 동굴 = 바위·강철·에스퍼·얼음 (전부 야생 가능종)
+  crystalcave:["pebblet","boulderin","coglet","orelet","ironforge","iceling","snowl","psykit","mystorb","seergaze","sparkmouse","sandwhirl","frostfish","glimmite"],   // 수정 동굴 = 바위·강철·에스퍼·얼음 (전부 야생 가능종)
   wyverngorge:["drakeling","wyverna","emberdrake","thundwyrm","cryogon","frostwyrm","riverdrake","leafdrake","stormhawk","sandwhirl"],   // 비룡 협곡 = 용·비행 (전부 야생 가능종 — skydrake는 NO_WILD라 제외)
-  fairyglade:["glimmertide","petalwing","blossomhawk","pixibud","glimmite","lumenfae","psykit","sproutcat","dewdrop","moonytide"],   // 요정의 뜰 = 페어리·풀·에스퍼 (전부 야생 가능종 — blossfae는 NO_WILD라 제외)
+  fairyglade:["glimmertide","petalwing","blossomhawk","pixibud","glimmite","lumenfae","psykit","mystorb","seergaze","sproutcat","dewdrop","moonytide"],   // 요정의 뜰 = 페어리·풀·에스퍼 (전부 야생 가능종 — blossfae는 NO_WILD라 제외)
   coralcove:["puddlet","shellow","otterwave","nipling","jellure","riverine","frostfish","dewdrop","moonytide","crablord"],   // 산호 해식동 = 물·얼음·물요정 (전부 야생 가능종 — tidalore는 NO_WILD라 제외)
   isle:["stormhawk","tigerflame","magmahound","krakentide","tidewhale","harelord","emberdrake","grovespirit","palmore","emberlix","crablord"],
   coast:["shellow","otterwave","frostfish","tidewhale","racoonmon","bunnyhop","stormhawk","nipling","gullian","jellure"],
@@ -4398,7 +4398,7 @@ const ENC_POOLS={
 // ⚠️ 늘릴 땐 낮/밤 각 티어 풀이 비지 않는지 확인할 것(pickWild가 티어로 먼저 거른다).
 const NIGHT_MONS=new Set(["lunarmoth", "thunderowl", "swampfrog", "emberwolf", "tigerflame", "vinesnake", "emberlix", "moonytide", "pyrewolf", "glowfly", "arcmoth", "duskbeak", "glimmite"]);
 const SEA_MONS=new Set(["nipling","crablord","gullian","palmore","jellure","emberlix"]);
-const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox","blossfae","lanternox","voidpanther","gearclad","steelgolem","reapmantis","dreadmask"]);
+const NO_WILD=new Set(["skydrake","tidalore","megalith","taekwarrior","mystfox","blossfae","lanternox","voidpanther","gearclad","steelgolem","reapmantis","dreadmask","omniseer"]);
 const DAY_MONS=new Set(["sprigfawn", "stormhawk", "cindercat", "leafdrake", "palmore", "seedbean", "mossback", "sproutcat", "glimmertide"]);
 function pickWild(al,depth){ const roll=Math.random(); depth=depth||0; let pool;
   const deep=depth>=0.82;
@@ -7835,6 +7835,9 @@ const FLAVOR={
   hexmask:{cat:"저주탈",h:0.4,w:1,t:"버려진 사당에 걸려 있던 탈에 원한이 깃들었다. 밤이면 스스로 떠올라 나직이 웃는다."},
   wraithmask:{cat:"탈망령",h:1.0,w:3,t:"탈 아래로 너덜너덜한 그림자 자락이 자랐다. 지나는 이의 이름을 부르며 뒤를 따른다."},
   dreadmask:{cat:"원귀탈",h:1.8,w:6,t:"수많은 원한이 겹쳐 굳은 큰 탈. 텅 빈 눈구멍에서 새어나오는 냉기가 방 안의 온기를 앗아간다."},
+  mystorb:{cat:"점술구슬",h:0.3,w:2,t:"홀로 떠다니는 수정 구슬. 안개 낀 표면에 스치는 이의 가까운 앞날이 어렴풋이 비친다."},
+  seergaze:{cat:"천리안",h:0.8,w:4,t:"구슬 한가운데 커다란 눈이 떠졌다. 감기는 법 없이 먼 곳과 마음속을 동시에 들여다본다."},
+  omniseer:{cat:"심안자",h:1.5,w:7,t:"수많은 눈을 두른 예지의 정령. 아직 오지 않은 일을 미리 보고 조용히 길을 고른다."},
   pummelpup:{cat:"권술강아지",h:0.5,w:9,t:"작은 앞발에 붕대를 감고 하루 종일 허공에 주먹을 지른다. 겁 없이 큰 상대에게도 달려든다."},
   taekwarrior:{cat:"태권무사",h:1.6,w:62,t:"낡은 검은 띠를 두르고 도장을 지킨다. 한 발차기에 바위가 갈라진다 전해진다."},
   psykit:{cat:"요술여우",h:0.4,w:6,t:"이마의 세 번째 눈으로 상대의 마음을 살짝 엿본다. 심심하면 작은 환영으로 장난친다."},
